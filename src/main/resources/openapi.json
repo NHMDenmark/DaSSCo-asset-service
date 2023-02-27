@@ -1,0 +1,291 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "DaSSCo",
+    "description" : "DaSSCO API Documentation\n",
+    "version" : "1.0"
+  },
+  "servers" : [ {
+    "url" : "${apiServerUrl}",
+    "variables" : { }
+  } ],
+  "paths" : {
+    "/v1/assets" : {
+      "get" : {
+        "operationId" : "getCountries",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Asset" : {
+        "type" : "object",
+        "properties" : {
+          "originalMedia" : {
+            "type" : "string"
+          },
+          "originalMediaTaken" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "digitiser" : {
+            "type" : "string"
+          },
+          "workstationName" : {
+            "type" : "string"
+          },
+          "pipelineName" : {
+            "type" : "string"
+          },
+          "institution" : {
+            "type" : "string"
+          },
+          "collection" : {
+            "type" : "string"
+          },
+          "dateMediaCreated" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "mediaCreatedBy" : {
+            "type" : "string"
+          },
+          "dateMediaUpdated" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date-time"
+            }
+          },
+          "mediaUpdatedBy" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "dateMediaDeleted" : {
+            "type" : "string"
+          },
+          "mediaDeletedBy" : {
+            "type" : "string"
+          },
+          "dateMetadataCreated" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "metadataCreatedBy" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "dateMetadataUpdated" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date-time"
+            }
+          },
+          "metadataUpdatedBy" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "audited" : {
+            "type" : "string"
+          },
+          "auditedBy" : {
+            "type" : "string"
+          },
+          "auditedDate" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "storageLocation" : {
+            "type" : "string"
+          },
+          "parent" : {
+            "type" : "string"
+          },
+          "originalParent" : {
+            "type" : "string"
+          },
+          "relatedMedia" : {
+            "type" : "string"
+          },
+          "mutispecimenStatus" : {
+            "type" : "string"
+          },
+          "otherMultispecimen" : {
+            "type" : "string"
+          },
+          "barcode" : {
+            "type" : "string"
+          },
+          "specimenPid" : {
+            "type" : "string"
+          },
+          "specifySpecimenId" : {
+            "type" : "string"
+          },
+          "specifyAttachmentId" : {
+            "type" : "string"
+          },
+          "mediaGuid" : {
+            "type" : "string"
+          },
+          "mediaPid" : {
+            "type" : "string"
+          },
+          "externalLink" : {
+            "type" : "string"
+          },
+          "payloadType" : {
+            "type" : "string"
+          },
+          "fileFormat" : {
+            "type" : "string"
+          },
+          "fileInfo" : {
+            "type" : "string"
+          },
+          "accessLevel" : {
+            "type" : "string"
+          },
+          "preparationType" : {
+            "type" : "string"
+          },
+          "ocrText" : {
+            "type" : "string"
+          },
+          "geographicRegion" : {
+            "type" : "string"
+          },
+          "taxonName" : {
+            "type" : "string"
+          },
+          "typeStatus" : {
+            "type" : "string"
+          },
+          "specimenStorageLocation" : {
+            "type" : "string"
+          },
+          "funding" : {
+            "type" : "string"
+          },
+          "copyrightOwner" : {
+            "type" : "string"
+          },
+          "license" : {
+            "type" : "string"
+          },
+          "embargoType" : {
+            "type" : "string"
+          },
+          "embargoNotes" : {
+            "type" : "string"
+          },
+          "equipmentDetails" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "exposureTime" : {
+            "type" : "string"
+          },
+          "fNumber" : {
+            "type" : "string"
+          },
+          "focalLength" : {
+            "type" : "string"
+          },
+          "isoSetting" : {
+            "type" : "string"
+          },
+          "whiteBalance" : {
+            "type" : "string"
+          },
+          "originalSpecifyMediaName" : {
+            "type" : "string"
+          },
+          "mediaSubject" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "pushAssetToSpecify" : {
+            "type" : "string"
+          },
+          "pushMetadataToSpecify" : {
+            "type" : "string"
+          }
+        }
+      },
+      "DaSSCoError" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Error" ]
+          },
+          "protocolVersion" : {
+            "type" : "string",
+            "enum" : [ "1.0" ]
+          },
+          "errorCode" : {
+            "type" : "string",
+            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR" ]
+          },
+          "errorMessage" : {
+            "type" : "string"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "dassco-idp" : {
+        "type" : "oauth2",
+        "flows" : {
+          "authorizationCode" : {
+            "authorizationUrl" : "${authServerUrl}/protocol/openid-connect/auth",
+            "tokenUrl" : "${authServerUrl}/protocol/openid-connect/token"
+          }
+        },
+        "x-client-id" : "${authClientId}",
+        "x-receive-token-in" : "request-body"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+services:
+  keycloak:
+    extends:
+      file: ./docker-compose-keycloak.yaml
+      service: keycloak
+  database:
+    extends:
+      file: ./docker-compose-postgres.yaml
+      service: database
+  age-viewer:
+    extends:
+      file: ./docker-compose-age-viewer.yaml
+      service: age-viewer
+#  springadmin:
+#    extends:
+#      file: ./docker-compose-springadmin.yaml
+#      service: springadmin
+

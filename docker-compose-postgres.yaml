@@ -1,0 +1,9 @@
+services:
+  database:
+    image: apache/age:v1.1.0
+    environment:
+      POSTGRES_DB: dassco_asset_service
+      POSTGRES_USER: dassco_asset_service
+      POSTGRES_PASSWORD: dassco_asset_service
+    ports:
+      - "5433:5432"

@@ -1,0 +1,17 @@
+@import '../../style/base';
+
+rapi-doc::part(section-navbar-search) {
+  margin-top: 1rem;
+  padding: .8rem;
+}
+
+rapi-doc::part(label-operation-method) {
+  color: $secondaryColor;
+}
+
+
+rapi-doc::part(section-operation) {
+  margin-bottom: 5rem;
+  --red: #E64831;
+  --green: #054791;
+}

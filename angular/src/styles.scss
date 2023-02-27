@@ -1,0 +1,50 @@
+@use '@angular/material' as mat;
+@import 'sanitize.css';
+@import './theme';
+@include mat.core(
+    mat.define-typography-config(
+      $font-family: lemonmilk
+    )
+);
+
+@import 'style/base';
+
+@font-face {
+  font-family: lemonmilk;
+  src: url('/assets/fonts/LEMONMILK-Light.otf');
+}
+
+@font-face {
+  font-family: lemonmilk-medium;
+  src: url('/assets/fonts/LEMONMILK-Medium.otf');
+}
+
+@font-face {
+  font-family: rocksalt;
+  src: url('/assets/fonts/RockSalt-Regular.ttf');
+}
+
+@font-face {
+  font-family: graphik-black;
+  src: url('/assets/fonts/GraphikBlack.otf');
+}
+
+@font-face {
+  font-family: graphik-regular;
+  src: url('/assets/fonts/GraphikRegular.otf');
+}
+
+@font-face {
+  font-family: graphikBold;
+  src: url('/assets/fonts/GraphikBold.otf');
+}
+
+@font-face {
+  font-family: graphikRegular;
+  src: url('/assets/fonts/GraphikRegular.otf');
+}
+
+@include mat.all-component-themes($dassco-asset-service-theme);
+
+html, body { height: 100%; background-color: $primaryBackgroundColor; }
+body { margin: 0 }

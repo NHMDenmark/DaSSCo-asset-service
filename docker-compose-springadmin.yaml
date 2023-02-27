@@ -1,0 +1,12 @@
+services:
+  springadmin:
+    image: devops-springadmin-server:1.0.0
+    ports:
+      - "9000:9000"
+    environment:
+      KEYCLOAK_REALM: dassco
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080/
+      KEYCLOAK_RESOURCE: dassco-asset-service
+      KEYCLOAK_SCOPE: openid, profile, roles
+      KEYCLOAK_GRANT_TYPE: authorization_code
+      KEYCLOAK_REDIRECT_URL: http://localhost:9000/login/oauth2/code/keycloak

@@ -1,0 +1,22 @@
+@use 'sass:map';
+
+$smallSpacing: 5px;
+$normalSpacing: 10px;
+$bigSpacing: 20px;
+
+$vhNormalized: var(--vh, 1vh);
+$vwNormalized: var(--vw, 1vw);
+
+$primaryColor: rgb(38, 166, 154);
+$primaryColorHover: rgba(38, 166, 154, 0.9);
+
+$secondaryColor: rgb(5, 71, 145);
+$secondaryColorHover: rgba(5, 71, 145, 0.9);
+
+$warnColor: rgb(230, 72, 49);
+
+$secondaryBackgroundColor: rgb(34, 24, 28);
+$primaryBackgroundColor: rgb(255, 252, 255);
+
+$primaryColorText: rgb(34, 24, 28);
+$secondaryColorText: rgb(255, 252, 255);

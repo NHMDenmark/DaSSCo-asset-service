@@ -1,0 +1,91 @@
+@use '@angular/material' as mat;
+
+$dassco-asset-service-primary: (
+  50: #E5F4F3,
+  100: #BEE4E1,
+  200: #93D3CD,
+  300: #67C1B8,
+  400: #47B3A9,
+  500: #26A69A,
+  600: #229E92,
+  700: #1C9588,
+  800: #178B7E,
+  900: #0D7B6C,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgb(252, 252, 252),
+    500: rgb(252, 252, 252),
+    600: rgb(252, 252, 252),
+    700: rgb(252, 252, 252),
+    800: rgb(252, 252, 252),
+    900: rgb(252, 252, 252),
+  )
+);
+
+
+$dassco-asset-service-secondary: (
+  50: #E5EEF5,
+  100: #BDD5E6,
+  200: #91BAD5,
+  300: #659EC4,
+  400: #4489B8,
+  500: #2374AB,
+  600: #1F6CA4,
+  700: #1A619A,
+  800: #155791,
+  900: #0C4480,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgb(252, 252, 252),
+    500: rgb(252, 252, 252),
+    600: rgb(252, 252, 252),
+    700: rgb(252, 252, 252),
+    800: rgb(252, 252, 252),
+    900: rgb(252, 252, 252),
+  )
+);
+
+
+$dassco-asset-service-warn: (
+  50: #FCEAE7,
+  100: #F8CAC3,
+  200: #F4A79B,
+  300: #F08473,
+  400: #EC6955,
+  500: #E94F37,
+  600: #E64831,
+  700: #E33F2A,
+  800: #DF3623,
+  900: #D92616,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: rgba(black, 0.87),
+    400: rgb(252, 252, 252),
+    500: rgb(252, 252, 252),
+    600: rgb(252, 252, 252),
+    700: rgb(252, 252, 252),
+    800: rgb(252, 252, 252),
+    900: rgb(252, 252, 252),
+  )
+);
+
+$dassco-asset-service-primary: mat.define-palette($dassco-asset-service-primary);
+$dassco-asset-service-accent: mat.define-palette($dassco-asset-service-secondary);
+
+$dassco-asset-service-warn: mat.define-palette($dassco-asset-service-warn);
+
+$dassco-asset-service-theme: mat.define-light-theme((
+  color: (
+    primary: $dassco-asset-service-primary,
+    accent: $dassco-asset-service-accent,
+    warn: $dassco-asset-service-warn,
+  )
+));

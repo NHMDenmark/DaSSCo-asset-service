@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!-- Waiting for 9.3.5 release to ge past https://github.com/rapi-doc/RapiDoc/issues/805 in 9.3.3
+         and https://github.com/rapi-doc/RapiDoc/issues/879 in 9.3.4 -->
+    <script type="module" src="https://unpkg.com/rapidoc@9.3.2/dist/rapidoc-min.js"></script>
+    <title>Docs: tmc.vimo</title>
+</head>
+<body>
+<rapi-doc
+        id="thedoc"
+        heading-text="tmc.vimo"
+        use-path-in-nav-bar="true"
+        render-style="focused"
+        sort-endpoints-by="path"
+        show-info="true"
+        schema-description-expanded="true"
+        allow-server-selection="false"
+        allow-spec-url-load="false"
+        allow-spec-file-load="false"
+        allow-try="true"
+>
+</rapi-doc>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        let docEl = document.getElementById("thedoc");
+        const accessToken = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJldHlhQkdGc1JPN3FoVVY2SkdnNGdWRGVnbVZ3a2ptTHRiM1NLTGsyWmx3In0.eyJleHAiOjE2NzYwMzk4MjMsImlhdCI6MTY3NjAzOTUyMywiYXV0aF90aW1lIjoxNjc2MDM3Njg3LCJqdGkiOiJhZTVlOGQ3OC02MDkxLTRmYTAtODVmOC1kZmY1OWNjNGRhMTIiLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjgwODMvcmVhbG1zL2Rhc3NjbyIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJhMjk5YWMxMC03OWI1LTRjMTktODYwNC1iZjllY2U2MTA2MmYiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkYXNzY28tYXNzZXQtc2VydmljZSIsIm5vbmNlIjoiYTEwODdhMmIyMDI5ODgyMTc0NTdhZGIxOGZkZDdiNWM0NngwU1JoY08iLCJzZXNzaW9uX3N0YXRlIjoiZDUxODQwODAtZGYwMi00ZDMyLTg5ZGMtNTBmZWZlMjM0MzUzIiwiYWNyIjoiMCIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwOi8vbG9jYWxob3N0OjgwODQiLCJodHRwOi8vbG9jYWxob3N0OjgwODAiLCJodHRwOi8vbG9jYWxob3N0OjgwODEiLCJodHRwOi8vbG9jYWxob3N0OjQyMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwiZGVmYXVsdC1yb2xlcy1kYXNzY28iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoib3BlbmlkIG9mZmxpbmVfYWNjZXNzIGVtYWlsIHByb2ZpbGUiLCJzaWQiOiJkNTE4NDA4MC1kZjAyLTRkMzItODlkYy01MGZlZmUyMzQzNTMiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsIm5hbWUiOiJDaHJpc3RvZmZlciBIYW5zZW4iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJjaHJpc3RvZmZlcmhhbnNlbjIwQGdtYWlsLmNvbSIsImdpdmVuX25hbWUiOiJDaHJpc3RvZmZlciIsImZhbWlseV9uYW1lIjoiSGFuc2VuIiwiZW1haWwiOiJjaHJpc3RvZmZlcmhhbnNlbjIwQGdtYWlsLmNvbSJ9.FA9nM265shy7IInCtbWFs2AdK_Rd2QewX_Ln0flDNKYaF_hOaJcO9hXztgGWFPIp452bx_PzgS-rC_yzct-klSTSDFUdUz-x-7zmEbwOWalAJ-S2efYo5uydm3zpQgr_pEITgYUQH11Q-oahTkTcbY5-2LT4FUL2uHt8gsW4BcomQ0JywryzrIf2unuapSGlATRfUA1xK92l55-DmneKhzUqblH-fO7OFA7PW2X2m5V-L4T1Udsaqsbx_0RqwEJ6xzmGLLkhUUyXOeZ178tuIJtCJYSyAPA3l1PCjc7ZlNswDziN7WPqELMYcHujYR5gaGX91ffn06TzRjrSsMARgw';
+        const headers = new Headers({
+            'Authorization': 'Bearer ' + accessToken
+        });
+        fetch('/api/o.json', { headers: headers })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                docEl.loadSpec(data);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        /*let objSpec = JSON.parse(strSpec);
+        docEl.loadSpec(objSpec);*/
+    })
+</script>
+</body>
+</html>

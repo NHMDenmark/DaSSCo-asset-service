@@ -1,0 +1,20 @@
+<div class="assets-page" style="padding: 2rem">
+  <div class="search-container">
+    <mat-form-field class="example-form-field" style="width: 25rem">
+      <mat-label>Filter Assets</mat-label>
+      <input matInput type="text" [(ngModel)]="value">
+      <button *ngIf="value" matSuffix mat-icon-button aria-label="Clear" (click)="value=''">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+  </div>
+
+  <div class="asset-container">
+    <div *ngFor="let asset of assets" style="display: flex; flex-direction: row;">
+      <span style="margin-right: 20px">Collection: {{asset.collection}} </span>
+      <span style="margin-right: 20px">Digitiser: {{asset.digitiser}} </span>
+      <span style="margin-right: 20px">Institution: {{asset.institution}}</span>
+      <span>Media Created: {{asset.dateMediaCreated.toString() | date:'mediumDate'}}   </span>
+    </div>
+  </div>
+</div>
