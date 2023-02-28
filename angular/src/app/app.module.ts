@@ -16,6 +16,7 @@ import {MatInputModule} from "@angular/material/input";
 import {FormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {DocsComponent} from "./docs/docs.component";
+import { LineChartComponent } from './line-chart/line-chart.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import {DocsComponent} from "./docs/docs.component";
     StatisticsComponent,
     AssetsComponent,
     GraphComponent,
-    AssetDetailComponent
+    AssetDetailComponent,
+    LineChartComponent
   ],
   imports: [
     BrowserModule,

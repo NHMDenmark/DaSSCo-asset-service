@@ -12,7 +12,7 @@
   "paths" : {
     "/v1/assets" : {
       "get" : {
-        "operationId" : "getCountries",
+        "operationId" : "getAssets",
         "responses" : {
           "200" : {
             "content" : {

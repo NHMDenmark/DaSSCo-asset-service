@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DataSources {
+
   @Bean
   public DataSource dataSource(HikariConfig hikariConfig) {
     return new HikariDataSource(hikariConfig);
@@ -22,5 +23,6 @@ public class DataSources {
   public HikariConfig hikariConfig() {
     return new HikariConfig();
   }
+
 }
 
