@@ -13,7 +13,7 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest
 @Testcontainers
 @DirtiesContext // The database container is torn down between tests, so the pool cannot be reused
-class DasscoAssetServiceApplicationTests {
+class DasscoAssetServiceApplicationTests2 {
 
     @Container
     static GenericContainer postgreSQL = new GenericContainer(DockerImageName.parse("postgres:13.3-alpine"))
