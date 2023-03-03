@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import Chart from 'chart.js/auto';
+import {SpecimenGraphService} from "../services/specimen-graph.service";
+import {filter, map} from "rxjs";
+import { isNotUndefined } from '@northtech/ginnungagap';
 
 @Component({
   selector: 'dassco-line-chart',
@@ -9,7 +12,18 @@ import Chart from 'chart.js/auto';
 export class LineChartComponent implements OnInit {
   public chart: any;
 
-  constructor() { }
+  graphInfo$
+    = this.specimenGraphService.specimenGraphInfo$
+    .pipe(
+      filter(isNotUndefined),
+      map(info => {
+        console.log(info)
+
+        return info;
+      })
+    )
+
+  constructor(public specimenGraphService: SpecimenGraphService) { }
 
   ngOnInit(): void {
     this.createChart();
