@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {UserComponent} from "./user/user.component";
+import {UserComponent} from "./components/user/user.component";
 import {AuthenticatedGuard} from "./authenticated.guard";
-import {DocsComponent} from "./docs/docs.component";
-import {AssetsComponent} from "./assets/assets.component";
-import {GraphComponent} from "./graph/graph.component";
-import {StatisticsComponent} from "./statistics/statistics.component";
+import {DocsComponent} from "./components/docs/docs.component";
+import {AssetsComponent} from "./components/assets/assets.component";
+import {GraphComponent} from "./components/graph/graph.component";
+import {StatisticsComponent} from "./components/statistics/statistics.component";
 
 const routes: Routes = [
   {path: 'assets', component: AssetsComponent, canActivate: [AuthenticatedGuard]},

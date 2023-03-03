@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.configuration;
 
 import dk.northtech.dasscoassetservice.webapi.v1.AssetApi;
+import dk.northtech.dasscoassetservice.webapi.v1.InstituteApi;
 import dk.northtech.dasscoassetservice.webapi.v1.OpenAPI;
 import dk.northtech.dasscoassetservice.webapi.v1.SpecimenGraphInfoApi;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -17,6 +18,7 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(AssetApi.class);
     register(OpenAPI.class);
     register(SpecimenGraphInfoApi.class);
+    register(InstituteApi.class);
 
     register(RolesAllowedDynamicFeature.class);
     register(ClientAbortInterceptor.class);

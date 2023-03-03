@@ -13,3 +13,19 @@ export interface SpecimenGraph {
   digitisorName: string;
   createdDate: string;
 }
+
+export interface Institute {
+  id: number;
+  label: string;
+  name: string;
+  ocrText: string;
+  taxonName?: string;
+  geographicRegion?: string;
+}
+
+export enum TimeFrame {
+  WEEK = 7,
+  MONTH = 30,
+  YEAR = 365
+}
+

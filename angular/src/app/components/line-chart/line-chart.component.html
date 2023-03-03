@@ -1,0 +1,13 @@
+<div>
+  <div class="chart-container">
+    <canvas  id="lineChart" >{{chart}}</canvas>
+  </div>
+<!--  <div *ngIf="(institutes$ | async)"></div>-->
+  <div *ngIf="(setChartValues$ | async)"></div>
+  <div *ngIf="(graphInfo$ | async)">
+    <div class="btns">
+      <button mat-raised-button (click)="setTimeFrame(7)">Week</button>
+      <button mat-raised-button (click)="setTimeFrame(30)">Month</button>
+    </div>
+  </div>
+</div>
