@@ -18,7 +18,63 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
+                  "$ref" : "#/components/schemas/AssetV1"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/institutes" : {
+      "get" : {
+        "operationId" : "getInstitutes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Institute"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/specimengraphinfo" : {
+      "get" : {
+        "operationId" : "getAssets_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SpecimenGraphInfo"
                 }
               }
             }
@@ -41,7 +97,7 @@
   },
   "components" : {
     "schemas" : {
-      "Asset" : {
+      "AssetV1" : {
         "type" : "object",
         "properties" : {
           "originalMedia" : {
@@ -269,6 +325,81 @@
             "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR" ]
           },
           "errorMessage" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Institute" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "ocrText" : {
+            "type" : "string"
+          },
+          "taxonName" : {
+            "type" : "string"
+          },
+          "geographicRegion" : {
+            "type" : "string"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "writeOnly" : true
+          }
+        }
+      },
+      "SpecimenGraphInfo" : {
+        "type" : "object",
+        "properties" : {
+          "instituteName" : {
+            "type" : "string"
+          },
+          "instituteOcrText" : {
+            "type" : "string"
+          },
+          "specimenName" : {
+            "type" : "string"
+          },
+          "specimenMediaSubject" : {
+            "type" : "string"
+          },
+          "specimenSpecifySpecId" : {
+            "type" : "string"
+          },
+          "specimenSpecifyAttId" : {
+            "type" : "string"
+          },
+          "specimenOrigSpecifyMediaName" : {
+            "type" : "string"
+          },
+          "assetName" : {
+            "type" : "string"
+          },
+          "assetMediaGuid" : {
+            "type" : "string"
+          },
+          "assetFileFormat" : {
+            "type" : "string"
+          },
+          "assetDateMediaCreated" : {
+            "type" : "string"
+          },
+          "digitisorName" : {
+            "type" : "string"
+          },
+          "createdDate" : {
             "type" : "string"
           }
         }

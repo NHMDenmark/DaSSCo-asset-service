@@ -16,10 +16,13 @@ export class LineChartComponent implements OnInit {
     = this.specimenGraphService.specimenGraphInfo$
     .pipe(
       filter(isNotUndefined),
-      map(info => {
-        console.log(info)
-
-        return info;
+      map(specimens => {
+        console.log(specimens)
+        specimens.forEach(s => {
+          const date = new Date(s.createdDate);
+          console.log(date);
+        })
+        return specimens;
       })
     )
 

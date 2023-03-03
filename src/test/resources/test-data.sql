@@ -53,7 +53,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2008-12-03 15:23:08'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -76,7 +76,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2016-05-01 07:00:57'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -99,7 +99,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2020-09-14 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -122,7 +122,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2015-10-18 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -144,7 +144,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2013-12-13 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -167,7 +167,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2021-03-11 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -190,7 +190,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2021-05-03 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -213,7 +213,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2003-07-16 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -236,7 +236,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2020-03-01 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i
@@ -259,7 +259,7 @@ select * from cypher('dassco', $$
    MERGE (a)-[:PROPERTY_OF]->(i)
    MERGE (a)-[:PART_OF_COLLECTION]->(c)
    MERGE (a)-[:HAS_MEDIA]->(m)
-   MERGE (a)-[:METADATA_CREATED_BY]->(d)
+   MERGE (a)-[MC:METADATA_CREATED_BY {created_date: '2018-05-20 15:51:01'}]->(d)
    MERGE (m)-[:EQUIPTMENT_USED]->(e)
    MERGE (m)-[:CREATED_ON]->(w)
    RETURN i

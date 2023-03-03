@@ -1,9 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.domain.SpecimenGraphInfo;
+import dk.northtech.dasscoassetservice.domain.Institute;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -12,15 +10,16 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.junit.jupiter.api.Assertions.*;
 
 import javax.inject.Inject;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 @SpringBootTest
 @Testcontainers
 @Sql("/test-data.sql")
-public class SpecimenServiceTest {
+public class InstituteServiceTest {
 
     @Container
     static GenericContainer postgreSQL = new GenericContainer(DockerImageName.parse("apache/age:v1.1.0"))
@@ -35,12 +34,13 @@ public class SpecimenServiceTest {
     }
 
     @Inject
-    private SpecimenService specimenService;
+    private InstituteService instituteService;
 
     @Test
-    public void getSpecimens() {
-        List<SpecimenGraphInfo> data = specimenService.getSpecimenData();
+    public void getInstitutes() {
+        List<Institute> data = instituteService.getInstitutes();
 //        data.forEach(System.out::println);
+        assertEquals(data.get(0).name, "NNAD");
         assertNotEquals(data.size(), 0);
     }
 
