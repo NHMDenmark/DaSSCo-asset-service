@@ -1,12 +1,12 @@
 <div *ngIf="(authService.loginInitialized|async)!==undefined" style="display: flex; flex-direction: column; position: fixed; top: 0; left: 0; right: 0; bottom: 0;">
   <mat-toolbar color="primary">
-    <img style="height: 100%; padding: .5rem" src="assets/DaSSCo_logo_blue.svg" (click)="navigateToSite('assets')">
+    <img style="height: 100%; padding: .5rem" src="assets/DaSSCo_logo_blue.svg" (click)="navigateToSite('statistics')">
     <div class="button-container">
       <div class="navigation-menu" *ngIf="(activeMenu | async); let active">
-        <button mat-button (click)="navigateToSite('assets')"
-                [ngStyle]="active==='assets' ? {'text-decoration-line': 'underline'} : {}">
-          Assets
-        </button>
+<!--        <button mat-button (click)="navigateToSite('assets')"-->
+<!--                [ngStyle]="active==='assets' ? {'text-decoration-line': 'underline'} : {}">-->
+<!--          Assets-->
+<!--        </button>-->
         <button mat-button (click)="navigateToSite('graphs')"
                 [ngStyle]="active==='graphs' ? {'text-decoration-line': 'underline'} : {}">
           Graphs

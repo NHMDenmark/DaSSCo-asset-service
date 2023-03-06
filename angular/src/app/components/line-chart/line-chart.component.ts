@@ -1,11 +1,10 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import Chart, {ChartDataset} from 'chart.js/auto';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {BehaviorSubject, combineLatest, filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import {InstituteService} from "../../services/institute.service";
-import moment from "moment";
-import {SpecimenGraph, TimeFrame} from "../../types";
+import moment from 'moment';
+import {SpecimenGraph, TimeFrame} from '../../types';
 import randomColor from 'randomcolor';
 
 @Component({
@@ -13,25 +12,10 @@ import randomColor from 'randomcolor';
   templateUrl: './line-chart.component.html',
   styleUrls: ['./line-chart.component.scss']
 })
-export class LineChartComponent implements OnInit {
-  public chart: any;
-  chartDataSubject = new BehaviorSubject<Map<string, Map<string, number>> | undefined>(undefined)
-  timeFrameSubject = new BehaviorSubject<TimeFrame>(TimeFrame.MONTH);
-  // chartLabels: string[] = [];
-
-  institutes$
-    = this.instituteService.institutes$
-    .pipe(
-      filter(isNotUndefined),
-      map(institutes => {
-        console.log(institutes)
-        // this.chartLabels = institutes;
-        // institutes.forEach(i => {
-        //   console.log(date);
-        // })
-        return institutes;
-      })
-    )
+export class LineChartComponent {
+  chart: any;
+  chartDataSubject = new BehaviorSubject<Map<string, Map<string, number>> | undefined>(undefined);
+  timeFrameSubject = new BehaviorSubject<TimeFrame>(TimeFrame.WEEK);
 
   graphInfo$: Observable<SpecimenGraph[]>
     = combineLatest([
@@ -44,26 +28,26 @@ export class LineChartComponent implements OnInit {
         const map = new Map<string, Map<string, number>>();
         specimens.forEach(s => {
           if (now.diff(moment(s.createdDate), 'days') <= timeFrame) { // if it's within the timeframe
-            const created = moment(s.createdDate).format('DD-MMM-YY'); // unix timestamp
+            const created = moment(s.createdDate).format('DD-MMM-YY');
             if (map.has(s.instituteName)) { // if it exists
               const inst = map.get(s.instituteName);
               if (inst) {
                 if (inst.has(created)) { // if its value has been set, we up the total
-                  let total = inst.get(created);
+                  const total = inst.get(created);
                   if (total) inst.set(created, total + 1); // splitting them up to satisfy typescripts need for undefined-validation sigh
                 } else { // otherwise, we set the total to 1
                   inst.set(created, 1);
                 }
               }
             } else { // if nothing, we create a new with the institute name
-              map.set(s.instituteName, new Map<string, number>([[created, 1]]))
+              map.set(s.instituteName, new Map<string, number>([[created, 1]]));
             }
           }
-        })
+        });
         this.chartDataSubject.next(map);
         return specimens;
       })
-    )
+    );
 
   setChartValues$
     = combineLatest([
@@ -73,24 +57,19 @@ export class LineChartComponent implements OnInit {
     .pipe(
       map(([chartData, timeFrame]) => {
         const labels = this.createLabels(timeFrame);
-        this.createChart(chartData, labels);
+        this.setChart(chartData, labels);
       })
-    )
+    );
 
   constructor(
     public specimenGraphService: SpecimenGraphService
-    , public instituteService: InstituteService
   ) { }
 
-  ngOnInit(): void {
-  }
-
-  createChart(chartData: Map<string, Map<string, number>>, labels: string[]){
+  setChart(chartData: Map<string, Map<string, number>>, labels: string[]){
     const chartDatasets: ChartDataset[] = [];
     chartData.forEach((value: Map<string, number>, institute: string) => {
       const data: number[] = [];
       const pointRadius: number[] = [];
-      const color = randomColor({luminosity: 'light', format: 'hex'});
       labels.forEach(label => {
         if (value.has(label)) {
           data.push(value.get(label)!);
@@ -99,33 +78,18 @@ export class LineChartComponent implements OnInit {
           data.push(0);
           pointRadius.push(0);
         }
-      })
+      });
       chartDatasets.push({
         label: institute,
         data: data,
-        borderWidth: 1,
+        borderWidth: 2,
         pointRadius: pointRadius,
-        backgroundColor: color,
-        borderColor: color
-      })
+        backgroundColor: randomColor({luminosity: 'light', format: 'hsl', seed: institute}),
+        borderColor: randomColor({luminosity: 'light', format: 'hsl', seed: institute})
+      });
     });
 
-    if (this.chart) this.chart.destroy();
-    this.chart = new Chart("lineChart", {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: chartDatasets
-      },
-      options: {
-        aspectRatio:2.5,
-        plugins: {
-          legend: {
-            position: 'left'
-          }
-        }
-      }
-    });
+    this.createchart(labels, chartDatasets, 'Specimens created');
   }
 
   createLabels(timeFrame: TimeFrame): string[] {
@@ -144,5 +108,38 @@ export class LineChartComponent implements OnInit {
 
   setTimeFrame(timeFrame: TimeFrame) {
     this.timeFrameSubject.next(timeFrame);
+  }
+
+  createchart(labels: string[], chartDatasets: ChartDataset[], yaxis: string): void {
+    if (this.chart) this.chart.destroy();
+    this.chart = new Chart('lineChart', {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: chartDatasets
+      },
+      options: {
+        aspectRatio:2.5,
+        plugins: {
+          legend: {
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            title: {
+              display: true,
+              align: 'center',
+              text: yaxis
+            },
+            ticks: {
+              callback(val, _index) {
+                return val as number % 1 === 0 ? val : '';
+              }
+            }
+          }
+        }
+      }
+    });
   }
 }
