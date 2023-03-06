@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.AssetV1;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.SpecimenGraphInfo;
 import dk.northtech.dasscoassetservice.services.SpecimenService;
@@ -17,8 +16,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -40,6 +37,6 @@ public class SpecimenGraphInfoApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = SpecimenGraphInfo.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<SpecimenGraphInfo> getAssets() {
-        return specimenService.getSpecimenData();
+        return specimenService.specimenDataByInstitute();
     }
 }

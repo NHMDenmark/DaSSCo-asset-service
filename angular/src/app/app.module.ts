@@ -17,6 +17,8 @@ import {FormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {DocsComponent} from "./components/docs/docs.component";
 import { LineChartComponent } from './components/line-chart/line-chart.component';
+import { SpecimenPipelineComponent } from './components/graph-data/specimen-pipeline/specimen-pipeline.component';
+import { SpecimenInstituteComponent } from './components/graph-data/specimen-institute/specimen-institute.component';
 
 @NgModule({
   declarations: [
@@ -27,7 +29,9 @@ import { LineChartComponent } from './components/line-chart/line-chart.component
     AssetsComponent,
     GraphComponent,
     AssetDetailComponent,
-    LineChartComponent
+    LineChartComponent,
+    SpecimenPipelineComponent,
+    SpecimenInstituteComponent
   ],
   imports: [
     BrowserModule,

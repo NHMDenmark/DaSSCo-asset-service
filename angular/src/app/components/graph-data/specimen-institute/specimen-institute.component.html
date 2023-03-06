@@ -1,0 +1,7 @@
+<div class="container">
+  <div *ngIf="(graphInfo$ | async) as graphInfo">
+    <div *ngIf="(labels$ | async) as labels">
+      <dassco-line-chart [setChartData]="graphInfo" [setLabels]="labels" (timeFrame)="setTimeFrame($event)"></dassco-line-chart>
+    </div>
+  </div>
+</div>

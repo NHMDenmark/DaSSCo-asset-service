@@ -15,7 +15,7 @@ export class SpecimenGraphService {
     , private http: HttpClient
   ) { }
 
-  specimenGraphInfo$: Observable<SpecimenGraph[] | undefined>
+  specimenInstitution$: Observable<SpecimenGraph[] | undefined>
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
@@ -24,7 +24,18 @@ export class SpecimenGraphService {
             catchError(this.handleError(`get ${this.baseUrl}`, undefined))
           );
       })
-    )
+    );
+
+  specimenPipeline$: Observable<SpecimenGraph[] | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<SpecimenGraph[]>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}`, undefined))
+          );
+      })
+    );
 
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {

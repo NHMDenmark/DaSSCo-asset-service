@@ -2,8 +2,6 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.SpecimenGraphInfo;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -38,8 +36,14 @@ public class SpecimenServiceTest {
     private SpecimenService specimenService;
 
     @Test
-    public void getSpecimens() {
-        List<SpecimenGraphInfo> data = specimenService.getSpecimenData();
+    public void getSpecimensByInstitute() {
+        List<SpecimenGraphInfo> data = specimenService.specimenDataByInstitute();
+        assertNotEquals(data.size(), 0);
+    }
+
+    @Test
+    public void getSpecimensByPipelilne() {
+        List<SpecimenGraphInfo> data = specimenService.specimenDataByPipeline();
 //        data.forEach(System.out::println);
         assertNotEquals(data.size(), 0);
     }

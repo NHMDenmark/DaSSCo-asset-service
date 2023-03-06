@@ -1,3 +1,6 @@
+import moment from "moment";
+import DurationConstructor = moment.unitOfTime.DurationConstructor;
+
 export interface SpecimenGraph {
   instituteName: string;
   instituteOcrText: string;
@@ -10,7 +13,8 @@ export interface SpecimenGraph {
   assetMediaGuid: string;
   assetFileFormat: string;
   assetDateMediaCreated: string;
-  digitisorName: string;
+  digitisorName?: string;
+  pipelineName?: string;
   createdDate: string;
 }
 
@@ -23,9 +27,12 @@ export interface Institute {
   geographicRegion?: string;
 }
 
-export enum TimeFrame {
-  WEEK = 7,
-  MONTH = 30,
-  YEAR = 365
+export interface TimeFrame {
+  period: 'WEEK' | 'MONTH' | 'YEAR';
+  amount: number;
+  unit: DurationConstructor;
+  format: string;
 }
+
+export const defaultTimeFrame: TimeFrame = {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'};
 

@@ -399,6 +399,9 @@
           "digitisorName" : {
             "type" : "string"
           },
+          "pipelineName" : {
+            "type" : "string"
+          },
           "createdDate" : {
             "type" : "string"
           }
