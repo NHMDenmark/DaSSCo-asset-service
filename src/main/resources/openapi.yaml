@@ -42,13 +42,13 @@ paths:
       - dassco-idp: []
   /v1/specimengraphinfo:
     get:
-      operationId: getAssets_1
+      operationId: getSpecimenData
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SpecimenGraphInfo'
+                $ref: '#/components/schemas/SpecimenData'
         "400-599":
           content:
             application/json:
@@ -241,7 +241,7 @@ components:
           additionalProperties:
             type: object
           writeOnly: true
-    SpecimenGraphInfo:
+    SpecimenData:
       type: object
       properties:
         instituteName:
@@ -266,9 +266,9 @@ components:
           type: string
         assetDateMediaCreated:
           type: string
-        digitisorName:
-          type: string
         pipelineName:
+          type: string
+        workstationName:
           type: string
         createdDate:
           type: string

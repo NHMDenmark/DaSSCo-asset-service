@@ -3,6 +3,7 @@
 mat-toolbar {
   display: flex;
   justify-content: flex-start;
+  background-color: $primaryColor;
 
   .title {
     font-family: GraphikBold, sans-serif;
@@ -32,8 +33,8 @@ mat-toolbar {
 
 .navigation-menu {
   button {
-    font-size: 20px;
-    font-family: lemonmilk-medium;
+    font-size: 18px;
+    font-family: lemonmilk;
     color: $secondaryColor;
   }
 }

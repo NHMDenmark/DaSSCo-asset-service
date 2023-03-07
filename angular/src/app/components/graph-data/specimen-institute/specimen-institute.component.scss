@@ -1,3 +1,39 @@
+@import 'src/style/base';
+
 .container {
   height: 100%;
+
+  .data-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    .config {
+      width: 100%;
+      display: flex;
+      gap: 1rem;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+
+      .time-frame-select {
+      }
+
+      .stat-btns {
+        .stat-inst-0, .stat-pip-1, .stat-work-2 {
+          background-color: $primaryColorHover;
+        }
+
+        button {
+          margin-left: 1rem;
+          background-color: $primaryColor;
+        }
+      }
+    }
+  }
+}
+
+::ng-deep.mat-form-field-wrapper {
+  padding: 0 !important;
 }

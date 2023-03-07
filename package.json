@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@types/randomcolor": "^0.5.7"
+    "@types/randomcolor": "^0.5.7",
+    "chroma-js": "^2.4.2"
   }
 }

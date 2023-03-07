@@ -64,7 +64,7 @@ export class AppComponent {
         this.activeMenu.next(path);
         break;
       default:
-        this.activeMenu.next('assets');
+        this.activeMenu.next('statistics');
         break;
     }
   }

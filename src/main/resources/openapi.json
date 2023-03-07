@@ -68,13 +68,13 @@
     },
     "/v1/specimengraphinfo" : {
       "get" : {
-        "operationId" : "getAssets_1",
+        "operationId" : "getSpecimenData",
         "responses" : {
           "200" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/SpecimenGraphInfo"
+                  "$ref" : "#/components/schemas/SpecimenData"
                 }
               }
             }
@@ -360,7 +360,7 @@
           }
         }
       },
-      "SpecimenGraphInfo" : {
+      "SpecimenData" : {
         "type" : "object",
         "properties" : {
           "instituteName" : {
@@ -396,10 +396,10 @@
           "assetDateMediaCreated" : {
             "type" : "string"
           },
-          "digitisorName" : {
+          "pipelineName" : {
             "type" : "string"
           },
-          "pipelineName" : {
+          "workstationName" : {
             "type" : "string"
           },
           "createdDate" : {

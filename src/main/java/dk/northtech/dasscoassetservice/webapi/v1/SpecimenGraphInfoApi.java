@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.domain.SpecimenGraphInfo;
+import dk.northtech.dasscoassetservice.domain.SpecimenData;
 import dk.northtech.dasscoassetservice.services.SpecimenService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,9 +34,9 @@ public class SpecimenGraphInfoApi {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = SpecimenGraphInfo.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = SpecimenData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<SpecimenGraphInfo> getAssets() {
-        return specimenService.specimenDataByInstitute();
+    public List<SpecimenData> getSpecimenData() {
+        return specimenService.getSpecimenData();
     }
 }

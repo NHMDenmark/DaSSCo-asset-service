@@ -3,9 +3,14 @@
     <canvas id="line-chart">{{chart}}</canvas>
     <div *ngIf="(setChartValues$ | async)"></div>
   </div>
-  <div class="btns">
-    <button mat-raised-button (click)="setTimeFrame('WEEK', 7, 'days', 'DD-MMM-YY')">Week</button>
-    <button mat-raised-button (click)="setTimeFrame('MONTH', 30, 'days', 'DD-MMM-YY')">Month</button>
-    <button mat-raised-button (click)="setTimeFrame('YEAR', 12, 'months', 'MMM YY')">Year</button>
-  </div>
+<!--  <div class="time-frame-select">-->
+<!--    <mat-form-field appearance="outline">-->
+<!--      <mat-label>Choose timeframe</mat-label>-->
+<!--      <mat-select [formControl]="timeFrameForm">-->
+<!--        <mat-option [value]="1">Week</mat-option>-->
+<!--        <mat-option [value]="2">Month</mat-option>-->
+<!--        <mat-option [value]="3">Year</mat-option>-->
+<!--      </mat-select>-->
+<!--    </mat-form-field>-->
+<!--  </div>-->
 </div>

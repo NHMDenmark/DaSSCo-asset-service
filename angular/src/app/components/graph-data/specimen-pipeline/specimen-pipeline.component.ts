@@ -1,15 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'dassco-specimen-pipeline',
   templateUrl: './specimen-pipeline.component.html',
   styleUrls: ['./specimen-pipeline.component.scss']
 })
-export class SpecimenPipelineComponent implements OnInit {
+export class SpecimenPipelineComponent {
 
-  constructor() { }
-
-  ngOnInit(): void {
-  }
-
+  constructor(
+  ) { }
 }

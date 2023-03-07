@@ -2,7 +2,7 @@ package dk.northtech.dasscoassetservice.domain;
 
 import javax.annotation.Nullable;
 
-public record SpecimenGraphInfo(
+public record SpecimenData(
         String instituteName,
         String instituteOcrText,
         String specimenName,
@@ -14,11 +14,11 @@ public record SpecimenGraphInfo(
         String assetMediaGuid,
         String assetFileFormat,
         String assetDateMediaCreated,
-        @Nullable String digitisorName,
         @Nullable String pipelineName,
+        @Nullable String workstationName,
         String createdDate
 ) {
-    public SpecimenGraphInfo(String instituteName, String instituteOcrText, String specimenName, String specimenMediaSubject, String specimenSpecifySpecId, String specimenSpecifyAttId, String specimenOrigSpecifyMediaName, String assetName, String assetMediaGuid, String assetFileFormat, String assetDateMediaCreated, @Nullable String digitisorName, @Nullable String pipelineName, String createdDate) {
+    public SpecimenData(String instituteName, String instituteOcrText, String specimenName, String specimenMediaSubject, String specimenSpecifySpecId, String specimenSpecifyAttId, String specimenOrigSpecifyMediaName, String assetName, String assetMediaGuid, String assetFileFormat, String assetDateMediaCreated, @Nullable String pipelineName, @Nullable String workstationName, String createdDate) {
         this.instituteName = instituteName.replaceAll("\"", "");
         this.instituteOcrText = instituteOcrText.replaceAll("\"", "");
         this.specimenName = specimenName.replaceAll("\"", "");
@@ -30,8 +30,8 @@ public record SpecimenGraphInfo(
         this.assetMediaGuid = assetMediaGuid.replaceAll("\"", "");
         this.assetFileFormat = assetFileFormat.replaceAll("\"", "");
         this.assetDateMediaCreated = assetDateMediaCreated.replaceAll("\"", "");
-        this.digitisorName = digitisorName != null ? digitisorName.replaceAll("\"", "") : null;
         this.pipelineName = pipelineName != null ? pipelineName.replaceAll("\"", "") : null;
+        this.workstationName = workstationName != null ? workstationName.replaceAll("\"", "") : null;
         this.createdDate = createdDate.replaceAll("\"", "");
     }
 }

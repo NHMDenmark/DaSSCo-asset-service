@@ -1,7 +1,24 @@
 <div class="container">
-  <div *ngIf="(graphInfo$ | async) as graphInfo">
+  <div *ngIf="(graphInfo$ | async) as graphInfo" class="data-container">
     <div *ngIf="(labels$ | async) as labels">
-      <dassco-line-chart [setChartData]="graphInfo" [setLabels]="labels" (timeFrame)="setTimeFrame($event)"></dassco-line-chart>
+      <dassco-line-chart [setChartData]="graphInfo" [setLabels]="labels" [setTitle]="title" [setTimeFrame]="timeFrameSubject.getValue()"></dassco-line-chart>
+    </div>
+    <div class="config">
+      <div class="time-frame-select">
+        <mat-form-field appearance="outline">
+          <mat-label>Choose timeframe</mat-label>
+          <mat-select [formControl]="timeFrameForm">
+            <mat-option [value]="1">Week</mat-option>
+            <mat-option [value]="2">Month</mat-option>
+            <mat-option [value]="3">Year</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="stat-btns">
+        <button mat-raised-button class="stat-inst-{{statValueSubject.getValue()}}" (click)="setStatValue(0)">Institute</button>
+        <button mat-raised-button class="stat-pip-{{statValueSubject.getValue()}}" (click)="setStatValue(1)">Pipeline</button>
+        <button mat-raised-button class="stat-work-{{statValueSubject.getValue()}}" (click)="setStatValue(2)">Workstation</button>
+      </div>
     </div>
   </div>
 </div>

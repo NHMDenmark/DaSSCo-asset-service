@@ -15,7 +15,7 @@ export class SpecimenGraphService {
     , private http: HttpClient
   ) { }
 
-  specimenInstitution$: Observable<SpecimenGraph[] | undefined>
+  specimenData$: Observable<SpecimenGraph[] | undefined>
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {

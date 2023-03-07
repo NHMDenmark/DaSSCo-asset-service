@@ -13,12 +13,14 @@ import { AssetsComponent } from './components/assets/assets.component';
 import { GraphComponent } from './components/graph/graph.component';
 import { AssetDetailComponent } from './components/asset-detail/asset-detail.component';
 import {MatInputModule} from "@angular/material/input";
-import {FormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {DocsComponent} from "./components/docs/docs.component";
 import { LineChartComponent } from './components/line-chart/line-chart.component';
 import { SpecimenPipelineComponent } from './components/graph-data/specimen-pipeline/specimen-pipeline.component';
 import { SpecimenInstituteComponent } from './components/graph-data/specimen-institute/specimen-institute.component';
+import {MatOptionModule} from "@angular/material/core";
+import {MatSelectModule} from "@angular/material/select";
 
 @NgModule({
   declarations: [
@@ -42,7 +44,10 @@ import { SpecimenInstituteComponent } from './components/graph-data/specimen-ins
     MatButtonModule,
     MatInputModule,
     FormsModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    MatOptionModule,
+    MatSelectModule,
+    ReactiveFormsModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

@@ -13,8 +13,8 @@ export interface SpecimenGraph {
   assetMediaGuid: string;
   assetFileFormat: string;
   assetDateMediaCreated: string;
-  digitisorName?: string;
-  pipelineName?: string;
+  pipelineName: string;
+  workstationName: string;
   createdDate: string;
 }
 
@@ -36,3 +36,8 @@ export interface TimeFrame {
 
 export const defaultTimeFrame: TimeFrame = {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'};
 
+export enum StatValue {
+  INSTITUTE,
+  PIPELINE,
+  WORKSTATION
+}
