@@ -19,8 +19,8 @@ export interface SpecimenGraph {
 }
 
 export interface GraphData {
-  fluctChart: Map<string, Map<string, number>>;
-  totalChart?: Map<string, Map<string, number>>;
+  lineChart: Map<string, Map<string, number>>;
+  barChart?: Map<string, Map<string, number>>;
 }
 
 export interface Institute {

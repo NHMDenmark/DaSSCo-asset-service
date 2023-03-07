@@ -53,12 +53,14 @@ export class LineChartComponent {
     );
 
   setChart(chartData: GraphData, labels: string[], timeFrame: TimeFrame, title: string) {
-    const chartDatasets: ChartDataset[] = this.createDataset(chartData.fluctChart, labels, timeFrame, 'line');
+    const lineDatasets: ChartDataset[] = this.createDataset(chartData.lineChart, labels, timeFrame, 'line');
 
-    // if (chartData.totalChart) {
-    //
-    // }
-    this.createchart(labels, chartDatasets, 'Specimens created', title);
+    if (chartData.barChart) {
+      const test = this.createDataset(chartData.barChart, labels, timeFrame, 'bar');
+      lineDatasets.concat(test);
+    }
+    console.log(chartData);
+    this.createchart(labels, lineDatasets, 'Specimens created', title);
   }
 
   createDataset(data: Map<string, Map<string, number>>, labels: string[], timeFrame: TimeFrame, type: ChartType): ChartDataset[] {
@@ -86,13 +88,13 @@ export class LineChartComponent {
     return chartDatasets;
   }
 
-  createchart(labels: string[], chartDatasets: ChartDataset[], yaxis: string, title: string): void {
+  createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
     this.chart = new Chart('line-chart', {
       type: 'line',
       data: {
         labels: labels,
-        datasets: chartDatasets
+        datasets: lineDataset
       },
       options: {
         responsive: true,

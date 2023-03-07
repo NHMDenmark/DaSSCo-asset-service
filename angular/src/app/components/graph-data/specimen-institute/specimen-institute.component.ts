@@ -53,8 +53,9 @@ export class SpecimenInstituteComponent {
             }
           }
         });
-        const graphData: GraphData = {fluctChart: map};
+        const graphData: GraphData = {lineChart: map};
         if (timeFrame.period === 'YEAR') {
+          graphData.barChart = map;
           map.forEach((totalPrDate, key, originalMap) => {
             const sortByDate = new Map(Array.from(totalPrDate).sort(([a], [b]) => a.localeCompare(b)));
             const addedList = new Map(Array.from(sortByDate)
@@ -65,7 +66,7 @@ export class SpecimenInstituteComponent {
             );
             originalMap.set(key, addedList);
           });
-          graphData.totalChart = map;
+          graphData.lineChart = map;
         }
         return graphData;
       })
