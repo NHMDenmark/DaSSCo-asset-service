@@ -21,13 +21,8 @@
       }
 
       .stat-btns {
-        .stat-inst-0, .stat-pip-1, .stat-work-2 {
+        .mat-button-toggle-checked {
           background-color: $primaryColorHover;
-        }
-
-        button {
-          margin-left: 1rem;
-          background-color: $primaryColor;
         }
       }
     }

@@ -1,8 +1,8 @@
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
-import Chart, {ChartDataset} from 'chart.js/auto';
+import Chart, {ChartDataset, ChartType} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import {defaultTimeFrame, TimeFrame} from '../../types';
+import {defaultTimeFrame, GraphData, TimeFrame} from '../../types';
 
 @Component({
   selector: 'dassco-line-chart',
@@ -12,19 +12,13 @@ import {defaultTimeFrame, TimeFrame} from '../../types';
 })
 export class LineChartComponent {
   chart: any;
-  readonly chartDataSubject = new BehaviorSubject<Map<string, Map<string, number>> | undefined>(undefined);
+  readonly chartDataSubject = new BehaviorSubject<GraphData | undefined>(undefined);
   readonly labelsSubject = new BehaviorSubject<string[] | undefined>(undefined);
   timeFrameSubject = new BehaviorSubject<TimeFrame>(defaultTimeFrame);
   titleSubject = new BehaviorSubject<string>('');
-  // timeFrameForm = new FormControl(1);
-  // timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
-  //   [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
-  //   [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],
-  //   [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM YY'}]
-  // ]);
 
   @Input()
-  set setChartData(chartdata: Map<string, Map<string, number>>) {
+  set setChartData(chartdata: GraphData) {
     this.chartDataSubject.next(chartdata);
   }
 
@@ -58,21 +52,20 @@ export class LineChartComponent {
       })
     );
 
-  // constructor() {
-    // this.timeFrameForm.valueChanges.pipe(filter(isNotNull))
-    //   .subscribe(val => {
-    //   this.timeFrameSubject.next(this.timeFrameMap.get(val) as TimeFrame);
-    //   this.timeFrame.emit(this.timeFrameMap.get(val) as TimeFrame);
-    // });
-  // }
+  setChart(chartData: GraphData, labels: string[], timeFrame: TimeFrame, title: string) {
+    const chartDatasets: ChartDataset[] = this.createDataset(chartData.fluctChart, labels, timeFrame, 'line');
 
-  setChart(chartData: Map<string, Map<string, number>>, labels: string[], timeFrame: TimeFrame, title: string) {
+    // if (chartData.totalChart) {
+    //
+    // }
+    this.createchart(labels, chartDatasets, 'Specimens created', title);
+  }
+
+  createDataset(data: Map<string, Map<string, number>>, labels: string[], timeFrame: TimeFrame, type: ChartType): ChartDataset[] {
     const chartDatasets: ChartDataset[] = [];
-    chartData.forEach((value: Map<string, number>, key: string) => {
+    data.forEach((value: Map<string, number>, key: string) => {
       const data: number[] = [];
       const pointRadius: number[] = [];
-      // const color = chroma(chroma.random()).luminance(0.5).saturate(1.5).hex();
-      // console.log(color)
       labels.forEach((label, idx, labels) => {
         if (value.has(label)) {
           data.push(value.get(label)!);
@@ -83,16 +76,14 @@ export class LineChartComponent {
         }
       });
       chartDatasets.push({
+        type: type,
         label: key,
         data: data,
         borderWidth: 2,
         pointRadius: pointRadius
-        // backgroundColor: color,
-        // borderColor: color
       });
     });
-
-    this.createchart(labels, chartDatasets, 'Specimens created', title);
+    return chartDatasets;
   }
 
   createchart(labels: string[], chartDatasets: ChartDataset[], yaxis: string, title: string): void {
@@ -116,7 +107,8 @@ export class LineChartComponent {
             text: title,
             font: {
               size: 20
-            }
+            },
+            color: 'rgba(20, 48, 82, 0.9)'
           },
           legend: {
             position: 'top'

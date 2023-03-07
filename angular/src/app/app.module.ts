@@ -17,10 +17,10 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {DocsComponent} from "./components/docs/docs.component";
 import { LineChartComponent } from './components/line-chart/line-chart.component';
-import { SpecimenPipelineComponent } from './components/graph-data/specimen-pipeline/specimen-pipeline.component';
 import { SpecimenInstituteComponent } from './components/graph-data/specimen-institute/specimen-institute.component';
 import {MatOptionModule} from "@angular/material/core";
 import {MatSelectModule} from "@angular/material/select";
+import {MatButtonToggleModule} from "@angular/material/button-toggle";
 
 @NgModule({
   declarations: [
@@ -32,7 +32,6 @@ import {MatSelectModule} from "@angular/material/select";
     GraphComponent,
     AssetDetailComponent,
     LineChartComponent,
-    SpecimenPipelineComponent,
     SpecimenInstituteComponent
   ],
   imports: [
@@ -47,7 +46,8 @@ import {MatSelectModule} from "@angular/material/select";
     BrowserAnimationsModule,
     MatOptionModule,
     MatSelectModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatButtonToggleModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

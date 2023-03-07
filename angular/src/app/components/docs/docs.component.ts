@@ -50,8 +50,8 @@ export class DocsComponent implements OnInit, OnDestroy {
     element.setAttribute('regular-font', 'lemonmilk')
     element.setAttribute('mono-font', 'graphik-regular')
     //Navigation Bar
-    element.setAttribute('nav-bg-color', '#26A69A')
-    element.setAttribute('nav-hover-bg-color', '#14968C')
+    element.setAttribute('nav-bg-color', '#AEEADDFF')
+    element.setAttribute('nav-hover-bg-color', '#F8B93AE5')
     element.setAttribute('nav-text-color', '#22181C')
     element.setAttribute('nav-accent-text-color', '#22181C')
     element.setAttribute('nav-accent-color', '#054791')

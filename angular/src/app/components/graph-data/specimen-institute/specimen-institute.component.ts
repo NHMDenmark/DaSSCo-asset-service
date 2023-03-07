@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../../services/specimen-graph.service';
 import {BehaviorSubject, combineLatest, filter, map, Observable} from 'rxjs';
-import {defaultTimeFrame, SpecimenGraph, StatValue, TimeFrame} from '../../../types';
+import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '../../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment from 'moment/moment';
 import {FormControl} from "@angular/forms";
@@ -17,13 +17,14 @@ export class SpecimenInstituteComponent {
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
   title = 'Specimens / Institute';
   timeFrameForm = new FormControl(1);
+  statForm = new FormControl(0);
   timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
     [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
     [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],
     [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM YY'}]
   ]);
 
-  graphInfo$: Observable<Map<string, Map<string, number>>>
+  graphInfo$: Observable<GraphData>
     = combineLatest([
     this.specimenGraphService.specimenData$.pipe(filter(isNotUndefined)),
     this.timeFrameSubject,
@@ -52,19 +53,21 @@ export class SpecimenInstituteComponent {
             }
           }
         });
+        const graphData: GraphData = {fluctChart: map};
         if (timeFrame.period === 'YEAR') {
           map.forEach((totalPrDate, key, originalMap) => {
             const sortByDate = new Map(Array.from(totalPrDate).sort(([a], [b]) => a.localeCompare(b)));
-            const test = new Map(Array.from(sortByDate)
+            const addedList = new Map(Array.from(sortByDate)
               .map((curr, i, arr) => {
                 if (arr[i - 1]) curr[1] += arr[i - 1][1];
                 return curr;
               })
             );
-            originalMap.set(key, test);
+            originalMap.set(key, addedList);
           });
+          graphData.totalChart = map;
         }
-        return map;
+        return graphData;
       })
     );
 
@@ -83,9 +86,11 @@ export class SpecimenInstituteComponent {
   constructor(public specimenGraphService: SpecimenGraphService) {
     this.timeFrameForm.valueChanges.pipe(filter(isNotNull))
       .subscribe(val => {
-        this.timeFrameSubject.next(this.timeFrameMap.get(val) as TimeFrame);
-        // this.timeFrame.emit(this.timeFrameMap.get(val) as TimeFrame);
+        this.timeFrameSubject.next(this.timeFrameMap.get(val) as TimeFrame)
       });
+
+    this.statForm.valueChanges.pipe(filter(isNotNull))
+      .subscribe(val => this.setStatValue(val));
   }
 
   createLabels(timeFrame: TimeFrame): string[] {
@@ -94,10 +99,6 @@ export class SpecimenInstituteComponent {
         labels.push(moment().subtract(i, timeFrame.unit).format(timeFrame.format));
       }
     return labels;
-  }
-
-  setTimeFrame(timeFrame: TimeFrame) {
-    this.timeFrameSubject.next(timeFrame);
   }
 
   setStatValue(statValue: StatValue) {

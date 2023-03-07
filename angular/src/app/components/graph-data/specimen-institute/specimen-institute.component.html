@@ -8,16 +8,23 @@
         <mat-form-field appearance="outline">
           <mat-label>Choose timeframe</mat-label>
           <mat-select [formControl]="timeFrameForm">
-            <mat-option [value]="1">Week</mat-option>
-            <mat-option [value]="2">Month</mat-option>
-            <mat-option [value]="3">Year</mat-option>
+            <mat-optgroup [label]="'Daily View'">
+              <mat-option [value]="1">Weekly fluctuation</mat-option>
+              <mat-option [value]="2">Monthly fluctuation</mat-option>
+            </mat-optgroup>
+            <mat-optgroup [label]="'Year to Date'">
+              <mat-option [value]="3">Total</mat-option>
+              <mat-option [value]="3">Total + fluctuation</mat-option>
+            </mat-optgroup>
           </mat-select>
         </mat-form-field>
       </div>
       <div class="stat-btns">
-        <button mat-raised-button class="stat-inst-{{statValueSubject.getValue()}}" (click)="setStatValue(0)">Institute</button>
-        <button mat-raised-button class="stat-pip-{{statValueSubject.getValue()}}" (click)="setStatValue(1)">Pipeline</button>
-        <button mat-raised-button class="stat-work-{{statValueSubject.getValue()}}" (click)="setStatValue(2)">Workstation</button>
+        <mat-button-toggle-group [formControl]="statForm">
+          <mat-button-toggle [value]="0">Institute</mat-button-toggle>
+          <mat-button-toggle [value]="1">Pipeline</mat-button-toggle>
+          <mat-button-toggle [value]="2">Workstation</mat-button-toggle>
+        </mat-button-toggle-group>
       </div>
     </div>
   </div>

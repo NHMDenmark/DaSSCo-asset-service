@@ -18,6 +18,11 @@ export interface SpecimenGraph {
   createdDate: string;
 }
 
+export interface GraphData {
+  fluctChart: Map<string, Map<string, number>>;
+  totalChart?: Map<string, Map<string, number>>;
+}
+
 export interface Institute {
   id: number;
   label: string;
