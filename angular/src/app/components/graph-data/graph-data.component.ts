@@ -1,17 +1,18 @@
 import {Component} from '@angular/core';
-import {SpecimenGraphService} from '../../../services/specimen-graph.service';
+import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {BehaviorSubject, combineLatest, filter, map, Observable} from 'rxjs';
-import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '../../../types';
+import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment from 'moment/moment';
 import {FormControl} from "@angular/forms";
+import _default from "chart.js/dist/plugins/plugin.legend";
 
 @Component({
   selector: 'dassco-specimen-institute',
-  templateUrl: './specimen-institute.component.html',
-  styleUrls: ['./specimen-institute.component.scss']
+  templateUrl: './graph-data.component.html',
+  styleUrls: ['./graph-data.component.scss']
 })
-export class SpecimenInstituteComponent {
+export class GraphDataComponent {
   chart: any;
   timeFrameSubject = new BehaviorSubject<TimeFrame>(defaultTimeFrame);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
@@ -21,7 +22,8 @@ export class SpecimenInstituteComponent {
   timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
     [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
     [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],
-    [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM YY'}]
+    [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM YY'}],
+    [4, {period: 'MULTIYEAR', amount: 12, unit: 'months', format: 'MMM YY'}]
   ]);
 
   graphInfo$: Observable<GraphData>
@@ -53,9 +55,12 @@ export class SpecimenInstituteComponent {
             }
           }
         });
-        const graphData: GraphData = {lineChart: map};
-        if (timeFrame.period === 'YEAR') {
-          graphData.barChart = map;
+        const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
+        if (timeFrame.period.includes('YEAR')) {
+          if (timeFrame.period.includes('MULTI')) {
+            graphData.subChart = map; // sets the subchart as the otherwise mainchart, as year mainchart will be with manipulated data
+            graphData.multi = true;
+          }
           map.forEach((totalPrDate, key, originalMap) => {
             const sortByDate = new Map(Array.from(totalPrDate).sort(([a], [b]) => a.localeCompare(b)));
             const addedList = new Map(Array.from(sortByDate)
@@ -66,7 +71,9 @@ export class SpecimenInstituteComponent {
             );
             originalMap.set(key, addedList);
           });
-          graphData.lineChart = map;
+          graphData.mainChart = map;
+        } else {
+          graphData.mainChart = map;
         }
         return graphData;
       })
@@ -77,12 +84,6 @@ export class SpecimenInstituteComponent {
     if (statValue === StatValue.PIPELINE) return specimen.pipelineName;
     return specimen.workstationName;
   }
-
-  labels$
-    = this.timeFrameSubject
-    .pipe(
-      map((timeFrame) => this.createLabels(timeFrame))
-    );
 
   constructor(public specimenGraphService: SpecimenGraphService) {
     this.timeFrameForm.valueChanges.pipe(filter(isNotNull))

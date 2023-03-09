@@ -1,8 +1,11 @@
 <div class="container">
   <div *ngIf="(graphInfo$ | async) as graphInfo" class="data-container">
-    <div *ngIf="(labels$ | async) as labels">
-      <dassco-line-chart [setChartData]="graphInfo" [setLabels]="labels" [setTitle]="title" [setTimeFrame]="timeFrameSubject.getValue()"></dassco-line-chart>
+    <div *ngIf="graphInfo.multi; else single">
+      <dassco-multi-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-multi-chart>
     </div>
+    <ng-template #single>
+      <dassco-line-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-line-chart>
+    </ng-template>
     <div class="config">
       <div class="time-frame-select">
         <mat-form-field appearance="outline">
@@ -14,7 +17,7 @@
             </mat-optgroup>
             <mat-optgroup [label]="'Year to Date'">
               <mat-option [value]="3">Total</mat-option>
-              <mat-option [value]="3">Total + fluctuation</mat-option>
+              <mat-option [value]="4">Total + fluctuation</mat-option>
             </mat-optgroup>
           </mat-select>
         </mat-form-field>

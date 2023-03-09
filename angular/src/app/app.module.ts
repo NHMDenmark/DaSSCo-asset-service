@@ -17,10 +17,11 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {DocsComponent} from "./components/docs/docs.component";
 import { LineChartComponent } from './components/line-chart/line-chart.component';
-import { SpecimenInstituteComponent } from './components/graph-data/specimen-institute/specimen-institute.component';
+import { GraphDataComponent } from './components/graph-data/graph-data.component';
 import {MatOptionModule} from "@angular/material/core";
 import {MatSelectModule} from "@angular/material/select";
 import {MatButtonToggleModule} from "@angular/material/button-toggle";
+import { MultiChartComponent } from './components/multi-chart/multi-chart.component';
 
 @NgModule({
   declarations: [
@@ -32,7 +33,8 @@ import {MatButtonToggleModule} from "@angular/material/button-toggle";
     GraphComponent,
     AssetDetailComponent,
     LineChartComponent,
-    SpecimenInstituteComponent
+    GraphDataComponent,
+    MultiChartComponent
   ],
   imports: [
     BrowserModule,

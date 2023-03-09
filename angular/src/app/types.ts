@@ -19,8 +19,11 @@ export interface SpecimenGraph {
 }
 
 export interface GraphData {
-  lineChart: Map<string, Map<string, number>>;
-  barChart?: Map<string, Map<string, number>>;
+  mainChart?: Map<string, Map<string, number>>;
+  subChart?: Map<string, Map<string, number>>;
+  labels: string[];
+  timeFrame: TimeFrame;
+  multi: boolean;
 }
 
 export interface Institute {
