@@ -1,11 +1,11 @@
 <div class="container">
   <div *ngIf="(graphInfo$ | async) as graphInfo" class="data-container">
-    <div *ngIf="graphInfo.multi; else single">
-      <dassco-multi-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-multi-chart>
-    </div>
-    <ng-template #single>
+<!--    <div *ngIf="graphInfo.multi; else single">-->
+<!--      <dassco-multi-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-multi-chart>-->
+<!--    </div>-->
+<!--    <ng-template #single>-->
       <dassco-line-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-line-chart>
-    </ng-template>
+<!--    </ng-template>-->
     <div class="config">
       <div class="time-frame-select">
         <mat-form-field appearance="outline">

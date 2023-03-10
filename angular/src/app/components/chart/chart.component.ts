@@ -1,17 +1,16 @@
-import {Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import Chart, {ChartDataset, ChartOptions} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {GraphData} from '../../types';
-import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import Chart, {ChartDataset} from 'chart.js/auto';
-import randomColor from 'randomcolor';
+import {GraphData} from '../../types';
 
 @Component({
-  selector: 'dassco-multi-chart',
-  templateUrl: './multi-chart.component.html',
-  styleUrls: ['./multi-chart.component.scss']
+  selector: 'dassco-line-chart',
+  templateUrl: './chart.component.html',
+  styleUrls: ['./chart.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MultiChartComponent {
+export class ChartComponent {
   chart: any;
   readonly chartDataSubject = new BehaviorSubject<GraphData | undefined>(undefined);
   titleSubject = new BehaviorSubject<string>('');
@@ -38,34 +37,16 @@ export class MultiChartComponent {
       })
     );
 
-  constructor(private specimenGraphService: SpecimenGraphService) { }
-
   createDataset(graphData: GraphData): ChartDataset[] {
     const chartDatasets: ChartDataset[] = [];
-    if (graphData.mainChart && graphData.subChart) { // key = institut, value = dato, amount
+    if (graphData.mainChart) { // key = institut, value = dato, amount
       graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
         chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
       });
+    }
+    if (graphData.subChart) {
       graphData.subChart.forEach((value: Map<string, number>, key: string) => {
         chartDatasets.push(this.addDataset(value, key, 'bar', graphData, null));
-        // const data: any[] = [];
-        // graphData.labels.forEach((label) => {
-        //   if (value.has(label)) {
-        //     data.push(value.get(label)!);
-        //   } else { // if it's pr year, we don't want the graph to go down to 0
-        //     data.push(null);
-        //   }
-        // });
-        // chartDatasets.push({
-        //   type: 'bar',
-        //   label: key + '_bar',
-        //   data: data,
-        //   backgroundColor: randomColor({luminosity: 'light', format: 'rgba', alpha: 0.6, seed: key}),
-        //   borderColor: randomColor({luminosity: 'light', format: 'rgb', seed: key}),
-        //   borderWidth: 1.5,
-        //   borderRadius: 5,
-        //   barPercentage: 1
-        // });
       });
     }
     return chartDatasets;
@@ -85,13 +66,9 @@ export class MultiChartComponent {
         data.push(defaultVal);
       }
     });
-    const color = type === 'line' ? randomColor({luminosity: 'light', format: 'rgb', seed: key}) : randomColor({luminosity: 'light', format: 'rgba', alpha: 0.6, seed: key});
     return {
       type: type,
-      label: key + '_' + type,
-      pointBackgroundColor: color,
-      borderColor: type === 'line' ? color : randomColor({luminosity: 'light', format: 'rgb', seed: key}), // we don't want alpha if it's a bar for the border
-      backgroundColor: color,
+      label: graphData.multi ? key + ' <' + type + '>' : key,
       data: data,
       borderWidth: type === 'line' ? 2 : 1.5,
       pointRadius: pointRadius,
@@ -102,12 +79,56 @@ export class MultiChartComponent {
 
   createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
-    this.chart = new Chart('multi-chart', {
+    this.chart = new Chart('line-chart', {
       data: {
-        labels: labels.sort((a, b) => a.localeCompare(b)),
+        labels: labels,
         datasets: lineDataset
       },
-      options: this.specimenGraphService.getGraphOptions(yaxis, title)
+      options: this.getOptions(yaxis, title)
     });
+  }
+
+  getOptions(yaxis: string, title: string): ChartOptions { // only way to specify the type so I don't get annoying errors ¯\_(ツ)_/¯
+    return {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2.5,
+      skipNull: true,
+      layout: {
+        padding: 10
+      },
+      plugins: {
+        title: {
+          display: true,
+            text: title,
+            font: {
+            size: 20
+          },
+          color: 'rgba(20, 48, 82, 0.9)'
+        },
+        legend: {
+          position: 'top',
+          labels: {
+            sort(a, b, _data) {
+              return a.text.split(' <')[0].localeCompare(b.text.split(' <')[0]);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          title: {
+            display: true,
+              align: 'center',
+              text: yaxis
+          },
+          ticks: {
+            callback(val, _index) {
+              return val as number % 1 === 0 ? val : '';
+            }
+          }
+        }
+      }
+    } as ChartOptions;
   }
 }
