@@ -4,7 +4,7 @@ import {BehaviorSubject, combineLatest, filter, map, Observable} from 'rxjs';
 import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment from 'moment/moment';
-import {FormControl} from "@angular/forms";
+import {FormControl, FormGroup} from '@angular/forms';
 
 @Component({
   selector: 'dassco-specimen-institute',
@@ -18,6 +18,10 @@ export class GraphDataComponent {
   title = 'Specimens / Institute';
   timeFrameForm = new FormControl(1);
   statForm = new FormControl(0);
+  timeFrameRange = new FormGroup({
+    start: new FormControl<Date | null>(null),
+    end: new FormControl<Date | null>(null)
+  });
   timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
     [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
     [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],

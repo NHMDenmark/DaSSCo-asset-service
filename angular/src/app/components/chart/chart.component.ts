@@ -1,5 +1,8 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import Chart, {ChartDataset, ChartOptions} from 'chart.js/auto';
+import Chart, {
+  ChartDataset,
+  ChartOptions,
+} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphData} from '../../types';
@@ -55,11 +58,9 @@ export class ChartComponent {
   addDataset(value: Map<string, number>, key: string, type: string, graphData: GraphData, defaultVal: any): ChartDataset {
     const data: any[] = [];
     const pointRadius: number[] = [];
-    // let stack = '';
     graphData.labels.forEach((label, idx, labels) => {
       if (value.has(label)) {
         data.push(value.get(label)!);
-        // stack = label;
         if (type === 'line') pointRadius.push(5);
       } else if (type === 'line') { // if it's pr year, we don't want the graph to go down to 0
         value.has(labels[idx - 1]) && graphData.timeFrame.period === 'YEAR' ? data.push(value.get(labels[idx - 1])!) : data.push(defaultVal);
@@ -112,6 +113,7 @@ export class ChartComponent {
         },
         legend: {
           position: 'top'
+          // onHover: this.handleHover
         }
       },
       scales: {
@@ -132,4 +134,14 @@ export class ChartComponent {
       }
     } as ChartOptions;
   }
+
+  // handleHover = function(_evt: ChartEvent, item: LegendItem, legend: LegendElement<any>) {
+  //   console.log(legend.chart.config.data)
+  //   console.log(legend.chart.config.data.datasets)
+  //   console.log(legend.chart.config.data.datasets[0])
+  //   console.log(item.datasetIndex)
+  //   const bg = legend.chart.config.data.datasets[item.datasetIndex!].backgroundColor;
+  //   legend.chart.config.data.datasets[item.datasetIndex!].backgroundColor = bg + '4D';
+  //   legend.chart.update();
+  // };
 }

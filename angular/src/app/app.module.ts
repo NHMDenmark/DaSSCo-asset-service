@@ -21,6 +21,7 @@ import { GraphDataComponent } from './components/graph-data/graph-data.component
 import {MatOptionModule} from '@angular/material/core';
 import {MatSelectModule} from '@angular/material/select';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {MatDatepickerModule} from '@angular/material/datepicker';
 
 @NgModule({
   declarations: [
@@ -47,7 +48,8 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
     MatOptionModule,
     MatSelectModule,
     ReactiveFormsModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatDatepickerModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

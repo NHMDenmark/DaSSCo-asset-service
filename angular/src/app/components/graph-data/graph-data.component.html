@@ -1,12 +1,21 @@
 <div class="container">
   <div *ngIf="(graphInfo$ | async) as graphInfo" class="data-container">
-<!--    <div *ngIf="graphInfo.multi; else single">-->
-<!--      <dassco-multi-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-multi-chart>-->
-<!--    </div>-->
-<!--    <ng-template #single>-->
-      <dassco-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-chart>
-<!--    </ng-template>-->
+    <dassco-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-chart>
     <div class="config">
+      <mat-form-field appearance="fill">
+        <mat-label>Custom timeframe</mat-label>
+        <mat-date-range-input [formGroup]="timeFrameRange" [rangePicker]="picker">
+          <input matStartDate formControlName="start" placeholder="Start date">
+          <input matEndDate formControlName="end" placeholder="End date">
+        </mat-date-range-input>
+        <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker></mat-date-range-picker>
+
+        <mat-error *ngIf="timeFrameRange.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
+        <mat-error *ngIf="timeFrameRange.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error>
+      </mat-form-field>
+
       <div class="time-frame-select">
         <mat-form-field appearance="outline">
           <mat-label>Choose timeframe</mat-label>
@@ -22,6 +31,7 @@
           </mat-select>
         </mat-form-field>
       </div>
+
       <div class="stat-btns">
         <mat-button-toggle-group [formControl]="statForm">
           <mat-button-toggle [value]="0">Institute</mat-button-toggle>
