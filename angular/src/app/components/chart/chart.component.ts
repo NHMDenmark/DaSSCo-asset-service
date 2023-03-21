@@ -75,9 +75,7 @@ export class ChartComponent {
       data: data,
       borderWidth: type === 'line' ? 2 : 1.5,
       pointRadius: pointRadius,
-      // barPercentage: type === 'line' ? null : 0.9,
       borderRadius: type === 'line' ? null : 5,
-      // grouped: false,
       order: type === 'line' ? 2 : 1,
       stack: type
     } as ChartDataset;
@@ -100,9 +98,6 @@ export class ChartComponent {
       maintainAspectRatio: true,
       aspectRatio: 2.5,
       skipNull: true,
-      interaction: {
-        intersect: false
-      },
       layout: {
         padding: 10
       },
@@ -120,11 +115,7 @@ export class ChartComponent {
         }
       },
       scales: {
-        // x: {
-        //   stacked: false
-        // },
         y: {
-          beginAtZero: true,
           stacked: true,
           ticks: {
             beginAtZero: true,
