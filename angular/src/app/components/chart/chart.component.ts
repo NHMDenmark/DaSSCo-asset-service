@@ -55,9 +55,11 @@ export class ChartComponent {
   addDataset(value: Map<string, number>, key: string, type: string, graphData: GraphData, defaultVal: any): ChartDataset {
     const data: any[] = [];
     const pointRadius: number[] = [];
+    // let stack = '';
     graphData.labels.forEach((label, idx, labels) => {
       if (value.has(label)) {
         data.push(value.get(label)!);
+        // stack = label;
         if (type === 'line') pointRadius.push(5);
       } else if (type === 'line') { // if it's pr year, we don't want the graph to go down to 0
         value.has(labels[idx - 1]) && graphData.timeFrame.period === 'YEAR' ? data.push(value.get(labels[idx - 1])!) : data.push(defaultVal);
@@ -66,17 +68,18 @@ export class ChartComponent {
         data.push(defaultVal);
       }
     });
+    console.log(key)
     return {
       type: type,
-      label: graphData.multi ? key + ' <' + type + '>' : key,
+      label: key,
       data: data,
       borderWidth: type === 'line' ? 2 : 1.5,
       pointRadius: pointRadius,
-      barPercentage: type === 'line' ? null : 0.9,
+      // barPercentage: type === 'line' ? null : 0.9,
       borderRadius: type === 'line' ? null : 5,
       // grouped: false,
-      // stack: key,
-      // base: 0
+      order: type === 'line' ? 2 : 1,
+      stack: type
     } as ChartDataset;
   }
 
@@ -97,6 +100,9 @@ export class ChartComponent {
       maintainAspectRatio: true,
       aspectRatio: 2.5,
       skipNull: true,
+      interaction: {
+        intersect: false
+      },
       layout: {
         padding: 10
       },
@@ -110,29 +116,27 @@ export class ChartComponent {
           color: 'rgba(20, 48, 82, 0.9)'
         },
         legend: {
-          position: 'top',
-          labels: {
-            sort(a, b, _data) {
-              return a.text.split(' <')[0].localeCompare(b.text.split(' <')[0]);
-            }
-          }
+          position: 'top'
         }
       },
       scales: {
+        // x: {
+        //   stacked: false
+        // },
         y: {
+          beginAtZero: true,
+          stacked: true,
+          ticks: {
+            beginAtZero: true,
+            callback(val, _index) {
+              return val as number % 1 === 0 ? val : '';
+            }
+          },
           title: {
             display: true,
               align: 'center',
               text: yaxis
-          },
-          ticks: {
-            callback(val, _index) {
-              return val as number % 1 === 0 ? val : '';
-            }
           }
-        },
-        x: {
-          stacked: true
         }
       }
     } as ChartOptions;
