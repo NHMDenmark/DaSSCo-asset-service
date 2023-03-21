@@ -5,7 +5,6 @@ import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment from 'moment/moment';
 import {FormControl} from "@angular/forms";
-import _default from "chart.js/dist/plugins/plugin.legend";
 
 @Component({
   selector: 'dassco-specimen-institute',
@@ -22,8 +21,8 @@ export class GraphDataComponent {
   timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
     [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
     [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],
-    [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM YY'}],
-    [4, {period: 'MULTIYEAR', amount: 12, unit: 'months', format: 'MMM YY'}]
+    [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM-YY'}],
+    [4, {period: 'COMBINEDTOTAL', amount: 12, unit: 'months', format: 'MMM-YY'}]
   ]);
 
   graphInfo$: Observable<GraphData>
@@ -35,49 +34,65 @@ export class GraphDataComponent {
     .pipe(
       map(([specimens, timeFrame, statValue]) => {
         const now = moment();
-        const map = new Map<string, Map<string, number>>();
+        const main = new Map<string, Map<string, number>>();
+        const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
+
         specimens.forEach(s => {
-          const key = this.getKey(s, statValue);
+          const key = this.getKey(s, statValue); // institute, pipeline, etc...
           if (now.diff(moment(s.createdDate), timeFrame.unit) <= timeFrame.amount) { // if it's within the timeframe
             const created = moment(s.createdDate).format(timeFrame.format);
-            if (map.has(key)) { // if it exists
-              const inst = map.get(key);
+            if (main.has(key)) { // if it already exists
+              const inst = main.get(key);
               if (inst) {
-                if (inst.has(created)) { // if its value has been set, we up the total
-                  const total = inst.get(created);
-                  if (total) inst.set(created, total + 1); // splitting them up to satisfy typescripts need for undefined-validation sigh
-                } else { // otherwise, we set the total to 1
-                  inst.set(created, 1);
-                }
+                this.setTotalFromKey(inst, created, 1);
               }
             } else { // if nothing, we create a new with the institute name
-              map.set(key, new Map<string, number>([[created, 1]]));
+              main.set(key, new Map<string, number>([[created, 1]]));
             }
           }
         });
-        const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
+        graphData.mainChart = main;
+
         if (timeFrame.period.includes('YEAR')) {
-          if (timeFrame.period.includes('MULTI')) {
-            graphData.subChart = map; // sets the subchart as the otherwise mainchart, as year mainchart will be with manipulated data
-            graphData.multi = true;
-          }
-          map.forEach((totalPrDate, key, originalMap) => {
-            const sortByDate = new Map(Array.from(totalPrDate).sort(([a], [b]) => a.localeCompare(b)));
-            const addedList = new Map(Array.from(sortByDate)
-              .map((curr, i, arr) => {
-                if (arr[i - 1]) curr[1] += arr[i - 1][1];
-                return curr;
-              })
-            );
-            originalMap.set(key, addedList);
+          main.forEach((totalPrDate, key, originalMap) => {
+            originalMap.set(key, this.getAccumulativeTotal(totalPrDate, timeFrame));
           });
-          graphData.mainChart = map;
-        } else {
-          graphData.mainChart = map;
+        }
+
+        if (timeFrame.period.includes('COMBINEDTOTAL')) {
+          graphData.multi = true;
+          graphData.subChart = main; // sets the subchart as the (normally) mainchart, as COMBINED needs a manipulated linechart (aka. main)
+          const combinedTotal = new Map<string, number>();
+
+          main.forEach((totalPrDate, _inst, _originalMap) => {
+            totalPrDate.forEach((total, date, _originalMap) => {
+              this.setTotalFromKey(combinedTotal, date, total);
+            });
+          });
+          graphData.mainChart = new Map<string, Map<string, number>>([['Total', this.getAccumulativeTotal(combinedTotal, timeFrame)]]);
         }
         return graphData;
       })
     );
+
+  setTotalFromKey(map: Map<string, number>, hasKey: string, base: number) {
+    if (map.has(hasKey)) { // if its value has been set, we up the total
+      const total = map.get(hasKey);
+      if (total) map.set(hasKey, total + base); // splitting them up to satisfy typescripts need for undefined-validation sigh
+    } else { // otherwise, we set the total to 1
+      map.set(hasKey, base);
+    }
+  }
+
+  getAccumulativeTotal(map: Map<string, number>, timeFrame: TimeFrame): Map<string, number> { // sorts for dates and then adds the totals
+    return new Map([...map.entries()]
+      .sort(([a], [b]) => moment(a, timeFrame.format).isBefore(moment(b, timeFrame.format)) ? -1 : 1)
+      .map((curr, i, arr) => {
+        if (arr[i - 1]) curr[1] += arr[i - 1][1];
+        return curr;
+      })
+    );
+  }
 
   getKey(specimen: SpecimenGraph, statValue: StatValue): string {
     if (statValue === StatValue.INSTITUTE) return specimen.instituteName;

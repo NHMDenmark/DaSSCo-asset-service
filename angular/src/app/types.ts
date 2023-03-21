@@ -36,7 +36,7 @@ export interface Institute {
 }
 
 export interface TimeFrame {
-  period: 'WEEK' | 'MONTH' | 'YEAR';
+  period: 'WEEK' | 'MONTH' | 'YEAR' | 'COMBINEDTOTAL'; // combinedtotal = totals combined and bar chart w label-specific monthly data
   amount: number;
   unit: DurationConstructor;
   format: string;

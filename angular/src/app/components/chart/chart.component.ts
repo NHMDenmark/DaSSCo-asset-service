@@ -5,7 +5,7 @@ import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphData} from '../../types';
 
 @Component({
-  selector: 'dassco-line-chart',
+  selector: 'dassco-chart',
   templateUrl: './chart.component.html',
   styleUrls: ['./chart.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -73,7 +73,10 @@ export class ChartComponent {
       borderWidth: type === 'line' ? 2 : 1.5,
       pointRadius: pointRadius,
       barPercentage: type === 'line' ? null : 0.9,
-      borderRadius: type === 'line' ? null : 5
+      borderRadius: type === 'line' ? null : 5,
+      // grouped: false,
+      // stack: key,
+      // base: 0
     } as ChartDataset;
   }
 
@@ -127,6 +130,9 @@ export class ChartComponent {
               return val as number % 1 === 0 ? val : '';
             }
           }
+        },
+        x: {
+          stacked: true
         }
       }
     } as ChartOptions;

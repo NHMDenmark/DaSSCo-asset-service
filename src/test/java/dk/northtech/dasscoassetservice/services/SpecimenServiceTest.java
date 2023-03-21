@@ -36,7 +36,7 @@ public class SpecimenServiceTest {
     private SpecimenService specimenService;
 
     @Test
-    public void getSpecimensByPipelilne() {
+    public void getSpecimenData() {
         List<SpecimenData> data = specimenService.getSpecimenData();
 //        data.forEach(System.out::println);
         assertNotEquals(data.size(), 0);
