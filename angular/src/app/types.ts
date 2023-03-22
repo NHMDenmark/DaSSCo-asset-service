@@ -1,4 +1,4 @@
-import moment from "moment";
+import moment, {Moment} from 'moment';
 import DurationConstructor = moment.unitOfTime.DurationConstructor;
 
 export interface SpecimenGraph {
@@ -36,16 +36,29 @@ export interface Institute {
 }
 
 export interface TimeFrame {
-  period: 'WEEK' | 'MONTH' | 'YEAR' | 'COMBINEDTOTAL'; // combinedtotal = totals combined and bar chart w label-specific monthly data
-  amount: number;
+  period: 'WEEK' | 'MONTH' | 'YEAR' | 'COMBINEDTOTAL' | 'CUSTOM'; // combinedtotal = totals combined and bar chart w label-specific monthly data
   unit: DurationConstructor;
   format: string;
+  startDate: Moment;
+  endDate: Moment;
 }
-
-export const defaultTimeFrame: TimeFrame = {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'};
 
 export enum StatValue {
   INSTITUTE,
   PIPELINE,
   WORKSTATION
 }
+
+export const defaultTimeFrame: number = 1;
+
+export const MY_FORMATS = {
+  parse: {
+    dateInput: 'DD-MM-YYYY'
+  },
+  display: {
+    dateInput: 'DD-MM-YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'DD-MM-YYYY',
+    monthYearA11yLabel: 'MMM YYYY'
+  }
+};

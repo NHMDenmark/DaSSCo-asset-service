@@ -17,6 +17,13 @@
       align-items: center;
       justify-content: center;
 
+      .datepicker {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+      }
+
       .time-frame-select {
       }
 
@@ -30,5 +37,5 @@
 }
 
 ::ng-deep.mat-form-field-wrapper {
-  padding: 0 !important;
+  padding: 1em 0 1em 0; // i know how it looks, but i can't remove it, so i'm just adding the default on both sides.
 }

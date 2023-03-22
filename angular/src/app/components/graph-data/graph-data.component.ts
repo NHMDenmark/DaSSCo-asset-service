@@ -1,33 +1,37 @@
 import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
-import {BehaviorSubject, combineLatest, filter, map, Observable} from 'rxjs';
-import {defaultTimeFrame, GraphData, SpecimenGraph, StatValue, TimeFrame} from '../../types';
+import {BehaviorSubject, combineLatest, filter, map, Observable, pairwise, startWith} from 'rxjs';
+import {defaultTimeFrame, GraphData, MY_FORMATS, SpecimenGraph, StatValue, TimeFrame} from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
-import moment from 'moment/moment';
+import moment, {Moment} from 'moment/moment';
 import {FormControl, FormGroup} from '@angular/forms';
+import {MAT_DATE_FORMATS} from "@angular/material/core";
 
 @Component({
   selector: 'dassco-specimen-institute',
   templateUrl: './graph-data.component.html',
-  styleUrls: ['./graph-data.component.scss']
+  styleUrls: ['./graph-data.component.scss'],
+  providers: [
+    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS }
+  ]
 })
 export class GraphDataComponent {
   chart: any;
-  timeFrameSubject = new BehaviorSubject<TimeFrame>(defaultTimeFrame);
+  timeFrameMap: Map<number, TimeFrame> = new Map([
+    [1, {period: 'WEEK', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(7, 'days'), endDate: moment()}],
+    [2, {period: 'MONTH', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(1, 'months'), endDate: moment()}],
+    [3, {period: 'YEAR', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}],
+    [4, {period: 'COMBINEDTOTAL', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}]
+  ]);
+  timeFrameSubject = new BehaviorSubject<TimeFrame>(this.timeFrameMap.get(defaultTimeFrame) as TimeFrame);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
   title = 'Specimens / Institute';
-  timeFrameForm = new FormControl(1);
+  timeFrameForm = new FormControl(defaultTimeFrame);
   statForm = new FormControl(0);
-  timeFrameRange = new FormGroup({
-    start: new FormControl<Date | null>(null),
-    end: new FormControl<Date | null>(null)
+  timeframeRange = new FormGroup({
+    start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
+    end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
   });
-  timeFrameMap: Map<number, {period: string, amount: number, unit: string, format: string}> = new Map([
-    [1, {period: 'WEEK', amount: 7, unit: 'days', format: 'DD-MMM-YY'}],
-    [2, {period: 'MONTH', amount: 30, unit: 'days', format: 'DD-MMM-YY'}],
-    [3, {period: 'YEAR', amount: 12, unit: 'months', format: 'MMM-YY'}],
-    [4, {period: 'COMBINEDTOTAL', amount: 12, unit: 'months', format: 'MMM-YY'}]
-  ]);
 
   graphInfo$: Observable<GraphData>
     = combineLatest([
@@ -37,13 +41,12 @@ export class GraphDataComponent {
   ])
     .pipe(
       map(([specimens, timeFrame, statValue]) => {
-        const now = moment();
         const main = new Map<string, Map<string, number>>();
         const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
 
         specimens.forEach(s => {
           const key = this.getKey(s, statValue); // institute, pipeline, etc...
-          if (now.diff(moment(s.createdDate), timeFrame.unit) <= timeFrame.amount) { // if it's within the timeframe
+          if (moment(s.createdDate).isBetween(timeFrame.startDate, timeFrame.endDate, timeFrame.unit, '[]')) {
             const created = moment(s.createdDate).format(timeFrame.format);
             if (main.has(key)) { // if it already exists
               const inst = main.get(key);
@@ -55,6 +58,7 @@ export class GraphDataComponent {
             }
           }
         });
+        // todod if main is empty, there's no data.
         graphData.mainChart = main;
 
         if (timeFrame.period.includes('YEAR')) {
@@ -105,20 +109,77 @@ export class GraphDataComponent {
   }
 
   constructor(public specimenGraphService: SpecimenGraphService) {
-    this.timeFrameForm.valueChanges.pipe(filter(isNotNull))
-      .subscribe(val => {
-        this.timeFrameSubject.next(this.timeFrameMap.get(val) as TimeFrame)
+    combineLatest([
+      this.timeFrameForm.valueChanges.pipe(
+        startWith(defaultTimeFrame, defaultTimeFrame),
+        filter(isNotNull),
+        pairwise()
+      ),
+      this.timeframeRange.valueChanges.pipe(
+        startWith(null)
+      )
+    ])
+      .subscribe(([[prevForm, currForm], range]) => {
+        const prevTf = this.timeFrameMap.get(prevForm) as TimeFrame;
+        const nextTf = this.timeFrameMap.get(currForm) as TimeFrame;
+
+        if (range?.start && range.end) { // if there's custom range
+          if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
+            this.clearCustomTimeFrame();
+            this.timeFrameSubject.next(nextTf);
+            this.timeFrameForm.setValue(currForm); // todo make this prettier when you have time.....
+          } else if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
+            && moment(range.end, 'DD-MM-YYYY ', true).isValid()) {
+            this.timeFrameSubject.next({
+              period: nextTf.period,
+              unit: nextTf.unit,
+              format: nextTf.format,
+              startDate: range.start,
+              endDate: range.end
+            });
+          }
+        } else {
+          this.timeFrameSubject.next(nextTf);
+        }
       });
+
+    // this.timeFrameForm.valueChanges
+    //   .pipe(
+    //     filter(isNotNull),
+    //     startWith(defaultTimeFrame),
+    //     pairwise()
+    //   )
+    //   .subscribe(([prev, next]) => {
+    //     const prevTf = this.timeFrameMap.get(prev) as TimeFrame;
+    //     console.log(prevTf)
+    //     const nextTf = this.timeFrameMap.get(next) as TimeFrame;
+    //     this.timeFrameSubject.next(nextTf);
+    //     // if (prevTf.unit !== nextTf.unit) this.clearCustomTimeFrame();
+    //   });
 
     this.statForm.valueChanges.pipe(filter(isNotNull))
       .subscribe(val => this.setStatValue(val));
+
+    // this.timeframeRange.valueChanges.pipe(filter(isNotNull))
+    //   .subscribe(val => {
+    //     if (val.start && val.end) {
+    //       if (moment(val.start, 'DD-MM-YYYY ', true).isValid()
+    //         && moment(val.end, 'DD-MM-YYYY ', true).isValid()) {
+    //         if (this.timeFrameForm.value) {
+    //           const currTimeFrame = this.timeFrameMap.get(this.timeFrameForm.value) as TimeFrame;
+    //           this.timeFrameSubject.next({period: currTimeFrame.period, unit: currTimeFrame.unit, format: currTimeFrame.format, startDate: val.start, endDate: val.end});
+    //         }
+    //       }
+    //     }
+    //   });
   }
 
   createLabels(timeFrame: TimeFrame): string[] {
     const labels: string[] = [];
-      for (let i = timeFrame.amount - 1; i >= 0; i--) {
-        labels.push(moment().subtract(i, timeFrame.unit).format(timeFrame.format));
-      }
+    const duration = timeFrame.endDate.clone().diff(timeFrame.startDate.clone(), timeFrame.unit);
+    for (let i = duration; i >= 0; i--) {
+      labels.push(timeFrame.endDate.clone().subtract(i, timeFrame.unit).format(timeFrame.format));
+    }
     return labels;
   }
 
@@ -127,5 +188,13 @@ export class GraphDataComponent {
     if (statValue === StatValue.INSTITUTE) this.title = 'Specimens / Institute';
     if (statValue === StatValue.PIPELINE) this.title = 'Specimens / Pipeline';
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
+  }
+
+  clearCustomTimeFrame() {
+    if (this.timeFrameForm.value) {
+      const originalTf = this.timeFrameMap.get(this.timeFrameForm.value);
+      this.timeFrameSubject.next(originalTf as TimeFrame);
+      this.timeframeRange.reset();
+    }
   }
 }

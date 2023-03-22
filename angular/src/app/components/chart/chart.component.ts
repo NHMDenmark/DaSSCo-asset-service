@@ -42,6 +42,8 @@ export class ChartComponent {
 
   createDataset(graphData: GraphData): ChartDataset[] {
     const chartDatasets: ChartDataset[] = [];
+    console.log('creating dataset')
+    console.log(graphData)
     if (graphData.mainChart) { // key = institut, value = dato, amount
       graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
         chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
@@ -69,7 +71,6 @@ export class ChartComponent {
         data.push(defaultVal);
       }
     });
-    console.log(key)
     return {
       type: type,
       label: key,
@@ -84,7 +85,7 @@ export class ChartComponent {
 
   createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
-    this.chart = new Chart('line-chart', {
+    this.chart = new Chart('chart', {
       data: {
         labels: labels,
         datasets: lineDataset
