@@ -24,6 +24,7 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatNativeDateModule} from '@angular/material/core';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   declarations: [
@@ -37,24 +38,25 @@ import {MatMomentDateModule} from '@angular/material-moment-adapter';
     ChartComponent,
     GraphDataComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    AuthConfigModule,
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
-    MatInputModule,
-    FormsModule,
-    BrowserAnimationsModule,
-    MatOptionModule,
-    MatSelectModule,
-    ReactiveFormsModule,
-    MatButtonToggleModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatMomentDateModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        AuthConfigModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        MatOptionModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatMomentDateModule,
+        MatTooltipModule
+    ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],

@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import Chart, {
-  ChartDataset,
-  ChartOptions,
+  ChartDataset, ChartEvent,
+  ChartOptions, LegendElement, LegendItem
 } from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
@@ -13,10 +13,12 @@ import {GraphData} from '../../types';
   styleUrls: ['./chart.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
+
 export class ChartComponent {
   chart: any;
   readonly chartDataSubject = new BehaviorSubject<GraphData | undefined>(undefined);
   titleSubject = new BehaviorSubject<string>('');
+  clickedLabels: string[] = [];
 
   @Input()
   set setChartData(chartdata: GraphData) {
@@ -42,8 +44,6 @@ export class ChartComponent {
 
   createDataset(graphData: GraphData): ChartDataset[] {
     const chartDatasets: ChartDataset[] = [];
-    console.log('creating dataset')
-    console.log(graphData)
     if (graphData.mainChart) { // key = institut, value = dato, amount
       graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
         chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
@@ -79,7 +79,8 @@ export class ChartComponent {
       pointRadius: pointRadius,
       borderRadius: type === 'line' ? null : 5,
       order: type === 'line' ? 2 : 1,
-      stack: type
+      stack: type,
+      hidden: this.clickedLabels.includes(key)
     } as ChartDataset;
   }
 
@@ -113,8 +114,8 @@ export class ChartComponent {
           color: 'rgba(20, 48, 82, 0.9)'
         },
         legend: {
-          position: 'top'
-          // onHover: this.handleHover
+          position: 'top',
+          onClick: this.clickHandler
         }
       },
       scales: {
@@ -136,13 +137,25 @@ export class ChartComponent {
     } as ChartOptions;
   }
 
-  // handleHover = function(_evt: ChartEvent, item: LegendItem, legend: LegendElement<any>) {
-  //   console.log(legend.chart.config.data)
-  //   console.log(legend.chart.config.data.datasets)
-  //   console.log(legend.chart.config.data.datasets[0])
-  //   console.log(item.datasetIndex)
-  //   const bg = legend.chart.config.data.datasets[item.datasetIndex!].backgroundColor;
-  //   legend.chart.config.data.datasets[item.datasetIndex!].backgroundColor = bg + '4D';
-  //   legend.chart.update();
-  // };
+  clickHandler = (_e: ChartEvent, legendItem: LegendItem, legend: LegendElement<any>) => {
+    if (this.clickedLabels.includes(legendItem.text)) {
+      const idx = this.clickedLabels.indexOf(legendItem.text, 0);
+      this.clickedLabels.splice(idx);
+    } else {
+      this.clickedLabels.push(legendItem.text);
+    }
+    this.defaultLabelClick(legendItem, legend);
+  };
+
+  defaultLabelClick(legendItem: LegendItem, legend: LegendElement<any>) {
+    const index = legendItem.datasetIndex;
+    const ci = legend.chart;
+    if (ci.isDatasetVisible(index!)) {
+      ci.hide(index!);
+      legendItem.hidden = true;
+    } else {
+      ci.show(index!);
+      legendItem.hidden = false;
+    }
+  }
 }
