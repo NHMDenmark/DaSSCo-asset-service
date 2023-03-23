@@ -30,7 +30,7 @@ export class GraphDataComponent {
   statForm = new FormControl(0);
   timeframeRange = new FormGroup({
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
-    end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
+    end: new FormControl<Moment | null>(null, {updateOn: 'change'})
   });
 
   graphInfo$: Observable<GraphData>
@@ -124,6 +124,9 @@ export class GraphDataComponent {
         const nextTf = this.timeFrameMap.get(currForm) as TimeFrame;
 
         if (range?.start && range.end) { // if there's custom range
+          console.log('range')
+          console.log(moment(range.end, 'DD-MM-YYYY ', true).isValid())
+          console.log(moment(range.start, 'DD-MM-YYYY ', true).isValid())
           if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
             this.clearCustomTimeFrame();
             this.timeFrameSubject.next(nextTf);
