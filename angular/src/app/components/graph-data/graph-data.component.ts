@@ -124,9 +124,9 @@ export class GraphDataComponent {
         const nextTf = this.timeFrameMap.get(currForm) as TimeFrame;
 
         if (range?.start && range.end) { // if there's custom range
-          console.log('range')
-          console.log(moment(range.end, 'DD-MM-YYYY ', true).isValid())
-          console.log(moment(range.start, 'DD-MM-YYYY ', true).isValid())
+          // console.log('range')
+          // console.log(moment(range.end, 'DD-MM-YYYY ', true).isValid())
+          // console.log(moment(range.start, 'DD-MM-YYYY ', true).isValid())
           if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
             this.clearCustomTimeFrame();
             this.timeFrameSubject.next(nextTf);
@@ -188,7 +188,7 @@ export class GraphDataComponent {
 
   setStatValue(statValue: StatValue) {
     this.statValueSubject.next(statValue);
-    if (statValue === StatValue.INSTITUTE) this.title = 'Specimens / Institute';
+    if (statValue === StatValue.INSTITUTE) this.title = 'Specimens / Institution';
     if (statValue === StatValue.PIPELINE) this.title = 'Specimens / Pipeline';
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
