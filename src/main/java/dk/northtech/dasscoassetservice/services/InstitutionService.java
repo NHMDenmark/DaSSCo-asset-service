@@ -11,6 +11,7 @@ import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,5 +38,14 @@ public class InstitutionService {
         }
         institutionRepository.persistInstitution(institution);
         return institution;
+    }
+
+    public List<Institution> listInstitutions() {
+//        if(Strings.isNullOrEmpty(institution.name())) {
+//            throw new IllegalArgumentException("Name is cannot be null or empty");
+//        } else if (!institution.name().matches(name_regex)){
+//            throw new IllegalArgumentException("Name must be alphanumeric");
+//        }
+        return institutionRepository.listInstitutions();
     }
 }

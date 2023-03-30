@@ -4,6 +4,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
+import org.jdbi.v3.jackson2.Jackson2Plugin;
+import org.jdbi.v3.postgres.PostgresPlugin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +30,9 @@ public class DataSources {
 
   @Bean
   public Jdbi jdbi(DataSource dataSource) {
-    return Jdbi.create(dataSource).setSqlParser(new HashPrefixSqlParser());
+    return Jdbi.create(dataSource)
+            .installPlugin(new PostgresPlugin())
+            .installPlugin(new Jackson2Plugin()).setSqlParser(new HashPrefixSqlParser());
   }
 }
 

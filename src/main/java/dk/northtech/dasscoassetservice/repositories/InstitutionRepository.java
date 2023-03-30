@@ -15,12 +15,16 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 
 @Repository
 public class InstitutionRepository {
     private Jdbi jdbi;
     private DataSource dataSource;
 
+    private static final String boilerplate = "CREATE EXTENSION IF NOT EXISTS age;\n" +
+                         "LOAD 'age';\n" +
+                         "SET search_path = ag_catalog, \"$user\", public;";
     @Inject
     public InstitutionRepository(Jdbi jdbi, DataSource dataSource) {
         this.dataSource = dataSource;
@@ -29,10 +33,6 @@ public class InstitutionRepository {
 
 
     public void persistInstitution(Institution institution) {
-        String extension = "CREATE EXTENSION IF NOT EXISTS age;\n" +
-                           "LOAD 'age';\n" +
-                           "SET search_path = ag_catalog, \"$user\", public;";
-
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
@@ -40,37 +40,54 @@ public class InstitutionRepository {
                             MERGE (i:Institution {name: $name})
                             RETURN i.name
                         $$
-                        , ?) as (name agtype);""".replace(":institution_name", institution.name());
+                        , #params) as (name agtype);
+                        """;
 
 
-        try(Connection connection = dataSource.getConnection()){
-            PgConnection unwrap = connection.unwrap(PgConnection.class);
-            unwrap.addDataType("agtype", Agtype.class);
-            unwrap.execSQLUpdate(extension);
-            try (PreparedStatement statement = unwrap.prepareStatement(sql)){
+        try {
+            jdbi.withHandle(handle -> {
+//                Connection connection = handle.getConnection();
+//                PgConnection pgConn = connection.unwrap(PgConnection.class);
+//                pgConn.addDataType("agtype", Agtype.class);
                 AgtypeMap name = new AgtypeMapBuilder().add("name", institution.name()).build();
                 Agtype agtype = AgtypeFactory.create(name);
-
-                statement.setObject(1, agtype);
-                statement.execute();
-            }
-
-//        jdbi.withHandle(handle -> {
-//            Connection connection = handle.getConnection();
-//            PgConnection pgConn = connection.unwrap(PgConnection.class);
-//            pgConn.addDataType("agtype", Agtype.class);
-//            handle.execute(extension);
-//
-//
-//            handle.createUpdate(sql)
-//                    .execute();
-//            handle.close();
-//            return handle;
-//        });
-        } catch (SQLException e) {
+                handle.execute(boilerplate);
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                handle.close();
+                return handle;
+            });
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<Institution> listInstitutions() {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (i:Institution)
+                            RETURN i.name
+                        $$
+                        ) as (name agtype);""";
 
 
+        try {
+            return jdbi.withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConn = connection.unwrap(PgConnection.class);
+                pgConn.addDataType("agtype", Agtype.class);
+                handle.execute(boilerplate);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype name = rs.getObject("name", Agtype.class);
+                            return new Institution(name.getString());
+                        }).list();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
