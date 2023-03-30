@@ -6,6 +6,7 @@ import Chart, {
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphData} from '../../types';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
 @Component({
   selector: 'dassco-chart',
@@ -86,6 +87,7 @@ export class ChartComponent {
 
   createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
+    Chart.register(zoomPlugin);
     this.chart = new Chart('canvas', {
       data: {
         labels: labels,
@@ -116,6 +118,17 @@ export class ChartComponent {
         legend: {
           position: 'top',
           onClick: this.clickHandler
+        },
+        zoom: {
+          zoom: {
+            wheel: {
+              enabled: true
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'xy'
+          }
         }
       },
       scales: {

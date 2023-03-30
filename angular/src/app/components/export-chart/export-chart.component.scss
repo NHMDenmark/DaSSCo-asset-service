@@ -2,13 +2,22 @@
 @import 'src/style/base';
 
 .btns {
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    margin-left: 1rem;
+  }
+
   .mat-icon {
     width: fit-content;
     height: fit-content;
   }
+
   .mat-icon:hover {
     color: $primaryColorHover;
   }
+
   .material-icons-outlined {
     font-size: 2.5rem;
     line-height: 2.5rem;
