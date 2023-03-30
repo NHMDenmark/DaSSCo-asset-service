@@ -40,6 +40,42 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/institutions:
+    get:
+      operationId: getInstitutes_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Institution'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/specimengraphinfo:
     get:
       operationId: getSpecimenData
@@ -241,6 +277,11 @@ components:
           additionalProperties:
             type: object
           writeOnly: true
+    Institution:
+      type: object
+      properties:
+        name:
+          type: string
     SpecimenData:
       type: object
       properties:
