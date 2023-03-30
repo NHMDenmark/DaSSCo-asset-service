@@ -124,9 +124,6 @@ export class GraphDataComponent {
         const nextTf = this.timeFrameMap.get(currForm) as TimeFrame;
 
         if (range?.start && range.end) { // if there's custom range
-          // console.log('range')
-          // console.log(moment(range.end, 'DD-MM-YYYY ', true).isValid())
-          // console.log(moment(range.start, 'DD-MM-YYYY ', true).isValid())
           if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
             this.clearCustomTimeFrame();
             this.timeFrameSubject.next(nextTf);
@@ -146,35 +143,8 @@ export class GraphDataComponent {
         }
       });
 
-    // this.timeFrameForm.valueChanges
-    //   .pipe(
-    //     filter(isNotNull),
-    //     startWith(defaultTimeFrame),
-    //     pairwise()
-    //   )
-    //   .subscribe(([prev, next]) => {
-    //     const prevTf = this.timeFrameMap.get(prev) as TimeFrame;
-    //     console.log(prevTf)
-    //     const nextTf = this.timeFrameMap.get(next) as TimeFrame;
-    //     this.timeFrameSubject.next(nextTf);
-    //     // if (prevTf.unit !== nextTf.unit) this.clearCustomTimeFrame();
-    //   });
-
     this.statForm.valueChanges.pipe(filter(isNotNull))
       .subscribe(val => this.setStatValue(val));
-
-    // this.timeframeRange.valueChanges.pipe(filter(isNotNull))
-    //   .subscribe(val => {
-    //     if (val.start && val.end) {
-    //       if (moment(val.start, 'DD-MM-YYYY ', true).isValid()
-    //         && moment(val.end, 'DD-MM-YYYY ', true).isValid()) {
-    //         if (this.timeFrameForm.value) {
-    //           const currTimeFrame = this.timeFrameMap.get(this.timeFrameForm.value) as TimeFrame;
-    //           this.timeFrameSubject.next({period: currTimeFrame.period, unit: currTimeFrame.unit, format: currTimeFrame.format, startDate: val.start, endDate: val.end});
-    //         }
-    //       }
-    //     }
-    //   });
   }
 
   createLabels(timeFrame: TimeFrame): string[] {

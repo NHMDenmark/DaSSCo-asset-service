@@ -25,6 +25,7 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatNativeDateModule} from '@angular/material/core';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatTooltipModule} from "@angular/material/tooltip";
+import { ExportChartComponent } from './components/export-chart/export-chart.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +37,8 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     GraphComponent,
     AssetDetailComponent,
     ChartComponent,
-    GraphDataComponent
+    GraphDataComponent,
+    ExportChartComponent
   ],
     imports: [
         BrowserModule,
@@ -61,7 +63,8 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     CUSTOM_ELEMENTS_SCHEMA
   ],
   providers: [
-    MatDatepickerModule
+    MatDatepickerModule,
+    ChartComponent
   ],
   bootstrap: [AppComponent]
 })

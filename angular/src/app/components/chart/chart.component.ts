@@ -86,7 +86,7 @@ export class ChartComponent {
 
   createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
-    this.chart = new Chart('chart', {
+    this.chart = new Chart('canvas', {
       data: {
         labels: labels,
         datasets: lineDataset
