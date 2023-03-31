@@ -38,8 +38,12 @@ export class ChartComponent {
   ])
     .pipe(
       map(([chartData, title]) => {
-        const lineDatasets: ChartDataset[] = this.createDataset(chartData);
-        this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
+        if (chartData.mainChart && chartData.mainChart.size <= 0 && !chartData.subChart) { // mainchart is set immediately as empty/free Map in graph-data, thus it isn't undefined
+          this.createchart([], [], '', 'No data available for the selected dates');
+        } else {
+          const lineDatasets: ChartDataset[] = this.createDataset(chartData);
+          this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
+        }
       })
     );
 
@@ -88,7 +92,10 @@ export class ChartComponent {
   createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
     Chart.register(zoomPlugin);
-    if (dataset.length <= 0) title = 'No data available for the selected dates';
+    // if (dataset.length <= 0) {
+    //   yaxis = '';
+    //   title = 'No data available for the selected dates';
+    // }
 
     this.chart = new Chart('canvas', {
       data: {
