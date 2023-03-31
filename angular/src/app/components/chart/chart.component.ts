@@ -92,10 +92,6 @@ export class ChartComponent {
   createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
     Chart.register(zoomPlugin);
-    // if (dataset.length <= 0) {
-    //   yaxis = '';
-    //   title = 'No data available for the selected dates';
-    // }
 
     this.chart = new Chart('canvas', {
       data: {
