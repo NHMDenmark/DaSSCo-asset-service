@@ -106,6 +106,7 @@ export class ChartComponent {
     return {
       responsive: true,
       maintainAspectRatio: true,
+      aspectRatio: 2.5,
       skipNull: true,
       layout: {
         padding: 10
