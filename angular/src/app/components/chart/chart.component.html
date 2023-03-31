@@ -2,7 +2,7 @@
   <div class="export">
     <dassco-export-chart [setChart]="chart" [setTitle]="titleSubject.getValue()"></dassco-export-chart>
   </div>
-  <div class="canvas-container" style="position: relative; height:70vh; width: 80vw"> <!-- todo IT IS HERE MY DUDE -->
+  <div class="canvas-container">
     <canvas #canvas id="canvas">{{chart}}</canvas>
     <div *ngIf="(setChartValues$ | async)"></div>
   </div>

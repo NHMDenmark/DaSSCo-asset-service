@@ -85,13 +85,15 @@ export class ChartComponent {
     } as ChartDataset;
   }
 
-  createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
+  createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
     Chart.register(zoomPlugin);
+    if (dataset.length <= 0) title = 'No data available for the selected dates';
+
     this.chart = new Chart('canvas', {
       data: {
         labels: labels,
-        datasets: lineDataset
+        datasets: dataset
       },
       options: this.getOptions(yaxis, title)
     });
@@ -101,7 +103,6 @@ export class ChartComponent {
     return {
       responsive: true,
       maintainAspectRatio: true,
-      // aspectRatio: 2.5,
       skipNull: true,
       layout: {
         padding: 10
