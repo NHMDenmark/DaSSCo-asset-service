@@ -22,7 +22,8 @@ public class InstitutionRepository {
     private Jdbi jdbi;
     private DataSource dataSource;
 
-    private static final String boilerplate = "CREATE EXTENSION IF NOT EXISTS age;\n" +
+    private static final String boilerplate =
+            "CREATE EXTENSION IF NOT EXISTS age;\n" +
                          "LOAD 'age';\n" +
                          "SET search_path = ag_catalog, \"$user\", public;";
     @Inject
