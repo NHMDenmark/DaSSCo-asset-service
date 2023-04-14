@@ -15,10 +15,13 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(AssetApi.class);
     register(OpenAPI.class);
     register(SpecimenGraphInfoApi.class);
-    register(InstituteApi.class);
+//    register(InstituteApi.class);
     register(Institutions.class);
-
+    register(Specimens.class);
+    register(Collections.class);
     register(RolesAllowedDynamicFeature.class);
     register(ClientAbortInterceptor.class);
+    register(Pipelines.class);
+    register(Workstations.class);
   }
 }

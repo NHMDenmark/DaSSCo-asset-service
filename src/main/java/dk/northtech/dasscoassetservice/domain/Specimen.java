@@ -1,6 +1,8 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public record Specimen(String name
+public record Specimen(String institution
+        , String collection
         , String barcode
-        , String speciment_pid) {
+        , String specimen_pid
+        , String preparation_type) {
 }

@@ -1,4 +1,5 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public record Collection(String name) {
+public record Collection(String name, String institution) {
+
 }
