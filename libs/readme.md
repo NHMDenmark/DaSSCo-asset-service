@@ -1,5 +1,5 @@
 
-This is the jdbc driver. 
+This is the Apache AGE jdbc driver. 
 
 We need it in order to read and write the apache age custom sql types. The primary benefit of this is it enables 
 the usage of prepared statements

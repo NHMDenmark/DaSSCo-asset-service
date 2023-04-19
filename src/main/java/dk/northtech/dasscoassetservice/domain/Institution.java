@@ -1,4 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public record Institution(String name) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record Institution(@Schema(description = "The institution name", example = "NNAD") String name) {
 }

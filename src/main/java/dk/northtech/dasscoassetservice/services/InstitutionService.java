@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,5 +48,9 @@ public class InstitutionService {
 //            throw new IllegalArgumentException("Name must be alphanumeric");
 //        }
         return institutionRepository.listInstitutions();
+    }
+
+    public Optional<Institution> getIfExists(String institutionName) {
+        return institutionRepository.findInstitution(institutionName);
     }
 }

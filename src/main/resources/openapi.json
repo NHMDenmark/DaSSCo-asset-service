@@ -84,7 +84,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Collection"
+                  "$ref" : "#/components/schemas/Asset"
                 }
               }
             }
@@ -157,7 +157,7 @@
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Institution"
+                "$ref" : "#/components/schemas/Collection"
               }
             }
           }
@@ -295,9 +295,45 @@
         } ]
       }
     },
-    "/v1/pipelines" : {
+    "/v1/institutions/{institutionName}" : {
       "get" : {
         "operationId" : "getInstitutes_4",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Institution"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/pipelines" : {
+      "get" : {
+        "operationId" : "getInstitutes_5",
         "responses" : {
           "200" : {
             "content" : {
@@ -792,62 +828,64 @@
           }
         }
       },
-      "Collection" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          },
-          "institution" : {
-            "type" : "string"
-          }
-        }
-      },
-      "Institution" : {
-        "type" : "object",
-        "properties" : {
-          "name" : {
-            "type" : "string"
-          }
-        }
-      },
       "Asset" : {
         "type" : "object",
         "properties" : {
           "asset_pid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "???",
+            "example" : "asdf-1234-3333-1000"
           },
           "asset_guid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Unique key for the asset?",
+            "example" : "asdf1244-233-3"
           },
           "asset_status" : {
             "type" : "string",
             "enum" : [ "WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION" ]
           },
+          "multi_specimen" : {
+            "type" : "boolean",
+            "description" : "Basically a multispecimen is a single image (or other type of media) that actually contains multiple specimens in it",
+            "example" : true
+          },
           "specimen_barcodes" : {
             "type" : "array",
+            "description" : "The barcodes of associated specimens",
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "description" : "The barcodes of associated specimens"
             }
           },
           "funding" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "A short description of funding source used to create the asset",
+            "example" : "Funding secured"
           },
           "asset_subject" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "We will need to distinguish between image of a folder, device target, specimen, label etc)",
+            "example" : "folder"
           },
           "payload_type" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "image, ct scan, surface scan, document",
+            "example" : "ct scan"
           },
           "file_formats" : {
             "type" : "array",
+            "description" : "File format enum, can contain multiple formats",
             "items" : {
               "type" : "string",
+              "description" : "File format enum, can contain multiple formats",
               "enum" : [ "TIF", "JPEG", "RAW" ]
             }
           },
           "asset_locked" : {
-            "type" : "string"
+            "type" : "boolean",
+            "description" : "Flags if it is possible to edit / delete the media of this asset",
+            "example" : false
           },
           "restricted_access" : {
             "type" : "array",
@@ -859,18 +897,26 @@
           "tags" : {
             "type" : "object",
             "additionalProperties" : {
-              "type" : "string"
-            }
+              "type" : "string",
+              "description" : "A dictionary of dynamic properties",
+              "example" : "ct scan"
+            },
+            "description" : "A dictionary of dynamic properties",
+            "example" : "ct scan"
           },
           "audited" : {
-            "type" : "boolean"
+            "type" : "boolean",
+            "description" : "audited",
+            "example" : false
           },
           "asset_taken_date" : {
             "type" : "string",
             "format" : "date-time"
           },
           "institution" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The institution",
+            "example" : "NNAD"
           },
           "collection" : {
             "type" : "string"
@@ -880,6 +926,21 @@
           },
           "workstation" : {
             "type" : "string"
+          }
+        }
+      },
+      "Collection" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name of the collection",
+            "example" : "Test-collection"
+          },
+          "institution" : {
+            "type" : "string",
+            "description" : "The name of the institution to which the collection belong",
+            "example" : "NNAD"
           }
         }
       },
@@ -914,14 +975,28 @@
           }
         }
       },
+      "Institution" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The institution name",
+            "example" : "NNAD"
+          }
+        }
+      },
       "Pipeline" : {
         "type" : "object",
         "properties" : {
           "pipeline_name" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the pipeline",
+            "example" : "PIP1"
           },
           "institution" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The institution that the pipeline belongs to",
+            "example" : "NNAD"
           }
         }
       },
@@ -996,10 +1071,12 @@
         "type" : "object",
         "properties" : {
           "workstation_name" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the workstation"
           },
           "institution" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the institution"
           }
         }
       }

@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.repositories;
 
+import dk.northtech.dasscoassetservice.domain.Institute;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
@@ -16,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class InstitutionRepository {
@@ -86,6 +88,38 @@ public class InstitutionRepository {
                             Agtype name = rs.getObject("name", Agtype.class);
                             return new Institution(name.getString());
                         }).list();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Optional<Institution> findInstitution(String institutionName) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (i:Institution)
+                            WHERE i.name = $name
+                            RETURN i.name
+                        $$
+                        , #params) as (name agtype);
+                        """;
+
+
+        try {
+            return jdbi.withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConn = connection.unwrap(PgConnection.class);
+                pgConn.addDataType("agtype", Agtype.class);
+                handle.execute(boilerplate);
+                AgtypeMap institutionNameAG = new AgtypeMapBuilder().add("name", institutionName).build();
+                Agtype agtype = AgtypeFactory.create(institutionNameAG);
+                return handle.createQuery(sql).bind("params", agtype)
+                        .map((rs, ctx) -> {
+                            Agtype name = rs.getObject("name", Agtype.class);
+                            return new Institution(name.getString());
+                        }).findOne();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
