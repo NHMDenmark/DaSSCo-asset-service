@@ -125,11 +125,15 @@ export class GraphDataComponent {
 
         if (range?.start && range.end) { // if there's custom range
           if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
-            this.clearCustomTimeFrame();
-            this.timeFrameSubject.next(nextTf);
+            // this.clearCustomTimeFrame();
+            console.log(nextTf)
+            // this.timeFrameSubject.next(nextTf);
             this.timeFrameForm.setValue(currForm); // todo make this prettier when you have time.....
           } else if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
             && moment(range.end, 'DD-MM-YYYY ', true).isValid()) {
+            console.log('custom i guess')
+            console.log(range.start)
+            console.log(range.end)
             this.timeFrameSubject.next({
               period: nextTf.period,
               unit: nextTf.unit,
@@ -148,11 +152,14 @@ export class GraphDataComponent {
   }
 
   createLabels(timeFrame: TimeFrame): string[] {
+    console.log(timeFrame.startDate)
+    console.log(timeFrame.endDate)
     const labels: string[] = [];
     const duration = timeFrame.endDate.clone().diff(timeFrame.startDate.clone(), timeFrame.unit);
     for (let i = duration; i >= 0; i--) {
       labels.push(timeFrame.endDate.clone().subtract(i, timeFrame.unit).format(timeFrame.format));
     }
+    console.log(labels)
     return labels;
   }
 
