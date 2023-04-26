@@ -24,7 +24,7 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/institutions/{institutionName}/collections/{collectionName}/specimens/{specimenBarcode}/assets:
+  /v1/institutions/{institutionName}/collections/{collectionName}/assets:
     get:
       operationId: getInstitutes
       responses:
@@ -44,6 +44,17 @@ paths:
       - dassco-idp: []
     post:
       operationId: createInstitution
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -72,9 +83,15 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/collections:
+  /v1/institutions/{institutionName}/collections:
     get:
       operationId: getInstitutes_1
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -92,6 +109,12 @@ paths:
       - dassco-idp: []
     post:
       operationId: createInstitution_1
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -514,15 +537,15 @@ components:
     Asset:
       type: object
       properties:
-        asset_pid:
+        pid:
           type: string
           description: ???
           example: asdf-1234-3333-1000
-        asset_guid:
+        guid:
           type: string
           description: Unique key for the asset?
           example: asdf1244-233-3
-        asset_status:
+        status:
           type: string
           enum:
           - WORKING_COPY
@@ -547,7 +570,7 @@ components:
           type: string
           description: A short description of funding source used to create the asset
           example: Funding secured
-        asset_subject:
+        subject:
           type: string
           description: "We will need to distinguish between image of a folder, device\
             \ target, specimen, label etc)"

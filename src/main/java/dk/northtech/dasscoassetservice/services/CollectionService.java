@@ -35,4 +35,8 @@ public class CollectionService {
         return collectionRepository.listCollections(institution);
 
     }
+
+    public Optional<Collection> findCollection(String collectionName) {
+        return this.collectionRepository.findCollection(collectionName);
+    }
 }
