@@ -72,20 +72,21 @@ public class WorkstationRepository {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                             MATCH (w:Workstation)-[:IS_STATIONED_AT]->(i:Institution)
-                             WHERE w.name = $workstation_name
+                             MATCH (w:Workstation{name: $workstation_name})
+                             SET w.status = $workstation_status
                         $$
-                        , #params) as (institution_name agtype, workstation_name agtype);
+                        , #params) as (w agtype);
                         """;
 
 
         try {
+            System.out.println(workstation.name());
             jdbi.withHandle(handle -> {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
                 AgtypeMap name = new AgtypeMapBuilder()
-                        .add("institution_name", workstation.institution_name())
+//                        .add("institution_name", workstation.institution_name())
                         .add("workstation_name", workstation.name())
                         .add("workstation_status", workstation.status().name()).build();
                 Agtype agtype = AgtypeFactory.create(name);
@@ -106,7 +107,7 @@ public class WorkstationRepository {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
-                             MATCH (w:Workstation)-[:IS_STATIONED_AT]->(i:Institution)
+                             MATCH (w:Workstation)-[:STATIONED_AT]->(i:Institution)
                              WHERE w.name = $workstation_name
                              RETURN w.name, w.status, i.name
                            $$
@@ -141,7 +142,7 @@ public class WorkstationRepository {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
-                             MATCH (w:Workstation)-[:IS_STATIONED_AT]->(i:Institution)
+                             MATCH (w:Workstation)-[:STATIONED_AT]->(i:Institution)
                              WHERE i.name = $institution_name
                              RETURN w.name, w.status 
                            $$

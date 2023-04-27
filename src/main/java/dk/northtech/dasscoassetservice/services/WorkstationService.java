@@ -2,8 +2,10 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Workstation;
+import dk.northtech.dasscoassetservice.domain.WorkstationStatus;
 import dk.northtech.dasscoassetservice.repositories.WorkstationRepository;
 import jakarta.inject.Inject;
+import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,13 +17,14 @@ public class WorkstationService {
     private WorkstationRepository workstationRepository;
 
     @Inject
-    public WorkstationService(InstitutionService institutionService) {
+    public WorkstationService(InstitutionService institutionService, WorkstationRepository workstationRepository) {
         this.institutionService = institutionService;
+        this.workstationRepository = workstationRepository;
     }
 
-    public List<Workstation> listWorkstations(Institution institution) {
 
-        return null;
+    public List<Workstation> listWorkstations(Institution institution) {
+        return workstationRepository.listWorkStations(institution);
     }
 
     public Optional<Workstation> findWorkstation(String workstationName) {
@@ -30,6 +33,13 @@ public class WorkstationService {
 
 
     public Workstation createWorkStation(String institutionName, Workstation workstation) {
+        if (workstation.status() == null) {
+            workstation = new Workstation(workstation.name(), WorkstationStatus.IN_SERVICE, institutionName);
+        }
+        System.out.println(institutionName);
+        if (Strings.isNullOrEmpty(workstation.name())) {
+            throw new RuntimeException("Workstation must have a name");
+        }
         Optional<Institution> instopt = institutionService.getIfExists(institutionName);
         if (instopt.isEmpty()) {
             throw new IllegalArgumentException("Institution does not exist");
@@ -38,7 +48,12 @@ public class WorkstationService {
         if (workstationOpt.isPresent()) {
             throw new IllegalArgumentException("Workstation with name [" + workstation.name() + "] already exists in institution [" + workstationOpt.get().institution_name() + "]");
         }
-        workstationRepository.persistWorkstation(workstation);
+        Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
+        workstationRepository.persistWorkstation(newWs);
         return workstation;
+    }
+
+    public void updateWorkstation(Workstation workstation) {
+        workstationRepository.updateWorkstation(workstation);
     }
 }
