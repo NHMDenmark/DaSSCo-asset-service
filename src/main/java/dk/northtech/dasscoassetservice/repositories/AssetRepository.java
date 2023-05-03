@@ -73,10 +73,12 @@ public interface AssetRepository extends SqlObject {
                 'dassco'
                     , $$
                          MATCH (a:Asset{name: $guid})
-                         MATCH (c:Collection)<-[IS_PART_OF]-(a)
-                         MATCH (p:Pipeline)<-[CREATED_BY]-(a)
-                         MATCH (i:Institution)<-[BELONGS_TO]-(a)
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: 'bestific'})
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                         MATCH (e:Event{event:'CREATE_ASSET'})<-[:CHANGED_BY]-(a)
+                         MATCH (p:Pipeline)<-[:USED]-(e)
+                         MATCH (w:Workstation)<-[:USED]-(e)
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $guid})
                          RETURN a.guid
                          , a.pid
                          , a.status
@@ -90,6 +92,8 @@ public interface AssetRepository extends SqlObject {
                          , i.name
                          , c.name
                          , p.name
+                         , w.name
+                         , e.timestamp
                       $$
                     , #params)
                     as (guid agtype
@@ -105,7 +109,9 @@ public interface AssetRepository extends SqlObject {
                     , specimen_barcodes agtype
                     , institution_name agtype
                     , collection_name agtype
-                    , pipeline_name agtype);
+                    , pipeline_name agtype
+                    , workstation_name agtype
+                    , creation_date agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -119,9 +125,6 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
-    default void deleteParentRelation(String childGuid) {
-
-    }
     default void connectParentChild(String parentGuid, String childGuid) {
         if(Strings.isNullOrEmpty(parentGuid)) {
             return;
@@ -168,8 +171,13 @@ public interface AssetRepository extends SqlObject {
                                 , file_formats: $file_formats
                                 , asset_taken_date: $asset_taken_date
                                 , internal_status: $internal_status
-                            })    
-                            MERGE (a)-[cb:CREATED_BY{timestamp: $created_date}]->(p)
+                            })
+                            MERGE (u:User{user_id: $user, name: $user})
+                            MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET', name: 'CREATE_ASSET'})
+                            MERGE (e)-[uw:USED]->(w)
+                            MERGE (e)-[up:USED]->(p)
+                            MERGE (e)-[pb:INITIATED_BY]->(u)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)    
                             MERGE (a)-[bt:BELONGS_TO]->(i)
                             MERGE (w)-[sa:STATIONED_AT]->(i)
                             MERGE (p)-[ub:USED_BY]->(i)
@@ -198,6 +206,7 @@ public interface AssetRepository extends SqlObject {
                         .add("created_date", DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.created_date))
                         .add("internal_status", asset.internal_status.name())
                         .add("parent_id",asset.parent_guid)
+                        .add("user", "Thomas")
                         .build();
                 Agtype agtype = AgtypeFactory.create(parms);
                 handle.createUpdate(sql)

@@ -47,6 +47,6 @@ public class Asset {
     public String collection;
     public String pipeline;
     public String workstation;
-    public String assetLocation;
+    public String asset_location;
     public InternalStatus internal_status;
 }
