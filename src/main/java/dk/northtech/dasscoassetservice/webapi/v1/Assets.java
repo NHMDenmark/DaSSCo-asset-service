@@ -57,6 +57,18 @@ public class Assets {
         return this.assetService.persistAsset(asset);
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Path("/{assetGuid}")
+    public Asset getAsset(@PathParam("institutionName") String institutionName
+            , @PathParam("collectionName") String collectionName
+            , @PathParam("assetGuid")String assetGuid) {
+        return this.assetService.getAsset(assetGuid);
+    }
+
     @DELETE
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
 //    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))

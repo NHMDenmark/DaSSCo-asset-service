@@ -95,8 +95,14 @@
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-core</artifactId>
-            <version>3.28.0</version>
+            <version>3.37.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.jdbi</groupId>
+            <artifactId>jdbi3-sqlobject</artifactId>
+            <version>3.37.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-jackson2</artifactId>
@@ -131,6 +137,11 @@
             <groupId>org.antlr</groupId>
             <artifactId>antlr4</artifactId>
             <version>4.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jdbi</groupId>
+            <artifactId>jdbi3-sqlobject</artifactId>
+            <version>3.37.1</version>
         </dependency>
     </dependencies>
 
