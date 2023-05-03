@@ -337,6 +337,12 @@ paths:
   /v1/institutions/{institutionName}/workstations:
     get:
       operationId: getWorkstations
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -351,7 +357,13 @@ paths:
       security:
       - dassco-idp: []
     post:
-      operationId: createInstitution_4
+      operationId: createWorkstation
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -368,6 +380,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions/{institutionName}/workstations/{workstationName}:
+    put:
+      operationId: updateWorkstation
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Workstation'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
       security:
       - dassco-idp: []
 components:
@@ -722,12 +755,18 @@ components:
     Workstation:
       type: object
       properties:
-        workstation_name:
+        name:
           type: string
           description: The name of the workstation
-        institution:
+        status:
           type: string
-          description: The name of the institution
+          description: Status of the workstation
+          enum:
+          - IN_SERVICE
+          - OUT_OF_SERVICE
+        institution_name:
+          type: string
+          description: The institution that where the workstation is
   securitySchemes:
     dassco-idp:
       type: oauth2
