@@ -3,7 +3,7 @@ import {Chart} from 'chart.js';
 import excelJS from 'exceljs';
 import {saveAs} from 'file-saver';
 import JsPDF from 'jspdf';
-import {MatSnackBar} from "@angular/material/snack-bar";
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
   selector: 'dassco-export-chart',
@@ -43,7 +43,7 @@ export class ExportChartComponent {
     }
   }
 
-  downloadCsv() {
+  downloadExcel() {
     const workbook = new excelJS.Workbook;
     const worksheet = workbook.addWorksheet('Graph data');
     worksheet.columns = [
