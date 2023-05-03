@@ -49,7 +49,7 @@ export enum StatValue {
   WORKSTATION
 }
 
-export const defaultTimeFrame: number = 1;
+export const defaultTimeFrame = 1;
 
 export const MY_FORMATS = {
   parse: {
