@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Asset {
-
     @Schema(description = "???", example = "asdf-1234-3333-1000")
     public String pid;
     @Schema(description = "Unique key for the asset?", example = "asdf1244-233-3")
@@ -35,14 +34,19 @@ public class Asset {
     @Schema(description = "audited", example = "Has this asset been audited")
     public boolean audited;
 
+    public Instant created_date;
+    public Instant last_updated_date;
     public Instant asset_taken_date;
+    public Instant asset_deleted_date;
 
     //References
     @Schema(description = "The institution", example = "NNAD")
     public String institution;
  //   @Schema(description = "The institution", example = "NNAD")
-
+    public String parent_guid;
     public String collection;
     public String pipeline;
     public String workstation;
+    public String assetLocation;
+    public InternalStatus internal_status;
 }

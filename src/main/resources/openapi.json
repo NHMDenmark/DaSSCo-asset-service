@@ -362,9 +362,17 @@
         } ]
       }
     },
-    "/v1/pipelines" : {
+    "/v1/institutions/{institutionName}/pipelines" : {
       "get" : {
-        "operationId" : "getInstitutes_5",
+        "operationId" : "getPipelines",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -391,11 +399,19 @@
       },
       "post" : {
         "operationId" : "createInstitution_3",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/Institution"
+                "$ref" : "#/components/schemas/Pipeline"
               }
             }
           }
@@ -989,7 +1005,19 @@
             "description" : "audited",
             "example" : false
           },
+          "created_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "last_updated_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "asset_taken_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "asset_deleted_date" : {
             "type" : "string",
             "format" : "date-time"
           },
@@ -1006,6 +1034,10 @@
           },
           "workstation" : {
             "type" : "string"
+          },
+          "internal_status" : {
+            "type" : "string",
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED" ]
           }
         }
       },
@@ -1068,7 +1100,7 @@
       "Pipeline" : {
         "type" : "object",
         "properties" : {
-          "pipeline_name" : {
+          "name" : {
             "type" : "string",
             "description" : "The name of the pipeline",
             "example" : "PIP1"
