@@ -24,7 +24,7 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/institutes:
+  /v1/institutions/{institutionName}/collections/{collectionName}/assets:
     get:
       operationId: getInstitutes
       responses:
@@ -32,7 +32,220 @@ paths:
           content:
             application/json:
               schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Asset'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    delete:
+      operationId: deleteCollection
+      responses:
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions/{institutionName}/collections:
+    get:
+      operationId: getInstitutes_1
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution_1
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Collection'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    delete:
+      operationId: deleteCollection_1
+      responses:
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutes:
+    get:
+      operationId: getInstitutes_2
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
                 $ref: '#/components/schemas/Institute'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions:
+    get:
+      operationId: getInstitutes_3
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution_2
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Institution'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions/{institutionName}:
+    get:
+      operationId: getInstitutes_4
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Institution'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/pipelines:
+    get:
+      operationId: getInstitutes_5
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution_3
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Institution'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
         "400-599":
           content:
             application/json:
@@ -49,6 +262,107 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SpecimenData'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/collections/{collectionName}/specimens:
+    get:
+      operationId: getSpecimen
+      parameters:
+      - name: collectionName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createSpecimen
+      parameters:
+      - name: collectionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Specimen'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    delete:
+      operationId: deleteSpecimen
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Specimen'
+      responses:
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions/{institutionName}/workstations:
+    get:
+      operationId: getWorkstations
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workstation'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    post:
+      operationId: createInstitution_4
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Workstation'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workstation'
         "400-599":
           content:
             application/json:
@@ -220,6 +534,108 @@ components:
           - INTERNAL_ERROR
         errorMessage:
           type: string
+    Asset:
+      type: object
+      properties:
+        pid:
+          type: string
+          description: ???
+          example: asdf-1234-3333-1000
+        guid:
+          type: string
+          description: Unique key for the asset?
+          example: asdf1244-233-3
+        status:
+          type: string
+          enum:
+          - WORKING_COPY
+          - ARCHIVE
+          - BEING_PROCESSED
+          - PROCESSING_HALTED
+          - ISSUE_WITH_MEDIA
+          - ISSUE_WITH_METADATA
+          - FOR_DELETION
+        multi_specimen:
+          type: boolean
+          description: Basically a multispecimen is a single image (or other type
+            of media) that actually contains multiple specimens in it
+          example: true
+        specimen_barcodes:
+          type: array
+          description: The barcodes of associated specimens
+          items:
+            type: string
+            description: The barcodes of associated specimens
+        funding:
+          type: string
+          description: A short description of funding source used to create the asset
+          example: Funding secured
+        subject:
+          type: string
+          description: "We will need to distinguish between image of a folder, device\
+            \ target, specimen, label etc)"
+          example: folder
+        payload_type:
+          type: string
+          description: "image, ct scan, surface scan, document"
+          example: ct scan
+        file_formats:
+          type: array
+          description: "File format enum, can contain multiple formats"
+          items:
+            type: string
+            description: "File format enum, can contain multiple formats"
+            enum:
+            - TIF
+            - JPEG
+            - RAW
+        asset_locked:
+          type: boolean
+          description: Flags if it is possible to edit / delete the media of this
+            asset
+          example: false
+        restricted_access:
+          type: array
+          items:
+            type: string
+            enum:
+            - USER
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+            description: A dictionary of dynamic properties
+            example: ct scan
+          description: A dictionary of dynamic properties
+          example: ct scan
+        audited:
+          type: boolean
+          description: audited
+          example: false
+        asset_taken_date:
+          type: string
+          format: date-time
+        institution:
+          type: string
+          description: The institution
+          example: NNAD
+        collection:
+          type: string
+        pipeline:
+          type: string
+        workstation:
+          type: string
+    Collection:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the collection
+          example: Test-collection
+        institution:
+          type: string
+          description: The name of the institution to which the collection belong
+          example: NNAD
     Institute:
       type: object
       properties:
@@ -241,6 +657,24 @@ components:
           additionalProperties:
             type: object
           writeOnly: true
+    Institution:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The institution name
+          example: NNAD
+    Pipeline:
+      type: object
+      properties:
+        pipeline_name:
+          type: string
+          description: The name of the pipeline
+          example: PIP1
+        institution:
+          type: string
+          description: The institution that the pipeline belongs to
+          example: NNAD
     SpecimenData:
       type: object
       properties:
@@ -272,6 +706,28 @@ components:
           type: string
         createdDate:
           type: string
+    Specimen:
+      type: object
+      properties:
+        institution:
+          type: string
+        collection:
+          type: string
+        barcode:
+          type: string
+        specimen_pid:
+          type: string
+        preparation_type:
+          type: string
+    Workstation:
+      type: object
+      properties:
+        workstation_name:
+          type: string
+          description: The name of the workstation
+        institution:
+          type: string
+          description: The name of the institution
   securitySchemes:
     dassco-idp:
       type: oauth2
