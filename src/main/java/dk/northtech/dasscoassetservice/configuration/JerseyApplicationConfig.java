@@ -15,7 +15,7 @@ public class JerseyApplicationConfig extends ResourceConfig {
     // Activate the designated JaxRs classes with API endpoints:
     register(AssetApi.class);
     register(OpenAPI.class);
-    register(SpecimenGraphInfoApi.class);
+    register(GraphDataApi.class);
 //    register(InstituteApi.class);
     register(Institutions.class);
     register(Specimens.class);

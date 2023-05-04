@@ -3,19 +3,10 @@ import DurationConstructor = moment.unitOfTime.DurationConstructor;
 
 export interface SpecimenGraph {
   instituteName: string;
-  // instituteOcrText: string;
-  // specimenName: string;
-  // specimenMediaSubject: string;
-  // specimenSpecifySpecId: string; // spec == specimen
-  // specimenSpecifyAttId: string; // att = attachment
-  // specimenOrigSpecifyMediaName: string;
-  // assetName: string;
-  // assetMediaGuid: string;
-  // assetFileFormat: string;
-  // assetDateMediaCreated: string;
   pipelineName: string;
   workstationName: string;
   createdDate: string;
+  specimens: number;
 }
 
 export interface GraphData {

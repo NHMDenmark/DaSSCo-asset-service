@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.services.SpecimenService;
+import dk.northtech.dasscoassetservice.services.GraphDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,10 +26,10 @@ import java.util.List;
 @Path("/v1/assets")
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
-    private final SpecimenService specimenService;
+    private final GraphDataService specimenService;
 
     @Inject
-    public AssetApi(SpecimenService specimenService) {
+    public AssetApi(GraphDataService specimenService) {
         this.specimenService = specimenService;
     }
 

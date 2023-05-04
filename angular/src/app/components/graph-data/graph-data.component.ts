@@ -41,6 +41,7 @@ export class GraphDataComponent {
   ])
     .pipe(
       map(([specimens, timeFrame, statValue]) => {
+        console.log(specimens)
         const main = new Map<string, Map<string, number>>();
         const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
 

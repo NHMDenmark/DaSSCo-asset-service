@@ -1,17 +1,19 @@
 package dk.northtech.dasscoassetservice.domain;
 
-import javax.annotation.Nullable;
+import java.time.Instant;
 
-public record SpecimenData(
+public record GraphData(
         String instituteName,
         String pipelineName,
         String workstationName,
-        String createdDate
+        String createdDate, // event's timestamp
+        Integer specimens // number of specimens in the specific asset
 ) {
-    public SpecimenData(String instituteName, String pipelineName, String workstationName, String createdDate) {
+    public GraphData(String instituteName, String pipelineName, String workstationName, String createdDate, Integer specimens) {
         this.instituteName = instituteName.replaceAll("\"", "");
         this.pipelineName = pipelineName != null ? pipelineName.replaceAll("\"", "") : null;
         this.workstationName = workstationName != null ? workstationName.replaceAll("\"", "") : null;
         this.createdDate = createdDate.replaceAll("\"", "");
+        this.specimens = specimens;
     }
 }

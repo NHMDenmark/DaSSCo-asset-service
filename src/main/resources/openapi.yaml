@@ -175,6 +175,22 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/specimengraphinfo:
+    get:
+      operationId: getSpecimenData
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphData'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutes:
     get:
       operationId: getInstitutes_2
@@ -290,22 +306,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pipeline'
-        "400-599":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaSSCoError'
-      security:
-      - dassco-idp: []
-  /v1/specimengraphinfo:
-    get:
-      operationId: getSpecimenData
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SpecimenData'
         "400-599":
           content:
             application/json:
@@ -731,6 +731,20 @@ components:
           type: string
           description: The name of the institution to which the collection belong
           example: NNAD
+    GraphData:
+      type: object
+      properties:
+        instituteName:
+          type: string
+        pipelineName:
+          type: string
+        workstationName:
+          type: string
+        createdDate:
+          type: string
+        specimens:
+          type: integer
+          format: int32
     Institute:
       type: object
       properties:
@@ -770,37 +784,6 @@ components:
           type: string
           description: The institution that the pipeline belongs to
           example: NNAD
-    SpecimenData:
-      type: object
-      properties:
-        instituteName:
-          type: string
-        instituteOcrText:
-          type: string
-        specimenName:
-          type: string
-        specimenMediaSubject:
-          type: string
-        specimenSpecifySpecId:
-          type: string
-        specimenSpecifyAttId:
-          type: string
-        specimenOrigSpecifyMediaName:
-          type: string
-        assetName:
-          type: string
-        assetMediaGuid:
-          type: string
-        assetFileFormat:
-          type: string
-        assetDateMediaCreated:
-          type: string
-        pipelineName:
-          type: string
-        workstationName:
-          type: string
-        createdDate:
-          type: string
     Specimen:
       type: object
       properties:
