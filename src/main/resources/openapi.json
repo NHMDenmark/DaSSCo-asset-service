@@ -136,6 +136,56 @@
         } ]
       }
     },
+    "/v1/institutions/{institutionName}/collections/{collectionName}/assets/{assetGuid}" : {
+      "get" : {
+        "operationId" : "getAsset",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "collectionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
         "operationId" : "getInstitutes_1",
@@ -1026,6 +1076,9 @@
             "description" : "The institution",
             "example" : "NNAD"
           },
+          "parent_guid" : {
+            "type" : "string"
+          },
           "collection" : {
             "type" : "string"
           },
@@ -1033,6 +1086,9 @@
             "type" : "string"
           },
           "workstation" : {
+            "type" : "string"
+          },
+          "asset_location" : {
             "type" : "string"
           },
           "internal_status" : {
