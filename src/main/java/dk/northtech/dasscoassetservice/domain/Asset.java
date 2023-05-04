@@ -49,4 +49,6 @@ public class Asset {
     public String workstation;
     public String asset_location;
     public InternalStatus internal_status;
+    public Instant pushed_to_specify_date;
+    public String digitizer;
 }
