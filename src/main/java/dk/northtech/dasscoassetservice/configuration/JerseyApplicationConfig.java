@@ -1,9 +1,7 @@
 package dk.northtech.dasscoassetservice.configuration;
 
-import dk.northtech.dasscoassetservice.webapi.v1.AssetApi;
-import dk.northtech.dasscoassetservice.webapi.v1.InstituteApi;
-import dk.northtech.dasscoassetservice.webapi.v1.OpenAPI;
-import dk.northtech.dasscoassetservice.webapi.v1.SpecimenGraphInfoApi;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.IllegalArguementExceptionMapper;
+import dk.northtech.dasscoassetservice.webapi.v1.*;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.springframework.stereotype.Component;
@@ -18,9 +16,15 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(AssetApi.class);
     register(OpenAPI.class);
     register(SpecimenGraphInfoApi.class);
-    register(InstituteApi.class);
-
+//    register(InstituteApi.class);
+    register(Institutions.class);
+    register(Specimens.class);
+    register(Collections.class);
     register(RolesAllowedDynamicFeature.class);
     register(ClientAbortInterceptor.class);
+    register(Pipelines.class);
+    register(Workstations.class);
+    register(Assets.class);
+    register(IllegalArguementExceptionMapper.class);
   }
 }

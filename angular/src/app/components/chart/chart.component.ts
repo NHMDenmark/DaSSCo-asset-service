@@ -6,6 +6,7 @@ import Chart, {
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphData} from '../../types';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
 @Component({
   selector: 'dassco-chart',
@@ -37,8 +38,12 @@ export class ChartComponent {
   ])
     .pipe(
       map(([chartData, title]) => {
-        const lineDatasets: ChartDataset[] = this.createDataset(chartData);
-        this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
+        if (chartData.mainChart && chartData.mainChart.size <= 0 && !chartData.subChart) { // mainchart is set immediately as empty/free Map in graph-data, thus it isn't undefined
+          this.createchart([], [], '', 'No data available for the selected dates');
+        } else {
+          const lineDatasets: ChartDataset[] = this.createDataset(chartData);
+          this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
+        }
       })
     );
 
@@ -84,12 +89,14 @@ export class ChartComponent {
     } as ChartDataset;
   }
 
-  createchart(labels: string[], lineDataset: ChartDataset[], yaxis: string, title: string): void {
+  createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
-    this.chart = new Chart('chart', {
+    Chart.register(zoomPlugin);
+
+    this.chart = new Chart('canvas', {
       data: {
         labels: labels,
-        datasets: lineDataset
+        datasets: dataset
       },
       options: this.getOptions(yaxis, title)
     });
@@ -116,6 +123,17 @@ export class ChartComponent {
         legend: {
           position: 'top',
           onClick: this.clickHandler
+        },
+        zoom: {
+          zoom: {
+            wheel: {
+              enabled: true
+            },
+            pinch: {
+              enabled: true
+            },
+            mode: 'xy'
+          }
         }
       },
       scales: {

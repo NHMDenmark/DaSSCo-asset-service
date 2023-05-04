@@ -25,6 +25,8 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatNativeDateModule} from '@angular/material/core';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatTooltipModule} from "@angular/material/tooltip";
+import { ExportChartComponent } from './components/export-chart/export-chart.component';
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 @NgModule({
   declarations: [
@@ -36,32 +38,35 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     GraphComponent,
     AssetDetailComponent,
     ChartComponent,
-    GraphDataComponent
+    GraphDataComponent,
+    ExportChartComponent
   ],
     imports: [
-        BrowserModule,
-        AppRoutingModule,
-        AuthConfigModule,
-        MatToolbarModule,
-        MatIconModule,
-        MatButtonModule,
-        MatInputModule,
-        FormsModule,
-        BrowserAnimationsModule,
-        MatOptionModule,
-        MatSelectModule,
-        ReactiveFormsModule,
-        MatButtonToggleModule,
-        MatDatepickerModule,
-        MatNativeDateModule,
-        MatMomentDateModule,
-        MatTooltipModule
+      BrowserModule,
+      AppRoutingModule,
+      AuthConfigModule,
+      MatToolbarModule,
+      MatIconModule,
+      MatButtonModule,
+      MatInputModule,
+      FormsModule,
+      BrowserAnimationsModule,
+      MatOptionModule,
+      MatSelectModule,
+      ReactiveFormsModule,
+      MatButtonToggleModule,
+      MatDatepickerModule,
+      MatNativeDateModule,
+      MatMomentDateModule,
+      MatTooltipModule,
+      MatSnackBarModule
     ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],
   providers: [
-    MatDatepickerModule
+    MatDatepickerModule,
+    ChartComponent
   ],
   bootstrap: [AppComponent]
 })

@@ -24,7 +24,8 @@ public class InstituteService {
     public InstituteService(DataSource dataSource) {
         this.jdbi = Jdbi.create(dataSource)
                 .registerRowMapper((ConstructorMapper.factory(Institute.class)))
-                .installPlugin(new Jackson2Plugin());;
+                .installPlugin(new Jackson2Plugin())
+                ;
     }
 
     public List<Institute> getInstitutes() {
