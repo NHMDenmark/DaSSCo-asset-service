@@ -34,16 +34,25 @@ public class AssetService {
         if(collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
+        if(asset.guid.equals(asset.parent_guid)) {
+            throw new IllegalArgumentException("Asset cannot be its own parent");
+        }
+        Optional<Asset> assetOpt = getAsset(asset.guid);
+        if(assetOpt.isPresent()) {
+            throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
+        }
+
         // Default values on creation
         asset.last_updated_date = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class).createAsset(asset);
+        asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
         return asset;
     }
 
-    public Asset getAsset(String assetGuid) {
-        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid).orElse(null);
+    public Optional<Asset> getAsset(String assetGuid) {
+        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
 
 }

@@ -66,7 +66,7 @@ public class Assets {
     public Asset getAsset(@PathParam("institutionName") String institutionName
             , @PathParam("collectionName") String collectionName
             , @PathParam("assetGuid")String assetGuid) {
-        return this.assetService.getAsset(assetGuid);
+        return this.assetService.getAsset(assetGuid).orElse(null);
     }
 
     @DELETE

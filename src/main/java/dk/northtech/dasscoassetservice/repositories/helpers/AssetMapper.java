@@ -26,6 +26,7 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype institutionName = rs.getObject("institution_name", Agtype.class);
         Agtype collectionName = rs.getObject("collection_name", Agtype.class);
         Agtype pipelineName = rs.getObject("pipeline_name", Agtype.class);
+        Agtype workstationName = rs.getObject("workstation_name", Agtype.class);
 
         asset.specimen_barcodes = specimenBarcodes.getList().stream().map(x -> x.toString()).collect(Collectors.toList());
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
@@ -41,7 +42,8 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.institution = institutionName.getString();
         asset.collection = collectionName.getString();
         asset.pipeline = pipelineName.getString();
-        asset.assetLocation = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
+        asset.workstation = workstationName.getString();
+        asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
         return asset;
     }
 }
