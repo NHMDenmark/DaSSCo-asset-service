@@ -1,8 +1,8 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.domain.GraphData;
-import dk.northtech.dasscoassetservice.services.GraphDataService;
+import dk.northtech.dasscoassetservice.domain.StatisticsData;
+import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,19 +24,19 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/v1/specimengraphinfo")
 @SecurityRequirement(name = "dassco-idp")
 public class GraphDataApi {
-    private final GraphDataService graphDataService;
+    private final StatisticsDataService statisticsDataService;
 
     @Inject
-    public GraphDataApi(GraphDataService graphDataService) {
-        this.graphDataService = graphDataService;
+    public GraphDataApi(StatisticsDataService statisticsDataService) {
+        this.statisticsDataService = statisticsDataService;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = StatisticsData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<GraphData> getSpecimenData() {
-        return graphDataService.getGraphData();
+    public List<StatisticsData> getSpecimenData() {
+        return statisticsDataService.getGraphData();
     }
 }

@@ -1,40 +1,30 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.GraphData;
-import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.StatisticsData;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeMap;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
-import org.postgresql.jdbc.PgConnection;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public class GraphDataRepository {
+public class StatisticsDataRepository {
     private Jdbi jdbi;
     private DataSource dataSource;
 
     @Inject
-    public GraphDataRepository(Jdbi jdbi, DataSource dataSource) {
+    public StatisticsDataRepository(Jdbi jdbi, DataSource dataSource) {
         this.dataSource = dataSource;
         this.jdbi = Jdbi.create(dataSource)
-                .registerRowMapper((ConstructorMapper.factory(GraphData.class)));
+                .registerRowMapper((ConstructorMapper.factory(StatisticsData.class)));
     }
 
 
-    public List<GraphData> getGraphData() {
+    public List<StatisticsData> getGraphData() {
         String sql =
             """
                 SELECT * from cypher('dassco', $$
@@ -50,7 +40,7 @@ public class GraphDataRepository {
             handle.execute(DBConstants.AGE_BOILERPLATE);
             return handle.setSqlParser(new HashPrefixSqlParser())
                 .createQuery(sql)
-                .mapTo(GraphData.class)
+                .mapTo(StatisticsData.class)
                 .list();
         });
     }

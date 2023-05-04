@@ -1037,7 +1037,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "USER" ]
+              "enum" : [ "USER", "ADMIN" ]
             }
           },
           "tags" : {
@@ -1094,6 +1094,13 @@
           "internal_status" : {
             "type" : "string",
             "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED" ]
+          },
+          "pushed_to_specify_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "digitizer" : {
+            "type" : "string"
           }
         }
       },
