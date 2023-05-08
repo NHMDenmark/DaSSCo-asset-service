@@ -39,7 +39,7 @@ public class Publishers {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public PublicationLink publish(PublicationLink publicationLink, @PathParam("publisherName") String publisherName) {
-       return publicationService.publish(new PublicationLink(publicationLink.assetGuid(), publicationLink.link(), publicationLink.publisherName(), publicationLink.timestamp()));
+       return publicationService.publish(new PublicationLink(publicationLink.asset_guid(), publicationLink.link(), publisherName, publicationLink.timestamp()));
     }
 
     @POST
@@ -49,7 +49,7 @@ public class Publishers {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void pull(PublicationLink publicationLink, @PathParam("publisherName") String publisherName) {
-        publicationService.pull(new PublicationLink(publicationLink.assetGuid(), publicationLink.link(), publicationLink.publisherName(), publicationLink.timestamp()));
+        publicationService.pull(new PublicationLink(publicationLink.asset_guid(), publicationLink.link(), publisherName, publicationLink.timestamp()));
     }
 
     @GET

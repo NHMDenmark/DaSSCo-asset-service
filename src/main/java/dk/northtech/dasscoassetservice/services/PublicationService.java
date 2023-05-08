@@ -24,21 +24,21 @@ public class PublicationService {
 
 
     public PublicationLink publish(PublicationLink publicationLink) {
-        if(Strings.isNullOrEmpty(publicationLink.assetGuid())) {
+        if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
             throw new IllegalArgumentException("Asset guid cannot be null or empty");
         }
         if(Strings.isNullOrEmpty(publicationLink.link())) {
             throw new IllegalArgumentException("Link cannot be null or empty");
         }
         if(publicationLink.timestamp() == null) {
-            publicationLink = new PublicationLink(publicationLink.assetGuid(),publicationLink.link(), publicationLink.publisherName(), Instant.now());
+            publicationLink = new PublicationLink(publicationLink.asset_guid(),publicationLink.link(), publicationLink.publisher_name(), Instant.now());
         }
         jdbi.onDemand(PublisherRepository.class).publish(publicationLink);
         return publicationLink;
     }
 
     public void pull(PublicationLink publicationLink) {
-        if(Strings.isNullOrEmpty(publicationLink.assetGuid())) {
+        if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
             throw new IllegalArgumentException("Asset guid cannot be null or empty");
         }
         if(Strings.isNullOrEmpty(publicationLink.link())) {
