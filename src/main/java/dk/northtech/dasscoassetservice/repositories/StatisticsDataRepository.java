@@ -23,7 +23,6 @@ public class StatisticsDataRepository {
                 .registerRowMapper((ConstructorMapper.factory(StatisticsData.class)));
     }
 
-
     public List<StatisticsData> getGraphData() {
         String sql =
             """

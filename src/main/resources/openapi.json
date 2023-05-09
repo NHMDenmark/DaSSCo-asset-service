@@ -293,7 +293,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/GraphData"
+                  "$ref" : "#/components/schemas/StatisticsData"
                 }
               }
             }
@@ -1119,7 +1119,7 @@
           }
         }
       },
-      "GraphData" : {
+      "StatisticsData" : {
         "type" : "object",
         "properties" : {
           "instituteName" : {

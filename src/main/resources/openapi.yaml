@@ -183,7 +183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GraphData'
+                $ref: '#/components/schemas/StatisticsData'
         "400-599":
           content:
             application/json:
@@ -737,7 +737,7 @@ components:
           type: string
           description: The name of the institution to which the collection belong
           example: NNAD
-    GraphData:
+    StatisticsData:
       type: object
       properties:
         instituteName:
