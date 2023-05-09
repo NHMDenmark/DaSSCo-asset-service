@@ -65,10 +65,12 @@ public class Assets {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset updateAsset(Asset asset
             , @PathParam("institutionName") String institutionName
-            , @PathParam("collectionName") String collectionName) {
+            , @PathParam("collectionName") String collectionName
+            , @PathParam("assetGuid") String assetGuid) {
         asset.collection = collectionName;
         asset.institution = institutionName;
-        return this.assetService.persistAsset(asset);
+        asset.guid = assetGuid;
+        return this.assetService.updateAsset(asset);
     }
 
     @GET
