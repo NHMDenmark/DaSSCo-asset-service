@@ -115,6 +115,37 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+    put:
+      operationId: updateAsset
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: collectionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Asset'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutions/{institutionName}/collections:
     get:
       operationId: getInstitutes_1
@@ -300,6 +331,82 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/Pipeline'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/publishers/{publisherName}:
+    get:
+      operationId: list
+      parameters:
+      - name: publisherName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/publishers/{publisherName}/publish:
+    post:
+      operationId: publish
+      parameters:
+      - name: publisherName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublicationLink'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/publishers/{publisherName}/pull:
+    post:
+      operationId: pull
+      parameters:
+      - name: publisherName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PublicationLink'
       responses:
         "200":
           content:
@@ -790,6 +897,18 @@ components:
           type: string
           description: The institution that the pipeline belongs to
           example: NNAD
+    PublicationLink:
+      type: object
+      properties:
+        asset_guid:
+          type: string
+        link:
+          type: string
+        publisher_name:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     Specimen:
       type: object
       properties:
