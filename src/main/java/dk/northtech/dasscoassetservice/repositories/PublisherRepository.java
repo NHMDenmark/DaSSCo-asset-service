@@ -65,7 +65,7 @@ public interface PublisherRepository extends SqlObject {
                     .add("asset_guid", publicationLink.asset_guid())
                     .add("link", publicationLink.link())
                     .add("publisher_name", publicationLink.publisher_name())
-                    .add("publication_timestamp", DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(publicationLink.timestamp()))
+                    .add("publication_timestamp", publicationLink.timestamp().toEpochMilli())
                     .build();
             Agtype agtype = AgtypeFactory.create(params);
             handle.createUpdate(cypher)

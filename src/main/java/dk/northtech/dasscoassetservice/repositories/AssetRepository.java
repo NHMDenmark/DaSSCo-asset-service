@@ -193,6 +193,87 @@ public interface AssetRepository extends SqlObject {
                 asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
                 AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
                 asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+                AgtypeMapBuilder agBuilder = new AgtypeMapBuilder()
+                        .add("institution_name", asset.institution)
+                        .add("collection_name", asset.collection)
+                        .add("workstation_name", asset.workstation)
+                        .add("pipeline_name", asset.pipeline)
+                        .add("pid", asset.pid)
+                        .add("guid", asset.guid)
+                        .add("status", asset.status.name())
+                        .add("funding", asset.funding)
+                        .add("subject", asset.subject)
+                        .add("payload_type", asset.payload_type)
+                        .add("file_formats", agtypeListBuilder.build())
+                        .add("created_date", asset.created_date.toEpochMilli())
+                        .add("internal_status", asset.internal_status.name())
+                        .add("parent_id",asset.parent_guid)
+                        .add("user", asset.digitizer)
+                        .add("tags",tags.build())
+                        .add("restricted_access", restrictedAcces.build());
+
+                if(asset.asset_taken_date != null) {
+                    agBuilder.add("asset_taken_date", asset.asset_taken_date.toEpochMilli());
+                } else {
+                    agBuilder.add("asset_taken_date", (String) null);
+                }
+                AgtypeMap parms = agBuilder.build();
+                Agtype agtype = AgtypeFactory.create(parms);
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return asset;
+    }
+
+
+    default Asset update_asset_internal(Asset asset) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (i:Institution {name: $institution_name})
+                            MATCH (c:Collection {name: $collection_name})
+                            MATCH (w:Workstation {name: $workstation_name})
+                            MATCH (p:Pipeline {name: $pipeline_name})
+                            MERGE (a:Asset {name: $guid
+                                , pid: $pid
+                                , guid: $guid
+                                , status: $status
+                                , funding: $funding
+                                , subject: $subject
+                                , payload_type: $payload_type
+                                , file_formats: $file_formats
+                                , asset_taken_date: $asset_taken_date
+                                , internal_status: $internal_status
+                                , restricted_access: $restricted_access
+                                , tags: $tags
+                            })
+                            MERGE (u:User{user_id: $user, name: $user})
+                            MERGE (e:Event{timestamp: $created_date, event:'UPDATE_ASSET', name: 'CREATE_ASSET'})
+                            MERGE (e)-[uw:USED]->(w)
+                            MERGE (e)-[up:USED]->(p)
+                            MERGE (e)-[pb:INITIATED_BY]->(u)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)    
+                            MERGE (a)-[bt:BELONGS_TO]->(i)
+                            MERGE (w)-[sa:STATIONED_AT]->(i)
+                            MERGE (p)-[ub:USED_BY]->(i)
+                            MERGE (a)-[ipf:IS_PART_OF]->(c)
+                        $$
+                        , #params) as (a agtype);
+                        """;
+        try {
+            withHandle(handle -> {
+                AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
+                AgtypeMapBuilder tags = new AgtypeMapBuilder();
+                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
                 AgtypeMap parms = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
