@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.configuration;
 
+import dk.northtech.dasscoassetservice.services.PublicationService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.IllegalArguementExceptionMapper;
 import dk.northtech.dasscoassetservice.webapi.v1.*;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -26,5 +27,6 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(Workstations.class);
     register(Assets.class);
     register(IllegalArguementExceptionMapper.class);
+    register(Publishers.class);
   }
 }

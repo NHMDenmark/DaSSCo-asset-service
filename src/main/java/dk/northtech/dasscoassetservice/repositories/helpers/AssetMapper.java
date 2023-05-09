@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AssetMapper implements RowMapper<Asset> {
-    static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
 
     @Override
     public Asset map(ResultSet rs, StatementContext ctx) throws SQLException {
@@ -34,7 +33,7 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype tags = rs.getObject("tags", Agtype.class);
 
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
-        asset.specimen_barcodes = specimenBarcodes.getList().stream().map(x -> x.toString()).collect(Collectors.toList());
+        asset.specimen_barcodes = specimenBarcodes.getList().stream().map(Object::toString).collect(Collectors.toList());
         asset.guid = guid.getString();
         asset.pid = pid.getString();
         asset.status = AssetStatus.valueOf(status.getString());
@@ -53,12 +52,12 @@ public class AssetMapper implements RowMapper<Asset> {
         rs.getString("pushed_to_specify_date");
         if (!rs.wasNull()) {
             Agtype pushedToSpecifyDate = rs.getObject("pushed_to_specify_date", Agtype.class);
-            asset.pushed_to_specify_date = dateTimeFormatter.parse(pushedToSpecifyDate.getString(), Instant::from);
+            asset.pushed_to_specify_date = Instant.ofEpochMilli(pushedToSpecifyDate.getLong());
         }
         rs.getString("asset_taken_date");
         if (!rs.wasNull()) {
             Agtype assetTakenDate = rs.getObject("asset_taken_date", Agtype.class);
-            asset.asset_taken_date = dateTimeFormatter.parse(assetTakenDate.getString(), Instant::from);
+            asset.asset_taken_date = Instant.ofEpochMilli(assetTakenDate.getLong());
         }
         rs.getString("payload_type");
         if (!rs.wasNull()) {
