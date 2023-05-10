@@ -118,9 +118,6 @@ public class StatisticsDataApi {
         if (yearData.get(0).isEmpty()) {
             logger.warn("No data available for the past year.");
             return Response.status(Response.Status.NO_CONTENT).entity("No data available for the past year.").build();
-        } else if (!yearData.get(0).equals(incrData)) { // Just in case the incr. map has been modified when handling its copy in generateExponData()
-            logger.warn("Incremental data has been modified somewhere, and is no longer valid.");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Incremental data has been modified somewhere, and is no longer valid.").build();
         }
         return Response.status(Response.Status.OK).entity(yearData).build();
     }
