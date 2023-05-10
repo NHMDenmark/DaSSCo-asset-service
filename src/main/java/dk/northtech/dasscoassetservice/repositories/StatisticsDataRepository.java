@@ -23,22 +23,26 @@ public class StatisticsDataRepository {
                 .registerRowMapper((ConstructorMapper.factory(StatisticsData.class)));
     }
 
-    public List<StatisticsData> getGraphData() {
+    public List<StatisticsData> getGraphData(long timeFrame) {
         String sql =
             """
-                SELECT * from cypher('dassco', $$
-                    MATCH (event)-[:CHANGED_BY]-(asset)-[:CREATED_BY]-(specimen)
-                    OPTIONAL MATCH (pipeline:Pipeline)<-[:USED]-(event)
-                    OPTIONAL MATCH (workstation:Workstation)<-[:USED]-(event)
-                    OPTIONAL MATCH (institution)-[:BELONGS_TO]-(asset)
-                    RETURN event.timestamp, count(specimen), pipeline.name, workstation.name, institution.name
-                $$) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
+                WITH statistics_data as (
+                    SELECT * from cypher('dassco', $$
+                        MATCH (event)-[:CHANGED_BY]-(asset)-[:CREATED_BY]-(specimen)
+                        OPTIONAL MATCH (pipeline:Pipeline)<-[:USED]-(event)
+                        OPTIONAL MATCH (workstation:Workstation)<-[:USED]-(event)
+                        OPTIONAL MATCH (institution)-[:BELONGS_TO]-(asset)
+                        RETURN event.timestamp, count(specimen), pipeline.name, workstation.name, institution.name
+                    $$) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype))
+                SELECT * FROM statistics_data
+                    WHERE to_timestamp(agtype_to_float8(statistics_data.created_date / 1000)) >= to_timestamp(?);
             """;
 
         return jdbi.withHandle(handle -> {
             handle.execute(DBConstants.AGE_BOILERPLATE);
             return handle.setSqlParser(new HashPrefixSqlParser())
                 .createQuery(sql)
+                .bind(0, timeFrame)
                 .mapTo(StatisticsData.class)
                 .list();
         });

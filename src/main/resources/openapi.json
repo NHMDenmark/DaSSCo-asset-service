@@ -335,34 +335,6 @@
         } ]
       }
     },
-    "/v1/specimengraphinfo" : {
-      "get" : {
-        "operationId" : "getSpecimenData",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StatisticsData"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/institutes" : {
       "get" : {
         "operationId" : "getInstitutes_2",
@@ -788,6 +760,90 @@
           }
         },
         "responses" : {
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/month" : {
+      "get" : {
+        "operationId" : "getGraphDataMonth",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GraphData"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/week" : {
+      "get" : {
+        "operationId" : "getGraphDataWeek",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GraphData"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/year" : {
+      "get" : {
+        "operationId" : "getGraphDataYear",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -1295,27 +1351,6 @@
           }
         }
       },
-      "StatisticsData" : {
-        "type" : "object",
-        "properties" : {
-          "instituteName" : {
-            "type" : "string"
-          },
-          "pipelineName" : {
-            "type" : "string"
-          },
-          "workstationName" : {
-            "type" : "string"
-          },
-          "createdDate" : {
-            "type" : "string"
-          },
-          "specimens" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }
-      },
       "Institute" : {
         "type" : "object",
         "properties" : {
@@ -1407,6 +1442,32 @@
           },
           "preparation_type" : {
             "type" : "string"
+          }
+        }
+      },
+      "GraphData" : {
+        "type" : "object",
+        "properties" : {
+          "institutes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "pipelines" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "workstations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
           }
         }
       },
