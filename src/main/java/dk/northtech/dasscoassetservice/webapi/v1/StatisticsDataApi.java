@@ -29,10 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -59,40 +56,34 @@ public class StatisticsDataApi {
 //    }
 
     @GET
-    @Path("/week")
+    @Path("/daily/{timeframe}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getGraphDataWeek() {
-        // For a daily view, a week back
-        long days = ZonedDateTime.now(ZoneOffset.UTC).minusDays(7).toEpochSecond();
-        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.of("UTC"));
-        Map<String, GraphData> incrData = statisticsDataService.generateIncrData(days, dayFormatter);
+    public Response getGraphDataWeek(@PathParam("timeframe") String timeFrame) {
+        Map<String, GraphData> incrData;
+
+        if (GraphTimeFrame.valueOf(timeFrame).equals(GraphTimeFrame.WEEK)) {
+            // For a daily view, a week back
+            long days = ZonedDateTime.now(ZoneOffset.UTC).minusDays(7).toEpochSecond();
+            DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.of("UTC"));
+            incrData = statisticsDataService.generateIncrData(days, dayFormatter);
+        } else if (GraphTimeFrame.valueOf(timeFrame).equals(GraphTimeFrame.MONTH)) {
+            // For a daily view, a month back
+            long days = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toEpochSecond();
+            DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.of("UTC"));
+            incrData = statisticsDataService.generateIncrData(days, dayFormatter);
+        } else {
+            logger.warn("Received time frame {} is invalid.", timeFrame);
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
 
         if (incrData.isEmpty()) {
-            logger.warn("No data available for the past week.");
-            return Response.status(Response.Status.NO_CONTENT).entity("No data available for the past week.").build();
+            logger.warn("No data available within the selected time frame.");
+            return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
         }
-        return Response.status(Response.Status.OK).entity(incrData).build();
-    }
 
-    @GET
-    @Path("/month")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getGraphDataMonth() {
-        // For a daily view, a month back
-        long days = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toEpochSecond();
-        DateTimeFormatter dayFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy").withZone(ZoneId.of("UTC"));
-        Map<String, GraphData> incrData = statisticsDataService.generateIncrData(days, dayFormatter);
-
-        if (incrData.isEmpty()) {
-            logger.warn("No data available for the past month.");
-            return Response.status(Response.Status.NO_CONTENT).entity("No data available for the past month.").build();
-        }
         return Response.status(Response.Status.OK).entity(incrData).build();
     }
 
