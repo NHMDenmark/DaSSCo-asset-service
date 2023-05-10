@@ -37,6 +37,28 @@ export class SpecimenGraphService {
       })
     );
 
+  specimenDataMonth$: Observable<HttpResponse<any> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get(`${this.baseUrl}/daily/MONTH`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/daily/MONTH`, undefined))
+          );
+      })
+    );
+
+  specimenDataYear$: Observable<HttpResponse<any> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get(`${this.baseUrl}/year`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/year`, undefined))
+          );
+      })
+    );
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);

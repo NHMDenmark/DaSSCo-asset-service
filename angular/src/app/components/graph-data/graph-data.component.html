@@ -1,5 +1,5 @@
 <div class="container">
-  <div *ngIf="(stats$ | async) as graphDataV2" class="data-container">
+  <div *ngIf="(statsWeek$ | async) as graphDataV2" class="data-container">
     <dassco-chart [setChartDataV2]="graphDataV2" [setStatValue]="statValue" [setTitle]="title"></dassco-chart>
     <div class="config">
       <div class="datepicker">
