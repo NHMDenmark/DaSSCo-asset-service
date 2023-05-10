@@ -23,7 +23,7 @@ public class GraphData {
 
     public void addInstituteAmts(String instituteName, Integer amount) {
         if (this.institutes.containsKey(instituteName)) {
-            this.institutes.put(instituteName, this.institutes.get(instituteName) + amount);
+            this.institutes.put(instituteName, this.institutes.get(instituteName) == null ? 0 : this.institutes.get(instituteName) + amount);
         }
     }
 
@@ -37,7 +37,7 @@ public class GraphData {
 
     public void addPipelineAmts(String pipelineName, Integer amount) {
         if (this.pipelines.containsKey(pipelineName)) {
-            this.pipelines.put(pipelineName, this.pipelines.get(pipelineName) + amount);
+            this.pipelines.put(pipelineName, this.pipelines.get(pipelineName)  == null ? 0 : this.pipelines.get(pipelineName)+ amount);
         }
     }
 
@@ -51,7 +51,7 @@ public class GraphData {
 
     public void addWorkstationAmts(String workstationName, Integer amount) {
         if (this.workstations.containsKey(workstationName)) {
-            this.workstations.put(workstationName, this.workstations.get(workstationName) + amount);
+            this.workstations.put(workstationName, this.workstations.get(workstationName) == null ? 0 : this.workstations.get(workstationName) + amount);
         }
     }
 

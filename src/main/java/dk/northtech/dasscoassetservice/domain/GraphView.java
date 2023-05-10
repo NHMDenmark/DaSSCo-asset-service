@@ -1,6 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public enum GraphTimeFrame {
+public enum GraphView {
     WEEK
     , MONTH
     , YEAR

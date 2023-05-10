@@ -5,7 +5,7 @@ import Chart, {
 } from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import {GraphData} from '../../types';
+import {GraphStatsV2, StatValue} from '../../types';
 import zoomPlugin from 'chartjs-plugin-zoom';
 
 @Component({
@@ -17,13 +17,24 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 
 export class ChartComponent {
   chart: any;
-  readonly chartDataSubject = new BehaviorSubject<GraphData | undefined>(undefined);
+  readonly chartDataSubjectV2 = new BehaviorSubject<Map<string, GraphStatsV2> | undefined>(undefined);
   titleSubject = new BehaviorSubject<string>('');
   clickedLabels: string[] = [];
+  statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
+
+  // @Input()
+  // set setChartData(chartdata: GraphData) {
+  //   this.chartDataSubject.next(chartdata);
+  // }
 
   @Input()
-  set setChartData(chartdata: GraphData) {
-    this.chartDataSubject.next(chartdata);
+  set setChartDataV2(chartdata: Map<string, GraphStatsV2>) {
+    this.chartDataSubjectV2.next(chartdata);
+  }
+
+  @Input()
+  set setStatValue(statValue: StatValue) {
+    this.statValueSubject.next(statValue);
   }
 
   @Input()
@@ -31,63 +42,132 @@ export class ChartComponent {
     this.titleSubject.next(title);
   }
 
-  setChartValues$
+  // setChartValues$
+  //   = combineLatest([
+  //   this.chartDataSubject.pipe(filter(isNotUndefined)),
+  //   this.titleSubject
+  // ])
+  //   .pipe(
+  //     map(([chartData, _title]) => {
+  //       if (chartData.mainChart && chartData.mainChart.size <= 0 && !chartData.subChart) { // mainchart is set immediately as empty/free Map in graph-data, thus it isn't undefined
+  //         // heeey
+  //         // this.createchart([], [], '', 'No data available for the selected dates');
+  //       } else {
+  //         // const lineDatasets: ChartDataset[] = this.createDataset(chartData);
+  //         // this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
+  //       }
+  //     })
+  //   );
+
+  setChartValuesV2$
     = combineLatest([
-    this.chartDataSubject.pipe(filter(isNotUndefined)),
-    this.titleSubject
+    this.chartDataSubjectV2.pipe(filter(isNotUndefined)),
+    this.titleSubject,
+    this.statValueSubject
   ])
     .pipe(
-      map(([chartData, title]) => {
-        if (chartData.mainChart && chartData.mainChart.size <= 0 && !chartData.subChart) { // mainchart is set immediately as empty/free Map in graph-data, thus it isn't undefined
-          this.createchart([], [], '', 'No data available for the selected dates');
-        } else {
-          const lineDatasets: ChartDataset[] = this.createDataset(chartData);
-          this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
-        }
+      map(([chartData, title, statValue]) => {
+        // VI GÅR UD FRA AT INSTITUT ER VALGT
+        this.createDatasetV2(chartData, statValue, title);
       })
     );
 
-  createDataset(graphData: GraphData): ChartDataset[] {
+  // createDataset(graphData: GraphData): ChartDataset[] {
+  //   const chartDatasets: ChartDataset[] = [];
+  //   if (graphData.mainChart) { // key = institut, value = dato, amount
+  //     console.log(graphData.mainChart)
+  //     graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
+  //       chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
+  //     });
+  //   }
+  //   if (graphData.subChart) {
+  //     graphData.subChart.forEach((value: Map<string, number>, key: string) => {
+  //       chartDatasets.push(this.addDataset(value, key, 'bar', graphData, null));
+  //     });
+  //   }
+  //   return chartDatasets;
+  // }
+
+  // For reference: "stat" referes to either institution, pipeline, or workstation
+  createDatasetV2(chartData: Map<string, GraphStatsV2>, statValue: StatValue, title: string): void {
     const chartDatasets: ChartDataset[] = [];
-    if (graphData.mainChart) { // key = institut, value = dato, amount
-      graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
-        chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
+    const labels = Array.from(chartData.keys()); // datoer, x-akse
+    const type = 'line';
+    const statName: Set<string> = new Set<string>(); // don't want duplicates
+    let tempStatName: Array<string> = [];
+
+    // getting all institution/pipe/work names from the data
+    chartData.forEach((stats: GraphStatsV2, _date: string) => {
+      const selectedStatMap: Map<string, number> = new Map(Object.entries(this.getKey(stats, statValue)));
+      tempStatName = tempStatName.concat(Array.from(selectedStatMap.keys()));
+    });
+    tempStatName.forEach(i => statName.add(i));
+
+    for (const name of statName) { // e.g. NNAD
+      const data: number[] = [];
+      const pointRadius: number[] = [];
+
+      chartData.forEach((stats: GraphStatsV2, _date: string) => {
+        const selectedStatMap: Map<string, number> = new Map(Object.entries(this.getKey(stats, statValue)));
+        if (selectedStatMap.has(name)) {
+          data.push(selectedStatMap.get(name) as number);
+          pointRadius.push(5);
+        } else {
+          data.push(0);
+          pointRadius.push(0);
+        }
       });
+
+      const testDataSet = {
+        type: type,
+        label: name,
+        data: data,
+        borderWidth: type === 'line' ? 2 : 1.5,
+        pointRadius: pointRadius,
+        borderRadius: type === 'line' ? null : 5,
+        order: type === 'line' ? 2 : 1,
+        stack: type,
+        hidden: this.clickedLabels.includes(name)
+      } as ChartDataset;
+
+      chartDatasets.push(testDataSet);
     }
-    if (graphData.subChart) {
-      graphData.subChart.forEach((value: Map<string, number>, key: string) => {
-        chartDatasets.push(this.addDataset(value, key, 'bar', graphData, null));
-      });
-    }
-    return chartDatasets;
+    this.createchart(labels, chartDatasets, 'Specimens Created', title);
   }
 
-  addDataset(value: Map<string, number>, key: string, type: string, graphData: GraphData, defaultVal: any): ChartDataset {
-    const data: any[] = [];
-    const pointRadius: number[] = [];
-    graphData.labels.forEach((label, idx, labels) => {
-      if (value.has(label)) {
-        data.push(value.get(label)!);
-        if (type === 'line') pointRadius.push(5);
-      } else if (type === 'line') { // if it's pr year, we don't want the graph to go down to 0
-        value.has(labels[idx - 1]) && graphData.timeFrame.period === 'YEAR' ? data.push(value.get(labels[idx - 1])!) : data.push(defaultVal);
-        pointRadius.push(defaultVal);
-      } else {
-        data.push(defaultVal);
-      }
-    });
-    return {
-      type: type,
-      label: key,
-      data: data,
-      borderWidth: type === 'line' ? 2 : 1.5,
-      pointRadius: pointRadius,
-      borderRadius: type === 'line' ? null : 5,
-      order: type === 'line' ? 2 : 1,
-      stack: type,
-      hidden: this.clickedLabels.includes(key)
-    } as ChartDataset;
+  getKey(stats: GraphStatsV2, statValue: StatValue): Map<string, number> {
+    // as I want to reuse the datasetcreation code, but don't know if we're looking at institute, pipeline, or workstation
+    if (statValue === StatValue.INSTITUTE) return stats.institutes;
+    if (statValue === StatValue.PIPELINE) return stats.pipelines;
+    return stats.workstations;
   }
+
+  // addDataset(value: Map<string, number>, key: string, type: string, graphData: GraphData, defaultVal: any): ChartDataset {
+  //   const data: any[] = [];
+  //   const pointRadius: number[] = [];
+  //   graphData.labels.forEach((label, idx, labels) => {
+  //     if (value.has(label)) {
+  //       data.push(value.get(label)!);
+  //       if (type === 'line') pointRadius.push(5);
+  //     } else if (type === 'line') { // if it's pr year, we don't want the graph to go down to 0
+  //       value.has(labels[idx - 1]) && graphData.timeFrame.period === 'YEAR' ? data.push(value.get(labels[idx - 1])!) : data.push(defaultVal);
+  //       pointRadius.push(defaultVal);
+  //     } else {
+  //       data.push(defaultVal);
+  //     }
+  //   });
+  //   return {
+  //     type: type,
+  //     label: key,
+  //     data: data,
+  //     borderWidth: type === 'line' ? 2 : 1.5,
+  //     pointRadius: pointRadius,
+  //     borderRadius: type === 'line' ? null : 5,
+  //     order: type === 'line' ? 2 : 1,
+  //     stack: type,
+  //     hidden: this.clickedLabels.includes(key)
+  //   } as ChartDataset;
+  // }
 
   createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();

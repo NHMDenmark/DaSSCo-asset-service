@@ -35,7 +35,7 @@ public class StatisticsDataRepository {
                         RETURN event.timestamp, count(specimen), pipeline.name, workstation.name, institution.name
                     $$) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype))
                 SELECT * FROM statistics_data
-                    WHERE to_timestamp(agtype_to_float8(statistics_data.created_date / 1000)) >= to_timestamp(?);
+                    WHERE to_timestamp(agtype_to_float8(statistics_data.created_date / 1000)) >= to_timestamp(? / 1000);
             """;
 
         return jdbi.withHandle(handle -> {

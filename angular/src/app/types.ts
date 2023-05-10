@@ -9,6 +9,16 @@ export interface SpecimenGraph {
   specimens: number;
 }
 
+export interface GraphDataV2 {
+  stat: Map<string, GraphStatsV2>; // <date, statistics>
+}
+
+export interface GraphStatsV2 {
+  institutes: Map<string, number>;
+  pipelines: Map<string, number>;
+  workstations: Map<string, number>;
+}
+
 export interface GraphData {
   mainChart?: Map<string, Map<string, number>>;
   subChart?: Map<string, Map<string, number>>;

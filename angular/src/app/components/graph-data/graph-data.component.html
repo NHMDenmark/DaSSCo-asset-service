@@ -1,6 +1,6 @@
 <div class="container">
-  <div *ngIf="(graphInfo$ | async) as graphInfo" class="data-container">
-    <dassco-chart [setChartData]="graphInfo" [setTitle]="title"></dassco-chart>
+  <div *ngIf="(stats$ | async) as graphDataV2" class="data-container">
+    <dassco-chart [setChartDataV2]="graphDataV2" [setStatValue]="statValue" [setTitle]="title"></dassco-chart>
     <div class="config">
       <div class="datepicker">
         <button mat-icon-button (click)="clearCustomTimeFrame()"
