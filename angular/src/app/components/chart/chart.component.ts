@@ -104,8 +104,6 @@ export class ChartComponent {
     const statName: Set<string> = new Set<string>(); // don't want duplicates
     let tempStatName: Array<string> = [];
 
-    console.log(chartData)
-
     // getting all institution/pipe/work names from the data
     chartData.forEach((stats: GraphStatsV2, _date: string) => {
       const selectedStatMap: Map<string, number> = new Map(Object.entries(this.getKey(stats, statValue)));

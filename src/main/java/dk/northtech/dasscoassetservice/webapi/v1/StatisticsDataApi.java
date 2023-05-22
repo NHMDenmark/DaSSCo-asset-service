@@ -114,8 +114,6 @@ public class StatisticsDataApi {
 
         Map<String, GraphData> incrData = statisticsDataService.generateIncrData(startDate, Instant.now(), yearFormatter, GraphView.YEAR);
         finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
-        System.out.println("finaldata: ");
-        System.out.println(finalData);
 
         if (finalData.get("incremental").isEmpty()) {
             logger.warn("No data available for the past year.");
@@ -137,7 +135,7 @@ public class StatisticsDataApi {
         Instant start = Instant.ofEpochMilli(startDate);
         Instant end = Instant.ofEpochMilli(endDate);
 
-        if (view.equalsIgnoreCase("daily")) { // every date is shown along x-axis
+        if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
             DateTimeFormatter dateFormatter = getDateFormatter("dd-MMM-yyyy");
             customData = statisticsDataService.generateIncrData(start, end, dateFormatter, GraphView.WEEK);
 
@@ -148,17 +146,22 @@ public class StatisticsDataApi {
             finalData.put("incremental", customData);
 
             return Response.status(Response.Status.OK).entity(finalData).build();
-        } else if (view.equalsIgnoreCase("monthly")) { // every month is shown along x-axis
+        } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
             DateTimeFormatter yearFormatter = getDateFormatter("MMM yyyy");
 
             Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
-            finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
 
-            if (finalData.isEmpty()) {
+            if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
+                finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
+                return Response.status(Response.Status.OK).entity(finalData).build();
+            }
+
+            if (incrData.isEmpty()) {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
 
+            finalData.put("incremental", incrData);
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else {
             logger.warn("View {} is invalid. It has to be either \"daily\" or \"monthly\".", view);

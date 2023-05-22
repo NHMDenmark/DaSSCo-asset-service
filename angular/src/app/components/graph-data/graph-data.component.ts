@@ -2,11 +2,11 @@ import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
 import {
-  defaultTimeFrame,
+  defaultView,
   MY_FORMATS,
   StatValue,
-  TimeFrame,
-  GraphStatsV2, TimeFrameV2
+  View,
+  GraphStatsV2, ViewV2
 } from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment/moment';
@@ -23,23 +23,23 @@ import {MAT_DATE_FORMATS} from "@angular/material/core";
 })
 export class GraphDataComponent {
   chart: any;
-  timeFrameMap: Map<number, TimeFrame> = new Map([
+  viewMap: Map<number, View> = new Map([
     [1, {period: 'WEEK', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(7, 'days'), endDate: moment()}],
     [2, {period: 'MONTH', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(1, 'months'), endDate: moment()}],
     [3, {period: 'YEAR', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}],
     [4, {period: 'COMBINEDTOTAL', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}]
   ]);
-  timeFrameSubject = new BehaviorSubject<TimeFrame>(this.timeFrameMap.get(defaultTimeFrame) as TimeFrame);
+  viewSubject = new BehaviorSubject<View>(this.viewMap.get(defaultView) as View);
+  viewForm = new FormControl(defaultView);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
   statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
   statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
-  statValue = StatValue.INSTITUTE;
-  timeFrameForm = new FormControl(defaultTimeFrame);
+  statValue = StatValue.INSTITUTE; // the statistics chosen -> institute, pipeline, workstation
   statForm = new FormControl(0);
-  timeframeRange = new FormGroup({
+  timeFrameForm = new FormGroup({
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
-    end: new FormControl<Moment | null>(null, {updateOn: 'change'})
+    end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
   });
 
   statsWeek$: Observable<Map<string, Map<string, GraphStatsV2>>> // <date, stats>. Is array if there's line and bar chart stats within
@@ -134,6 +134,27 @@ export class GraphDataComponent {
   // }
 
   constructor(public specimenGraphService: SpecimenGraphService) {
+    this.timeFrameForm.valueChanges
+      .pipe(startWith(null))
+      .subscribe(range => {
+        if (range) {
+          if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
+            && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+            && this.timeFrameForm.valid) {
+            let view = 'WEEK';
+            // if (this.viewForm.value === ViewV2.WEEK || this.viewForm.value === ViewV2.MONTH) view = 'WEEK';
+            if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
+            if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
+            this.specimenGraphService.getSpecimenDataCustom(view, moment(range.start, 'DD-MM-YYYY ').add(1, 'days').valueOf(), moment(range.end, 'DD-MM-YYYY ', true).valueOf())
+              .pipe(filter(isNotUndefined))
+              .subscribe(customData => {
+                console.log(customData)
+                const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
+                this.statsV2Subject.next(mappedData);
+              })
+          }
+        }
+      });
     // this.timeFrameForm.setValue(1, {emitEvent: true});
     // combineLatest([
     //   this.timeFrameForm.valueChanges.pipe(
@@ -172,13 +193,13 @@ export class GraphDataComponent {
     this.statForm.valueChanges.pipe(filter(isNotNull))
       .subscribe(val => this.setStatValue(val));
 
-    this.timeFrameForm.valueChanges
+    this.viewForm.valueChanges
       .pipe(
         filter(isNotNull),
         startWith(1)
       )
-      .subscribe(timeFrame => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
-        if (timeFrame === TimeFrameV2.WEEK) {
+      .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
+        if (view === ViewV2.WEEK) {
           this.specimenGraphService.specimenDataWeek$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
@@ -186,7 +207,7 @@ export class GraphDataComponent {
               this.statsV2Subject.next(mappedData);
             });
         }
-        if (timeFrame === TimeFrameV2.MONTH) {
+        if (view === ViewV2.MONTH) {
           this.specimenGraphService.specimenDataMonth$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
@@ -194,19 +215,15 @@ export class GraphDataComponent {
               this.statsV2Subject.next(mappedData);
             });
         }
-        if (timeFrame === TimeFrameV2.YEAR || timeFrame === TimeFrameV2.EXPONENTIAL) {
+        if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
           this.specimenGraphService.specimenDataYear$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
-              // console.log(data.body)
-              // const dataMaps: Array<Map<string, GraphStatsV2>> = data.body;
-              // const incrData: Map<string, GraphStatsV2> = new Map(Object.entries(dataMaps[0])); // line chart
-              if (timeFrame === TimeFrameV2.YEAR) {
+              if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
                 mappedData.delete('exponential');
               }
               this.statsV2Subject.next(mappedData);
-              // console.log(mappedData)
             });
         }
       });
@@ -230,10 +247,10 @@ export class GraphDataComponent {
   }
 
   clearCustomTimeFrame() {
-    if (this.timeFrameForm.value) {
-      const originalTf = this.timeFrameMap.get(this.timeFrameForm.value);
-      this.timeFrameSubject.next(originalTf as TimeFrame);
-      this.timeframeRange.reset();
+    if (this.viewForm.value) {
+      const originalTf = this.viewMap.get(this.viewForm.value);
+      this.viewSubject.next(originalTf as View);
+      this.timeFrameForm.reset();
     }
   }
 }

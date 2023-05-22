@@ -4,4 +4,5 @@ public enum GraphView {
     WEEK
     , MONTH
     , YEAR
+    , EXPONENTIAL
 }

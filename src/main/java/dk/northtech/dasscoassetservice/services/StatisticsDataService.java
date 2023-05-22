@@ -32,11 +32,11 @@ public class StatisticsDataService {
     }
 
     public List<StatisticsData> getGraphData(long timeFrame) {
-        return this.statisticsDataRepository.getGraphData(timeFrame);
+        return this.statisticsDataRepository.getGraphData(timeFrame, Instant.now().toEpochMilli());
     }
 
     public Map<String, GraphData> generateIncrData(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, GraphView timeFrame) {
-        List<StatisticsData> statisticsData = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli());
+        List<StatisticsData> statisticsData = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
         Map<String, GraphData> incrData = new HashMap<>();
 
         statisticsData.forEach(data -> {

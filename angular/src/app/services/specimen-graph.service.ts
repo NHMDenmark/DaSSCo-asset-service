@@ -59,6 +59,18 @@ export class SpecimenGraphService {
       })
     );
 
+  getSpecimenDataCustom(view: string, start: number, end: number): Observable<HttpResponse<any> | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.baseUrl}/custom?view=${view}&start=${start}&end=${end}`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/custom`, undefined))
+            );
+        })
+      );
+  }
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);
