@@ -3,22 +3,27 @@ import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
 import {
   defaultView,
-  MY_FORMATS,
   StatValue,
   View,
-  GraphStatsV2, ViewV2
+  GraphStatsV2, ViewV2, MY_FORMATS
 } from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
-import moment, {Moment} from 'moment/moment';
+import moment, {Moment} from 'moment-timezone';
 import {FormControl, FormGroup} from '@angular/forms';
-import {MAT_DATE_FORMATS} from "@angular/material/core";
+import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/core';
+import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
 
 @Component({
   selector: 'dassco-specimen-institute',
   templateUrl: './graph-data.component.html',
   styleUrls: ['./graph-data.component.scss'],
   providers: [
-    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS }
+    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE,
+      MAT_MOMENT_DATE_ADAPTER_OPTIONS] },
+    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
+    {
+      provide: MAT_DATE_FORMATS, useValue: MY_FORMATS
+    }
   ]
 })
 export class GraphDataComponent {
@@ -46,16 +51,15 @@ export class GraphDataComponent {
     = this.statsV2$
     .pipe(
       filter(isNotUndefined),
-      map((data: Map<string, Map<string, GraphStatsV2>>) => {
-        // todo check if it contains the correct data
+      map((data: Map<string, Map<string, GraphStatsV2>>) =>
         // console.log(data)
         // console.log(data instanceof Map)
         // console.log(data instanceof Array)
         // if (data instanceof Map) {
         //   console.log('AIIGHT JUST A MAP')
-          return data;
+           data
         // }
-      })
+      )
     );
 
   // graphInfo$: Observable<GraphData>
@@ -139,16 +143,15 @@ export class GraphDataComponent {
       .subscribe(range => {
         if (range) {
           if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
-            && moment(range.end, 'DD-MM-YYYY ', true).isValid()
-            && this.timeFrameForm.valid) {
+              && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+              && this.timeFrameForm.valid) {
             let view = 'WEEK';
-            // if (this.viewForm.value === ViewV2.WEEK || this.viewForm.value === ViewV2.MONTH) view = 'WEEK';
             if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
             if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
-            console.log(view)
+
             this.specimenGraphService.getSpecimenDataCustom(view,
-                moment(range.start, 'DD-MM-YYYY ').add(1, 'days').valueOf(),
-                moment(range.end, 'DD-MM-YYYY ', true).add(1, 'days').valueOf())
+                moment(range.start).valueOf(),
+                moment(range.end).valueOf())
               .pipe(filter(isNotUndefined))
               .subscribe(customData => {
                 const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
@@ -201,6 +204,7 @@ export class GraphDataComponent {
         startWith(1)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
+        this.clearCustomTimeFrame(false);
         if (view === ViewV2.WEEK) {
           this.specimenGraphService.specimenDataWeek$
             .pipe(filter(isNotUndefined))
@@ -248,8 +252,8 @@ export class GraphDataComponent {
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
 
-  clearCustomTimeFrame() {
+  clearCustomTimeFrame(clearView: boolean) {
     this.timeFrameForm.reset();
-    this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
+    if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
   }
 }

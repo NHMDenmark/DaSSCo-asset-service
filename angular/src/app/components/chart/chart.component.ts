@@ -6,7 +6,7 @@ import Chart, {
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {GraphStatsV2, StatValue} from '../../types';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import {isNotUndefined} from "@northtech/ginnungagap";
+import {isNotUndefined} from '@northtech/ginnungagap';
 
 @Component({
   selector: 'dassco-chart',
@@ -69,7 +69,7 @@ export class ChartComponent {
     .pipe(
       map(([chartData, title, statValue] : [Map<string, Map<string, GraphStatsV2>>, string, StatValue]) => {
         const incrMap = new Map(Object.entries(chartData.get('incremental') as Map<string, GraphStatsV2>));
-        let incrDatasets = this.createDatasetV2(incrMap, statValue, 'line'); // I know ! is not allowed, but I AM smarter than the compiler, because I literally check for this in the graph-data component so don't @ me pls
+        let incrDatasets = this.createDatasetV2(incrMap, statValue, 'line');
         const labels = Array.from(incrMap.keys()); // datoer, x-akse
 
         if (chartData.has('exponential')) {
@@ -78,7 +78,7 @@ export class ChartComponent {
           incrDatasets = incrDatasets.concat(exponDatasets);
         }
 
-        this.createchart(labels, incrDatasets, 'Specimens Created', title);
+        this.createChart(labels, incrDatasets, 'Specimens Created', title);
       })
     );
 
@@ -112,7 +112,7 @@ export class ChartComponent {
     tempStatName.forEach(i => statName.add(i));
 
     for (const name of statName) { // e.g. NNAD
-      const data: number[] = [];
+      const data: any[] = [];
       const pointRadius: number[] = [];
 
       chartData.forEach((stats: GraphStatsV2, _date: string) => {
@@ -122,9 +122,12 @@ export class ChartComponent {
           pointRadius.push(5);
         } else {
           data.push(0);
-          pointRadius.push(0);
+          pointRadius.push(1);
         }
       });
+      console.log(data[0])
+
+      // if (data[0] === null) data[0] = 0; // not the best workaround in the world, but it's to make sure the graph starts at 0 while still showing the lines as necessary from spanGaps that NEEDS null values. Bleh.
 
       const tempDataset = {
         type: type,
@@ -135,6 +138,7 @@ export class ChartComponent {
         borderRadius: type === 'line' ? null : 5,
         order: type === 'line' ? 2 : 1,
         stack: type,
+        spanGaps: true,
         hidden: this.clickedLabels.includes(name)
       } as ChartDataset;
 
@@ -177,7 +181,7 @@ export class ChartComponent {
   //   } as ChartDataset;
   // }
 
-  createchart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
+  createChart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
     Chart.register(zoomPlugin);
 
@@ -228,7 +232,7 @@ export class ChartComponent {
         y: {
           stacked: true,
           ticks: {
-            beginAtZero: true,
+            // beginAtZero: true,
             callback(val, _index) {
               return val as number % 1 === 0 ? val : '';
             }

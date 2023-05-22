@@ -70,8 +70,6 @@ public class StatisticsDataService {
 
         // I know, but for some reason the deepcloning messes up the order pft
         ListOrderedMap<String, GraphData> exponData = sortMapOnDateKeys(deepClonedData, dateFormatter);
-        System.out.println("SORT ON DATE");
-        System.out.println(exponData);
 
         // then adds the values to the next map entry to get the exponential values
         MapIterator<String, GraphData> it = exponData.mapIterator();
@@ -108,7 +106,7 @@ public class StatisticsDataService {
 
         if (timeFrame.equals(GraphView.WEEK) || timeFrame.equals(GraphView.MONTH)) {
             unit = ChronoUnit.DAYS;
-        } else if (timeFrame.equals(GraphView.YEAR)) { // we want the labels as jan, feb, march, etc. if year
+        } else if (timeFrame.equals(GraphView.YEAR) || timeFrame.equals(GraphView.EXPONENTIAL)) { // we want the labels as jan, feb, march, etc. if year
             unit = ChronoUnit.MONTHS;
         }
 
