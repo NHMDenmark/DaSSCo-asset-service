@@ -145,13 +145,15 @@ export class GraphDataComponent {
             // if (this.viewForm.value === ViewV2.WEEK || this.viewForm.value === ViewV2.MONTH) view = 'WEEK';
             if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
             if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
-            this.specimenGraphService.getSpecimenDataCustom(view, moment(range.start, 'DD-MM-YYYY ').add(1, 'days').valueOf(), moment(range.end, 'DD-MM-YYYY ', true).valueOf())
+            console.log(view)
+            this.specimenGraphService.getSpecimenDataCustom(view,
+                moment(range.start, 'DD-MM-YYYY ').add(1, 'days').valueOf(),
+                moment(range.end, 'DD-MM-YYYY ', true).add(1, 'days').valueOf())
               .pipe(filter(isNotUndefined))
               .subscribe(customData => {
-                console.log(customData)
                 const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
                 this.statsV2Subject.next(mappedData);
-              })
+              });
           }
         }
       });
@@ -247,10 +249,7 @@ export class GraphDataComponent {
   }
 
   clearCustomTimeFrame() {
-    if (this.viewForm.value) {
-      const originalTf = this.viewMap.get(this.viewForm.value);
-      this.viewSubject.next(originalTf as View);
-      this.timeFrameForm.reset();
-    }
+    this.timeFrameForm.reset();
+    this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
   }
 }
