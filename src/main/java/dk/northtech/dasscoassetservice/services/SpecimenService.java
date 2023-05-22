@@ -1,6 +1,8 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.domain.SpecimenData;
+import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
@@ -21,6 +23,11 @@ public class SpecimenService {
     public SpecimenService(DataSource dataSource) {
         this.jdbi = Jdbi.create(dataSource)
                 .registerRowMapper((ConstructorMapper.factory(SpecimenData.class)));
+    }
+
+    public Specimen updateSpecimen(Specimen specimen) {
+        jdbi.onDemand(SpecimenRepository.class).updateSpecimen(specimen);
+        return specimen;
     }
 
     public List<SpecimenData> getSpecimenData() {
