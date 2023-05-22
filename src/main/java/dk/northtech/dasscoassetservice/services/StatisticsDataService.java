@@ -57,8 +57,6 @@ public class StatisticsDataService {
 
         addRemainingDates(startDate, endDate, dateTimeFormatter, incrData, timeFrame);
         return sortMapOnDateKeys(incrData, dateTimeFormatter);
-
-//        return incrData;
     }
 
     public Map<String, Map<String, GraphData>> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {

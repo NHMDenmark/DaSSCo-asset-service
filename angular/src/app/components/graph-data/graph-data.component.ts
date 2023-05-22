@@ -4,7 +4,7 @@ import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
 import {
   defaultView,
   StatValue,
-  GraphStatsV2, ViewV2, MY_FORMATS
+  GraphStatsV2, ViewV2, MY_FORMATS, ChartDataTypes
 } from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment-timezone';
@@ -102,7 +102,7 @@ export class GraphDataComponent {
             .subscribe(data => {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
-                mappedData.delete('exponential');
+                mappedData.delete(ChartDataTypes.EXPONENTIAL);
               }
               this.statsV2Subject.next(mappedData);
             });

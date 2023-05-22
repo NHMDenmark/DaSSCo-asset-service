@@ -26,6 +26,11 @@ export enum StatValue {
   WORKSTATION
 }
 
+export enum ChartDataTypes {
+  INCREMENTAL = 'incremental',
+  EXPONENTIAL = 'exponential'
+}
+
 export const defaultView = 1; // Weekly fluctuation.
 
 export const MY_FORMATS = {

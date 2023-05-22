@@ -4,7 +4,7 @@ import Chart, {
   ChartOptions, LegendElement, LegendItem
 } from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {GraphStatsV2, StatValue} from '../../types';
+import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {isNotUndefined} from '@northtech/ginnungagap';
 
@@ -45,12 +45,12 @@ export class ChartComponent {
   ])
     .pipe(
       map(([chartData, title, statValue] : [Map<string, Map<string, GraphStatsV2>>, string, StatValue]) => {
-        const incrMap = new Map(Object.entries(chartData.get('incremental') as Map<string, GraphStatsV2>));
+        const incrMap = new Map(Object.entries(chartData.get(ChartDataTypes.INCREMENTAL) as Map<string, GraphStatsV2>));
         let incrDatasets = this.createDatasetV2(incrMap, statValue, 'line');
         const labels = Array.from(incrMap.keys()); // datoer, x-akse
 
-        if (chartData.has('exponential')) {
-          const exponMap = new Map(Object.entries(chartData.get('exponential') as Map<string, GraphStatsV2>));
+        if (chartData.has(ChartDataTypes.EXPONENTIAL)) {
+          const exponMap = new Map(Object.entries(chartData.get(ChartDataTypes.EXPONENTIAL) as Map<string, GraphStatsV2>));
           const exponDatasets = this.createDatasetV2(exponMap, statValue, 'bar');
           incrDatasets = incrDatasets.concat(exponDatasets);
         }
