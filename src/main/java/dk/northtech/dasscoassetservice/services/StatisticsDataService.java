@@ -61,7 +61,8 @@ public class StatisticsDataService {
 //        return incrData;
     }
 
-    public List<Map<String, GraphData>> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
+    public Map<String, Map<String, GraphData>> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
+        Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
         Gson gson = new Gson(); // not a huge fan of this, but is the only way I can see - for now - to deep clone the map.
         String jsonString = gson.toJson(originalData);
         Type type = new TypeToken<HashMap<String, GraphData>>(){}.getType();
@@ -69,27 +70,27 @@ public class StatisticsDataService {
 
         // I know, but for some reason the deepcloning messes up the order pft
         ListOrderedMap<String, GraphData> exponData = sortMapOnDateKeys(deepClonedData, dateFormatter);
+        System.out.println("SORT ON DATE");
+        System.out.println(exponData);
 
         // then adds the values to the next map entry to get the exponential values
         MapIterator<String, GraphData> it = exponData.mapIterator();
         while (it.hasNext()) {
             String key = it.next();
-            GraphData value = it.getValue();
+            GraphData currvalue = it.getValue();
             if (!Strings.isNullOrEmpty(exponData.nextKey(key))) { // if there's a next
                 GraphData nextVal = deepClonedData.get(exponData.nextKey(key));
-                if (!value.getInstitutes().isEmpty()) {
-                    value.getInstitutes().keySet().forEach(instituteName -> nextVal.addInstituteAmts(instituteName, value.getInstitutes().get(instituteName)));
-                }
-                if (!value.getPipelines().isEmpty()) {
-                    value.getPipelines().keySet().forEach(pipelineName -> nextVal.addPipelineAmts(pipelineName, value.getPipelines().get(pipelineName)));
-                }
-                if (!value.getWorkstations().isEmpty()) {
-                    value.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, value.getWorkstations().get(workstationName)));
-                }
+
+                // gets all institute names of current data, runs through, adds their value to the next data object
+                currvalue.getInstitutes().keySet().forEach(instituteName -> nextVal.addInstituteAmts(instituteName, currvalue.getInstitutes().get(instituteName)));
+                currvalue.getPipelines().keySet().forEach(pipelineName -> nextVal.addPipelineAmts(pipelineName, currvalue.getPipelines().get(pipelineName)));
+                currvalue.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, currvalue.getWorkstations().get(workstationName)));
             }
         }
+        finalData.put("incremental", originalData);
+        finalData.put("exponential", exponData);
 
-        return Arrays.asList(originalData, exponData);
+        return finalData;
     }
 
     public void updateData(Map<String, Integer> existing, String key, Integer specimens) {

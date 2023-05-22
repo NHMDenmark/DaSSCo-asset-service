@@ -36,6 +36,13 @@ export interface Institute {
   geographicRegion?: string;
 }
 
+export enum TimeFrameV2 {
+  WEEK = 1,
+  MONTH = 2,
+  YEAR = 3,
+  EXPONENTIAL = 4
+}
+
 export interface TimeFrame {
   period: 'WEEK' | 'MONTH' | 'YEAR' | 'COMBINEDTOTAL' | 'CUSTOM'; // combinedtotal = totals combined and bar chart w label-specific monthly data
   unit: DurationConstructor;

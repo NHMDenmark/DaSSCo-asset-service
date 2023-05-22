@@ -4,9 +4,9 @@ import Chart, {
   ChartOptions, LegendElement, LegendItem
 } from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphStatsV2, StatValue} from '../../types';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import {isNotUndefined} from "@northtech/ginnungagap";
 
 @Component({
   selector: 'dassco-chart',
@@ -17,7 +17,7 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 
 export class ChartComponent {
   chart: any;
-  readonly chartDataSubjectV2 = new BehaviorSubject<Map<string, GraphStatsV2> | undefined>(undefined);
+  readonly chartDataSubjectV2 = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined);
   titleSubject = new BehaviorSubject<string>('');
   clickedLabels: string[] = [];
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
@@ -28,7 +28,7 @@ export class ChartComponent {
   // }
 
   @Input()
-  set setChartDataV2(chartdata: Map<string, GraphStatsV2>) {
+  set setChartDataV2(chartdata: Map<string, Map<string, GraphStatsV2>>) { // add as array!
     this.chartDataSubjectV2.next(chartdata);
   }
 
@@ -59,6 +59,7 @@ export class ChartComponent {
   //     })
   //   );
 
+
   setChartValuesV2$
     = combineLatest([
     this.chartDataSubjectV2.pipe(filter(isNotUndefined)),
@@ -66,9 +67,18 @@ export class ChartComponent {
     this.statValueSubject
   ])
     .pipe(
-      map(([chartData, title, statValue]) => {
-        // VI GÅR UD FRA AT INSTITUT ER VALGT
-        this.createDatasetV2(chartData, statValue, title);
+      map(([chartData, title, statValue] : [Map<string, Map<string, GraphStatsV2>>, string, StatValue]) => {
+        const incrMap = new Map(Object.entries(chartData.get('incremental') as Map<string, GraphStatsV2>));
+        let incrDatasets = this.createDatasetV2(incrMap, statValue, 'line'); // I know ! is not allowed, but I AM smarter than the compiler, because I literally check for this in the graph-data component so don't @ me pls
+        const labels = Array.from(incrMap.keys()); // datoer, x-akse
+
+        if (chartData.has('exponential')) {
+          const exponMap = new Map(Object.entries(chartData.get('exponential') as Map<string, GraphStatsV2>));
+          const exponDatasets = this.createDatasetV2(exponMap, statValue, 'bar');
+          incrDatasets = incrDatasets.concat(exponDatasets);
+        }
+
+        this.createchart(labels, incrDatasets, 'Specimens Created', title);
       })
     );
 
@@ -89,12 +99,12 @@ export class ChartComponent {
   // }
 
   // For reference: "stat" referes to either institution, pipeline, or workstation
-  createDatasetV2(chartData: Map<string, GraphStatsV2>, statValue: StatValue, title: string): void {
+  createDatasetV2(chartData: Map<string, GraphStatsV2>, statValue: StatValue, type: string): ChartDataset[] {
     const chartDatasets: ChartDataset[] = [];
-    const labels = Array.from(chartData.keys()); // datoer, x-akse
-    const type = 'line';
     const statName: Set<string> = new Set<string>(); // don't want duplicates
     let tempStatName: Array<string> = [];
+
+    console.log(chartData)
 
     // getting all institution/pipe/work names from the data
     chartData.forEach((stats: GraphStatsV2, _date: string) => {
@@ -118,7 +128,7 @@ export class ChartComponent {
         }
       });
 
-      const testDataSet = {
+      const tempDataset = {
         type: type,
         label: name,
         data: data,
@@ -130,9 +140,9 @@ export class ChartComponent {
         hidden: this.clickedLabels.includes(name)
       } as ChartDataset;
 
-      chartDatasets.push(testDataSet);
+      chartDatasets.push(tempDataset);
     }
-    this.createchart(labels, chartDatasets, 'Specimens Created', title);
+    return chartDatasets;
   }
 
   getKey(stats: GraphStatsV2, statValue: StatValue): Map<string, number> {

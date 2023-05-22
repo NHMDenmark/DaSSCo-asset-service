@@ -6,7 +6,7 @@ import {
   MY_FORMATS,
   StatValue,
   TimeFrame,
-  GraphStatsV2
+  GraphStatsV2, TimeFrameV2
 } from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment/moment';
@@ -31,7 +31,7 @@ export class GraphDataComponent {
   ]);
   timeFrameSubject = new BehaviorSubject<TimeFrame>(this.timeFrameMap.get(defaultTimeFrame) as TimeFrame);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
-  statsV2Subject = new BehaviorSubject<Map<string, GraphStatsV2> | undefined>(undefined);
+  statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
   statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
   statValue = StatValue.INSTITUTE;
@@ -42,11 +42,20 @@ export class GraphDataComponent {
     end: new FormControl<Moment | null>(null, {updateOn: 'change'})
   });
 
-  statsWeek$: Observable<Map<string, GraphStatsV2>> // <date, stats>
+  statsWeek$: Observable<Map<string, Map<string, GraphStatsV2>>> // <date, stats>. Is array if there's line and bar chart stats within
     = this.statsV2$
     .pipe(
       filter(isNotUndefined),
-      map(data => data)
+      map((data: Map<string, Map<string, GraphStatsV2>>) => {
+        // todo check if it contains the correct data
+        // console.log(data)
+        // console.log(data instanceof Map)
+        // console.log(data instanceof Array)
+        // if (data instanceof Map) {
+        //   console.log('AIIGHT JUST A MAP')
+          return data;
+        // }
+      })
     );
 
   // graphInfo$: Observable<GraphData>
@@ -169,35 +178,35 @@ export class GraphDataComponent {
         startWith(1)
       )
       .subscribe(timeFrame => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
-        console.log(timeFrame)
-        if (timeFrame === 1) {
+        if (timeFrame === TimeFrameV2.WEEK) {
           this.specimenGraphService.specimenDataWeek$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
-              const mappedData: Map<string, GraphStatsV2> = new Map(Object.entries(data.body));
-              console.log(mappedData)
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
         }
-        if (timeFrame === 2) {
+        if (timeFrame === TimeFrameV2.MONTH) {
           this.specimenGraphService.specimenDataMonth$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
-              const mappedData: Map<string, GraphStatsV2> = new Map(Object.entries(data.body));
-              console.log(mappedData)
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
         }
-        if (timeFrame === 3 || timeFrame === 4) {
+        if (timeFrame === TimeFrameV2.YEAR || timeFrame === TimeFrameV2.EXPONENTIAL) {
           this.specimenGraphService.specimenDataYear$
             .pipe(filter(isNotUndefined))
             .subscribe(data => {
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               // console.log(data.body)
-              const dataMaps: Array<Map<string, GraphStatsV2>> = data.body;
-              const incrData: Map<string, GraphStatsV2> = new Map(Object.entries(dataMaps[0])); // line chart
-              const exponData: Map<string, GraphStatsV2> = new Map(Object.entries(dataMaps[1])); // bar chart (exponential)
+              // const dataMaps: Array<Map<string, GraphStatsV2>> = data.body;
+              // const incrData: Map<string, GraphStatsV2> = new Map(Object.entries(dataMaps[0])); // line chart
+              if (timeFrame === TimeFrameV2.YEAR) {
+                mappedData.delete('exponential');
+              }
+              this.statsV2Subject.next(mappedData);
               // console.log(mappedData)
-              this.statsV2Subject.next(incrData);
             });
         }
       });

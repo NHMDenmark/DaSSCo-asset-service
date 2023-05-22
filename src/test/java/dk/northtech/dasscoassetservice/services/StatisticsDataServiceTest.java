@@ -99,10 +99,10 @@ public class StatisticsDataServiceTest {
         Map<String, GraphData> incrData = new HashMap<>();
         Instant isAfter = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
 
-//        Map<String, GraphData> incrDate = statisticsDataService.generateIncrData(isAfter, Instant.now(), yearFormatter);
-//        List<Map<String, GraphData>> yearData = statisticsDataService.generateExponData(incrDate, yearFormatter);
+//        Map<String, GraphData> incrDate = statisticsDataService.generateIncrData(isAfter, Instant.now(), yearFormatter, GraphView.YEAR);
+//        Map<String, Map<String, GraphData>> yearData = statisticsDataService.generateExponData(incrDate, yearFormatter);
 
-        Map<String, GraphData> data2 = generateIncrData(isAfter, Instant.now(), yearFormatter, GraphView.YEAR);
+//        Map<String, GraphData> data2 = generateIncrData(isAfter, Instant.now(), yearFormatter, GraphView.YEAR);
 
 //        Assertions.assertEquals(yearData.get(0).isEmpty(), false); // todo setup test database to ACTUALLY throw in data.
     }

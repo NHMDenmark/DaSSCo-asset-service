@@ -502,7 +502,7 @@ paths:
       - dassco-idp: []
   /v1/graphdata/daily/{timeframe}:
     get:
-      operationId: getGraphDataWeek
+      operationId: getGraphDataDaily
       parameters:
       - name: timeframe
         in: path

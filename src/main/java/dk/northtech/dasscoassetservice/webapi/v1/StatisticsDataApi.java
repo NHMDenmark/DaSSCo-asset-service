@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.collections4.map.ListOrderedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -72,7 +73,8 @@ public class StatisticsDataApi {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getGraphDataWeek(@PathParam("timeframe") String timeFrame) {
+    public Response getGraphDataDaily(@PathParam("timeframe") String timeFrame) {
+        Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental (pr day data): data, exponential (continually adding pr day): data
         Map<String, GraphData> incrData;
         DateTimeFormatter dateFormatter = getDateFormatter("dd-MMM-yyyy");
 
@@ -94,7 +96,8 @@ public class StatisticsDataApi {
             return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
         }
 
-        return Response.status(Response.Status.OK).entity(incrData).build();
+        finalData.put("incremental", incrData);
+        return Response.status(Response.Status.OK).entity(finalData).build();
     }
 
     @GET
@@ -105,17 +108,20 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getGraphDataYear() {
         // For a monnthly view, a year back
+        Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental (pr day data): data, exponential (continually adding pr day): data
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
         DateTimeFormatter yearFormatter = getDateFormatter("MMM yyyy");
 
         Map<String, GraphData> incrData = statisticsDataService.generateIncrData(startDate, Instant.now(), yearFormatter, GraphView.YEAR);
-        List<Map<String, GraphData>> yearData = statisticsDataService.generateExponData(incrData, yearFormatter); // 0 -> incr 1 -> expon
+        finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
+        System.out.println("finaldata: ");
+        System.out.println(finalData);
 
-        if (yearData.get(0).isEmpty()) {
+        if (finalData.get("incremental").isEmpty()) {
             logger.warn("No data available for the past year.");
             return Response.status(Response.Status.NO_CONTENT).entity("No data available for the past year.").build();
         }
-        return Response.status(Response.Status.OK).entity(yearData).build();
+        return Response.status(Response.Status.OK).entity(finalData).build();
     }
 
     @GET
@@ -127,6 +133,7 @@ public class StatisticsDataApi {
     public Response getGraphDataCustomTimeframe(@QueryParam("view") String view, @QueryParam("start") long startDate, @QueryParam("end") long endDate) {
         // Custom start and end date with either daily or monthly view
         Map<String, GraphData> customData;
+        Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental data: data, exponential data: data
         Instant start = Instant.ofEpochMilli(startDate);
         Instant end = Instant.ofEpochMilli(endDate);
 
@@ -138,22 +145,25 @@ public class StatisticsDataApi {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
-            return Response.status(Response.Status.OK).entity(customData).build();
+            finalData.put("incremental", customData);
+
+            return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (view.equalsIgnoreCase("monthly")) { // every month is shown along x-axis
             DateTimeFormatter yearFormatter = getDateFormatter("MMM yyyy");
 
             Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
-            List<Map<String, GraphData>> yearData = statisticsDataService.generateExponData(incrData, yearFormatter); // 0 -> incr 1 -> expon
+            finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
 
-            if (yearData.isEmpty()) {
+            if (finalData.isEmpty()) {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
-            return Response.status(Response.Status.OK).entity(yearData).build();
+
+            return Response.status(Response.Status.OK).entity(finalData).build();
         } else {
             logger.warn("View {} is invalid. It has to be either \"daily\" or \"monthly\".", view);
+            return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        return Response.status(Response.Status.OK).build();
     }
 
     public DateTimeFormatter getDateFormatter(String pattern) { // need this as the pattern varies >.>
