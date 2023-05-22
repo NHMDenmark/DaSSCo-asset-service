@@ -22,13 +22,8 @@ export class ChartComponent {
   clickedLabels: string[] = [];
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
 
-  // @Input()
-  // set setChartData(chartdata: GraphData) {
-  //   this.chartDataSubject.next(chartdata);
-  // }
-
   @Input()
-  set setChartDataV2(chartdata: Map<string, Map<string, GraphStatsV2>>) { // add as array!
+  set setChartDataV2(chartdata: Map<string, Map<string, GraphStatsV2>>) {
     this.chartDataSubjectV2.next(chartdata);
   }
 
@@ -41,24 +36,6 @@ export class ChartComponent {
   set setTitle(title: string) {
     this.titleSubject.next(title);
   }
-
-  // setChartValues$
-  //   = combineLatest([
-  //   this.chartDataSubject.pipe(filter(isNotUndefined)),
-  //   this.titleSubject
-  // ])
-  //   .pipe(
-  //     map(([chartData, _title]) => {
-  //       if (chartData.mainChart && chartData.mainChart.size <= 0 && !chartData.subChart) { // mainchart is set immediately as empty/free Map in graph-data, thus it isn't undefined
-  //         // heeey
-  //         // this.createchart([], [], '', 'No data available for the selected dates');
-  //       } else {
-  //         // const lineDatasets: ChartDataset[] = this.createDataset(chartData);
-  //         // this.createchart(chartData.labels, lineDatasets, 'Specimens created', title);
-  //       }
-  //     })
-  //   );
-
 
   setChartValuesV2$
     = combineLatest([
@@ -81,22 +58,6 @@ export class ChartComponent {
         this.createChart(labels, incrDatasets, 'Specimens Created', title);
       })
     );
-
-  // createDataset(graphData: GraphData): ChartDataset[] {
-  //   const chartDatasets: ChartDataset[] = [];
-  //   if (graphData.mainChart) { // key = institut, value = dato, amount
-  //     console.log(graphData.mainChart)
-  //     graphData.mainChart.forEach((value: Map<string, number>, key: string) => {
-  //       chartDatasets.push(this.addDataset(value, key, 'line', graphData, 0));
-  //     });
-  //   }
-  //   if (graphData.subChart) {
-  //     graphData.subChart.forEach((value: Map<string, number>, key: string) => {
-  //       chartDatasets.push(this.addDataset(value, key, 'bar', graphData, null));
-  //     });
-  //   }
-  //   return chartDatasets;
-  // }
 
   // For reference: "stat" referes to either institution, pipeline, or workstation
   createDatasetV2(chartData: Map<string, GraphStatsV2>, statValue: StatValue, type: string): ChartDataset[] {
@@ -125,9 +86,6 @@ export class ChartComponent {
           pointRadius.push(1);
         }
       });
-      console.log(data[0])
-
-      // if (data[0] === null) data[0] = 0; // not the best workaround in the world, but it's to make sure the graph starts at 0 while still showing the lines as necessary from spanGaps that NEEDS null values. Bleh.
 
       const tempDataset = {
         type: type,
@@ -153,33 +111,6 @@ export class ChartComponent {
     if (statValue === StatValue.PIPELINE) return stats.pipelines;
     return stats.workstations;
   }
-
-  // addDataset(value: Map<string, number>, key: string, type: string, graphData: GraphData, defaultVal: any): ChartDataset {
-  //   const data: any[] = [];
-  //   const pointRadius: number[] = [];
-  //   graphData.labels.forEach((label, idx, labels) => {
-  //     if (value.has(label)) {
-  //       data.push(value.get(label)!);
-  //       if (type === 'line') pointRadius.push(5);
-  //     } else if (type === 'line') { // if it's pr year, we don't want the graph to go down to 0
-  //       value.has(labels[idx - 1]) && graphData.timeFrame.period === 'YEAR' ? data.push(value.get(labels[idx - 1])!) : data.push(defaultVal);
-  //       pointRadius.push(defaultVal);
-  //     } else {
-  //       data.push(defaultVal);
-  //     }
-  //   });
-  //   return {
-  //     type: type,
-  //     label: key,
-  //     data: data,
-  //     borderWidth: type === 'line' ? 2 : 1.5,
-  //     pointRadius: pointRadius,
-  //     borderRadius: type === 'line' ? null : 5,
-  //     order: type === 'line' ? 2 : 1,
-  //     stack: type,
-  //     hidden: this.clickedLabels.includes(key)
-  //   } as ChartDataset;
-  // }
 
   createChart(labels: string[], dataset: ChartDataset[], yaxis: string, title: string): void {
     if (this.chart) this.chart.destroy();
@@ -232,7 +163,6 @@ export class ChartComponent {
         y: {
           stacked: true,
           ticks: {
-            // beginAtZero: true,
             callback(val, _index) {
               return val as number % 1 === 0 ? val : '';
             }
