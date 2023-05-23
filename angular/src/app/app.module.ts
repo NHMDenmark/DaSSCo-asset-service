@@ -28,6 +28,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import { ExportChartComponent } from './components/export-chart/export-chart.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
+import {MatDividerModule} from "@angular/material/divider";
 
 @NgModule({
   declarations: [
@@ -44,24 +45,25 @@ import { StatusWidgetComponent } from './components/status-widget/status-widget.
     StatusWidgetComponent
   ],
     imports: [
-      BrowserModule,
-      AppRoutingModule,
-      AuthConfigModule,
-      MatToolbarModule,
-      MatIconModule,
-      MatButtonModule,
-      MatInputModule,
-      FormsModule,
-      BrowserAnimationsModule,
-      MatOptionModule,
-      MatSelectModule,
-      ReactiveFormsModule,
-      MatButtonToggleModule,
-      MatDatepickerModule,
-      MatNativeDateModule,
-      MatMomentDateModule,
-      MatTooltipModule,
-      MatSnackBarModule
+        BrowserModule,
+        AppRoutingModule,
+        AuthConfigModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        MatOptionModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatMomentDateModule,
+        MatTooltipModule,
+        MatSnackBarModule,
+        MatDividerModule
     ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

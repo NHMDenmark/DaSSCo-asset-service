@@ -1,0 +1,15 @@
+.statistics-page {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+  mat-divider {
+    margin: 1rem;
+    width: 75%;
+  }
+
+  dassco-status-widget {
+    display: flex;
+    width: fit-content;
+  }
+}

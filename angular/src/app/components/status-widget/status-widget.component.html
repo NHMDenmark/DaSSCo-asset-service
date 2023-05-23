@@ -1,3 +1,27 @@
 <div class="container">
-  <div>Status!</div>
+  <h3>No. pr. Status for {{today | date}}</h3>
+  <div *ngIf="(internalStatuses$ | async) as statuses" class="status-container">
+    <table>
+      <tr>
+        <th>Status</th>
+        <th>No.</th>
+      </tr>
+      <tr>
+        <td>COMPLETED</td>
+        <td>{{statuses.get('COMPLETED')}}</td>
+      </tr>
+      <tr>
+        <td>METADATA_RECEIVED</td>
+        <td>{{statuses.get('METADATA_RECEIVED')}}</td>
+      </tr>
+      <tr>
+        <td>ASSET_RECEIVED</td>
+        <td>{{statuses.get('ASSET_RECEIVED')}}</td>
+      </tr>
+    </table>
+
+<!--    <p>completed: {{statuses.get('COMPLETED')}}</p>-->
+<!--    <p>metadata: {{statuses.get('METADATA_RECEIVED')}}</p>-->
+<!--    <p>asset: {{statuses.get('ASSET_RECEIVED')}}</p>-->
+  </div>
 </div>

@@ -34,7 +34,6 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-
     public Map<InternalStatus, Integer> getInternalStatusAmt(long currMillisecs) {
         String sql =
                 """
@@ -54,9 +53,6 @@ public class InternalStatusRepository {
 
 
             return jdbi.withHandle(handle -> {
-//                Connection connection = handle.getConnection();
-//                PgConnection pgConn = connection.unwrap(PgConnection.class);
-//                pgConn.addDataType("agtype", Agtype.class);
                 AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();
                 Agtype agtype = AgtypeFactory.create(today);
                 handle.execute(boilerplate);
