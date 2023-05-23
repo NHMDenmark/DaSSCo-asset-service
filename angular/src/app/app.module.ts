@@ -29,6 +29,7 @@ import { ExportChartComponent } from './components/export-chart/export-chart.com
 import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
+import {MatTableModule} from "@angular/material/table";
 
 @NgModule({
   declarations: [
@@ -63,7 +64,8 @@ import {MatDividerModule} from "@angular/material/divider";
         MatMomentDateModule,
         MatTooltipModule,
         MatSnackBarModule,
-        MatDividerModule
+        MatDividerModule,
+        MatTableModule
     ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

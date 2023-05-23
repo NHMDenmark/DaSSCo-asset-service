@@ -13,6 +13,11 @@ export interface Institute {
   geographicRegion?: string;
 }
 
+export interface InternalStatusDataSource {
+  status: string;
+  no: number;
+}
+
 export enum ViewV2 {
   WEEK = 1,
   MONTH = 2,

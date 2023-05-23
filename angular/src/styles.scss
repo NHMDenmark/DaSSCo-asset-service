@@ -10,6 +10,21 @@
 @import 'style/base';
 
 @font-face {
+  font-family: geomatrix-light;
+  src: url('/assets/fonts/Geomatrix Light.otf');
+}
+
+@font-face {
+  font-family: geomatrix-medium;
+  src: url('/assets/fonts/Geomatrix.otf');
+}
+
+@font-face {
+  font-family: geomatrix-bold;
+  src: url('/assets/fonts/Geomatrix Medium.otf');
+}
+
+@font-face {
   font-family: lemonmilk;
   src: url('/assets/fonts/LEMONMILK-Light.otf');
 }
