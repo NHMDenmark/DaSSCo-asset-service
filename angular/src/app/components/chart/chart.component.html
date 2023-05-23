@@ -4,6 +4,7 @@
   </div>
   <div class="canvas-container">
     <canvas #canvas id="canvas">{{chart}}</canvas>
-    <div *ngIf="(setChartValues$ | async)"></div>
+<!--    <div *ngIf="(setChartValues$ | async)"></div>-->
+    <div *ngIf="(setChartValuesV2$ | async)"></div>
   </div>
 </div>

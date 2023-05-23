@@ -1,33 +1,23 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
-import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
-import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
-import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
+import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
-import org.springframework.stereotype.Repository;
-import org.jdbi.v3.sqlobject.SqlObject;
-import org.springframework.transaction.annotation.Transactional;
 
-import javax.sql.DataSource;
-import java.beans.Transient;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 
 //@Repository
@@ -79,6 +69,7 @@ public interface AssetRepository extends SqlObject {
                          MATCH (w:Workstation)<-[:USED]-(e)
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $guid})
+                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
                          RETURN a.guid
                          , a.pid
                          , a.status
@@ -88,12 +79,16 @@ public interface AssetRepository extends SqlObject {
                          , a.file_formats
                          , a.asset_taken_date
                          , a.internal_status
+                         , pa.guid
+                         , a.restricted_access
+                         , a.tags
                          , collect(s.name)
                          , i.name
                          , c.name
                          , p.name
                          , w.name
                          , e.timestamp
+                         , a.pushed_to_specify_date
                       $$
                     , #params)
                     as (guid agtype
@@ -106,12 +101,16 @@ public interface AssetRepository extends SqlObject {
                     , file_formats agtype
                     , asset_taken_date agtype
                     , internal_status agtype
+                    , parent_guid agtype
+                    , restricted_access agtype
+                    , tags agtype
                     , specimen_barcodes agtype
                     , institution_name agtype
                     , collection_name agtype
                     , pipeline_name agtype
                     , workstation_name agtype
-                    , creation_date agtype);
+                    , creation_date agtype
+                    , pushed_to_specify_date agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -164,13 +163,14 @@ public interface AssetRepository extends SqlObject {
                                 , pid: $pid
                                 , guid: $guid
                                 , status: $status
-                                , multi_specimen: $multi_specimen
                                 , funding: $funding
                                 , subject: $subject
                                 , payload_type: $payload_type
                                 , file_formats: $file_formats
                                 , asset_taken_date: $asset_taken_date
                                 , internal_status: $internal_status
+                                , restricted_access: $restricted_access
+                                , tags: $tags
                             })
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET', name: 'CREATE_ASSET'})
@@ -189,7 +189,11 @@ public interface AssetRepository extends SqlObject {
             withHandle(handle -> {
                 AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
                 asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
-                AgtypeMap parms = new AgtypeMapBuilder()
+                AgtypeMapBuilder tags = new AgtypeMapBuilder();
+                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+                AgtypeMapBuilder agBuilder = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
                         .add("workstation_name", asset.workstation)
@@ -197,17 +201,23 @@ public interface AssetRepository extends SqlObject {
                         .add("pid", asset.pid)
                         .add("guid", asset.guid)
                         .add("status", asset.status.name())
-                        .add("multi_specimen", asset.multi_specimen)
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
                         .add("payload_type", asset.payload_type)
                         .add("file_formats", agtypeListBuilder.build())
-                        .add("asset_taken_date", asset.asset_taken_date != null ? DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.asset_taken_date) : null)
-                        .add("created_date", DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.created_date))
+                        .add("created_date", asset.created_date.toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
                         .add("parent_id",asset.parent_guid)
-                        .add("user", "Thomas")
-                        .build();
+                        .add("user", asset.digitizer)
+                        .add("tags",tags.build())
+                        .add("restricted_access", restrictedAcces.build());
+
+                if(asset.asset_taken_date != null) {
+                    agBuilder.add("asset_taken_date", asset.asset_taken_date.toEpochMilli());
+                } else {
+                    agBuilder.add("asset_taken_date", (String) null);
+                }
+                AgtypeMap parms = agBuilder.build();
                 Agtype agtype = AgtypeFactory.create(parms);
                 handle.createUpdate(sql)
                         .bind("params", agtype)
@@ -221,37 +231,78 @@ public interface AssetRepository extends SqlObject {
     }
 
 
-//    public List<Collection> listCollections(Institution institution) {
-//        String sql =
-//                """
-//                        SELECT * FROM ag_catalog.cypher('dassco'
-//                         , $$
-//                             MATCH (c:Collection)-[USED_BY]-(i:Institution)
-//                             WHERE i.name = $institution_name
-//                             RETURN c.name
-//                           $$
-//                         , #params
-//                        ) as (collection_name agtype);""";
-//
-//
-//        try {
-//            withHandle(handle -> {
-//                // We have to register the type
-//                Connection connection = handle.getConnection();
-//                PgConnection pgConn = connection.unwrap(PgConnection.class);
-//                pgConn.addDataType("agtype", Agtype.class);
-//
-//                AgtypeMap name = new AgtypeMapBuilder().add("institution_name", institution.name()).build();
-//                Agtype agtype = AgtypeFactory.create(name);
-//                handle.execute(DBConstants.AGE_BOILERPLATE);
-//                return handle.createQuery(sql).bind("params", agtype)
-//                        .map((rs, ctx) -> {
-//                            Agtype collection_name = rs.getObject("collection_name", Agtype.class);
-//                            return new Collection(collection_name.getString(), institution.name());
-//                        }).list();
-//            });
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    default Asset update_asset_internal(Asset asset) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (i:Institution {name: $institution_name})
+                            MATCH (c:Collection {name: $collection_name})
+                            MATCH (w:Workstation {name: $workstation_name})
+                            MATCH (p:Pipeline {name: $pipeline_name})
+                            MERGE (a:Asset {name: $guid
+                                , pid: $pid
+                                , guid: $guid
+                                , status: $status
+                                , funding: $funding
+                                , subject: $subject
+                                , payload_type: $payload_type
+                                , file_formats: $file_formats
+                                , asset_taken_date: $asset_taken_date
+                                , internal_status: $internal_status
+                                , restricted_access: $restricted_access
+                                , tags: $tags
+                            })
+                            MERGE (u:User{user_id: $user, name: $user})
+                            MERGE (e:Event{timestamp: $created_date, event:'UPDATE_ASSET', name: 'CREATE_ASSET'})
+                            MERGE (e)-[uw:USED]->(w)
+                            MERGE (e)-[up:USED]->(p)
+                            MERGE (e)-[pb:INITIATED_BY]->(u)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)    
+                            MERGE (a)-[bt:BELONGS_TO]->(i)
+                            MERGE (w)-[sa:STATIONED_AT]->(i)
+                            MERGE (p)-[ub:USED_BY]->(i)
+                            MERGE (a)-[ipf:IS_PART_OF]->(c)
+                        $$
+                        , #params) as (a agtype);
+                        """;
+        try {
+            withHandle(handle -> {
+                AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
+                AgtypeMapBuilder tags = new AgtypeMapBuilder();
+                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+                AgtypeMap parms = new AgtypeMapBuilder()
+                        .add("institution_name", asset.institution)
+                        .add("collection_name", asset.collection)
+                        .add("workstation_name", asset.workstation)
+                        .add("pipeline_name", asset.pipeline)
+                        .add("pid", asset.pid)
+                        .add("guid", asset.guid)
+                        .add("status", asset.status.name())
+                        .add("funding", asset.funding)
+                        .add("subject", asset.subject)
+                        .add("payload_type", asset.payload_type)
+                        .add("file_formats", agtypeListBuilder.build())
+                        .add("asset_taken_date", asset.asset_taken_date != null ? DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.asset_taken_date) : null)
+                        .add("created_date", DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.created_date))
+                        .add("internal_status", asset.internal_status.name())
+                        .add("parent_id",asset.parent_guid)
+                        .add("user", asset.digitizer)
+                        .add("tags",tags.build())
+                        .add("restricted_access", restrictedAcces.build())
+                        .build();
+                Agtype agtype = AgtypeFactory.create(parms);
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return asset;
+    }
 }
