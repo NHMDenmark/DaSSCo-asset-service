@@ -26,6 +26,4 @@ public class PublicationLinkMapper implements RowMapper<PublicationLink> {
                 , publisherName.getString()
                 , Instant.ofEpochMilli(publicationTimestamp.getLong()));
     }
-
-    static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
 }

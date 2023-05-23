@@ -16,6 +16,7 @@ import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -55,6 +56,15 @@ public interface AssetRepository extends SqlObject {
     default Optional<Asset> readAsset(String assetId) {
         boilerplate();
         return readAssetInternal(assetId);
+    }
+
+    @Transaction
+    default Asset updateAsset(Asset asset) {
+        boilerplate();
+        update_asset_internal(asset);
+        connectParentChild(asset.parent_guid, asset.guid);
+        createSpecimenRepository().persistSpecimens(asset);
+        return asset;
     }
 
     default Optional<Asset> readAssetInternal(String assetGuid) {
@@ -236,33 +246,29 @@ public interface AssetRepository extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (i:Institution {name: $institution_name})
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})
-                            MERGE (a:Asset {name: $guid
-                                , pid: $pid
-                                , guid: $guid
-                                , status: $status
-                                , funding: $funding
-                                , subject: $subject
-                                , payload_type: $payload_type
-                                , file_formats: $file_formats
-                                , asset_taken_date: $asset_taken_date
-                                , internal_status: $internal_status
-                                , restricted_access: $restricted_access
-                                , tags: $tags
-                            })
+                            MATCH (a:Asset {name: $guid})
+                            OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
+                            DELETE co
                             MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $created_date, event:'UPDATE_ASSET', name: 'CREATE_ASSET'})
+                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET', name: 'UPDATE_ASSET'})
                             MERGE (e)-[uw:USED]->(w)
                             MERGE (e)-[up:USED]->(p)
                             MERGE (e)-[pb:INITIATED_BY]->(u)
-                            MERGE (a)-[ca:CHANGED_BY]-(e)    
-                            MERGE (a)-[bt:BELONGS_TO]->(i)
-                            MERGE (w)-[sa:STATIONED_AT]->(i)
-                            MERGE (p)-[ub:USED_BY]->(i)
-                            MERGE (a)-[ipf:IS_PART_OF]->(c)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)
+                            SET a.status = $status
+                            , a.tags = $tags
+                            , a.funding = $funding
+                            , a.subject = $subject
+                            , a.payload_type = $payload_type
+                            , a.file_formats = $file_formats
+                            , a.restricted_access = $restricted_access
+                            , a.pushed_to_specify_date = $pushed_to_specify_date
+                            , a.parent_id = $parent_id
+                            , a.asset_locked = $asset_locked
+                            , a.internal_status = $internal_status
                         $$
                         , #params) as (a agtype);
                         """;
@@ -274,27 +280,29 @@ public interface AssetRepository extends SqlObject {
                 asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
                 AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
                 asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-                AgtypeMap parms = new AgtypeMapBuilder()
-                        .add("institution_name", asset.institution)
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("collection_name", asset.collection)
                         .add("workstation_name", asset.workstation)
                         .add("pipeline_name", asset.pipeline)
-                        .add("pid", asset.pid)
                         .add("guid", asset.guid)
                         .add("status", asset.status.name())
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
                         .add("payload_type", asset.payload_type)
                         .add("file_formats", agtypeListBuilder.build())
-                        .add("asset_taken_date", asset.asset_taken_date != null ? DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.asset_taken_date) : null)
-                        .add("created_date", DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC")).format(asset.created_date))
+                        .add("updated_date", Instant.now().toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
-                        .add("parent_id",asset.parent_guid)
+                        .add("parent_id", asset.parent_guid)
                         .add("user", asset.digitizer)
-                        .add("tags",tags.build())
-                        .add("restricted_access", restrictedAcces.build())
-                        .build();
-                Agtype agtype = AgtypeFactory.create(parms);
+                        .add("tags", tags.build())
+                        .add("asset_locked", asset.asset_locked)
+                        .add("restricted_access", restrictedAcces.build());
+                if(asset.pushed_to_specify_date != null) {
+                    builder.add("pushed_to_specify_date", asset.pushed_to_specify_date.toEpochMilli());
+                } else {
+                    builder.addNull("pushed_to_specify_date");
+                }
+                Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)
                         .execute();

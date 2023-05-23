@@ -24,7 +24,35 @@ public class AssetService {
         this.jdbi = jdbi;
     }
 
-    public Asset persistAsset(Asset asset) {
+    public Asset updateAsset(Asset updatedAsset) {
+        Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
+        if(assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("Asset " + updatedAsset.guid + " does not exist");
+        }
+        validateAsset(updatedAsset);
+        Asset existing = assetOpt.get();
+        if(existing.asset_locked) {
+            throw new RuntimeException("Asset is locked");
+        }
+        existing.tags = updatedAsset.tags;
+        existing.workstation= updatedAsset.workstation;
+        existing.pipeline = updatedAsset.pipeline;
+        existing.pushed_to_specify_date = updatedAsset.pushed_to_specify_date;
+        existing.status = updatedAsset.status;
+        existing.asset_locked = updatedAsset.asset_locked;
+        existing.subject = updatedAsset.subject;
+        existing.restricted_access = updatedAsset.restricted_access;
+        existing.funding = updatedAsset.funding;
+        existing.file_formats = updatedAsset.file_formats;
+        existing.payload_type = updatedAsset.payload_type;
+        existing.digitizer = updatedAsset.digitizer;
+        existing.parent_guid = updatedAsset.parent_guid;
+
+        jdbi.onDemand(AssetRepository.class).updateAsset(existing);
+        return updatedAsset;
+    }
+
+    void validateAsset(Asset asset){
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institution doesnt exist");
@@ -44,10 +72,15 @@ public class AssetService {
         if(workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)){
             throw new RuntimeException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
+
+    }
+
+    public Asset persistAsset(Asset asset) {
         Optional<Asset> assetOpt = getAsset(asset.guid);
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
         }
+        validateAsset(asset);
 
         // Default values on creation
         asset.last_updated_date = Instant.now();

@@ -21,7 +21,7 @@ public interface SpecimenRepository extends SqlObject {
                             MATCH (a:Asset {name: $guid})
                             MERGE (s:Specimen{name: $specimen_barcode, barcode: $specimen_barcode})                       
                             MERGE (s)-[u:USED_BY]->(a)
-                            MERGE (s)-[bt:BELONGS_TO]->(c)
+                            MERGE (s)-[bt:IS_PART_OF]->(c)
                             MERGE (s)-[bts:BELONGS_TO]->(i)
                         $$
                         , #params) as (a agtype);
@@ -61,4 +61,9 @@ public interface SpecimenRepository extends SqlObject {
             return handle;
         });
     }
+
+    default void updateSpecimen(Specimen specimen) {
+
+    }
+
 }
