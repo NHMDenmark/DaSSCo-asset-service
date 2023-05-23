@@ -13,7 +13,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/
 import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
 
 @Component({
-  selector: 'dassco-specimen-institute',
+  selector: 'dassco-graph-data',
   templateUrl: './graph-data.component.html',
   styleUrls: ['./graph-data.component.scss'],
   providers: [

@@ -27,6 +27,7 @@ import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { ExportChartComponent } from './components/export-chart/export-chart.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
+import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     AssetDetailComponent,
     ChartComponent,
     GraphDataComponent,
-    ExportChartComponent
+    ExportChartComponent,
+    StatusWidgetComponent
   ],
     imports: [
       BrowserModule,

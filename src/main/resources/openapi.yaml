@@ -24,6 +24,22 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/assets/internalstatus:
+    get:
+      operationId: getInternalStatusAmt
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetV1'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutions/{institutionName}/collections/{collectionName}/assets:
     get:
       operationId: getInstitutes
@@ -128,6 +144,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
@@ -206,25 +227,9 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/institutes:
-    get:
-      operationId: getInstitutes_2
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Institute'
-        "400-599":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaSSCoError'
-      security:
-      - dassco-idp: []
   /v1/institutions:
     get:
-      operationId: getInstitutes_3
+      operationId: getInstitutes_2
       responses:
         "200":
           content:
@@ -260,7 +265,7 @@ paths:
       - dassco-idp: []
   /v1/institutions/{institutionName}:
     get:
-      operationId: getInstitutes_4
+      operationId: getInstitutes_3
       parameters:
       - name: institutionName
         in: path
@@ -897,6 +902,7 @@ components:
           enum:
           - METADATA_RECEIVED
           - ASSET_RECEIVED
+          - COMPLETED
         pushed_to_specify_date:
           type: string
           format: date-time
@@ -913,27 +919,6 @@ components:
           type: string
           description: The name of the institution to which the collection belong
           example: NNAD
-    Institute:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        label:
-          type: string
-        name:
-          type: string
-        ocrText:
-          type: string
-        taxonName:
-          type: string
-        geographicRegion:
-          type: string
-        properties:
-          type: object
-          additionalProperties:
-            type: object
-          writeOnly: true
     Institution:
       type: object
       properties:
