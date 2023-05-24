@@ -51,6 +51,24 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void deleteAsset() {
+        Asset createAsset = getTestAsset("deleteAsset");
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.pid = "pid-createAsset";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset);
+        assetService.deleteAsset("Karl-Børge", "deleteAsset");
+        Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset");
+        Asset result = deleteAssetOpt.get();
+        assertThat(result.asset_deleted_date).isNotNull();
+    }
+
+    @Test
     void createAssetUpdateAsset() {
         Asset createAsset = getTestAsset("createAssetUpdateAsset");
         createAsset.specimen_barcodes = Arrays.asList("createAssetUpdateAsset-sp-1");

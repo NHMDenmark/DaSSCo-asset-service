@@ -7,4 +7,4 @@ services:
       POSTGRES_URL: jdbc:postgresql://database:5432/dassco_asset_service
       POSTGRES_USERNAME: dassco_asset_service
       POSTGRES_PASSWORD: dassco_asset_service
-      LIQUIBASE_CONTEXT: local
+      LIQUIBASE_CONTEXT: local,development

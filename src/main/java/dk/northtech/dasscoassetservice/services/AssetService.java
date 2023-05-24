@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import jakarta.inject.Inject;
+import joptsimple.internal.Strings;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,9 @@ public class AssetService {
 
     public boolean auditAsset(Audit audit, String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
+        if(Strings.isNullOrEmpty(audit.user())) {
+            throw new IllegalArgumentException("Audit must have a user!");
+        }
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
@@ -35,14 +39,29 @@ public class AssetService {
         if(!InternalStatus.COMPLETED.equals(asset.internal_status)){
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
-        System.out.println(audit.user());
-        System.out.println(asset.digitizer);
         if(Objects.equals(asset.digitizer, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
-        jdbi.onDemand(AssetRepository.class).auditAsset(audit, asset);
+        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), DasscoEvent.AUDIT_ASSET, asset);
         return true;
     }
+
+    public boolean deleteAsset(String user, String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(Strings.isNullOrEmpty(user)) {
+            throw new IllegalArgumentException("User is null");
+        }
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        if(asset.asset_deleted_date != null) {
+            throw new IllegalArgumentException("Asset is already deleted");
+        }
+        jdbi.onDemand(AssetRepository.class).setEvent(user, DasscoEvent.DELETE_ASSET, asset);
+        return true;
+    }
+
     public boolean unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {

@@ -29,22 +29,22 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SpringBootTest
-@Testcontainers
+//@SpringBootTest
+//@Testcontainers
 //@Sql("/test-data.sql")
-public class StatisticsDataServiceTest {
+public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
-    @Container
-    static GenericContainer postgreSQL = new GenericContainer(DockerImageName.parse("apache/age:v1.1.0"))
-            .withExposedPorts(5432)
-            .withEnv("POSTGRES_DB", "dassco_asset_service")
-            .withEnv("POSTGRES_USER", "dassco_asset_service")
-            .withEnv("POSTGRES_PASSWORD", "dassco_asset_service");
+//    @Container
+//    static GenericContainer postgreSQL = new GenericContainer(DockerImageName.parse("apache/age:v1.1.0"))
+//            .withExposedPorts(5432)
+//            .withEnv("POSTGRES_DB", "dassco_asset_service")
+//            .withEnv("POSTGRES_USER", "dassco_asset_service")
+//            .withEnv("POSTGRES_PASSWORD", "dassco_asset_service");
 
-    @DynamicPropertySource
-    static void dataSourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_asset_service?currentSchema=dassco");
-    }
+//    @DynamicPropertySource
+//    static void dataSourceProperties(DynamicPropertyRegistry registry) {
+//        registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_asset_service?currentSchema=dassco");
+//    }
 
     @Inject
     private StatisticsDataService statisticsDataService;

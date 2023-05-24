@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Audit;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
@@ -400,7 +399,7 @@ public interface AssetRepository extends SqlObject {
                         .add("updated_date", Instant.now().toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
                         .add("parent_id", asset.parent_guid)
-                        .add("user", asset.digitizer)
+                        .add("user", asset.updateUser)
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
                         .add("restricted_access", restrictedAcces.build());
@@ -421,14 +420,20 @@ public interface AssetRepository extends SqlObject {
         return asset;
     }
 
-    default void auditAsset(Audit audit, Asset asset) {
+    @Transaction
+    default void setEvent(String user, DasscoEvent event, Asset asset) {
+        boilerplate();
+        internal_setEvent(user, event, asset);
+    };
+
+    default void internal_setEvent(String user, DasscoEvent dasscoEvent, Asset asset) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (a:Asset {name: $guid})
                             MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $updated_date, event:'AUDIT_ASSET', name: 'AUDIT_ASSET'})
+                            MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
                             MERGE (e)-[pb:INITIATED_BY]->(u)
                             MERGE (a)-[ca:CHANGED_BY]-(e)
                         $$
@@ -436,10 +441,11 @@ public interface AssetRepository extends SqlObject {
                         """;
         try {
             withHandle(handle -> {
-              AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("guid", asset.guid)
-                        .add("user", audit.user())
-                      .add("updated_date", Instant.now().toEpochMilli());
+                        .add("user", user)
+                        .add("event", dasscoEvent.name())
+                        .add("updated_date", Instant.now().toEpochMilli());
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)

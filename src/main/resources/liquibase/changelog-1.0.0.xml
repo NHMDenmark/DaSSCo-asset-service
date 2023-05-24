@@ -14,6 +14,7 @@
 
             -- Nodes
             SELECT create_vlabel('dassco','Institute');
+            SELECT create_vlabel('dassco','Institution');
             SELECT create_vlabel('dassco','Event');
             SELECT create_vlabel('dassco','User');
             SELECT create_vlabel('dassco','Pipeline');

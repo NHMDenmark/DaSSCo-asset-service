@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Specimen;
-import dk.northtech.dasscoassetservice.domain.SpecimenData;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -18,11 +17,9 @@ import java.util.List;
 public class SpecimenService {
     private final Jdbi jdbi;
     private static final Logger log = LoggerFactory.getLogger(SpecimenService.class);
-
     @Inject
-    public SpecimenService(DataSource dataSource) {
-        this.jdbi = Jdbi.create(dataSource)
-                .registerRowMapper((ConstructorMapper.factory(SpecimenData.class)));
+    public SpecimenService(Jdbi jdbi) {
+        this.jdbi = jdbi;
     }
 
     public Specimen updateSpecimen(Specimen specimen) {

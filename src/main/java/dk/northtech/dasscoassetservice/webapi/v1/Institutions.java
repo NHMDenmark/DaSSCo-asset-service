@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InstitutionService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -34,6 +35,7 @@ public class Institutions {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @ApiOperation(value = "List all institutions")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Institution> getInstitutes() {
@@ -48,15 +50,13 @@ public class Institutions {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Institution getInstitutes(@PathParam("institutionName") String institutionName) {
         Optional<Institution> instOpt = institutionService.getIfExists(institutionName);
-        if(instOpt.isPresent()){
-            return instOpt.get();
-        } else {
-            return null;
-        }
+        return instOpt.orElse(null);
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @ApiOperation(value = "Register a new institution")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))

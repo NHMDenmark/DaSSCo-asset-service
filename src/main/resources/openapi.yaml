@@ -24,6 +24,16 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+    delete:
+      operationId: deleteAsset_1
+      responses:
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutions/{institutionName}/collections/{collectionName}/assets:
     get:
       operationId: getInstitutes
@@ -57,7 +67,7 @@ paths:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Asset'
       responses:
@@ -66,16 +76,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Asset'
-        "400-599":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaSSCoError'
-      security:
-      - dassco-idp: []
-    delete:
-      operationId: deleteCollection
-      responses:
         "400-599":
           content:
             application/json:
@@ -128,11 +128,146 @@ paths:
         required: true
         schema:
           type: string
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           '*/*':
             schema:
               $ref: '#/components/schemas/Asset'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    delete:
+      operationId: deleteAsset
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Asset'
+      responses:
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/institutions/{institutionName}/collections/{collectionName}/assets/{assetGuid}/unlock:
+    put:
+      operationId: unlockAsset
+      parameters:
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/assets/{assetGuid}/audit:
+    post:
+      operationId: auditAsset
+      parameters:
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Audit'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/assets/{assetGuid}/complete:
+    put:
+      operationId: completeAsset
+      parameters:
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/assets/{assetGuid}/events:
+    get:
+      operationId: getEvents
+      parameters:
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/assets/{assetGuid}/unlock:
+    put:
+      operationId: unlockAsset_1
+      parameters:
+      - name: assetGuid
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -197,7 +332,7 @@ paths:
       security:
       - dassco-idp: []
     delete:
-      operationId: deleteCollection_1
+      operationId: deleteCollection
       responses:
         "400-599":
           content:
@@ -242,7 +377,7 @@ paths:
       operationId: createInstitution_2
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Institution'
       responses:
@@ -361,7 +496,7 @@ paths:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PublicationLink'
       responses:
@@ -388,7 +523,7 @@ paths:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/PublicationLink'
       responses:
@@ -586,7 +721,7 @@ paths:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: '#/components/schemas/Workstation'
       responses:
@@ -785,6 +920,7 @@ components:
           - BAD_REQUEST
           - UPSTREAM_ERROR
           - INTERNAL_ERROR
+          - FORBIDDEN
         errorMessage:
           type: string
     Asset:
@@ -854,6 +990,7 @@ components:
             enum:
             - USER
             - ADMIN
+            - SERVICE_USER
         tags:
           type: object
           additionalProperties:
@@ -886,10 +1023,6 @@ components:
           type: string
         collection:
           type: string
-        pipeline:
-          type: string
-        workstation:
-          type: string
         asset_location:
           type: string
         internal_status:
@@ -897,10 +1030,41 @@ components:
           enum:
           - METADATA_RECEIVED
           - ASSET_RECEIVED
+          - COMPLETED
         pushed_to_specify_date:
           type: string
           format: date-time
         digitizer:
+          type: string
+        pipeline:
+          type: string
+        workstation:
+          type: string
+        updateUser:
+          type: string
+    Audit:
+      type: object
+      properties:
+        user:
+          type: string
+    Event:
+      type: object
+      properties:
+        user:
+          type: string
+        timeStamp:
+          type: string
+          format: date-time
+        event:
+          type: string
+          enum:
+          - CREATE_ASSET
+          - UPDATE_ASSET
+          - AUDIT_ASSET
+          - DELETE_ASSET
+        pipeline:
+          type: string
+        workstation:
           type: string
     Collection:
       type: object
