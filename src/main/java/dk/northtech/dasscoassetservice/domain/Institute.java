@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
-import com.fasterxml.jackson.annotation.*;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.annotation.Nullable;
 import java.util.Map;

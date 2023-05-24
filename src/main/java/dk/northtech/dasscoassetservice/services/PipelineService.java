@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;

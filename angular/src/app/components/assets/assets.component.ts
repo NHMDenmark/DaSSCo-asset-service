@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {Asset} from "../domain/asset";
 import {Temporal} from "@js-temporal/polyfill";
 

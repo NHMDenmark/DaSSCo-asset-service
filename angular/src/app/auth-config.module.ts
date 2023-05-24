@@ -1,5 +1,5 @@
-import { NgModule } from '@angular/core';
-import { AuthModule, LogLevel } from 'angular-auth-oidc-client';
+import {NgModule} from '@angular/core';
+import {AuthModule, LogLevel} from 'angular-auth-oidc-client';
 
 @NgModule({
   imports: [

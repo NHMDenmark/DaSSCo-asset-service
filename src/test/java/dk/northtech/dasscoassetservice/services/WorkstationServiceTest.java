@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class WorkstationServiceTest extends AbstractIntegrationTest {
     @Inject

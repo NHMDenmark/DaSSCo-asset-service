@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.repositories.helpers;
 
-import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.DasscoEvent;
+import dk.northtech.dasscoassetservice.domain.Event;
 import org.apache.age.jdbc.base.Agtype;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -8,9 +9,6 @@ import org.jdbi.v3.core.statement.StatementContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class EventMapper implements RowMapper<Event> {
 

@@ -14,8 +14,6 @@ import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public interface PublisherRepository extends SqlObject {

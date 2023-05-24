@@ -6,7 +6,6 @@ import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

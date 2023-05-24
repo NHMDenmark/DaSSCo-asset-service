@@ -1,8 +1,5 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import Chart, {
-  ChartDataset, ChartEvent,
-  ChartOptions, LegendElement, LegendItem
-} from 'chart.js/auto';
+import Chart, {ChartDataset, ChartEvent, ChartOptions, LegendElement, LegendItem} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {GraphData} from '../../types';

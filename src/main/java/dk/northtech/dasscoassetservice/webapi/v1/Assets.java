@@ -1,8 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;

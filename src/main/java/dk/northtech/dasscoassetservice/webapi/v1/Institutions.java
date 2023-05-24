@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.Institute;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InstitutionService;

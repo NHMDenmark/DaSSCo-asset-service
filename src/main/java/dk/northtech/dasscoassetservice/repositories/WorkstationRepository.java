@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Workstation;
 import dk.northtech.dasscoassetservice.domain.WorkstationStatus;

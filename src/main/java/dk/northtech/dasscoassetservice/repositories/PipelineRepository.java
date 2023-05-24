@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;

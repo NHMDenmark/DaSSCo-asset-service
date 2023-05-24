@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";

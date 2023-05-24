@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {AuthService} from "./services/auth.service";
 import {Router} from "@angular/router";

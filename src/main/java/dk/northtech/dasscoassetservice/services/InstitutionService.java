@@ -1,20 +1,13 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.domain.Institute;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.InstitutionRepository;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
-import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 public class InstitutionService {
