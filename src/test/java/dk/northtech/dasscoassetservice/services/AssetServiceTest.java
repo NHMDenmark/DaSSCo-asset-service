@@ -84,6 +84,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
+        result.updateUser = "Uffe Updater";
         result.payload_type = "conventional";
         assetService.updateAsset(result);
         result.payload_type = "nuclear";
@@ -91,6 +92,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.completeAsset("createAssetUpdateAsset");
         assetService.auditAsset(new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.guid);
+        resultEvents.forEach(z -> System.out.println(z));
         assertThat(resultEvents.size()).isEqualTo(4);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         Asset resultAsset = resultOpt2.get();
@@ -197,6 +199,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
+        asset.updateUser = "Basviola";
         return asset;
     }
 }

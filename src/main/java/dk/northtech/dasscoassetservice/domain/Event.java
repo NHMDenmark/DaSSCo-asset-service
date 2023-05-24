@@ -8,4 +8,15 @@ public class Event {
     public DasscoEvent event;
     public String pipeline;
     public String workstation;
+
+    @Override
+    public String toString() {
+        return "Event{" +
+               "user='" + user + '\'' +
+               ", timeStamp=" + timeStamp +
+               ", event=" + event +
+               ", pipeline='" + pipeline + '\'' +
+               ", workstation='" + workstation + '\'' +
+               '}';
+    }
 }

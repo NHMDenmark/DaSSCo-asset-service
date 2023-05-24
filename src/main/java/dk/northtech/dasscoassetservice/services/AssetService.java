@@ -93,6 +93,9 @@ public class AssetService {
         if(assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset " + updatedAsset.guid + " does not exist");
         }
+        if(Strings.isNullOrEmpty(updatedAsset.updateUser)) {
+            throw new IllegalArgumentException("Update user must be provided");
+        }
         validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
         existing.tags = updatedAsset.tags;
@@ -108,6 +111,7 @@ public class AssetService {
         existing.payload_type = updatedAsset.payload_type;
         existing.digitizer = updatedAsset.digitizer;
         existing.parent_guid = updatedAsset.parent_guid;
+        existing.updateUser = updatedAsset.updateUser;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing);
         return updatedAsset;

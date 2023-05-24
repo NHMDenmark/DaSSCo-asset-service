@@ -185,7 +185,7 @@ public interface AssetRepository extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                            MATCH (e:Event)<-[:CHANGED_BY]-(a:Asset{name: $guid})
                             MATCH (u:User)<-[:INITIATED_BY]-(e)
                             OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e)
                             OPTIONAL MATCH (w:Workstation)<-[:USED]-(e)
