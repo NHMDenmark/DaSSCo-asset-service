@@ -136,6 +136,106 @@
         } ]
       }
     },
+    "/v1/institutions/{institutionName}/collections/{collectionName}/assets/{assetGuid}" : {
+      "get" : {
+        "operationId" : "getAsset",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "collectionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "put" : {
+        "operationId" : "updateAsset",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "collectionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Asset"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
         "operationId" : "getInstitutes_1",
@@ -441,15 +541,113 @@
         } ]
       }
     },
-    "/v1/specimengraphinfo" : {
+    "/v1/publishers/{publisherName}" : {
       "get" : {
-        "operationId" : "getSpecimenData",
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "publisherName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/SpecimenData"
+                  "$ref" : "#/components/schemas/Pipeline"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/publishers/{publisherName}/publish" : {
+      "post" : {
+        "operationId" : "publish",
+        "parameters" : [ {
+          "name" : "publisherName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PublicationLink"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Pipeline"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/publishers/{publisherName}/pull" : {
+      "post" : {
+        "operationId" : "pull",
+        "parameters" : [ {
+          "name" : "publisherName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PublicationLink"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Pipeline"
                 }
               }
             }
@@ -562,6 +760,147 @@
           }
         },
         "responses" : {
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/custom" : {
+      "get" : {
+        "operationId" : "getGraphDataCustomTimeframe",
+        "parameters" : [ {
+          "name" : "view",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "start",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "end",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/daily/{timeframe}" : {
+      "get" : {
+        "operationId" : "getGraphDataDaily",
+        "parameters" : [ {
+          "name" : "timeframe",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GraphData"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata/year" : {
+      "get" : {
+        "operationId" : "getGraphDataYear",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/graphdata" : {
+      "get" : {
+        "operationId" : "getSpecimenData",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StatisticsData"
+                }
+              }
+            }
+          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -987,7 +1326,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "USER" ]
+              "enum" : [ "USER", "ADMIN" ]
             }
           },
           "tags" : {
@@ -1026,6 +1365,9 @@
             "description" : "The institution",
             "example" : "NNAD"
           },
+          "parent_guid" : {
+            "type" : "string"
+          },
           "collection" : {
             "type" : "string"
           },
@@ -1035,9 +1377,19 @@
           "workstation" : {
             "type" : "string"
           },
+          "asset_location" : {
+            "type" : "string"
+          },
           "internal_status" : {
             "type" : "string",
             "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED" ]
+          },
+          "pushed_to_specify_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "digitizer" : {
+            "type" : "string"
           }
         }
       },
@@ -1112,50 +1464,21 @@
           }
         }
       },
-      "SpecimenData" : {
+      "PublicationLink" : {
         "type" : "object",
         "properties" : {
-          "instituteName" : {
+          "asset_guid" : {
             "type" : "string"
           },
-          "instituteOcrText" : {
+          "link" : {
             "type" : "string"
           },
-          "specimenName" : {
+          "publisher_name" : {
             "type" : "string"
           },
-          "specimenMediaSubject" : {
-            "type" : "string"
-          },
-          "specimenSpecifySpecId" : {
-            "type" : "string"
-          },
-          "specimenSpecifyAttId" : {
-            "type" : "string"
-          },
-          "specimenOrigSpecifyMediaName" : {
-            "type" : "string"
-          },
-          "assetName" : {
-            "type" : "string"
-          },
-          "assetMediaGuid" : {
-            "type" : "string"
-          },
-          "assetFileFormat" : {
-            "type" : "string"
-          },
-          "assetDateMediaCreated" : {
-            "type" : "string"
-          },
-          "pipelineName" : {
-            "type" : "string"
-          },
-          "workstationName" : {
-            "type" : "string"
-          },
-          "createdDate" : {
-            "type" : "string"
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },
@@ -1176,6 +1499,54 @@
           },
           "preparation_type" : {
             "type" : "string"
+          }
+        }
+      },
+      "GraphData" : {
+        "type" : "object",
+        "properties" : {
+          "institutes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "pipelines" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "workstations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          }
+        }
+      },
+      "StatisticsData" : {
+        "type" : "object",
+        "properties" : {
+          "instituteName" : {
+            "type" : "string"
+          },
+          "pipelineName" : {
+            "type" : "string"
+          },
+          "workstationName" : {
+            "type" : "string"
+          },
+          "createdDate" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "specimens" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },

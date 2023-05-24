@@ -1,29 +1,7 @@
-import moment, {Moment} from 'moment';
-import DurationConstructor = moment.unitOfTime.DurationConstructor;
-
-export interface SpecimenGraph {
-  instituteName: string;
-  instituteOcrText: string;
-  specimenName: string;
-  specimenMediaSubject: string;
-  specimenSpecifySpecId: string; // spec == specimen
-  specimenSpecifyAttId: string; // att = attachment
-  specimenOrigSpecifyMediaName: string;
-  assetName: string;
-  assetMediaGuid: string;
-  assetFileFormat: string;
-  assetDateMediaCreated: string;
-  pipelineName: string;
-  workstationName: string;
-  createdDate: string;
-}
-
-export interface GraphData {
-  mainChart?: Map<string, Map<string, number>>;
-  subChart?: Map<string, Map<string, number>>;
-  labels: string[];
-  timeFrame: TimeFrame;
-  multi: boolean;
+export interface GraphStatsV2 {
+  institutes: Map<string, number>;
+  pipelines: Map<string, number>;
+  workstations: Map<string, number>;
 }
 
 export interface Institute {
@@ -35,12 +13,11 @@ export interface Institute {
   geographicRegion?: string;
 }
 
-export interface TimeFrame {
-  period: 'WEEK' | 'MONTH' | 'YEAR' | 'COMBINEDTOTAL' | 'CUSTOM'; // combinedtotal = totals combined and bar chart w label-specific monthly data
-  unit: DurationConstructor;
-  format: string;
-  startDate: Moment;
-  endDate: Moment;
+export enum ViewV2 {
+  WEEK = 1,
+  MONTH = 2,
+  YEAR = 3,
+  EXPONENTIAL = 4
 }
 
 export enum StatValue {
@@ -49,7 +26,12 @@ export enum StatValue {
   WORKSTATION
 }
 
-export const defaultTimeFrame: number = 1;
+export enum ChartDataTypes {
+  INCREMENTAL = 'incremental',
+  EXPONENTIAL = 'exponential'
+}
+
+export const defaultView = 1; // Weekly fluctuation.
 
 export const MY_FORMATS = {
   parse: {

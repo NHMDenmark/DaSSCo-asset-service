@@ -1,41 +1,63 @@
 import {Injectable} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
-import {HttpClient} from "@angular/common/http";
+import {HttpClient, HttpResponse} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
-import {SpecimenGraph} from "../types";
 
 @Injectable({
   providedIn: 'root'
 })
 export class SpecimenGraphService {
-  baseUrl = '/api/v1/specimengraphinfo';
+  baseUrl = '/api/v1/graphdata';
 
   constructor(
     public oidcSecurityService: OidcSecurityService
     , private http: HttpClient
   ) { }
 
-  specimenData$: Observable<SpecimenGraph[] | undefined>
+  specimenDataWeek$: Observable<HttpResponse<any> | undefined>
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get<SpecimenGraph[]>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
+        return this.http.get(`${this.baseUrl}/daily/WEEK`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
-            catchError(this.handleError(`get ${this.baseUrl}`, undefined))
+            catchError(this.handleError(`get ${this.baseUrl}/daily/WEEK`, undefined))
           );
       })
     );
 
-  specimenPipeline$: Observable<SpecimenGraph[] | undefined>
+  specimenDataMonth$: Observable<HttpResponse<any> | undefined>
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get<SpecimenGraph[]>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
+        return this.http.get(`${this.baseUrl}/daily/MONTH`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
-            catchError(this.handleError(`get ${this.baseUrl}`, undefined))
+            catchError(this.handleError(`get ${this.baseUrl}/daily/MONTH`, undefined))
           );
       })
     );
+
+  specimenDataYear$: Observable<HttpResponse<any> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get(`${this.baseUrl}/year`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/year`, undefined))
+          );
+      })
+    );
+
+  getSpecimenDataCustom(view: string, start: number, end: number): Observable<HttpResponse<any> | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.baseUrl}/custom?view=${view}&start=${start}&end=${end}`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/custom`, undefined))
+            );
+        })
+      );
+  }
 
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {

@@ -1,0 +1,14 @@
+<div class="btns">
+  <button mat-icon-button color="accent" (click)="downloadPdf()"
+          #tooltip="matTooltip"
+          matTooltip="Download as PDF"
+          [matTooltipPosition]="'above'">
+    <mat-icon class="material-icons-outlined">sim_card_download</mat-icon>
+  </button>
+  <button mat-icon-button color="accent" (click)="downloadExcel()"
+          #tooltip="matTooltip"
+          matTooltip="Download as .xlsx"
+          [matTooltipPosition]="'above'">
+    <mat-icon class="material-icons-outlined">analytics</mat-icon>
+  </button>
+</div>

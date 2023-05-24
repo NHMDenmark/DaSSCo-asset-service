@@ -1,35 +1,35 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.AssetV1;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.services.SpecimenService;
+import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.springframework.stereotype.Component;
 
+import jakarta.inject.Inject;
+
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/assets")
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
-    private final SpecimenService specimenService;
+    private final StatisticsDataService specimenService;
 
     @Inject
-    public AssetApi(SpecimenService specimenService) {
+    public AssetApi(StatisticsDataService specimenService) {
         this.specimenService = specimenService;
     }
 

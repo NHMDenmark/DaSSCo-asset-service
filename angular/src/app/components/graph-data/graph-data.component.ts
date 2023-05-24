@@ -1,203 +1,125 @@
 import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
-import {BehaviorSubject, combineLatest, filter, map, Observable, pairwise, startWith} from 'rxjs';
-import {defaultTimeFrame, GraphData, MY_FORMATS, SpecimenGraph, StatValue, TimeFrame} from '../../types';
+import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
+import {
+  defaultView,
+  StatValue,
+  GraphStatsV2, ViewV2, MY_FORMATS, ChartDataTypes
+} from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
-import moment, {Moment} from 'moment/moment';
+import moment, {Moment} from 'moment-timezone';
 import {FormControl, FormGroup} from '@angular/forms';
-import {MAT_DATE_FORMATS} from "@angular/material/core";
+import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/core';
+import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
 
 @Component({
   selector: 'dassco-specimen-institute',
   templateUrl: './graph-data.component.html',
   styleUrls: ['./graph-data.component.scss'],
   providers: [
-    { provide: MAT_DATE_FORMATS, useValue: MY_FORMATS }
+    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE,
+      MAT_MOMENT_DATE_ADAPTER_OPTIONS] },
+    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
+    {
+      provide: MAT_DATE_FORMATS, useValue: MY_FORMATS
+    }
   ]
 })
 export class GraphDataComponent {
   chart: any;
-  timeFrameMap: Map<number, TimeFrame> = new Map([
-    [1, {period: 'WEEK', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(7, 'days'), endDate: moment()}],
-    [2, {period: 'MONTH', unit: 'days', format: 'DD-MMM-YY', startDate: moment().subtract(1, 'months'), endDate: moment()}],
-    [3, {period: 'YEAR', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}],
-    [4, {period: 'COMBINEDTOTAL', unit: 'months', format: 'MMM-YY', startDate: moment().subtract(12, 'months'), endDate: moment()}]
-  ]);
-  timeFrameSubject = new BehaviorSubject<TimeFrame>(this.timeFrameMap.get(defaultTimeFrame) as TimeFrame);
+  viewForm = new FormControl(defaultView);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
+  statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
+  statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
-  timeFrameForm = new FormControl(defaultTimeFrame);
+  statValue = StatValue.INSTITUTE; // the statistics chosen -> institute, pipeline, workstation
   statForm = new FormControl(0);
-  timeframeRange = new FormGroup({
+  timeFrameForm = new FormGroup({
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
-    end: new FormControl<Moment | null>(null, {updateOn: 'change'})
+    end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
   });
 
-  graphInfo$: Observable<GraphData>
-    = combineLatest([
-    this.specimenGraphService.specimenData$.pipe(filter(isNotUndefined)),
-    this.timeFrameSubject,
-    this.statValueSubject
-  ])
+  statsWeek$: Observable<Map<string, Map<string, GraphStatsV2>>> // <date, stats>. Is array if there's line and bar chart stats within
+    = this.statsV2$
     .pipe(
-      map(([specimens, timeFrame, statValue]) => {
-        const main = new Map<string, Map<string, number>>();
-        const graphData: GraphData = {labels: this.createLabels(timeFrame), timeFrame: timeFrame, multi: false};
-
-        specimens.forEach(s => {
-          const key = this.getKey(s, statValue); // institute, pipeline, etc...
-          if (moment(s.createdDate).isBetween(timeFrame.startDate, timeFrame.endDate, timeFrame.unit, '[]')) {
-            const created = moment(s.createdDate).format(timeFrame.format);
-            if (main.has(key)) { // if it already exists
-              const inst = main.get(key);
-              if (inst) {
-                this.setTotalFromKey(inst, created, 1);
-              }
-            } else { // if nothing, we create a new with the institute name
-              main.set(key, new Map<string, number>([[created, 1]]));
-            }
-          }
-        });
-        // todod if main is empty, there's no data.
-        graphData.mainChart = main;
-
-        if (timeFrame.period.includes('YEAR')) {
-          main.forEach((totalPrDate, key, originalMap) => {
-            originalMap.set(key, this.getAccumulativeTotal(totalPrDate, timeFrame));
-          });
-        }
-
-        if (timeFrame.period.includes('COMBINEDTOTAL')) {
-          graphData.multi = true;
-          graphData.subChart = main; // sets the subchart as the (normally) mainchart, as COMBINED needs a manipulated linechart (aka. main)
-          const combinedTotal = new Map<string, number>();
-
-          main.forEach((totalPrDate, _inst, _originalMap) => {
-            totalPrDate.forEach((total, date, _originalMap) => {
-              this.setTotalFromKey(combinedTotal, date, total);
-            });
-          });
-          graphData.mainChart = new Map<string, Map<string, number>>([['Total', this.getAccumulativeTotal(combinedTotal, timeFrame)]]);
-        }
-        return graphData;
-      })
+      filter(isNotUndefined),
+      map((data: Map<string, Map<string, GraphStatsV2>>) => data)
     );
-
-  setTotalFromKey(map: Map<string, number>, hasKey: string, base: number) {
-    if (map.has(hasKey)) { // if its value has been set, we up the total
-      const total = map.get(hasKey);
-      if (total) map.set(hasKey, total + base); // splitting them up to satisfy typescripts need for undefined-validation sigh
-    } else { // otherwise, we set the total to 1
-      map.set(hasKey, base);
-    }
-  }
-
-  getAccumulativeTotal(map: Map<string, number>, timeFrame: TimeFrame): Map<string, number> { // sorts for dates and then adds the totals
-    return new Map([...map.entries()]
-      .sort(([a], [b]) => moment(a, timeFrame.format).isBefore(moment(b, timeFrame.format)) ? -1 : 1)
-      .map((curr, i, arr) => {
-        if (arr[i - 1]) curr[1] += arr[i - 1][1];
-        return curr;
-      })
-    );
-  }
-
-  getKey(specimen: SpecimenGraph, statValue: StatValue): string {
-    if (statValue === StatValue.INSTITUTE) return specimen.instituteName;
-    if (statValue === StatValue.PIPELINE) return specimen.pipelineName;
-    return specimen.workstationName;
-  }
 
   constructor(public specimenGraphService: SpecimenGraphService) {
-    combineLatest([
-      this.timeFrameForm.valueChanges.pipe(
-        startWith(defaultTimeFrame, defaultTimeFrame),
-        filter(isNotNull),
-        pairwise()
-      ),
-      this.timeframeRange.valueChanges.pipe(
-        startWith(null)
-      )
-    ])
-      .subscribe(([[prevForm, currForm], range]) => {
-        const prevTf = this.timeFrameMap.get(prevForm) as TimeFrame;
-        const nextTf = this.timeFrameMap.get(currForm) as TimeFrame;
+    this.timeFrameForm.valueChanges
+      .pipe(startWith(null))
+      .subscribe(range => {
+        if (range) {
+          if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
+              && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+              && this.timeFrameForm.valid) {
+            let view = 'WEEK';
+            if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
+            if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
 
-        if (range?.start && range.end) { // if there's custom range
-          // console.log('range')
-          // console.log(moment(range.end, 'DD-MM-YYYY ', true).isValid())
-          // console.log(moment(range.start, 'DD-MM-YYYY ', true).isValid())
-          if (prevTf.unit !== nextTf.unit) { // if it changes from daily to yearly view or vice versa
-            this.clearCustomTimeFrame();
-            this.timeFrameSubject.next(nextTf);
-            this.timeFrameForm.setValue(currForm); // todo make this prettier when you have time.....
-          } else if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
-            && moment(range.end, 'DD-MM-YYYY ', true).isValid()) {
-            this.timeFrameSubject.next({
-              period: nextTf.period,
-              unit: nextTf.unit,
-              format: nextTf.format,
-              startDate: range.start,
-              endDate: range.end
-            });
+            this.specimenGraphService.getSpecimenDataCustom(view,
+                moment(range.start).valueOf(),
+                moment(range.end).valueOf())
+              .pipe(filter(isNotUndefined))
+              .subscribe(customData => {
+                const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
+                this.statsV2Subject.next(mappedData);
+              });
           }
-        } else {
-          this.timeFrameSubject.next(nextTf);
         }
       });
-
-    // this.timeFrameForm.valueChanges
-    //   .pipe(
-    //     filter(isNotNull),
-    //     startWith(defaultTimeFrame),
-    //     pairwise()
-    //   )
-    //   .subscribe(([prev, next]) => {
-    //     const prevTf = this.timeFrameMap.get(prev) as TimeFrame;
-    //     console.log(prevTf)
-    //     const nextTf = this.timeFrameMap.get(next) as TimeFrame;
-    //     this.timeFrameSubject.next(nextTf);
-    //     // if (prevTf.unit !== nextTf.unit) this.clearCustomTimeFrame();
-    //   });
 
     this.statForm.valueChanges.pipe(filter(isNotNull))
       .subscribe(val => this.setStatValue(val));
 
-    // this.timeframeRange.valueChanges.pipe(filter(isNotNull))
-    //   .subscribe(val => {
-    //     if (val.start && val.end) {
-    //       if (moment(val.start, 'DD-MM-YYYY ', true).isValid()
-    //         && moment(val.end, 'DD-MM-YYYY ', true).isValid()) {
-    //         if (this.timeFrameForm.value) {
-    //           const currTimeFrame = this.timeFrameMap.get(this.timeFrameForm.value) as TimeFrame;
-    //           this.timeFrameSubject.next({period: currTimeFrame.period, unit: currTimeFrame.unit, format: currTimeFrame.format, startDate: val.start, endDate: val.end});
-    //         }
-    //       }
-    //     }
-    //   });
-  }
-
-  createLabels(timeFrame: TimeFrame): string[] {
-    const labels: string[] = [];
-    const duration = timeFrame.endDate.clone().diff(timeFrame.startDate.clone(), timeFrame.unit);
-    for (let i = duration; i >= 0; i--) {
-      labels.push(timeFrame.endDate.clone().subtract(i, timeFrame.unit).format(timeFrame.format));
-    }
-    return labels;
+    this.viewForm.valueChanges
+      .pipe(
+        filter(isNotNull),
+        startWith(1)
+      )
+      .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
+        this.clearCustomTimeFrame(false);
+        if (view === ViewV2.WEEK) {
+          this.specimenGraphService.specimenDataWeek$
+            .pipe(filter(isNotUndefined))
+            .subscribe(data => {
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
+              this.statsV2Subject.next(mappedData);
+            });
+        }
+        if (view === ViewV2.MONTH) {
+          this.specimenGraphService.specimenDataMonth$
+            .pipe(filter(isNotUndefined))
+            .subscribe(data => {
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
+              this.statsV2Subject.next(mappedData);
+            });
+        }
+        if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
+          this.specimenGraphService.specimenDataYear$
+            .pipe(filter(isNotUndefined))
+            .subscribe(data => {
+              const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
+              if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
+                mappedData.delete(ChartDataTypes.EXPONENTIAL);
+              }
+              this.statsV2Subject.next(mappedData);
+            });
+        }
+      });
   }
 
   setStatValue(statValue: StatValue) {
     this.statValueSubject.next(statValue);
+    this.statValue = statValue;
     if (statValue === StatValue.INSTITUTE) this.title = 'Specimens / Institution';
     if (statValue === StatValue.PIPELINE) this.title = 'Specimens / Pipeline';
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
 
-  clearCustomTimeFrame() {
-    if (this.timeFrameForm.value) {
-      const originalTf = this.timeFrameMap.get(this.timeFrameForm.value);
-      this.timeFrameSubject.next(originalTf as TimeFrame);
-      this.timeframeRange.reset();
-    }
+  clearCustomTimeFrame(clearView: boolean) {
+    this.timeFrameForm.reset();
+    if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
   }
 }

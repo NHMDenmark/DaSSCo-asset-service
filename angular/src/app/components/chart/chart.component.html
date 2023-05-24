@@ -1,6 +1,10 @@
 <div class="chart-container">
-  <div style="position: relative; height: 60vh; width: 150vh;">
-    <canvas id="chart">{{chart}}</canvas>
-    <div *ngIf="(setChartValues$ | async)"></div>
+  <div class="export">
+    <dassco-export-chart [setChart]="chart" [setTitle]="titleSubject.getValue()"></dassco-export-chart>
+  </div>
+  <div class="canvas-container">
+    <canvas #canvas id="canvas">{{chart}}</canvas>
+<!--    <div *ngIf="(setChartValues$ | async)"></div>-->
+    <div *ngIf="(setChartValuesV2$ | async)"></div>
   </div>
 </div>

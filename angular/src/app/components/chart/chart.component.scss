@@ -1,8 +1,25 @@
+@import 'src/style/base';
+
 .chart-container {
   display: flex;
   justify-content: center;
   flex-direction: column;
 
-  #line-chart {
+  .export {
+    display: flex;
+    justify-content: flex-end;
+    z-index: 10;
+
+    dassco-export-chart {
+      position: absolute;
+    }
+  }
+
+  .canvas-container {
+    position: relative;
+    height: 50vh;
+    width: 80vw;
+    display: flex;
+    justify-content: center;
   }
 }

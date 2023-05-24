@@ -129,7 +129,7 @@ public class WorkstationRepository {
                             Agtype workstation_status = rs.getObject("status", Agtype.class);
                             Agtype institutionName = rs.getObject("institution_name", Agtype.class);
                             return new Workstation(workstation_name.getString(), WorkstationStatus.valueOf(workstation_status.getString()),institutionName.getString());
-                        }).findOne();
+                        }).findFirst();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
