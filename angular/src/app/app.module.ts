@@ -26,6 +26,9 @@ import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { ExportChartComponent } from './components/export-chart/export-chart.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
+import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
+import {MatDividerModule} from "@angular/material/divider";
+import {MatTableModule} from "@angular/material/table";
 
 @NgModule({
   declarations: [
@@ -38,27 +41,30 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
     AssetDetailComponent,
     ChartComponent,
     GraphDataComponent,
-    ExportChartComponent
+    ExportChartComponent,
+    StatusWidgetComponent
   ],
     imports: [
-      BrowserModule,
-      AppRoutingModule,
-      AuthConfigModule,
-      MatToolbarModule,
-      MatIconModule,
-      MatButtonModule,
-      MatInputModule,
-      FormsModule,
-      BrowserAnimationsModule,
-      MatOptionModule,
-      MatSelectModule,
-      ReactiveFormsModule,
-      MatButtonToggleModule,
-      MatDatepickerModule,
-      MatNativeDateModule,
-      MatMomentDateModule,
-      MatTooltipModule,
-      MatSnackBarModule
+        BrowserModule,
+        AppRoutingModule,
+        AuthConfigModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        MatOptionModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatMomentDateModule,
+        MatTooltipModule,
+        MatSnackBarModule,
+        MatDividerModule,
+        MatTableModule
     ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

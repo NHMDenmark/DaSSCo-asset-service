@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.GraphData;
 import dk.northtech.dasscoassetservice.domain.GraphView;
 import dk.northtech.dasscoassetservice.domain.StatisticsData;
+import io.swagger.models.auth.In;
 import joptsimple.internal.Strings;
 import org.apache.commons.collections4.MapIterator;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -21,6 +22,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import javax.inject.Inject;
 import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -127,6 +130,22 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
         Assertions.assertEquals(dtf.parse(dateStringA, Instant::from).compareTo(dtf.parse(dateStringB, Instant::from)), -1);
         Assertions.assertEquals(dtf.parse(dateStringB, Instant::from).compareTo(dtf.parse(dateStringA, Instant::from)), 1);
+    }
+
+    @Test
+    public void testMillisecs() {
+        Instant d = Instant.now();
+        DateTimeFormatter dtf = new DateTimeFormatterBuilder() // default day and hour as the pattern is only month and year
+                .appendPattern("dd-MM-yyyy")
+                .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                .toFormatter(Locale.ENGLISH)
+                .withZone(ZoneId.of("UTC"));
+        String output = dtf.format(Instant.now());
+
+        long t = Instant.from(dtf.parse(output)).toEpochMilli();
+        System.out.println(t);
     }
 
     public Map<String, GraphData> generateIncrData(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, GraphView timeFrame) {
