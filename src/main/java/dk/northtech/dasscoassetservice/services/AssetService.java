@@ -7,6 +7,8 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -24,6 +26,47 @@ public class AssetService {
         this.jdbi = jdbi;
     }
 
+    public boolean auditAsset(Audit audit, String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        if(!InternalStatus.COMPLETED.equals(asset.internal_status)){
+            throw new DasscoIllegalActionException("Asset must be complete before auditing");
+        }
+        System.out.println(audit.user());
+        System.out.println(asset.digitizer);
+        if(Objects.equals(asset.digitizer, audit.user())) {
+            throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
+        }
+        jdbi.onDemand(AssetRepository.class).auditAsset(audit, asset);
+        return true;
+    }
+    public boolean unlockAsset(String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.asset_locked = false;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
+    }
+    public List<Event> getEvents(String assetGuid) {
+        return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
+    }
+    public boolean completeAsset(String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = InternalStatus.COMPLETED;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
+    }
+
     public Asset updateAsset(Asset updatedAsset) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
         if(assetOpt.isEmpty()) {
@@ -31,9 +74,6 @@ public class AssetService {
         }
         validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
-        if(existing.asset_locked) {
-            throw new RuntimeException("Asset is locked");
-        }
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
         existing.pipeline = updatedAsset.pipeline;
@@ -47,11 +87,22 @@ public class AssetService {
         existing.payload_type = updatedAsset.payload_type;
         existing.digitizer = updatedAsset.digitizer;
         existing.parent_guid = updatedAsset.parent_guid;
-
+        validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing);
         return updatedAsset;
     }
 
+    void validateAssetFields(Asset a) {
+        if(a.pid == null){
+            throw new IllegalArgumentException("PID cannot be null");
+        }
+        if(a.guid == null) {
+            throw new IllegalArgumentException("GUID cannot be null");
+        }
+        if(a.status == null) {
+            throw new IllegalArgumentException("Status cannot be null");
+        }
+    }
     void validateAsset(Asset asset){
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
         if(ifExists.isEmpty()){
@@ -80,6 +131,7 @@ public class AssetService {
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
         }
+        validateAssetFields(asset);
         validateAsset(asset);
 
         // Default values on creation

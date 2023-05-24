@@ -24,6 +24,7 @@ public class AbstractIntegrationTest {
     @Inject
     InstitutionService institutionService;
 
+    @Inject PipelineService pipelineService;
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
         // These tests assume the dev dataset, so roll that context on:

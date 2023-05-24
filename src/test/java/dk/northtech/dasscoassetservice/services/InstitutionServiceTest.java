@@ -18,8 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@SpringBootTest
-@Testcontainers
+//@SpringBootTest
+//@Testcontainers
 class InstitutionServiceTest extends AbstractIntegrationTest {
     //jdbc:postgresql://localhost:5433/dassco_asset_service?currentSchema=dassco
 
@@ -56,5 +56,4 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
         IllegalArgumentException illegalArgumentException2 = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution(null)));
         assertThat(illegalArgumentException2).hasMessageThat().isEqualTo("Name is cannot be null or empty");
     }
-
 }

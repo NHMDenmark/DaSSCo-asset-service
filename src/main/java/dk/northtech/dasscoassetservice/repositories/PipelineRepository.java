@@ -56,7 +56,6 @@ public class PipelineRepository {
                 handle.createUpdate(sql)
                         .bind("params", agtype)
                         .execute();
-                handle.close();
                 return handle;
             });
         } catch (Exception e) {

@@ -1,8 +1,12 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.Audit;
+import dk.northtech.dasscoassetservice.domain.DasscoEvent;
+import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
+import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
 import joptsimple.internal.Strings;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -17,8 +21,9 @@ import org.postgresql.jdbc.PgConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 //@Repository
@@ -55,7 +60,25 @@ public interface AssetRepository extends SqlObject {
     @Transaction
     default Optional<Asset> readAsset(String assetId) {
         boilerplate();
-        return readAssetInternal(assetId);
+        Optional<Asset> asset = readAssetInternal(assetId);
+        if(asset.isEmpty()) {
+            return asset;
+        }
+        Asset asset1 = asset.get();
+        List<Event> events = readEvents_internal(assetId);
+
+        for(Event event : events) {
+            if(DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+                asset1.audited = true;
+            } else if(DasscoEvent.UPDATE_ASSET.equals(event.event) && asset1.last_updated_date == null) {
+                asset1.last_updated_date = event.timeStamp;
+            } else if(DasscoEvent.CREATE_ASSET.equals(event.event) && asset1.last_updated_date == null) {
+                asset1.last_updated_date = event.timeStamp;
+            } else if(DasscoEvent.DELETE_ASSET.equals(event.event)) {
+                asset1.asset_deleted_date = event.timeStamp;
+            }
+        }
+        return Optional.of(asset1);
     }
 
     @Transaction
@@ -67,6 +90,13 @@ public interface AssetRepository extends SqlObject {
         return asset;
     }
 
+    @Transaction
+    default Asset updateAssetNoEvent(Asset asset) {
+        boilerplate();
+        updateAssetNoEventInternal(asset);
+        return asset;
+    }
+
     default Optional<Asset> readAssetInternal(String assetGuid) {
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
@@ -75,6 +105,7 @@ public interface AssetRepository extends SqlObject {
                          MATCH (a:Asset{name: $guid})
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event{event:'CREATE_ASSET'})<-[:CHANGED_BY]-(a)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e)
                          MATCH (p:Pipeline)<-[:USED]-(e)
                          MATCH (w:Workstation)<-[:USED]-(e)
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
@@ -89,6 +120,7 @@ public interface AssetRepository extends SqlObject {
                          , a.file_formats
                          , a.asset_taken_date
                          , a.internal_status
+                         , a.asset_locked
                          , pa.guid
                          , a.restricted_access
                          , a.tags
@@ -99,6 +131,7 @@ public interface AssetRepository extends SqlObject {
                          , w.name
                          , e.timestamp
                          , a.pushed_to_specify_date
+                         , u.name
                       $$
                     , #params)
                     as (guid agtype
@@ -111,6 +144,7 @@ public interface AssetRepository extends SqlObject {
                     , file_formats agtype
                     , asset_taken_date agtype
                     , internal_status agtype
+                    , asset_locked agtype
                     , parent_guid agtype
                     , restricted_access agtype
                     , tags agtype
@@ -120,7 +154,8 @@ public interface AssetRepository extends SqlObject {
                     , pipeline_name agtype
                     , workstation_name agtype
                     , creation_date agtype
-                    , pushed_to_specify_date agtype);
+                    , pushed_to_specify_date agtype
+                    , user_name agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -134,6 +169,48 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
+    @Transaction
+    default List<Event> readEvents(String guid) {
+        boilerplate();
+        return readEvents_internal(guid);
+    }
+    default List<Event> readEvents_internal(String guid) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                            MATCH (u:User)<-[:INITIATED_BY]-(e)
+                            OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e)
+                            OPTIONAL MATCH (w:Workstation)<-[:USED]-(e)
+                            RETURN e.timestamp
+                                , e.event
+                                , u.name
+                                , p.name
+                                , w.name
+                        $$
+                        , #params) 
+                        as (timestamp agtype
+                            , event agtype
+                            , event_user agtype
+                            , pipeline agtype
+                            , workstation agtype);
+                        """;
+
+        return withHandle(handle -> {
+            AgtypeMap agParams = new AgtypeMapBuilder()
+                    .add("guid", guid)
+                    .build();
+            Agtype agtype = AgtypeFactory.create(agParams);
+            List<Event> events = handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .map(new EventMapper())
+                    .list();
+
+            events.sort(Collections.reverseOrder(Comparator.comparing(event -> event.timeStamp)));
+            return events;
+        });
+    }
     default void connectParentChild(String parentGuid, String childGuid) {
         if(Strings.isNullOrEmpty(parentGuid)) {
             return;
@@ -181,6 +258,7 @@ public interface AssetRepository extends SqlObject {
                                 , internal_status: $internal_status
                                 , restricted_access: $restricted_access
                                 , tags: $tags
+                                , asset_locked: $asset_locked
                             })
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET', name: 'CREATE_ASSET'})
@@ -220,7 +298,8 @@ public interface AssetRepository extends SqlObject {
                         .add("parent_id",asset.parent_guid)
                         .add("user", asset.digitizer)
                         .add("tags",tags.build())
-                        .add("restricted_access", restrictedAcces.build());
+                        .add("restricted_access", restrictedAcces.build())
+                        .add("asset_locked", asset.asset_locked);
 
                 if(asset.asset_taken_date != null) {
                     agBuilder.add("asset_taken_date", asset.asset_taken_date.toEpochMilli());
@@ -240,6 +319,34 @@ public interface AssetRepository extends SqlObject {
         return asset;
     }
 
+    default Asset updateAssetNoEventInternal(Asset asset) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (a:Asset {name: $guid})
+                            SET a.asset_locked = $asset_locked
+                            , a.internal_status = $internal_status
+                        $$
+                        , #params) as (a agtype);
+                        """;
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("guid", asset.guid)
+                        .add("internal_status", asset.internal_status.name())
+                        .add("asset_locked", asset.asset_locked);
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return asset;
+    }
 
     default Asset update_asset_internal(Asset asset) {
         String sql =
@@ -313,4 +420,34 @@ public interface AssetRepository extends SqlObject {
         }
         return asset;
     }
+
+    default void auditAsset(Audit audit, Asset asset) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (a:Asset {name: $guid})
+                            MERGE (u:User{user_id: $user, name: $user})
+                            MERGE (e:Event{timestamp: $updated_date, event:'AUDIT_ASSET', name: 'AUDIT_ASSET'})
+                            MERGE (e)-[pb:INITIATED_BY]->(u)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)
+                        $$
+                        , #params) as (a agtype);
+                        """;
+        try {
+            withHandle(handle -> {
+              AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("guid", asset.guid)
+                        .add("user", audit.user())
+                      .add("updated_date", Instant.now().toEpochMilli());
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    };
 }

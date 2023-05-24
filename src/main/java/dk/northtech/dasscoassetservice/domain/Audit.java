@@ -1,5 +1,4 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public enum Role {
-    USER, ADMIN, SERVICE_USER
+public record Audit(String user) {
 }

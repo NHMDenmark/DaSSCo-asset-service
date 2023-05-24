@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class Asset {
     public List<FileFormat> file_formats;
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "false")
     public boolean asset_locked;
-    public List<Role> restricted_access;
+    public List<Role> restricted_access = new ArrayList<>();
 
     @Schema(description = "A dictionary of dynamic properties", example = "ct scan")
     public Map<String, String> tags = new HashMap<>();

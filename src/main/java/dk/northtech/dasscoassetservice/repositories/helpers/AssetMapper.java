@@ -8,8 +8,6 @@ import org.jdbi.v3.core.statement.StatementContext;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,7 +29,8 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype workstationName = rs.getObject("workstation_name", Agtype.class);
         Agtype restrictedAccess = rs.getObject("restricted_access", Agtype.class);
         Agtype tags = rs.getObject("tags", Agtype.class);
-
+        Agtype userName = rs.getObject("user_name", Agtype.class);
+        Agtype assetLocked = rs.getObject("asset_locked", Agtype.class);
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
         asset.specimen_barcodes = specimenBarcodes.getList().stream().map(Object::toString).collect(Collectors.toList());
         asset.guid = guid.getString();
@@ -43,6 +42,8 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.collection = collectionName.getString();
         asset.pipeline = pipelineName.getString();
         asset.workstation = workstationName.getString();
+        asset.asset_locked = assetLocked.getBoolean();
+        asset.digitizer = userName.getString();
         asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
         asset.restricted_access = restrictedAccess.getList().stream().map(role -> Role.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();

@@ -1,8 +1,8 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.Audit;
+import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
@@ -22,59 +22,27 @@ import java.util.List;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
-@Path("/v1/institutions/{institutionName}/collections/{collectionName}/assets/")
+@Path("/v1/assets/")
 @SecurityRequirement(name = "dassco-idp")
-public class Assets {
+public class Assetupdates {
 
     private final AssetService assetService;
 
     @Inject
-    public Assets(AssetService assetService) {
+    public Assetupdates(AssetService assetService) {
         this.assetService = assetService;
     }
 
-
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getInstitutes() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
     @POST
+    @Path("{assetGuid}/audit")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset createInstitution(Asset asset
-    , @PathParam("institutionName") String institutionName
-    , @PathParam("collectionName") String collectionName) {
-        asset.collection = collectionName;
-        asset.institution = institutionName;
-        return this.assetService.persistAsset(asset);
+    public boolean auditAsset(@PathParam("assetGuid") String assetGuid
+    , Audit audit) {
+        return this.assetService.auditAsset(audit, assetGuid);
     }
-
-
-
-    @PUT
-    @Path("{assetGuid}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(Asset asset
-            , @PathParam("institutionName") String institutionName
-            , @PathParam("collectionName") String collectionName
-            , @PathParam("assetGuid") String assetGuid) {
-        asset.collection = collectionName;
-        asset.institution = institutionName;
-        asset.guid = assetGuid;
-        return this.assetService.updateAsset(asset);
-    }
-
     @PUT
     @Path("{assetGuid}/unlock")
     @Produces(MediaType.APPLICATION_JSON)
@@ -85,23 +53,31 @@ public class Assets {
         return this.assetService.unlockAsset(assetGuid);
     }
 
-    @GET
+    @PUT
+    @Path("{assetGuid}/complete")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    @Path("/{assetGuid}")
-    public Asset getAsset(@PathParam("institutionName") String institutionName
-            , @PathParam("collectionName") String collectionName
-            , @PathParam("assetGuid")String assetGuid) {
-        return this.assetService.getAsset(assetGuid).orElse(null);
+    public boolean completeAsset(@PathParam("assetGuid") String assetGuid) {
+        return this.assetService.completeAsset(assetGuid);
+    }
+
+    @GET
+    @Path("{assetGuid}/events")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<Event> getEvents(@PathParam("assetGuid") String assetGuid) {
+        return this.assetService.getEvents(assetGuid);
     }
 
     @DELETE
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
 //    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteCollection() {
+    public void deleteAsset() {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

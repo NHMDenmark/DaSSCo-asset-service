@@ -72,3 +72,39 @@ SELECT * FROM ag_catalog.cypher('dassco'
                             MERGE (i)<-[:STATIONED_AT]-(c)
                             RETURN i.name, c.name
                         $$) as (institution_name agtype, workstation_name agtype);
+-- Pipeline
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "institution_1"})
+                            MERGE (p:Pipeline {name: "i1_p1"})
+                            MERGE (i)<-[:USED_BY]-(p)
+                            RETURN i.name, p.name
+                        $$
+                 ) as (institution_name agtype, pipeline_name agtype);
+
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "institution_1"})
+                            MERGE (p:Pipeline {name: "i1_p2"})
+                            MERGE (i)<-[:USED_BY]-(p)
+                            RETURN i.name, p.name
+                        $$
+                  ) as (institution_name agtype, pipeline_name agtype);
+
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "institution_2"})
+                            MERGE (p:Pipeline {name: "i2_p1"})
+                            MERGE (i)<-[:USED_BY]-(p)
+                            RETURN i.name, p.name
+                        $$
+                  ) as (institution_name agtype, pipeline_name agtype);
+
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "institution_2"})
+                            MERGE (p:Pipeline {name: "i2_p2"})
+                            MERGE (i)<-[:USED_BY]-(p)
+                            RETURN i.name, p.name
+                        $$
+                  ) as (institution_name agtype, pipeline_name agtype);
