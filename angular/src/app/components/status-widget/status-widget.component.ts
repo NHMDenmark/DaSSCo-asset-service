@@ -4,6 +4,7 @@ import {filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {MatTableDataSource} from "@angular/material/table";
 import {InternalStatusDataSource} from "../../types";
+import {HttpStatusCode} from "@angular/common/http";
 
 @Component({
   selector: 'dassco-status-widget',
@@ -20,8 +21,12 @@ export class StatusWidgetComponent {
     .pipe(
       filter(isNotUndefined),
       map(statuses => {
+        // todo MAKE DATA IF HTTP CODE IS NO CONTENT
+        if (statuses.status === HttpStatusCode.NoContent) {
+          console.warn('No data received.');
+          return new Map<string, string>;
+        }
         const mapData = new Map(Object.entries(statuses.body));
-        console.log(mapData)
         const listData = [];
         listData.push({status: 'COMPLETED', no: mapData.get('COMPLETED')} as InternalStatusDataSource);
         listData.push({status: 'ASSET_RECEIVED', no: mapData.get('ASSET_RECEIVED')} as InternalStatusDataSource);
