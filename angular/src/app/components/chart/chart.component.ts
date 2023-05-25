@@ -161,7 +161,8 @@ export class ChartComponent {
       },
       scales: {
         y: {
-          stacked: true,
+          beginAtZero: true,
+          stacked: false,
           ticks: {
             callback(val, _index) {
               return val as number % 1 === 0 ? val : '';
