@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
     <!-- This changelog primarily handles competition setup -->
 
-    <changeSet id="VERSION-1.0.0-INIT-AGE" author="Thomas Skov Bornerup" context="default">
+    <changeSet id="VERSION-1.0.0-INIT-AGE" author="Thomas Skov Bornerup" contextFilter="default">
         <sql>
             CREATE EXTENSION IF NOT EXISTS age;
             LOAD 'age';

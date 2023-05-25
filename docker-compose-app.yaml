@@ -5,7 +5,10 @@ services:
     ports:
       - 8080:8080
     environment:
+      CORS_ALLOW_ORIGIN: http://localhost:8080
       POSTGRES_URL: jdbc:postgresql://database:5432/dassco_asset_service
-      POSTGRES_USERNAME: dassco_asset_service
+      POSTGRES_USER: dassco_asset_service
       POSTGRES_PASSWORD: dassco_asset_service
-      LIQUIBASE_CONTEXT: local,development
+      KEYCLOAK_REALM: dassco
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8083/
+      KEYCLOAK_RESOURCE: dassco-asset-service
