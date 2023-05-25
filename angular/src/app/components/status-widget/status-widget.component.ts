@@ -21,7 +21,7 @@ export class StatusWidgetComponent {
     .pipe(
       filter(isNotUndefined),
       map(statuses => {
-        if (statuses.status === HttpStatusCode.NoCongtent) {
+        if (statuses.status === HttpStatusCode.NoContent) {
           console.warn('No data received.');
           return new Map<string, string>;
         }
