@@ -3,12 +3,12 @@ services:
     build: .
     image: dassco_asset_service
     ports:
-      - 8080:8080
+      - 8084:8084
     environment:
       CORS_ALLOW_ORIGIN: http://localhost:8080
       POSTGRES_URL: jdbc:postgresql://database:5432/dassco_asset_service
       POSTGRES_USER: dassco_asset_service
       POSTGRES_PASSWORD: dassco_asset_service
       KEYCLOAK_REALM: dassco
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8083/
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080/
       KEYCLOAK_RESOURCE: dassco-asset-service

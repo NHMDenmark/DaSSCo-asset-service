@@ -1,6 +1,6 @@
 services:
   age-viewer:
-    image: docker.northtech.dk/northtech/age-viewer:1.0.0
+    image: granddock/age-viewer:1.0.0
     ports:
       - "5455:5455"
       - "3000:3000"

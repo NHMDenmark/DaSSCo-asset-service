@@ -36,7 +36,6 @@ public class WorkstationService {
         if (workstation.status() == null) {
             workstation = new Workstation(workstation.name(), WorkstationStatus.IN_SERVICE, institutionName);
         }
-        System.out.println(institutionName);
         if (Strings.isNullOrEmpty(workstation.name())) {
             throw new RuntimeException("Workstation must have a name");
         }
