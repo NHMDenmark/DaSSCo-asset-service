@@ -26,10 +26,11 @@ public class InstitutionService {
 
     public Institution createInstitution(Institution institution) {
         if(Strings.isNullOrEmpty(institution.name())) {
-            throw new IllegalArgumentException("Name is cannot be null or empty");
-        } else if (!institution.name().matches(name_regex)){
-            throw new IllegalArgumentException("Name must be alphanumeric");
+            throw new IllegalArgumentException("Name cannot be null or empty");
         }
+//        else if (!institution.name().matches(name_regex)){
+//            throw new IllegalArgumentException("Name must be alphanumeric");
+//        }
         institutionRepository.persistInstitution(institution);
         return institution;
     }

@@ -24,7 +24,6 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(ClientAbortInterceptor.class);
     register(Pipelines.class);
     register(Workstations.class);
-    register(Assets.class);
     register(Publishers.class);
     register(Assetupdates.class);
     register(IllegalArguementExceptionMapper.class);

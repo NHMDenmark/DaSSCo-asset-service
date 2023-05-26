@@ -350,7 +350,7 @@ paths:
     delete:
       operationId: deleteCollection
       responses:
-        "400-599":
+         "400-599":
           content:
             application/json:
               schema:

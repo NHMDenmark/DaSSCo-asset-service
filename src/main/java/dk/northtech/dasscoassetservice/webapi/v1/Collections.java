@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.CollectionService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,10 +17,11 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.springframework.stereotype.Component;
 
+import javax.print.attribute.standard.Media;
 import java.util.List;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
-
+@ApiOperation("Collection API")
 @Component
 @Path("/v1/institutions/{institutionName}/collections/")
 @SecurityRequirement(name = "dassco-idp")
@@ -34,6 +36,7 @@ public class Collections {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @ApiOperation(value = "List collections",  notes = "Lists all collections that belongs to given institution")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName) {
@@ -42,6 +45,7 @@ public class Collections {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))

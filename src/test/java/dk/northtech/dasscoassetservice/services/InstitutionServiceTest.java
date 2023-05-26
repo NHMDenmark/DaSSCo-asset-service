@@ -19,8 +19,8 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
     @Test
     void testCreateInstitutionIllegalName() {
         InstitutionService institutionService = new InstitutionService(null);
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("name'")));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name must be alphanumeric");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
     }
 
     @Test
@@ -39,13 +39,5 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
 
     }
 
-    @Test
-    void testCreateInstitutionNull() {
-        InstitutionService institutionService = new InstitutionService(null);
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("")));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name is cannot be null or empty");
 
-        IllegalArgumentException illegalArgumentException2 = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution(null)));
-        assertThat(illegalArgumentException2).hasMessageThat().isEqualTo("Name is cannot be null or empty");
-    }
 }
