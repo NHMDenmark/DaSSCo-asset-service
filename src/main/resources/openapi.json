@@ -36,23 +36,6 @@
         "security" : [ {
           "dassco-idp" : [ ]
         } ]
-      },
-      "delete" : {
-        "operationId" : "deleteAsset_1",
-        "responses" : {
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
       }
     },
     "/v1/assets/internalstatus" : {
@@ -83,257 +66,7 @@
         } ]
       }
     },
-    "/v1/institutions/{institutionName}/collections/{collectionName}/assets" : {
-      "get" : {
-        "operationId" : "getInstitutes",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Asset"
-                  }
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "post" : {
-        "operationId" : "createInstitution",
-        "parameters" : [ {
-          "name" : "institutionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "collectionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Asset"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/institutions/{institutionName}/collections/{collectionName}/assets/{assetGuid}" : {
-      "get" : {
-        "operationId" : "getAsset",
-        "parameters" : [ {
-          "name" : "institutionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "collectionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "assetGuid",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "put" : {
-        "operationId" : "updateAsset",
-        "parameters" : [ {
-          "name" : "institutionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "collectionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "assetGuid",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Asset"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "delete" : {
-        "operationId" : "deleteAsset",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Asset"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/institutions/{institutionName}/collections/{collectionName}/assets/{assetGuid}/unlock" : {
-      "put" : {
-        "operationId" : "unlockAsset",
-        "parameters" : [ {
-          "name" : "assetGuid",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets/{assetGuid}/audit" : {
+    "/v1/assetmetadata/{assetGuid}/audit" : {
       "post" : {
         "operationId" : "auditAsset",
         "parameters" : [ {
@@ -378,7 +111,7 @@
         } ]
       }
     },
-    "/v1/assets/{assetGuid}/complete" : {
+    "/v1/assetmetadata/{assetGuid}/complete" : {
       "put" : {
         "operationId" : "completeAsset",
         "parameters" : [ {
@@ -414,7 +147,169 @@
         } ]
       }
     },
-    "/v1/assets/{assetGuid}/events" : {
+    "/v1/assetmetadata" : {
+      "get" : {
+        "operationId" : "getInstitutes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "post" : {
+        "operationId" : "createInstitution",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Asset"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "delete" : {
+        "operationId" : "deleteAsset",
+        "responses" : {
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetmetadata/{assetGuid}" : {
+      "get" : {
+        "operationId" : "getAsset",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "put" : {
+        "operationId" : "updateAsset",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Asset"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetmetadata/{assetGuid}/events" : {
       "get" : {
         "operationId" : "getEvents",
         "parameters" : [ {
@@ -450,9 +345,9 @@
         } ]
       }
     },
-    "/v1/assets/{assetGuid}/unlock" : {
+    "/v1/assetmetadata/{assetGuid}/unlock" : {
       "put" : {
-        "operationId" : "unlockAsset_1",
+        "operationId" : "unlockAsset",
         "parameters" : [ {
           "name" : "assetGuid",
           "in" : "path",
@@ -536,7 +431,7 @@
         } ],
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Collection"
               }
@@ -731,7 +626,7 @@
         } ],
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Pipeline"
               }
@@ -1490,35 +1385,39 @@
         "properties" : {
           "pid" : {
             "type" : "string",
-            "description" : "???",
+            "description" : "Pid",
             "example" : "asdf-1234-3333-1000"
           },
           "guid" : {
             "type" : "string",
             "description" : "Unique key for the asset?",
-            "example" : "asdf1244-233-3"
+            "example" : "ti-a01-202305241657"
           },
           "status" : {
             "type" : "string",
+            "description" : "The status of the asset",
+            "example" : "BEING_PROCESSED",
             "enum" : [ "WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION" ]
           },
           "multi_specimen" : {
             "type" : "boolean",
             "description" : "Basically a multispecimen is a single image (or other type of media) that actually contains multiple specimens in it",
-            "example" : true
+            "example" : false
           },
           "specimen_barcodes" : {
             "type" : "array",
             "description" : "The barcodes of associated specimens",
+            "example" : "'[\"ti-sp-00012\"']",
             "items" : {
               "type" : "string",
-              "description" : "The barcodes of associated specimens"
+              "description" : "The barcodes of associated specimens",
+              "example" : "'[\"ti-sp-00012\"']"
             }
           },
           "funding" : {
             "type" : "string",
             "description" : "A short description of funding source used to create the asset",
-            "example" : "Funding secured"
+            "example" : "Hundredetusindvis af dollars"
           },
           "subject" : {
             "type" : "string",
@@ -1555,32 +1454,38 @@
             "type" : "object",
             "additionalProperties" : {
               "type" : "string",
-              "description" : "A dictionary of dynamic properties",
-              "example" : "ct scan"
+              "description" : "A dictionary of dynamic properties"
             },
-            "description" : "A dictionary of dynamic properties",
-            "example" : "ct scan"
+            "description" : "A dictionary of dynamic properties"
           },
           "audited" : {
             "type" : "boolean",
-            "description" : "audited",
-            "example" : false
+            "description" : "Marking if this asset has been audited atleast once",
+            "example" : true
           },
           "created_date" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date the asset metadata was uploaded",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "last_updated_date" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date the asset metadata was last updated",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "asset_taken_date" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date the asset was taken",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "asset_deleted_date" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date the asset was marked as deleted in the metadata",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "institution" : {
             "type" : "string",
@@ -1588,33 +1493,51 @@
             "example" : "NNAD"
           },
           "parent_guid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "GUID of the parent asset",
+            "example" : "ti-a02-202305241657"
           },
           "collection" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Name of the collection the asset belongs to",
+            "example" : "test-collection"
           },
           "asset_location" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The location on the storage where asset media can be uploaded",
+            "example" : "/test-institution/test-collection/ti-a02-202305241657"
           },
           "internal_status" : {
             "type" : "string",
+            "description" : "An internal status field used to track the status of the upload of related media",
+            "example" : "COMPLETED",
             "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED" ]
           },
           "pushed_to_specify_date" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date the asset was pushed to specify",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "digitizer" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Username of the person that digitised the asset,",
+            "example" : "THBO"
           },
           "pipeline" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The pipeline that created or updtated the asset",
+            "example" : "ti-p1"
           },
           "workstation" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the workstation that created or updated the asset",
+            "example" : "ti-ws1"
           },
           "updateUser" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Username of the person that updated the asset",
+            "example" : "THBO"
           }
         }
       },
@@ -1654,12 +1577,12 @@
           "name" : {
             "type" : "string",
             "description" : "The name of the collection",
-            "example" : "Test-collection"
+            "example" : "test-collection"
           },
           "institution" : {
             "type" : "string",
             "description" : "The name of the institution to which the collection belong",
-            "example" : "NNAD"
+            "example" : "test-institution"
           }
         }
       },
@@ -1669,7 +1592,7 @@
           "name" : {
             "type" : "string",
             "description" : "The institution name",
-            "example" : "NNAD"
+            "example" : "test-institution"
           }
         }
       },
@@ -1679,12 +1602,12 @@
           "name" : {
             "type" : "string",
             "description" : "The name of the pipeline",
-            "example" : "PIP1"
+            "example" : "ti-p1"
           },
           "institution" : {
             "type" : "string",
             "description" : "The institution that the pipeline belongs to",
-            "example" : "NNAD"
+            "example" : "test-institution"
           }
         }
       },
@@ -1779,16 +1702,19 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "description" : "The name of the workstation"
+            "description" : "The name of the workstation",
+            "example" : "ti-ws1"
           },
           "status" : {
             "type" : "string",
             "description" : "Status of the workstation",
+            "example" : "IN_SERVICE",
             "enum" : [ "IN_SERVICE", "OUT_OF_SERVICE" ]
           },
           "institution_name" : {
             "type" : "string",
-            "description" : "The institution that where the workstation is"
+            "description" : "The institution that where the workstation is located",
+            "example" : "test-institution"
           }
         }
       }

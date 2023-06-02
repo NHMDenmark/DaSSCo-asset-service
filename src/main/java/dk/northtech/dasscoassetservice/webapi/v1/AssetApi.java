@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Path("/v1/assets")
@@ -58,7 +59,7 @@ public class AssetApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getInternalStatusAmt() {
-        Map<InternalStatus, Integer> statusAmts = this.internalStatusService.getInternalStatusAmt();
+        Optional<Map<InternalStatus, Integer>> statusAmts = this.internalStatusService.getInternalStatusAmt();
         return Response.status(Response.Status.OK).entity(statusAmts).build();
     }
 }
