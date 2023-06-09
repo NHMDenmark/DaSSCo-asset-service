@@ -1,6 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public enum  AssetStatus {
+public enum     AssetStatus {
     WORKING_COPY
     , ARCHIVE
     , BEING_PROCESSED

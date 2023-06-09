@@ -90,7 +90,7 @@ public class StatisticsDataApi {
         Instant end = Instant.ofEpochMilli(endDate);
 
         if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
-            DateTimeFormatter dateFormatter = getDateFormatter("dd-MMM-yyyy");
+            DateTimeFormatter dateFormatter = statisticsDataService.getDateFormatter("dd-MMM-yyyy");
             customData = statisticsDataService.generateIncrData(start, end, dateFormatter, GraphView.WEEK);
 
             if (customData.isEmpty()) {
@@ -101,7 +101,7 @@ public class StatisticsDataApi {
 
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
-            DateTimeFormatter yearFormatter = getDateFormatter("MMM yyyy");
+            DateTimeFormatter yearFormatter = statisticsDataService.getDateFormatter("MMM yyyy");
 
             Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
 
@@ -121,15 +121,6 @@ public class StatisticsDataApi {
             logger.warn("View {} is invalid. It has to be either \"daily\" or \"monthly\".", view);
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-    }
-
-    public DateTimeFormatter getDateFormatter(String pattern) { // need this as the pattern varies >.>
-        return new DateTimeFormatterBuilder() // default day and hour as the pattern is only month and year
-                .appendPattern(pattern)
-                .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
-                .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                .toFormatter(Locale.ENGLISH)
-                .withZone(ZoneId.of("UTC"));
     }
 
 }
