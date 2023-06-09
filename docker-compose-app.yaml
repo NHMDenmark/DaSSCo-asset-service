@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    image: dassco_asset_service
+    image: granddock/dassco_asset_service:1.0.0
     ports:
       - 8084:8084
     environment:
