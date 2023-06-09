@@ -18,7 +18,7 @@ export class SpecimenGraphService {
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get(`${this.baseUrl}/daily/WEEK`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+        return this.http.get(`${this.baseUrl}/WEEK`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
             catchError(this.handleError(`get ${this.baseUrl}/daily/WEEK`, undefined))
           );
@@ -29,7 +29,7 @@ export class SpecimenGraphService {
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get(`${this.baseUrl}/daily/MONTH`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+        return this.http.get(`${this.baseUrl}/MONTH`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
             catchError(this.handleError(`get ${this.baseUrl}/daily/MONTH`, undefined))
           );
@@ -40,7 +40,7 @@ export class SpecimenGraphService {
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get(`${this.baseUrl}/year`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+        return this.http.get(`${this.baseUrl}/YEAR`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
             catchError(this.handleError(`get ${this.baseUrl}/year`, undefined))
           );
