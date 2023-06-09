@@ -34,7 +34,7 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-    public Map<InternalStatus, Integer> getInternalStatusAmt(long currMillisecs) {
+    public Optional<Map<InternalStatus, Integer>> getInternalStatusAmt(long currMillisecs) {
         String sql =
                 """
                     SELECT * from cypher('dassco', $$
@@ -71,7 +71,7 @@ public class InternalStatusRepository {
 
                             return amountMap;
                         })
-                        .one();
+                        .findFirst();
             });
     }
 }

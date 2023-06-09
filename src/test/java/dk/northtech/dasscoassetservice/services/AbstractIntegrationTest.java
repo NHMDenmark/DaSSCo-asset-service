@@ -21,10 +21,11 @@ public class AbstractIntegrationTest {
             .withEnv("POSTGRES_USER", "dassco_asset_service")
             .withEnv("POSTGRES_PASSWORD", "dassco_asset_service");
 
-    @Inject
-    InstitutionService institutionService;
-
+    @Inject InstitutionService institutionService;
     @Inject PipelineService pipelineService;
+    @Inject StatisticsDataService statisticsDataService;
+    @Inject AssetService assetService;
+
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
         // These tests assume the dev dataset, so roll that context on:

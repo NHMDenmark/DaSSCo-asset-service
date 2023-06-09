@@ -28,7 +28,7 @@ public class InternalStatusService {
         this.internalStatusRepository = internalStatusRepository;
     }
 
-    public Map<InternalStatus, Integer> getInternalStatusAmt() {
+    public Optional<Map<InternalStatus, Integer>> getInternalStatusAmt() {
         DateTimeFormatter dtf = new DateTimeFormatterBuilder() // need to do it like this to make sure the epochmilli does not involve any hours, minutes, or seconds.
                 .appendPattern("dd-MM-yyyy")
                 .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
