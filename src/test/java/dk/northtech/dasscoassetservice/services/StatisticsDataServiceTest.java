@@ -12,11 +12,11 @@ import java.util.*;
 import static com.google.common.truth.Truth.assertThat;
 
 public class StatisticsDataServiceTest extends AbstractIntegrationTest {
-
+    User user = new User();
     @Test
     public void calculcateWeek() {
         Asset createAsset = getTestAsset("week-asset");
-        assetService.persistAsset(createAsset);
+        assetService.persistAsset(createAsset, user);
 
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
@@ -37,7 +37,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateMonth() {
         Asset createAsset = getTestAsset("month-asset");
-        assetService.persistAsset(createAsset);
+        assetService.persistAsset(createAsset, user);
 
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
@@ -58,7 +58,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateYear() {
         Asset testAsset = getTestAsset("year-asset");
-        assetService.persistAsset(testAsset);
+        assetService.persistAsset(testAsset, user);
 
         Instant startDateInstant = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
         String startDate = getDateFormatter("MMM yyyy").format(startDateInstant);

@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.Audit;
 import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetService;
+import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,7 +15,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -97,8 +102,11 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset createInstitution(Asset asset) {
-        return this.assetService.persistAsset(asset);
+    public Asset createInstitution(Asset asset
+        , @Context HttpHeaders headers
+        , @Context SecurityContext securityContext) {
+        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
+        return this.assetService.persistAsset(asset, UserMapper.from(tkn));
     }
 
 

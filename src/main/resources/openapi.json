@@ -784,6 +784,55 @@
         } ]
       }
     },
+    "/v1/shares/checkoutasset" : {
+      "post" : {
+        "operationId" : "checkoutAsset",
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/shares/disconnect" : {
+      "post" : {
+        "operationId" : "pauseSmb",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SmbRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/collections/{collectionName}/specimens" : {
       "get" : {
         "operationId" : "getSpecimen",
@@ -1474,10 +1523,8 @@
             "description" : "Name of the collection the asset belongs to",
             "example" : "test-collection"
           },
-          "asset_location" : {
-            "type" : "string",
-            "description" : "The location on the storage where asset media can be uploaded",
-            "example" : "/test-institution/test-collection/ti-a02-202305241657"
+          "sambaInfo" : {
+            "$ref" : "#/components/schemas/SambaInfo"
           },
           "internal_status" : {
             "type" : "string",
@@ -1510,6 +1557,31 @@
             "type" : "string",
             "description" : "Username of the person that updated the asset",
             "example" : "THBO"
+          }
+        }
+      },
+      "SambaInfo" : {
+        "type" : "object",
+        "properties" : {
+          "port" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hostname" : {
+            "type" : "string"
+          },
+          "smb_name" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "sambaRequestStatus" : {
+            "type" : "string",
+            "enum" : [ "OK_OPEN", "OK_DISCONNECTED", "OK_CLOSED", "NO_PORT_AVAILABLE", "UPSTREAM_ERROR" ]
+          },
+          "sambaRequestStatusMessage" : {
+            "type" : "string"
           }
         }
       },
@@ -1600,6 +1672,9 @@
             "format" : "date-time"
           }
         }
+      },
+      "SmbRequest" : {
+        "type" : "object"
       },
       "Specimen" : {
         "type" : "object",

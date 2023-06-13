@@ -14,7 +14,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import javax.print.attribute.standard.Media;
@@ -39,7 +42,8 @@ public class Collections {
     @ApiOperation(value = "List collections",  notes = "Lists all collections that belongs to given institution")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName) {
+    public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
+            , @Context SecurityContext securityContext) {
         return this.collectionService.listCollections(new Institution(institutionName));
     }
 

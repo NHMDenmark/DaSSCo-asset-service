@@ -17,6 +17,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Inject
     AssetService assetService;
 
+    User user = new User();
     @Test
     void createAsset() {
         Asset createAsset = getTestAsset("createAsset");
@@ -29,8 +30,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset);
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset));
+        assetService.persistAsset(createAsset, user);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset createAsset already exists");
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -61,7 +62,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset);
+        assetService.persistAsset(createAsset, user);
         assetService.deleteAsset("Karl-Børge", "deleteAsset");
         Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset");
         Asset result = deleteAssetOpt.get();
@@ -80,7 +81,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset);
+        assetService.persistAsset(createAsset, user);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
@@ -116,7 +117,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.pid = "pid-updateAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset);
+        assetService.persistAsset(asset, user);
         asset.tags.remove("Tag1");
         asset.tags.remove("Tag2");
         asset.workstation = "i1_w2";
@@ -159,7 +160,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.pid = "pid-lockUnlock";
         asset.asset_locked = true;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset);
+        assetService.persistAsset(asset, user);
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         Asset lockedAsset = lockedAssetOpt.get();
         assertThat(lockedAsset.asset_locked).isTrue();
@@ -181,7 +182,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset);
+        assetService.persistAsset(asset, user);
         DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.guid));
         assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
         assetService.completeAsset(asset.guid);

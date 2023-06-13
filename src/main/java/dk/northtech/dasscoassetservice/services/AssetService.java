@@ -19,13 +19,16 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
+    private final FileProxyClient fileProxyClient;
+
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, Jdbi jdbi) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, FileProxyClient fileProxyClient,Jdbi jdbi) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
+        this.fileProxyClient = fileProxyClient;
         this.jdbi = jdbi;
     }
 
@@ -151,7 +154,7 @@ public class AssetService {
 
     }
 
-    public Asset persistAsset(Asset asset) {
+    public Asset persistAsset(Asset asset, User user) {
         Optional<Asset> assetOpt = getAsset(asset.guid);
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
@@ -164,7 +167,7 @@ public class AssetService {
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class).createAsset(asset);
-        asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
+        asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.guid, asset.parent_guid), user);
         return asset;
     }
 
