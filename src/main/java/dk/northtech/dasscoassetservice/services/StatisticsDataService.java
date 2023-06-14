@@ -1,5 +1,8 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.GraphData;
@@ -17,8 +20,12 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Type;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,9 +33,48 @@ public class StatisticsDataService {
     private static final Logger logger = LoggerFactory.getLogger(StatisticsDataService.class);
     private final StatisticsDataRepository statisticsDataRepository;
 
+    LoadingCache<GraphView, Map<String, Map<String, GraphData>>> cachedGraphData = CacheBuilder.newBuilder()
+            .expireAfterAccess(24, TimeUnit.HOURS)
+            .build(
+                    new CacheLoader<GraphView, Map<String, Map<String, GraphData>>>() {
+                        public Map<String, Map<String, GraphData>> load(GraphView key) {
+                            // {incremental (pr day data): data, exponential (continually adding pr day): data}
+                            Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>();
+                            Map<String, GraphData> incrData;
+
+                            if (key.equals(GraphView.WEEK)) {
+                                logger.info("Generating, and caching, daily data for the past week.");
+                                Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
+                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
+                                finalData.put("incremental", incrData);
+                            } else if (key.equals(GraphView.MONTH)) {
+                                logger.info("Generating, and caching, daily data for the past month.");
+                                Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
+                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.MONTH);
+                                finalData.put("incremental", incrData);
+                            } else if (key.equals(GraphView.YEAR)) {
+                                logger.info("Generating, and caching, monthly data for the past year.");
+                                Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
+                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                finalData = generateExponData(incrData, getDateFormatter("MMM yyyy"));
+                            }
+
+                            return finalData;
+                        }
+                    });
+
     @Inject
     public StatisticsDataService(StatisticsDataRepository statisticsDataRepository) {
         this.statisticsDataRepository = statisticsDataRepository;
+    }
+
+    public Map<String, Map<String, GraphData>> getCachedGraphData(GraphView timeFrame) {
+        try {
+            return cachedGraphData.get(timeFrame);
+        } catch (ExecutionException e) {
+            logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
+            throw new RuntimeException("An error occurred when loading the graph cache {}", e);
+        }
     }
 
     public List<StatisticsData> getGraphData(long timeFrame) {
@@ -127,5 +173,14 @@ public class StatisticsDataService {
                         Map.Entry::getValue,
                         (oldValue, newValue) -> oldValue, ListOrderedMap::new));
         return sortedMap;
+    }
+
+    public DateTimeFormatter getDateFormatter(String pattern) { // need this as the pattern varies >.>
+        return new DateTimeFormatterBuilder() // default day and hour as the pattern is only month and year
+                .appendPattern(pattern)
+                .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+                .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                .toFormatter(Locale.ENGLISH)
+                .withZone(ZoneId.of("UTC"));
     }
 }
