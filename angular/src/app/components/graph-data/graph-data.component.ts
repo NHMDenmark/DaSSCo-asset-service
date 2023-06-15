@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
-import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
+import {BehaviorSubject, distinctUntilChanged, filter, map, Observable, startWith, Subscription} from 'rxjs';
 import {
   defaultView,
   StatValue,
@@ -38,6 +38,7 @@ export class GraphDataComponent {
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
     end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
   });
+  currentViewSubscription: Subscription | undefined; // we subscribe to the weekly/monthly/yearly data observable, and need to unsub when we change to avoid multiple subs at a time
 
   statsWeek$: Observable<Map<string, Map<string, GraphStatsV2>>> // <date, stats>. Is array if there's line and bar chart stats within
     = this.statsV2$
@@ -80,25 +81,36 @@ export class GraphDataComponent {
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
         this.clearCustomTimeFrame(false);
+        this.currentViewSubscription?.unsubscribe();
+
         if (view === ViewV2.WEEK) {
-          this.specimenGraphService.specimenDataWeek$
-            .pipe(filter(isNotUndefined))
+          this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
+            .pipe(
+              filter(isNotUndefined),
+              distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
+            )
             .subscribe(data => {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
         }
         if (view === ViewV2.MONTH) {
-          this.specimenGraphService.specimenDataMonth$
-            .pipe(filter(isNotUndefined))
+          this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
+            .pipe(
+              filter(isNotUndefined),
+              distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
+            )
             .subscribe(data => {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
-          this.specimenGraphService.specimenDataYear$
-            .pipe(filter(isNotUndefined))
+          this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
+            .pipe(
+              filter(isNotUndefined),
+              distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
+            )
             .subscribe(data => {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix

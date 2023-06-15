@@ -61,6 +61,7 @@ export class ChartComponent {
     const chartDatasets: ChartDataset[] = [];
     const statName: Set<string> = new Set<string>(); // don't want duplicates
     let tempStatName: Array<string> = [];
+    let stackGroup = 0; // this is so stupid, but I just need the lines to NEVER have the same group ID, and the bars need it......
 
     // getting all institution/pipe/work names from the data
     chartData.forEach((stats: GraphStatsV2, _date: string) => {
@@ -92,12 +93,13 @@ export class ChartComponent {
         pointRadius: pointRadius,
         borderRadius: type === 'line' ? null : 5,
         order: type === 'line' ? 2 : 1,
-        stack: type,
+        stack: type === 'line' ? stackGroup.toString() : 'bar',
         spanGaps: true,
         hidden: this.clickedLabels.includes(name)
       } as ChartDataset;
 
       chartDatasets.push(tempDataset);
+      stackGroup++;
     }
     return chartDatasets;
   }
@@ -159,7 +161,7 @@ export class ChartComponent {
       scales: {
         y: {
           beginAtZero: true,
-          stacked: false,
+          stacked: true,
           ticks: {
             callback(val, _index) {
               return val as number % 1 === 0 ? val : '';
