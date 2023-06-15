@@ -93,7 +93,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateCachedWeekWithNewAsset() {
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
-        Asset createAsset = getTestAsset("week-asset");
+        Asset createAsset = getTestAsset("week-cached-asset");
         assetService.persistAsset(createAsset);
 
         Map<String, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
@@ -102,7 +102,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assertThat(firstData.get("incremental")).containsKey(currentDate);
         assertThat(firstData.get("incremental").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
 
-        Asset newCreateAsset = getTestAsset("new-week-asset");
+        Asset newCreateAsset = getTestAsset("new-week-cached-asset");
         assetService.persistAsset(newCreateAsset);
 
         // adds a new asset with 2 specimens
@@ -116,7 +116,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateCachedYearWithNewAsset() {
         String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
-        Asset createAsset = getTestAsset("year-asset");
+        Asset createAsset = getTestAsset("year-cached-asset");
         assetService.persistAsset(createAsset);
 
         Map<String, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.YEAR);

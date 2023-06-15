@@ -115,8 +115,6 @@ export class ChartComponent {
     if (this.chart) this.chart.destroy();
     Chart.register(zoomPlugin);
 
-    console.log(dataset)
-
     this.chart = new Chart('canvas', {
       data: {
         labels: labels,
