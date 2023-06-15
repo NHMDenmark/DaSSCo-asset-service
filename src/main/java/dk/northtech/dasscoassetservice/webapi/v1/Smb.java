@@ -12,10 +12,7 @@ import dk.northtech.dasscoassetservice.webapi.domain.SmbRequest;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
@@ -25,7 +22,7 @@ import org.springframework.stereotype.Component;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
-@Path("/v1/shares")
+@Path("/v1/shares/")
 @SecurityRequirement(name = "dassco-idp")
 public class Smb {
     public FileProxyClient fileProxyClient;
@@ -39,7 +36,7 @@ public class Smb {
 
     //Open a share for a single asset to upload media
     @POST
-    @Path("/checkoutasset")
+    @Path("/openAsset")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public SambaInfo checkoutAsset(MinimalAsset asset, @Context SecurityContext securityContext) {
         JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
@@ -61,7 +58,7 @@ public class Smb {
     }
 
     @POST
-    @Path("/disconnect")
+    @Path("/disconnectShare")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -73,14 +70,15 @@ public class Smb {
     }
 
     @POST
-    @Path("/closeshare")
+    @Path("/closeShare")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public SambaInfo closeSmb(AssetSmbRequest smbRequest
+            , @QueryParam("syncERDA") boolean syncERDA
             , @Context SecurityContext securityContext) {
         JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         User from = UserMapper.from(tkn);
-        return fileProxyClient.closeSamba(from, smbRequest);
+        return fileProxyClient.closeSamba(from, smbRequest, syncERDA);
     }
 }
