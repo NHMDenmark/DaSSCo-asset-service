@@ -65,8 +65,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
 
         long duration = ChronoUnit.MONTHS.between(
-                LocalDate.parse(getDateFormatter("yyyy-dd-MM").format(startDateInstant)).withDayOfMonth(1),
-                LocalDate.parse(getDateFormatter("yyyy-dd-MM").format(Instant.now())).withDayOfMonth(1)
+                LocalDate.parse(getDateFormatter("yyyy-MM-dd").format(startDateInstant)).withDayOfMonth(1),
+                LocalDate.parse(getDateFormatter("yyyy-MM-dd").format(Instant.now())).withDayOfMonth(1)
         ) + 1; // plus 1 as it doesn't count the first month as "between";
 
         Map<String, Map<String, GraphData>> finalData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
