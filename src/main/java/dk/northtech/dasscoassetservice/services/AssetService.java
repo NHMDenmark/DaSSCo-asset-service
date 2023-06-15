@@ -17,16 +17,18 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
+    private final StatisticsDataService statisticsDataService;
     private final FileProxyClient fileProxyClient;
 
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, FileProxyClient fileProxyClient,Jdbi jdbi) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, FileProxyClient fileProxyClient,Jdbi jdbi, StatisticsDataService statisticsDataService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
         this.fileProxyClient = fileProxyClient;
+        this.statisticsDataService = statisticsDataService;
         this.jdbi = jdbi;
     }
 
@@ -198,6 +200,7 @@ public class AssetService {
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class).createAsset(asset);
         asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.guid, asset.parent_guid), user);
+        this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }
 

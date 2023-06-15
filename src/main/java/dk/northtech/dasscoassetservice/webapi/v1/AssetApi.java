@@ -48,7 +48,6 @@ public class AssetApi {
     public List<AssetV1> getAssets() {
         List<AssetV1> list = new ArrayList<>();
         list.add(new AssetV1("",Instant.now(),"","","","","",Instant.now(),"",new ArrayList<>(),new ArrayList<>(),"","",Instant.now(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),"","", Instant.now(),"","","","","","","","","","","","","","","","","","","","","","","","","","","","","",new ArrayList<>(),"","","","","","","",new ArrayList<>(),"",""));
-//        return specimenService.getSpecimenData();
         return list;
     }
 
