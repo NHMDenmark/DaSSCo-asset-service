@@ -143,6 +143,15 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assertThat(secondData.get("exponential").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(prevInstituteSpecimensExpon + 2);
     }
 
+    @Test
+    public void testTestidk() {
+        Asset createAsset = getTestAsset("test-asset");
+        assetService.persistAsset(createAsset);
+        Asset createAssetNew = getTestAssetNew("new-test-asset");
+        assetService.persistAsset(createAssetNew);
+        System.out.println(this.statisticsDataService.generateIncrDataNew());
+    }
+
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
@@ -161,6 +170,29 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.tags.put("Tag2", "value2");
         asset.institution = "institution_1";
         asset.collection = "i1_c1";
+        asset.pid = "pid-createAsset";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        return asset;
+    }
+
+    public Asset getTestAssetNew(String guid) {
+        Asset asset = new Asset();
+        asset.asset_locked = false;
+        asset.digitizer = "Karl-Børge";
+        asset.guid = guid;
+        asset.funding = "Hundredetusindvis af dollars";
+        asset.asset_taken_date = Instant.now();
+        asset.subject = "Folder";
+        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.payload_type = "nuclear";
+        asset.updateUser = "Basviola";
+        asset.specimen_barcodes = Arrays.asList("createAsset-sp-3", "createAsset-sp-4");
+        asset.pipeline = "i2_p2";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.tags.put("Tag2", "value2");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
         asset.pid = "pid-createAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
         return asset;

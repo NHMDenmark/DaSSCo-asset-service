@@ -10,6 +10,7 @@ import dk.northtech.dasscoassetservice.domain.GraphData;
 import dk.northtech.dasscoassetservice.domain.GraphView;
 import dk.northtech.dasscoassetservice.domain.StatisticsData;
 import dk.northtech.dasscoassetservice.repositories.StatisticsDataRepository;
+import io.swagger.models.auth.In;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
 import org.apache.commons.collections4.MapIterator;
@@ -28,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class StatisticsDataService {
@@ -56,7 +58,10 @@ public class StatisticsDataService {
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating, and caching, monthly data for the past year.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
+                                // total is true as we want the accumulative of ALL the inst./workst./pipelns
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                Map<String, GraphData> totalData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                finalData.put("incremental", totalData); // todo doesn't work for some reason, also it's become crazy slow fix pls thanks
                                 finalData = generateExponData(incrData, getDateFormatter("MMM yyyy"));
                             }
 
@@ -106,8 +111,32 @@ public class StatisticsDataService {
         return sortMapOnDateKeys(incrData, dateTimeFormatter);
     }
 
-    public Map<String, Map<String, GraphData>> generateTotalData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
-        // todo THIS IS WHERE YOU RETURN A LINE WITH THE DATA OF TOTAL INSTITUTES OKAY. like TOTAL. as in the word. god's sake get in the game, me
+    public Map<String, GraphData> generateIncrDataNew() {
+        Map<String, GraphData> incrData;
+        Map<String, GraphData> totalData = null;
+        Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
+        incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+        System.out.println(incrData);
+
+        incrData.forEach((k, v) -> {
+            System.out.println(k);
+            System.out.println(v);
+            System.out.println(v.getInstitutes().values());
+            Integer t = v.getInstitutes().values().stream().reduce(0, Integer::sum);
+            System.out.println(t);
+
+            if (!totalData.containsKey(k)) {
+                incrData.put(k, new GraphData(
+                        new HashMap<>() {{put("Institutes", v.getInstitutes().values().stream().reduce(0, Integer::sum));}},
+                        new HashMap<>() {{put("Pipelines", v.getPipelines().values().stream().reduce(0, Integer::sum));}},
+                        new HashMap<>() {{put("Workstations", v.getWorkstations().values().stream().reduce(0, Integer::sum));}}
+                ));
+            } else {
+                updateData(incrData.get(k).getInstitutes(), "Institutes", v.getInstitutes().values().stream().reduce(0, Integer::sum));
+                updateData(incrData.get(k).getPipelines(), data.pipelineName(), data.specimens());
+                updateData(incrData.get(k).getWorkstations(), data.workstationName(), data.specimens());
+            }
+        });
         return new HashMap<>();
     }
 
@@ -135,7 +164,7 @@ public class StatisticsDataService {
             currvalue.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, currvalue.getWorkstations().get(workstationName)));
         }
     }
-    finalData.put("incremental", originalData);
+//    finalData.put("incremental", originalData);
     finalData.put("exponential", exponData);
 
     return finalData;

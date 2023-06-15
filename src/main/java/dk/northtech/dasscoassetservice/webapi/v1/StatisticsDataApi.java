@@ -106,6 +106,7 @@ public class StatisticsDataApi {
             Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
 
             if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
+                finalData.put("incremental", incrData);
                 finalData = statisticsDataService.generateExponData(incrData, yearFormatter);
                 return Response.status(Response.Status.OK).entity(finalData).build();
             }
