@@ -57,8 +57,8 @@ public class Assetupdates {
         return this.assetService.unlockAsset(assetGuid);
     }
 
-    @PUT
-    @Path("{assetGuid}/assetrecieved")
+    @POST
+    @Path("{assetGuid}/assetreceived")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
@@ -67,7 +67,7 @@ public class Assetupdates {
         return this.assetService.completeUpload(assetGuid);
     }
 
-    @PUT
+    @POST
     @Path("{assetGuid}/complete")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
