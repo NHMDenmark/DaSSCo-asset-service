@@ -91,6 +91,17 @@ public class AssetService {
         return true;
     }
 
+    public boolean completeUpload(String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = InternalStatus.ASSET_RECEIVED;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
+    }
+
     public Asset updateAsset(Asset updatedAsset) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
         if(assetOpt.isEmpty()) {

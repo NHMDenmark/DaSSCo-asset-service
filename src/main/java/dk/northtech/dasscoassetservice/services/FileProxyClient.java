@@ -37,31 +37,30 @@ public class FileProxyClient {
             smbRequest.users.add(user.username);
             String json = gson.toJson(smbRequest);
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url()+ "/opensamba"))
+                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/opensamba"))
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             String body = send.body();
-            if(send.statusCode()>199 && send.statusCode() < 300) {
+            if (send.statusCode() > 199 && send.statusCode() < 300) {
                 return gson.fromJson(body, SambaInfo.class);
             }
-
             SambaInfo sambaInfo = new SambaInfo();
             sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;
-            if(send.statusCode() == 503) {
-                sambaInfo.sambaRequestStatusMessage = "Shares are temporarely unavailable, please try manually checking out the asset later";
+            if (send.statusCode() == 503) {
+                sambaInfo.sambaRequestStatusMessage = "Shares are temporarily unavailable, please try manually checking out the asset later";
             } else {
                 logger.error("Failed to get share");
                 sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to create share, please try manually checking out the asset later";
             }
-            logger.error("Failed to get smb share from file-proxy, http status code: {}, response bode: {}", send.statusCode(), body);
+            logger.error("Failed to get smb share from file-proxy, http status code: {}, response code: {}", send.statusCode(), body);
             return sambaInfo;
         } catch (Exception e) {
             SambaInfo sambaInfo = new SambaInfo();
             sambaInfo.sambaRequestStatus = SambaRequestStatus.INTERNAL_ERROR;
             sambaInfo.sambaRequestStatusMessage = "Failed to get samba share, please try manually checking out the asset";
-            logger.error("Failed to get samba share due to an internal error",e);
+            logger.error("Failed to get samba share due to an internal error", e);
             return sambaInfo;
         }
     }
@@ -78,8 +77,73 @@ public class FileProxyClient {
 //        }
 //    }
 
-    public void closeSamba(User user , AssetSmbRequest assetSmbRequest) {
+    public SambaInfo closeSamba(User user, AssetSmbRequest assetSmbRequest) {
+        SmbRequest smbRequest = new SmbRequest();
         smbRequest.users = Arrays.asList(user.username);
-
+        Gson gson = new Gson();
+        String json = gson.toJson(assetSmbRequest);
+        SambaInfo sambaInfo = new SambaInfo();
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/closesamba"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpClient httpClient = HttpClient.newBuilder().build();
+            HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = send.body();
+            if (send.statusCode() > 199 && send.statusCode() < 300) {
+                return gson.fromJson(body, SambaInfo.class);
+            }
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;
+            if (send.statusCode() == 503) {
+                sambaInfo.sambaRequestStatusMessage = "Service unavailable";
+            } else {
+                logger.error("Failed to close share");
+                sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to close share, please try manually checking out the asset later";
+            }
+            logger.error("Failed to close SMB share, http status code: {}, response body: {}", send.statusCode(), body);
+            return sambaInfo;
+        } catch (Exception e) {
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.INTERNAL_ERROR;
+            sambaInfo.sambaRequestStatusMessage = "Failed to close SMB due to an internal error";
+            logger.error("Failed to get samba share due to an internal error", e);
+            return sambaInfo;
+        }
     }
+
+    public SambaInfo disconnectSamba(User user, AssetSmbRequest assetSmbRequest) {
+        SmbRequest smbRequest = new SmbRequest();
+        smbRequest.users = Arrays.asList(user.username);
+        Gson gson = new Gson();
+        String json = gson.toJson(assetSmbRequest);
+        SambaInfo sambaInfo = new SambaInfo();
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/closesamba"))
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpClient httpClient = HttpClient.newBuilder().build();
+            HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = send.body();
+            if (send.statusCode() > 199 && send.statusCode() < 300) {
+                return gson.fromJson(body, SambaInfo.class);
+            }
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;
+            if (send.statusCode() == 503) {
+                sambaInfo.sambaRequestStatusMessage = "Service unavailable";
+            } else {
+                logger.error("Failed to get share");
+                sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to close share, please try manually checking out the asset later";
+            }
+            logger.error("Failed to close SMB share, http status code: {}, response body: {}", send.statusCode(), body);
+            return sambaInfo;
+        } catch (Exception e) {
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.INTERNAL_ERROR;
+            sambaInfo.sambaRequestStatusMessage = "Failed to close SMB due to an internal error";
+            logger.error("Failed to get samba share due to an internal error", e);
+            return sambaInfo;
+        }
+    }
+
+
 }

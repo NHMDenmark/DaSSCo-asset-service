@@ -115,7 +115,7 @@ public interface AssetRepository extends SqlObject {
                          MATCH (p:Pipeline)<-[:USED]-(e)
                          MATCH (w:Workstation)<-[:USED]-(e)
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $guidd})
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $guid})
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
                          RETURN a.guid
                          , a.pid
@@ -166,7 +166,7 @@ public interface AssetRepository extends SqlObject {
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
                     .add("guid", assetGuid)
-                    .add("guidd", assetGuid)
+                    .add("guid", assetGuid)
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)
