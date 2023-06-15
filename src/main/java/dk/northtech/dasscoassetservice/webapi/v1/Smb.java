@@ -81,19 +81,6 @@ public class Smb {
             , @Context SecurityContext securityContext) {
         JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         User from = UserMapper.from(tkn);
-        return fileProxyClient.disconnectSamba(from, smbRequest);
+        return fileProxyClient.closeSamba(from, smbRequest);
     }
-
-    @POST
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    public SambaInfo finalizeAsset(AssetSmbRequest smbRequest
-            , @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        User from = UserMapper.from(tkn);
-        return fileProxyClient.disconnectSamba(from, smbRequest);
-    }
-
 }
