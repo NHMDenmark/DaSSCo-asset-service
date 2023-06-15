@@ -15,8 +15,8 @@ services:
     extends:
       file: ./docker-compose-app.yaml
       service: app
-#  springadmin:
-#    extends:
-#      file: ./docker-compose-springadmin.yaml
-#      service: springadmin
+  nginx:
+    extends:
+      file: ./docker-compose-nginx.yaml
+      service: nginx
 
