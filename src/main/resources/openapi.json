@@ -66,6 +66,42 @@
         } ]
       }
     },
+    "/v1/assetmetadata/{assetGuid}/assetrecieved" : {
+      "put" : {
+        "operationId" : "assetreceived",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetmetadata/{assetGuid}/audit" : {
       "post" : {
         "operationId" : "auditAsset",
@@ -148,35 +184,6 @@
       }
     },
     "/v1/assetmetadata" : {
-      "get" : {
-        "operationId" : "getInstitutes",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Asset"
-                  }
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
       "post" : {
         "operationId" : "createInstitution",
         "requestBody" : {
@@ -198,23 +205,6 @@
               }
             }
           },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "delete" : {
-        "operationId" : "deleteAsset",
-        "responses" : {
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -345,6 +335,48 @@
         } ]
       }
     },
+    "/v1/assetmetadata/{assetGuid}/seterrorstatus" : {
+      "put" : {
+        "operationId" : "setErrorStatus",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "newStatus",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetmetadata/{assetGuid}/unlock" : {
       "put" : {
         "operationId" : "unlockAsset",
@@ -383,7 +415,7 @@
     },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
-        "operationId" : "getInstitutes_1",
+        "operationId" : "getInstitutes",
         "parameters" : [ {
           "name" : "institutionName",
           "in" : "path",
@@ -482,7 +514,7 @@
     },
     "/v1/institutions" : {
       "get" : {
-        "operationId" : "getInstitutes_2",
+        "operationId" : "getInstitutes_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -545,7 +577,7 @@
     },
     "/v1/institutions/{institutionName}" : {
       "get" : {
-        "operationId" : "getInstitutes_3",
+        "operationId" : "getInstitutes_2",
         "parameters" : [ {
           "name" : "institutionName",
           "in" : "path",
@@ -787,11 +819,107 @@
     "/v1/shares/checkoutasset" : {
       "post" : {
         "operationId" : "checkoutAsset",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MinimalAsset"
+              }
+            }
+          }
+        },
         "responses" : {
           "default" : {
             "description" : "default response",
             "content" : {
               "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/shares/closeshare" : {
+      "post" : {
+        "operationId" : "closeSmb",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssetSmbRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/shares/open" : {
+      "post" : {
+        "operationId" : "closeSmb_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SmbRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/shares" : {
+      "post" : {
+        "operationId" : "finalizeAsset",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssetSmbRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SambaInfo"
                 }
@@ -811,7 +939,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/SmbRequest"
+                "$ref" : "#/components/schemas/AssetSmbRequest"
               }
             }
           }
@@ -1530,7 +1658,7 @@
             "type" : "string",
             "description" : "An internal status field used to track the status of the upload of related media",
             "example" : "COMPLETED",
-            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED" ]
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "SMB_ERROR", "ERDA_ERROR" ]
           },
           "pushed_to_specify_date" : {
             "type" : "string",
@@ -1578,7 +1706,7 @@
           },
           "sambaRequestStatus" : {
             "type" : "string",
-            "enum" : [ "OK_OPEN", "OK_DISCONNECTED", "OK_CLOSED", "NO_PORT_AVAILABLE", "UPSTREAM_ERROR" ]
+            "enum" : [ "OK_OPEN", "OK_DISCONNECTED", "OK_CLOSED", "NO_PORT_AVAILABLE", "UPSTREAM_ERROR", "INTERNAL_ERROR" ]
           },
           "sambaRequestStatusMessage" : {
             "type" : "string"
@@ -1673,8 +1801,47 @@
           }
         }
       },
+      "MinimalAsset" : {
+        "type" : "object",
+        "properties" : {
+          "guid" : {
+            "type" : "string"
+          },
+          "parent_guid" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AssetSmbRequest" : {
+        "type" : "object",
+        "properties" : {
+          "shareName" : {
+            "type" : "string"
+          },
+          "assetId" : {
+            "type" : "string"
+          },
+          "syncErda" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "SmbRequest" : {
-        "type" : "object"
+        "type" : "object",
+        "properties" : {
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "assets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MinimalAsset"
+            }
+          }
+        }
       },
       "Specimen" : {
         "type" : "object",

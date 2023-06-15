@@ -1,7 +1,11 @@
 import {Component} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
 import {BehaviorSubject, filter, map, Observable, startWith} from 'rxjs';
-import {ChartDataTypes, defaultView, GraphStatsV2, MY_FORMATS, StatValue, ViewV2} from '../../types';
+import {
+  defaultView,
+  StatValue,
+  GraphStatsV2, ViewV2, MY_FORMATS, ChartDataTypes
+} from '../../types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment-timezone';
 import {FormControl, FormGroup} from '@angular/forms';

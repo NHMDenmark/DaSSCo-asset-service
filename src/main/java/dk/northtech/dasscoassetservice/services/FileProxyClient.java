@@ -9,6 +9,7 @@ import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.SmbRequest;
 import jakarta.inject.Inject;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,11 +30,9 @@ public class FileProxyClient {
         this.fileProxyConfiguration = fileProxyConfiguration;
     }
 
-    public SambaInfo openSamba(MinimalAsset asset, User user) {
+    public SambaInfo openSamba(SmbRequest smbRequest, User user) {
         Gson gson = new Gson();
         try {
-            SmbRequest smbRequest = new SmbRequest();
-            smbRequest.assets.add(asset);
             smbRequest.users.add(user.username);
             String json = gson.toJson(smbRequest);
             HttpRequest request = HttpRequest.newBuilder()
@@ -64,6 +63,13 @@ public class FileProxyClient {
             return sambaInfo;
         }
     }
+
+    public SambaInfo openSamba(MinimalAsset asset, User user) {
+        SmbRequest smbRequest = new SmbRequest();
+        smbRequest.assets.add(asset);
+        smbRequest.users.add(user.username);
+        return openSamba(smbRequest, user);
+    }
 //    public void pauseSamba(AssetSmbRequest assetSmbRequest, MinimalAsset asset, String token, String username) {
 //        Gson gson = new Gson();
 //        try {
@@ -85,7 +91,10 @@ public class FileProxyClient {
         SambaInfo sambaInfo = new SambaInfo();
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/closesamba"))
+                    .header("Authorization", user.token).uri(
+                            new URIBuilder(fileProxyConfiguration.url() + "/closesamba")
+                                    .addParameter("syncERDA", String.valueOf(assetSmbRequest.syncErda()))
+                                    .build())
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
             HttpClient httpClient = HttpClient.newBuilder().build();
@@ -119,7 +128,7 @@ public class FileProxyClient {
         SambaInfo sambaInfo = new SambaInfo();
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/closesamba"))
+                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/disconnect"))
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
             HttpClient httpClient = HttpClient.newBuilder().build();

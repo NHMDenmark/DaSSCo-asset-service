@@ -100,6 +100,27 @@ public class AssetService {
         return true;
     }
 
+    public boolean setFailedStatus(String assetGuid, String status) {
+        InternalStatus assetStatus = null;
+        try {
+            assetStatus = InternalStatus.valueOf(status);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.SMB_ERROR) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = assetStatus;
+        jdbi.onDemand(AssetRepository.class)
+                .updateAssetNoEvent(asset);
+        return true;
+    }
+
     public Asset updateAsset(Asset updatedAsset) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
         if(assetOpt.isEmpty()) {

@@ -7,7 +7,6 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +15,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -60,6 +58,16 @@ public class Assetupdates {
     }
 
     @PUT
+    @Path("{assetGuid}/assetrecieved")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public boolean assetreceived(@PathParam("assetGuid") String assetGuid) {
+        return this.assetService.completeUpload(assetGuid);
+    }
+
+    @PUT
     @Path("{assetGuid}/complete")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
@@ -67,6 +75,18 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public boolean completeAsset(@PathParam("assetGuid") String assetGuid) {
         return this.assetService.completeAsset(assetGuid);
+    }
+
+    @PUT
+    @Path("{assetGuid}/seterrorstatus")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public boolean setErrorStatus(
+            @PathParam("assetGuid") String assetGuid
+            , @QueryParam("newStatus") String newStatus) {
+        return this.assetService.setFailedStatus(assetGuid, newStatus);
     }
 
     @GET
@@ -79,23 +99,6 @@ public class Assetupdates {
         return this.assetService.getEvents(assetGuid);
     }
 
-    @DELETE
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-//    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteAsset() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getInstitutes() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -103,8 +106,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset createInstitution(Asset asset
-        , @Context HttpHeaders headers
-        , @Context SecurityContext securityContext) {
+            , @Context SecurityContext securityContext) {
         JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         return this.assetService.persistAsset(asset, UserMapper.from(tkn));
     }
