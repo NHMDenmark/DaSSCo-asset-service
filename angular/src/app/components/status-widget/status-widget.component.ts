@@ -1,4 +1,4 @@
-import { Component} from '@angular/core';
+import {Component} from '@angular/core';
 import {InternalStatusService} from '../../services/internal-status.service';
 import {filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';

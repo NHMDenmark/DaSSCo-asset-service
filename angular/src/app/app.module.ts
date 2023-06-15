@@ -24,9 +24,9 @@ import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
 import {MatTooltipModule} from "@angular/material/tooltip";
-import { ExportChartComponent } from './components/export-chart/export-chart.component';
+import {ExportChartComponent} from './components/export-chart/export-chart.component';
 import {MatSnackBarModule} from "@angular/material/snack-bar";
-import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
+import {StatusWidgetComponent} from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
 

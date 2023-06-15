@@ -1,6 +1,9 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.GraphData;
+import dk.northtech.dasscoassetservice.domain.GraphView;
+import dk.northtech.dasscoassetservice.domain.SecurityRoles;
+import dk.northtech.dasscoassetservice.domain.StatisticsData;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,13 +22,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 

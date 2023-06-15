@@ -3,7 +3,6 @@ package dk.northtech.dasscoassetservice.repositories;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
-import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
@@ -24,11 +23,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 

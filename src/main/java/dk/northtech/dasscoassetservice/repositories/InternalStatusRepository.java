@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
@@ -8,14 +7,10 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
-import org.postgresql.jdbc.PgConnection;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 

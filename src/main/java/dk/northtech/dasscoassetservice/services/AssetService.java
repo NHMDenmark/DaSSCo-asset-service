@@ -4,14 +4,12 @@ import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import jakarta.inject.Inject;
-
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
