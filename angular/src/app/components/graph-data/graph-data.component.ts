@@ -43,7 +43,10 @@ export class GraphDataComponent {
     = this.statsV2$
     .pipe(
       filter(isNotUndefined),
-      map((data: Map<string, Map<string, GraphStatsV2>>) => data)
+      map((data: Map<string, Map<string, GraphStatsV2>>) => {
+        console.log(data)
+        return data;
+      })
     );
 
   constructor(public specimenGraphService: SpecimenGraphService) {

@@ -41,10 +41,10 @@ public class InternalStatusRepository {
                             MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event)
                             WHERE ae.timestamp >= $today
                             WITH count(assets) as assetcount
-                            MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event)
+                            OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event)
                             WHERE ce.timestamp >= $today
                             WITH count(completed) as complcount, assetcount
-                            MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event)
+                            OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event)
                             WHERE me.timestamp >= $today
                             WITH count(metadata) as metacount, complcount, assetcount
                             RETURN assetcount, complcount, metacount

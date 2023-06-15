@@ -19,13 +19,15 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
+    private final StatisticsDataService statisticsDataService;
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, Jdbi jdbi) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, StatisticsDataService statisticsDataService, Jdbi jdbi) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
+        this.statisticsDataService = statisticsDataService;
         this.jdbi = jdbi;
     }
 
@@ -165,6 +167,8 @@ public class AssetService {
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class).createAsset(asset);
         asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
+        // add the new asset to graph-cache for the  frontend
+        this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }
 
