@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import org.apache.commons.collections4.map.ListOrderedMap;
 import org.junit.jupiter.api.Test;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -145,11 +144,24 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void testTestidk() {
+        String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
+
         Asset createAsset = getTestAsset("test-asset");
         assetService.persistAsset(createAsset);
+        Map<String, Map<String, GraphData>> beforeData = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Integer instSumBefore = beforeData.get("incremental").get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
+
         Asset createAssetNew = getTestAssetNew("new-test-asset");
         assetService.persistAsset(createAssetNew);
-        System.out.println(this.statisticsDataService.generateIncrDataNew());
+        Map<String, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Integer instSumAfter = dataAfter.get("incremental").get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
+        System.out.println(dataAfter);
+
+        assertThat(dataAfter).containsKey("incremental");
+        assertThat(dataAfter.get("incremental")).containsKey(currentDate);
+        assertThat(dataAfter).containsKey("exponential");
+        assertThat(dataAfter.get("exponential")).containsKey(currentDate);
+        assertThat(instSumBefore).isLessThan(instSumAfter);
     }
 
     public Asset getTestAsset(String guid) {

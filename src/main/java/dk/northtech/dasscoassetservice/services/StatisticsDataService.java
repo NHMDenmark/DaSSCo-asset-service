@@ -10,7 +10,6 @@ import dk.northtech.dasscoassetservice.domain.GraphData;
 import dk.northtech.dasscoassetservice.domain.GraphView;
 import dk.northtech.dasscoassetservice.domain.StatisticsData;
 import dk.northtech.dasscoassetservice.repositories.StatisticsDataRepository;
-import io.swagger.models.auth.In;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
 import org.apache.commons.collections4.MapIterator;
@@ -29,7 +28,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 public class StatisticsDataService {
@@ -49,20 +47,24 @@ public class StatisticsDataService {
                                 logger.info("Generating, and caching, daily data for the past week.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
+
                                 finalData.put("incremental", incrData);
                             } else if (key.equals(GraphView.MONTH)) {
                                 logger.info("Generating, and caching, daily data for the past month.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.MONTH);
+
                                 finalData.put("incremental", incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating, and caching, monthly data for the past year.");
+                                DateTimeFormatter dtf = getDateFormatter("MMM yyyy");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-                                // total is true as we want the accumulative of ALL the inst./workst./pipelns
-                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
-                                Map<String, GraphData> totalData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
-                                finalData.put("incremental", totalData); // todo doesn't work for some reason, also it's become crazy slow fix pls thanks
-                                finalData = generateExponData(incrData, getDateFormatter("MMM yyyy"));
+                                                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                Map<String, GraphData> totalData = generateTotalIncrData(incrData, dtf);
+                                Map<String, GraphData> exponData = generateExponData(incrData, dtf);
+
+                                finalData.put("incremental", totalData);
+                                finalData.put("exponential", exponData);
                             }
 
                             return finalData;
@@ -94,54 +96,68 @@ public class StatisticsDataService {
         statisticsData.forEach(data -> {
             Instant createdDate = Instant.ofEpochMilli(data.createdDate());
             String dateString = dateTimeFormatter.format(createdDate);
-            if (!incrData.containsKey(dateString)) {
-                incrData.put(dateString, new GraphData(
-                    new HashMap<>() {{put(data.instituteName(), data.specimens());}},
-                    new HashMap<>() {{put(data.pipelineName(), data.specimens());}},
-                    new HashMap<>() {{put(data.workstationName(), data.specimens());}}
-                ));
-            } else {
-                updateData(incrData.get(dateString).getInstitutes(), data.instituteName(), data.specimens());
-                updateData(incrData.get(dateString).getPipelines(), data.pipelineName(), data.specimens());
-                updateData(incrData.get(dateString).getWorkstations(), data.workstationName(), data.specimens());
-            }
+
+            updateOnKey(incrData, dateString,
+                    data.instituteName(), data.specimens(),
+                    data.workstationName(), data.specimens(),
+                    data.pipelineName(), data.specimens());
+
+//            if (!incrData.containsKey(dateString)) {
+//                incrData.put(dateString, new GraphData(
+//                    new HashMap<>() {{put(data.instituteName(), data.specimens());}},
+//                    new HashMap<>() {{put(data.pipelineName(), data.specimens());}},
+//                    new HashMap<>() {{put(data.workstationName(), data.specimens());}}
+//                ));
+//            } else {
+//                updateData(incrData.get(dateString).getInstitutes(), data.instituteName(), data.specimens());
+//                updateData(incrData.get(dateString).getPipelines(), data.pipelineName(), data.specimens());
+//                updateData(incrData.get(dateString).getWorkstations(), data.workstationName(), data.specimens());
+//            }
+
         });
 
         addRemainingDates(startDate, endDate, dateTimeFormatter, incrData, timeFrame);
         return sortMapOnDateKeys(incrData, dateTimeFormatter);
     }
 
-    public Map<String, GraphData> generateIncrDataNew() {
-        Map<String, GraphData> incrData;
-        Map<String, GraphData> totalData = null;
-        Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-        incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
-        System.out.println(incrData);
+    public Map<String, GraphData> generateTotalIncrData(Map<String, GraphData> incrData, DateTimeFormatter dateTimeFormatter) {
+        Map<String, GraphData> totalData = new HashMap<>();;
 
-        incrData.forEach((k, v) -> {
-            System.out.println(k);
-            System.out.println(v);
-            System.out.println(v.getInstitutes().values());
-            Integer t = v.getInstitutes().values().stream().reduce(0, Integer::sum);
-            System.out.println(t);
+        incrData.forEach((dateKey, value) -> {
+            // gets all the values from all institues on each date and adds them
+            Integer instituteSum = value.getInstitutes().values().stream().reduce(0, Integer::sum);
+            Integer pipelineSum = value.getPipelines().values().stream().reduce(0, Integer::sum);
+            Integer workstationSum = value.getWorkstations().values().stream().reduce(0, Integer::sum);
 
-            if (!totalData.containsKey(k)) {
-                incrData.put(k, new GraphData(
-                        new HashMap<>() {{put("Institutes", v.getInstitutes().values().stream().reduce(0, Integer::sum));}},
-                        new HashMap<>() {{put("Pipelines", v.getPipelines().values().stream().reduce(0, Integer::sum));}},
-                        new HashMap<>() {{put("Workstations", v.getWorkstations().values().stream().reduce(0, Integer::sum));}}
-                ));
-            } else {
-                updateData(incrData.get(k).getInstitutes(), "Institutes", v.getInstitutes().values().stream().reduce(0, Integer::sum));
-                updateData(incrData.get(k).getPipelines(), data.pipelineName(), data.specimens());
-                updateData(incrData.get(k).getWorkstations(), data.workstationName(), data.specimens());
-            }
+            updateOnKey(totalData, dateKey,
+                    "Institutes", instituteSum,
+                    "Workstations", workstationSum,
+                    "Pipelines", pipelineSum);
         });
-        return new HashMap<>();
+
+        return sortMapOnDateKeys(totalData, dateTimeFormatter);
     }
 
-    public Map<String, Map<String, GraphData>> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
-    Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
+    public void updateOnKey(Map<String, GraphData> dataMap, String key,
+                            String institute, Integer instituteAmount,
+                            String workstation, Integer workstationAmount,
+                            String pipeline, Integer pipelineAmount) {
+
+        if (!dataMap.containsKey(key)) {
+            dataMap.put(key, new GraphData(
+                    new HashMap<>() {{put(institute, instituteAmount);}},
+                    new HashMap<>() {{put(pipeline, pipelineAmount);}},
+                    new HashMap<>() {{put(workstation, workstationAmount);}}
+            ));
+        } else {
+            updateData(dataMap.get(key).getInstitutes(), institute, instituteAmount);
+            updateData(dataMap.get(key).getPipelines(), pipeline, pipelineAmount);
+            updateData(dataMap.get(key).getWorkstations(), workstation, workstationAmount);
+        }
+    }
+
+    public Map<String, GraphData> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
+//    Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
     Gson gson = new Gson(); // not a huge fan of this, but is the only way I can see - for now - to deep clone the map.
     String jsonString = gson.toJson(originalData);
     Type type = new TypeToken<HashMap<String, GraphData>>(){}.getType();
@@ -164,10 +180,8 @@ public class StatisticsDataService {
             currvalue.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, currvalue.getWorkstations().get(workstationName)));
         }
     }
-//    finalData.put("incremental", originalData);
-    finalData.put("exponential", exponData);
 
-    return finalData;
+    return exponData;
     }
 
     public void updateData(Map<String, Integer> existing, String key, Integer specimens) {
