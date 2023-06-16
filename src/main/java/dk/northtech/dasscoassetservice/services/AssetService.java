@@ -149,7 +149,7 @@ public class AssetService {
         existing.updateUser = updatedAsset.updateUser;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing);
-        return updatedAsset;
+        return existing;
     }
 
     void validateAssetFields(Asset a) {

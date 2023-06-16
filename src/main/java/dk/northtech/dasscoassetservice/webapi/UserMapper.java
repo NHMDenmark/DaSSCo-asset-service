@@ -12,7 +12,6 @@ public class UserMapper {
         user.keycloakId = String.valueOf(tokenAttributes.get("sub"));
         user.username = String.valueOf(tokenAttributes.get("preferred_username"));
         user.token = token.getToken().getTokenValue();
-        System.out.println(token.getToken().getTokenValue());
         return user;
     }
 }

@@ -41,7 +41,6 @@ public interface SpecimenRepository extends SqlObject {
                 """;
         withHandle(handle -> {
             for (String specimenBarcode : asset.specimen_barcodes) {
-                System.out.println("PERSISTING " + specimenBarcode);
                 AgtypeMap parms = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)

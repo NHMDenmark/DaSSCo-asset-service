@@ -125,7 +125,6 @@ public class FileProxyClient {
     }
 
     public SambaInfo disconnectSamba(User user, AssetSmbRequest assetSmbRequest) {
-        System.out.println("tests");
         SmbRequest smbRequest = new SmbRequest();
         smbRequest.users = Arrays.asList(user.username);
         Gson gson = new Gson();
