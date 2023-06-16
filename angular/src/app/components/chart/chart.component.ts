@@ -78,7 +78,7 @@ export class ChartComponent {
         const selectedStatMap: Map<string, number> = new Map(Object.entries(this.getKey(stats, statValue)));
         if (selectedStatMap.has(name)) {
           data.push(selectedStatMap.get(name) as number);
-          pointRadius.push(5);
+          pointRadius.push(selectedStatMap.get(name) as number !== 0 ? 5 : 1);
         } else {
           data.push(0);
           pointRadius.push(1);
@@ -108,6 +108,7 @@ export class ChartComponent {
     // as I want to reuse the datasetcreation code, but don't know if we're looking at institute, pipeline, or workstation
     if (statValue === StatValue.INSTITUTE) return stats.institutes;
     if (statValue === StatValue.PIPELINE) return stats.pipelines;
+    // if (statValue === StatValue.WORKSTATION) return stats.workstations;
     return stats.workstations;
   }
 

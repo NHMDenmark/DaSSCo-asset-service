@@ -47,17 +47,24 @@ public class StatisticsDataService {
                                 logger.info("Generating, and caching, daily data for the past week.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
+
                                 finalData.put("incremental", incrData);
                             } else if (key.equals(GraphView.MONTH)) {
                                 logger.info("Generating, and caching, daily data for the past month.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.MONTH);
+
                                 finalData.put("incremental", incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating, and caching, monthly data for the past year.");
+                                DateTimeFormatter dtf = getDateFormatter("MMM yyyy");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
-                                finalData = generateExponData(incrData, getDateFormatter("MMM yyyy"));
+                                                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                Map<String, GraphData> totalData = generateTotalIncrData(incrData, dtf);
+                                Map<String, GraphData> exponData = generateExponData(incrData, dtf);
+
+                                finalData.put("incremental", totalData);
+                                finalData.put("exponential", exponData);
                             }
 
                             return finalData;
@@ -89,30 +96,67 @@ public class StatisticsDataService {
         statisticsData.forEach(data -> {
             Instant createdDate = Instant.ofEpochMilli(data.createdDate());
             String dateString = dateTimeFormatter.format(createdDate);
-            if (!incrData.containsKey(dateString)) {
-                incrData.put(dateString, new GraphData(
-                    new HashMap<>() {{put(data.instituteName(), data.specimens());}},
-                    new HashMap<>() {{put(data.pipelineName(), data.specimens());}},
-                    new HashMap<>() {{put(data.workstationName(), data.specimens());}}
-                ));
-            } else {
-                updateData(incrData.get(dateString).getInstitutes(), data.instituteName(), data.specimens());
-                updateData(incrData.get(dateString).getPipelines(), data.pipelineName(), data.specimens());
-                updateData(incrData.get(dateString).getWorkstations(), data.workstationName(), data.specimens());
-            }
+
+            updateOnKey(incrData, dateString,
+                    data.instituteName(), data.specimens(),
+                    data.workstationName(), data.specimens(),
+                    data.pipelineName(), data.specimens());
+
+//            if (!incrData.containsKey(dateString)) {
+//                incrData.put(dateString, new GraphData(
+//                    new HashMap<>() {{put(data.instituteName(), data.specimens());}},
+//                    new HashMap<>() {{put(data.pipelineName(), data.specimens());}},
+//                    new HashMap<>() {{put(data.workstationName(), data.specimens());}}
+//                ));
+//            } else {
+//                updateData(incrData.get(dateString).getInstitutes(), data.instituteName(), data.specimens());
+//                updateData(incrData.get(dateString).getPipelines(), data.pipelineName(), data.specimens());
+//                updateData(incrData.get(dateString).getWorkstations(), data.workstationName(), data.specimens());
+//            }
+
         });
 
         addRemainingDates(startDate, endDate, dateTimeFormatter, incrData, timeFrame);
         return sortMapOnDateKeys(incrData, dateTimeFormatter);
     }
 
-    public Map<String, Map<String, GraphData>> generateTotalData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
-        // todo THIS IS WHERE YOU RETURN A LINE WITH THE DATA OF TOTAL INSTITUTES OKAY. like TOTAL. as in the word. god's sake get in the game, me
-        return new HashMap<>();
+    public Map<String, GraphData> generateTotalIncrData(Map<String, GraphData> incrData, DateTimeFormatter dateTimeFormatter) {
+        Map<String, GraphData> totalData = new HashMap<>();;
+
+        incrData.forEach((dateKey, value) -> {
+            // gets all the values from all institues on each date and adds them
+            Integer instituteSum = value.getInstitutes().values().stream().reduce(0, Integer::sum);
+            Integer pipelineSum = value.getPipelines().values().stream().reduce(0, Integer::sum);
+            Integer workstationSum = value.getWorkstations().values().stream().reduce(0, Integer::sum);
+
+            updateOnKey(totalData, dateKey,
+                    "Institutes", instituteSum,
+                    "Workstations", workstationSum,
+                    "Pipelines", pipelineSum);
+        });
+
+        return sortMapOnDateKeys(totalData, dateTimeFormatter);
     }
 
-    public Map<String, Map<String, GraphData>> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
-    Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
+    public void updateOnKey(Map<String, GraphData> dataMap, String key,
+                            String institute, Integer instituteAmount,
+                            String workstation, Integer workstationAmount,
+                            String pipeline, Integer pipelineAmount) {
+        if (!dataMap.containsKey(key)) {
+            dataMap.put(key, new GraphData(
+                    new HashMap<>() {{put(institute, instituteAmount);}},
+                    new HashMap<>() {{put(pipeline, pipelineAmount);}},
+                    new HashMap<>() {{put(workstation, workstationAmount);}}
+            ));
+        } else {
+            updateData(dataMap.get(key).getInstitutes(), institute, instituteAmount);
+            updateData(dataMap.get(key).getPipelines(), pipeline, pipelineAmount);
+            updateData(dataMap.get(key).getWorkstations(), workstation, workstationAmount);
+        }
+    }
+
+    public Map<String, GraphData> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
+//    Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
     Gson gson = new Gson(); // not a huge fan of this, but is the only way I can see - for now - to deep clone the map.
     String jsonString = gson.toJson(originalData);
     Type type = new TypeToken<HashMap<String, GraphData>>(){}.getType();
@@ -135,10 +179,8 @@ public class StatisticsDataService {
             currvalue.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, currvalue.getWorkstations().get(workstationName)));
         }
     }
-    finalData.put("incremental", originalData);
-    finalData.put("exponential", exponData);
 
-    return finalData;
+    return exponData;
     }
 
     public void updateData(Map<String, Integer> existing, String key, Integer specimens) {
@@ -193,14 +235,14 @@ public class StatisticsDataService {
     public void addAssetToCache(Asset asset) {
         try {
             if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {
-                updateCache(asset, cachedGraphData.get(GraphView.WEEK), "incremental", getDateFormatter("dd-MMM-yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.WEEK), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.MONTH)) {
-                updateCache(asset, cachedGraphData.get(GraphView.MONTH), "incremental", getDateFormatter("dd-MMM-yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.MONTH), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.YEAR)) {
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "incremental", getDateFormatter("MMM yyyy"));
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "exponential", getDateFormatter("MMM yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "incremental", getDateFormatter("MMM yyyy"), true);
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "exponential", getDateFormatter("MMM yyyy"), false);
             }
         } catch (ExecutionException e) {
             logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
@@ -208,21 +250,22 @@ public class StatisticsDataService {
         }
     }
 
-    public void updateCache(Asset asset, Map<String, Map<String, GraphData>> cachedFullData, String key, DateTimeFormatter dtf) {
+    public void updateCache(Asset asset, Map<String, Map<String, GraphData>> cachedFullData, String key, DateTimeFormatter dtf, boolean total) {
+        // bool total is bc when it's a total graph, the keys aren't the names of the institutes/etc, but an overall title
         Map<String, GraphData> cachedData = cachedFullData.get(key);
         String createdDate = dtf.format(asset.created_date);
 
         if (cachedData.containsKey(createdDate)) {
             logger.info("New asset with {} specimens is being added.", asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addInstituteAmts(asset.institution, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addWorkstationAmts(asset.workstation, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addPipelineAmts(asset.pipeline, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());
         } else {
             logger.info("Cached data does not contain today's date {}, and will be added.", createdDate);
             cachedData.put(createdDate, new GraphData(
-                    new HashMap<>() {{put(asset.institution, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(asset.pipeline, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(asset.workstation, asset.specimen_barcodes.size());}}
+                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());}},
+                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());}},
+                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());}}
             ));
             cachedFullData.put(key, sortMapOnDateKeys(cachedData, getDateFormatter("dd-MMM-yyyy")));
         }
