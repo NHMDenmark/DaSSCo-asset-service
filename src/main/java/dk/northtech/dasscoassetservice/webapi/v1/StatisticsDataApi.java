@@ -104,7 +104,6 @@ public class StatisticsDataApi {
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
             DateTimeFormatter yearFormatter = statisticsDataService.getDateFormatter("MMM yyyy");
-
             Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
 
             if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar

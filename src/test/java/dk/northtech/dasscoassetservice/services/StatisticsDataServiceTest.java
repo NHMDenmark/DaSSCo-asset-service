@@ -68,7 +68,6 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assertThat(firstData).containsKey(incremental);
         assertThat(firstData.get(incremental)).containsKey(currentDate);
         int prevInstituteSpecimens = firstData.get(incremental).get(currentDate).getInstitutes().get("institution_1");
-//        assertThat(firstData.get(incremental).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
 
         Asset newCreateAsset = getTestAsset("new-week-cached-asset", "institution_1");
         assetService.persistAsset(newCreateAsset);
