@@ -142,7 +142,6 @@ public class StatisticsDataService {
                             String institute, Integer instituteAmount,
                             String workstation, Integer workstationAmount,
                             String pipeline, Integer pipelineAmount) {
-
         if (!dataMap.containsKey(key)) {
             dataMap.put(key, new GraphData(
                     new HashMap<>() {{put(institute, instituteAmount);}},
@@ -236,14 +235,14 @@ public class StatisticsDataService {
     public void addAssetToCache(Asset asset) {
         try {
             if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {
-                updateCache(asset, cachedGraphData.get(GraphView.WEEK), "incremental", getDateFormatter("dd-MMM-yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.WEEK), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.MONTH)) {
-                updateCache(asset, cachedGraphData.get(GraphView.MONTH), "incremental", getDateFormatter("dd-MMM-yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.MONTH), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.YEAR)) {
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "incremental", getDateFormatter("MMM yyyy"));
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "exponential", getDateFormatter("MMM yyyy"));
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "incremental", getDateFormatter("MMM yyyy"), true);
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "exponential", getDateFormatter("MMM yyyy"), false);
             }
         } catch (ExecutionException e) {
             logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
@@ -251,21 +250,22 @@ public class StatisticsDataService {
         }
     }
 
-    public void updateCache(Asset asset, Map<String, Map<String, GraphData>> cachedFullData, String key, DateTimeFormatter dtf) {
+    public void updateCache(Asset asset, Map<String, Map<String, GraphData>> cachedFullData, String key, DateTimeFormatter dtf, boolean total) {
+        // bool total is bc when it's a total graph, the keys aren't the names of the institutes/etc, but an overall title
         Map<String, GraphData> cachedData = cachedFullData.get(key);
         String createdDate = dtf.format(asset.created_date);
 
         if (cachedData.containsKey(createdDate)) {
             logger.info("New asset with {} specimens is being added.", asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addInstituteAmts(asset.institution, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addWorkstationAmts(asset.workstation, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addPipelineAmts(asset.pipeline, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());
+            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());
         } else {
             logger.info("Cached data does not contain today's date {}, and will be added.", createdDate);
             cachedData.put(createdDate, new GraphData(
-                    new HashMap<>() {{put(asset.institution, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(asset.pipeline, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(asset.workstation, asset.specimen_barcodes.size());}}
+                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());}},
+                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());}},
+                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());}}
             ));
             cachedFullData.put(key, sortMapOnDateKeys(cachedData, getDateFormatter("dd-MMM-yyyy")));
         }
