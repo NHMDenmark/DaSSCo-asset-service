@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
+import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
@@ -20,15 +21,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
+import java.util.Optional;
 
 @Service
 public class FileProxyClient {
     private static final Logger logger = LoggerFactory.getLogger(FileProxyClient.class);
     public FileProxyConfiguration fileProxyConfiguration;
+    public AssetService assetService;
 
     @Inject
-    public FileProxyClient(FileProxyConfiguration fileProxyConfiguration) {
+    public FileProxyClient(FileProxyConfiguration fileProxyConfiguration, AssetService assetService) {
         this.fileProxyConfiguration = fileProxyConfiguration;
+        this.assetService = assetService;
     }
 
     public SambaInfo openSamba(SmbRequest smbRequest, User user) {
@@ -52,7 +56,6 @@ public class FileProxyClient {
             if (send.statusCode() == 503) {
                 sambaInfo.sambaRequestStatusMessage = "Shares are temporarily unavailable, please try manually checking out the asset later";
             } else {
-                logger.error("Failed to get share");
                 sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to create share, please try manually checking out the asset later";
             }
             logger.error("Failed to get smb share from file-proxy, http status code: {}, response code: {}", send.statusCode(), body);
@@ -67,10 +70,16 @@ public class FileProxyClient {
     }
 
     public SambaInfo openSamba(MinimalAsset asset, User user) {
-        SmbRequest smbRequest = new SmbRequest();
-        smbRequest.assets.add(asset);
-        smbRequest.users.add(user.username);
-        return openSamba(smbRequest, user);
+        Optional<Asset> optionalAsset = assetService.getAsset(asset.guid());
+        if(optionalAsset.isPresent()){
+            Asset asset1 = optionalAsset.get();
+            SmbRequest smbRequest = new SmbRequest();
+            smbRequest.assets.add(new MinimalAsset(asset1.guid, asset1.parent_guid));
+            smbRequest.users.add(user.username);
+            return openSamba(smbRequest, user);
+        } else {
+            throw new IllegalArgumentException("Asset ["+asset.guid()+"] does not exist");
+        }
     }
 //    public void pauseSamba(AssetSmbRequest assetSmbRequest, MinimalAsset asset, String token, String username) {
 //        Gson gson = new Gson();
