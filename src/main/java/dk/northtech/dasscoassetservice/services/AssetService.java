@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -23,7 +24,7 @@ public class AssetService {
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, FileProxyClient fileProxyClient,Jdbi jdbi, StatisticsDataService statisticsDataService) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
