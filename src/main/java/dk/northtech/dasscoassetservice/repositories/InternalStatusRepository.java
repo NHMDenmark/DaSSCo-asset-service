@@ -29,21 +29,21 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-    public Optional<Map<InternalStatus, Integer>> getInternalStatusAmt(long currMillisecs) {
+    public Optional<Map<String, Integer>> getInternalStatusAmt(long currMillisecs) {
         String sql =
                 """
                     SELECT * from cypher('dassco', $$
                             MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event)
-                            WHERE ae.timestamp >= $today
+                            WHERE ae.timestamp >= 1686878830000
                             WITH count(assets) as assetcount
                             OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event)
-                            WHERE ce.timestamp >= $today
+                            WHERE ce.timestamp >= 1686878830000
                             WITH count(completed) as complcount, assetcount
                             OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event)
-                            WHERE me.timestamp >= $today
+                            WHERE me.timestamp >= 1686878830000
                             WITH count(metadata) as metacount, complcount, assetcount
-                            RETURN assetcount, complcount, metacount
-                        $$, #params) as (assetcount agtype, complcount agtype, metacount agtype);
+                            RETURN (assetcount + metacount), complcount
+                        $$, #params) as (pendingcount agtype, complcount agtype);
                """;
 
 
@@ -54,15 +54,13 @@ public class InternalStatusRepository {
                 return handle.createQuery(sql)
                         .bind("params", agtype)
                         .map((rs, ctx) -> {
-                            Map<InternalStatus, Integer> amountMap = new HashMap<>();
+                            Map<String, Integer> amountMap = new HashMap<>();
 
-                            Integer assetcount = rs.getInt("assetcount");
+                            Integer pendingcount = rs.getInt("pendingcount");
                             Integer complcount = rs.getInt("complcount");
-                            Integer metacount = rs.getInt("metacount");
 
-                            amountMap.put(InternalStatus.METADATA_RECEIVED, metacount);
-                            amountMap.put(InternalStatus.COMPLETED, complcount);
-                            amountMap.put(InternalStatus.ASSET_RECEIVED, assetcount);
+                            amountMap.put("pending", pendingcount);
+                            amountMap.put("completed", complcount);
 
                             return amountMap;
                         })
