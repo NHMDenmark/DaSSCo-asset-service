@@ -15,11 +15,22 @@ export class InternalStatusService {
     , private http: HttpClient
   ) { }
 
-  internalStatuses$: Observable<HttpResponse<any> | undefined>
+  dailyInternalStatuses$: Observable<HttpResponse<any> | undefined>
     = this.oidcSecurityService.getAccessToken()
     .pipe(
       switchMap((token) => {
-        return this.http.get(`${this.baseUrl}/internalstatus`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+        return this.http.get(`${this.baseUrl}/internalstatus/daily`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/internalstatus/daily`, undefined))
+          );
+      })
+    );
+
+  totalInternalStatuses$: Observable<HttpResponse<any> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get(`${this.baseUrl}/internalstatus/total`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(
             catchError(this.handleError(`get ${this.baseUrl}/internalstatus`, undefined))
           );
