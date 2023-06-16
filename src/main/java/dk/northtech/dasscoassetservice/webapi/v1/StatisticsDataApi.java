@@ -125,5 +125,4 @@ public class StatisticsDataApi {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
     }
-
 }
