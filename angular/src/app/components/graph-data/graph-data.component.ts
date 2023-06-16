@@ -58,10 +58,12 @@ export class GraphDataComponent {
             let view = 'WEEK';
             if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
             if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
+            // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
+            const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
 
             this.specimenGraphService.getSpecimenDataCustom(view,
                 moment(range.start).valueOf(),
-                moment(range.end).valueOf())
+              endDateFormatted.valueOf())
               .pipe(filter(isNotUndefined))
               .subscribe(customData => {
                 const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));

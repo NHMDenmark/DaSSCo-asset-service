@@ -10,6 +10,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
+import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
+import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 
 public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
@@ -22,15 +24,15 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
         long duration = ChronoUnit.DAYS.between(startDate, Instant.now()) + 1; // plus 1 as it doesn't count the first date as "between"
 
-        Map<String, Map<String, GraphData>> finalData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
+        Map<GraphType, Map<String, GraphData>> finalData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
 
-        assertThat(finalData).containsKey("incremental");
-        assertThat(finalData.get("incremental")).isNotEmpty();
-        assertThat(finalData.get("incremental")).containsKey(currentDate);
-        assertThat(finalData.get("incremental").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
-        assertThat(finalData.get("incremental").size()).isEqualTo(duration);
+        assertThat(finalData).containsKey(incremental);
+        assertThat(finalData.get(incremental)).isNotEmpty();
+        assertThat(finalData.get(incremental)).containsKey(currentDate);
+        assertThat(finalData.get(incremental).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
+        assertThat(finalData.get(incremental).size()).isEqualTo(duration);
 
-        Map.Entry<String, GraphData> firstEntry = finalData.get("incremental").entrySet().iterator().next();
+        Map.Entry<String, GraphData> firstEntry = finalData.get(incremental).entrySet().iterator().next();
         assertThat(firstEntry.getKey()).isEqualTo(getDateFormatter("dd-MMM-yyyy").format(startDate));
     }
 
@@ -43,15 +45,15 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
         long duration = ChronoUnit.DAYS.between(startDate, Instant.now()) + 1; // plus 1 as it doesn't count the first date as "between"
 
-        Map<String, Map<String, GraphData>> finalData = statisticsDataService.getCachedGraphData(GraphView.MONTH);
+        Map<GraphType, Map<String, GraphData>> finalData = statisticsDataService.getCachedGraphData(GraphView.MONTH);
 
-        assertThat(finalData).containsKey("incremental");
-        assertThat(finalData.get("incremental")).isNotEmpty();
-        assertThat(finalData.get("incremental")).containsKey(currentDate);
-        assertThat(finalData.get("incremental").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
-        assertThat(finalData.get("incremental").size()).isEqualTo(duration);
+        assertThat(finalData).containsKey(incremental);
+        assertThat(finalData.get(incremental)).isNotEmpty();
+        assertThat(finalData.get(incremental)).containsKey(currentDate);
+        assertThat(finalData.get(incremental).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
+        assertThat(finalData.get(incremental).size()).isEqualTo(duration);
 
-        Map.Entry<String, GraphData> firstEntry = finalData.get("incremental").entrySet().iterator().next();
+        Map.Entry<String, GraphData> firstEntry = finalData.get(incremental).entrySet().iterator().next();
         assertThat(firstEntry.getKey()).isEqualTo(getDateFormatter("dd-MMM-yyyy").format(startDate));
     }
 
@@ -61,22 +63,22 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Asset createAsset = getTestAsset("week-cached-asset", "institution_1");
         assetService.persistAsset(createAsset);
 
-        Map<String, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
+        Map<GraphType, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
 
-        assertThat(firstData).containsKey("incremental");
-        assertThat(firstData.get("incremental")).containsKey(currentDate);
-        int prevInstituteSpecimens = firstData.get("incremental").get(currentDate).getInstitutes().get("institution_1");
-//        assertThat(firstData.get("incremental").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
+        assertThat(firstData).containsKey(incremental);
+        assertThat(firstData.get(incremental)).containsKey(currentDate);
+        int prevInstituteSpecimens = firstData.get(incremental).get(currentDate).getInstitutes().get("institution_1");
+//        assertThat(firstData.get(incremental).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(2);
 
         Asset newCreateAsset = getTestAsset("new-week-cached-asset", "institution_1");
         assetService.persistAsset(newCreateAsset);
 
         // adds a new asset with 2 specimens
-        Map<String, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
+        Map<GraphType, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
 
-        assertThat(secondData).containsKey("incremental");
-        assertThat(secondData.get("incremental")).containsKey(currentDate);
-        assertThat(secondData.get("incremental").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(prevInstituteSpecimens + 2);
+        assertThat(secondData).containsKey(incremental);
+        assertThat(secondData.get(incremental)).containsKey(currentDate);
+        assertThat(secondData.get(incremental).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(prevInstituteSpecimens + 2);
     }
 
     @Test
@@ -85,27 +87,27 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Asset createAsset = getTestAsset("year-cached-asset", "institution_1");
         assetService.persistAsset(createAsset);
 
-        Map<String, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Map<GraphType, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
 
-        assertThat(firstData).containsKey("incremental");
-        assertThat(firstData.get("incremental")).containsKey(currentDate);
-        int prevInstituteSpecimensIncr = firstData.get("incremental").get(currentDate).getInstitutes().get("Institutes");
-        assertThat(firstData).containsKey("exponential");
-        assertThat(firstData.get("exponential")).containsKey(currentDate);
-        int prevInstituteSpecimensExpon = firstData.get("exponential").get(currentDate).getInstitutes().get("institution_1");
+        assertThat(firstData).containsKey(incremental);
+        assertThat(firstData.get(incremental)).containsKey(currentDate);
+        int prevInstituteSpecimensIncr = firstData.get(incremental).get(currentDate).getInstitutes().get("Institutes");
+        assertThat(firstData).containsKey(exponential);
+        assertThat(firstData.get(exponential)).containsKey(currentDate);
+        int prevInstituteSpecimensExpon = firstData.get(exponential).get(currentDate).getInstitutes().get("institution_1");
 
         Asset newCreateAsset = getTestAsset("new-year-cached-asset", "institution_1");
         assetService.persistAsset(newCreateAsset);
 
         // adds a new asset with 2 specimens
-        Map<String, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Map<GraphType, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
 
-        assertThat(secondData).containsKey("incremental");
-        assertThat(secondData.get("incremental")).containsKey(currentDate);
-        assertThat(secondData.get("incremental").get(currentDate).getInstitutes().get("Institutes")).isEqualTo(prevInstituteSpecimensIncr + 2);
-        assertThat(secondData).containsKey("exponential");
-        assertThat(secondData.get("exponential")).containsKey(currentDate);
-        assertThat(secondData.get("exponential").get(currentDate).getInstitutes().get("institution_1")).isEqualTo(prevInstituteSpecimensExpon + 2);
+        assertThat(secondData).containsKey(incremental);
+        assertThat(secondData.get(incremental)).containsKey(currentDate);
+        assertThat(secondData.get(incremental).get(currentDate).getInstitutes().get("Institutes")).isEqualTo(prevInstituteSpecimensIncr + 2);
+        assertThat(secondData).containsKey(exponential);
+        assertThat(secondData.get(exponential)).containsKey(currentDate);
+        assertThat(secondData.get(exponential).get(currentDate).getInstitutes().get("institution_1")).isEqualTo(prevInstituteSpecimensExpon + 2);
     }
 
     @Test
@@ -114,19 +116,19 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
         Asset createAsset = getTestAsset("year-total-asset", "institution_1");
         assetService.persistAsset(createAsset);
-        Map<String, Map<String, GraphData>> beforeData = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
-        Integer instSumBefore = beforeData.get("incremental").get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
+        Map<GraphType, Map<String, GraphData>> beforeData = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Integer instSumBefore = beforeData.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
 
         Asset createAssetNew = getTestAsset("new-year-total-asset", "institution_2");
         assetService.persistAsset(createAssetNew);
-        Map<String, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
-        Integer instSumAfter = dataAfter.get("incremental").get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
+        Map<GraphType, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
+        Integer instSumAfter = dataAfter.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
         System.out.println(dataAfter);
 
-        assertThat(dataAfter).containsKey("incremental");
-        assertThat(dataAfter.get("incremental")).containsKey(currentDate);
-        assertThat(dataAfter).containsKey("exponential");
-        assertThat(dataAfter.get("exponential")).containsKey(currentDate);
+        assertThat(dataAfter).containsKey(incremental);
+        assertThat(dataAfter.get(incremental)).containsKey(currentDate);
+        assertThat(dataAfter).containsKey(exponential);
+        assertThat(dataAfter.get(exponential)).containsKey(currentDate);
         assertThat(instSumBefore).isLessThan(instSumAfter);
     }
 

@@ -38,7 +38,6 @@ export class StatusWidgetComponent {
         listData.push({status: 'ASSET_RECEIVED', no: mapData.get('ASSET_RECEIVED')} as InternalStatusDataSource);
         listData.push({status: 'METADATA_RECEIVED', no: mapData.get('METADATA_RECEIVED')} as InternalStatusDataSource);
 
-        // this.dataSource.data = listData;
         return statuses.body;
       })
     );
