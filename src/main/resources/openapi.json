@@ -66,8 +66,8 @@
         } ]
       }
     },
-    "/v1/assetmetadata/{assetGuid}/assetrecieved" : {
-      "put" : {
+    "/v1/assetmetadata/{assetGuid}/assetreceived" : {
+      "post" : {
         "operationId" : "assetreceived",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -148,7 +148,7 @@
       }
     },
     "/v1/assetmetadata/{assetGuid}/complete" : {
-      "put" : {
+      "post" : {
         "operationId" : "completeAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -816,7 +816,7 @@
         } ]
       }
     },
-    "/v1/shares/checkoutasset" : {
+    "/v1/shares/openAsset" : {
       "post" : {
         "operationId" : "checkoutAsset",
         "requestBody" : {
@@ -845,38 +845,9 @@
         } ]
       }
     },
-    "/v1/shares/closeshare" : {
-      "post" : {
-        "operationId" : "closeSmb",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AssetSmbRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/shares/open" : {
       "post" : {
-        "operationId" : "closeSmb_1",
+        "operationId" : "closeSmb",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -903,9 +874,16 @@
         } ]
       }
     },
-    "/v1/shares" : {
+    "/v1/shares/closeShare" : {
       "post" : {
-        "operationId" : "finalizeAsset",
+        "operationId" : "closeSmb_1",
+        "parameters" : [ {
+          "name" : "syncERDA",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -932,7 +910,7 @@
         } ]
       }
     },
-    "/v1/shares/disconnect" : {
+    "/v1/shares/disconnectShare" : {
       "post" : {
         "operationId" : "pauseSmb",
         "requestBody" : {
@@ -1812,20 +1790,6 @@
           }
         }
       },
-      "AssetSmbRequest" : {
-        "type" : "object",
-        "properties" : {
-          "shareName" : {
-            "type" : "string"
-          },
-          "assetId" : {
-            "type" : "string"
-          },
-          "syncErda" : {
-            "type" : "boolean"
-          }
-        }
-      },
       "SmbRequest" : {
         "type" : "object",
         "properties" : {
@@ -1840,6 +1804,17 @@
             "items" : {
               "$ref" : "#/components/schemas/MinimalAsset"
             }
+          }
+        }
+      },
+      "AssetSmbRequest" : {
+        "type" : "object",
+        "properties" : {
+          "shareName" : {
+            "type" : "string"
+          },
+          "assetId" : {
+            "type" : "string"
           }
         }
       },

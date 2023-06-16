@@ -40,8 +40,8 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/assetmetadata/{assetGuid}/assetrecieved:
-    put:
+  /v1/assetmetadata/{assetGuid}/assetreceived:
+    post:
       operationId: assetreceived
       parameters:
       - name: assetGuid
@@ -90,7 +90,7 @@ paths:
       security:
       - dassco-idp: []
   /v1/assetmetadata/{assetGuid}/complete:
-    put:
+    post:
       operationId: completeAsset
       parameters:
       - name: assetGuid
@@ -492,7 +492,7 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/shares/checkoutasset:
+  /v1/shares/openAsset:
     post:
       operationId: checkoutAsset
       requestBody:
@@ -509,26 +509,9 @@ paths:
                 $ref: '#/components/schemas/SambaInfo'
       security:
       - dassco-idp: []
-  /v1/shares/closeshare:
-    post:
-      operationId: closeSmb
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssetSmbRequest'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SambaInfo'
-      security:
-      - dassco-idp: []
   /v1/shares/open:
     post:
-      operationId: closeSmb_1
+      operationId: closeSmb
       requestBody:
         content:
           application/json:
@@ -543,9 +526,14 @@ paths:
                 $ref: '#/components/schemas/SambaInfo'
       security:
       - dassco-idp: []
-  /v1/shares:
+  /v1/shares/closeShare:
     post:
-      operationId: finalizeAsset
+      operationId: closeSmb_1
+      parameters:
+      - name: syncERDA
+        in: query
+        schema:
+          type: boolean
       requestBody:
         content:
           application/json:
@@ -560,7 +548,7 @@ paths:
                 $ref: '#/components/schemas/SambaInfo'
       security:
       - dassco-idp: []
-  /v1/shares/disconnect:
+  /v1/shares/disconnectShare:
     post:
       operationId: pauseSmb
       requestBody:
@@ -1188,15 +1176,6 @@ components:
           type: string
         parent_guid:
           type: string
-    AssetSmbRequest:
-      type: object
-      properties:
-        shareName:
-          type: string
-        assetId:
-          type: string
-        syncErda:
-          type: boolean
     SmbRequest:
       type: object
       properties:
@@ -1208,6 +1187,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MinimalAsset'
+    AssetSmbRequest:
+      type: object
+      properties:
+        shareName:
+          type: string
+        assetId:
+          type: string
     Specimen:
       type: object
       properties:
