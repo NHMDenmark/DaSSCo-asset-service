@@ -36,7 +36,7 @@ public class Publishers {
     @Path("/publish")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public PublicationLink publish(PublicationLink publicationLink, @PathParam("publisherName") String publisherName) {
@@ -47,7 +47,7 @@ public class Publishers {
     @Path("/pull")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void pull(PublicationLink publicationLink, @PathParam("publisherName") String publisherName) {
@@ -57,7 +57,7 @@ public class Publishers {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<PublicationLink> list(@PathParam("publisherName") String publisherName) {

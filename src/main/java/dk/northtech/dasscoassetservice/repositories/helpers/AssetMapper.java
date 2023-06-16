@@ -44,7 +44,6 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.workstation = workstationName.getString();
         asset.asset_locked = assetLocked.getBoolean();
         asset.digitizer = userName.getString();
-        asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
         asset.restricted_access = restrictedAccess.getList().stream().map(role -> Role.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();
         tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null? tag.getValue().toString(): null));

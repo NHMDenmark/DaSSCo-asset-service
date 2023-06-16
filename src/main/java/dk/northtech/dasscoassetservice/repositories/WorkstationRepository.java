@@ -79,7 +79,6 @@ public class WorkstationRepository {
 
 
         try {
-            System.out.println(workstation.name());
             jdbi.withHandle(handle -> {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);

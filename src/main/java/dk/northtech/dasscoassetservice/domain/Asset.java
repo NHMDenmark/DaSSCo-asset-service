@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -53,8 +54,8 @@ public class Asset {
     public String parent_guid;
     @Schema(description = "Name of the collection the asset belongs to", example = "test-collection")
     public String collection;
-    @Schema(description = "The location on the storage where asset media can be uploaded", example = "/test-institution/test-collection/ti-a02-202305241657")
-    public String asset_location;
+    @Schema(description = "The location on the storage where asset media can be uploaded")
+    public SambaInfo sambaInfo;
     @Schema(description = "An internal status field used to track the status of the upload of related media", example = "COMPLETED")
     public InternalStatus internal_status;
     @Schema(description = "Date the asset was pushed to specify", example = "2023-05-24T00:00:00.000Z")

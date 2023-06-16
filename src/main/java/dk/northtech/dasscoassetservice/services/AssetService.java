@@ -4,14 +4,12 @@ import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import jakarta.inject.Inject;
-
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -20,13 +18,16 @@ public class AssetService {
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
     private final StatisticsDataService statisticsDataService;
+    private final FileProxyClient fileProxyClient;
+
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, StatisticsDataService statisticsDataService, Jdbi jdbi) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, FileProxyClient fileProxyClient,Jdbi jdbi, StatisticsDataService statisticsDataService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
+        this.fileProxyClient = fileProxyClient;
         this.statisticsDataService = statisticsDataService;
         this.jdbi = jdbi;
     }
@@ -90,6 +91,38 @@ public class AssetService {
         return true;
     }
 
+    public boolean completeUpload(String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = InternalStatus.ASSET_RECEIVED;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
+    }
+
+    public boolean setFailedStatus(String assetGuid, String status) {
+        InternalStatus assetStatus = null;
+        try {
+            assetStatus = InternalStatus.valueOf(status);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.SMB_ERROR) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if(optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = assetStatus;
+        jdbi.onDemand(AssetRepository.class)
+                .updateAssetNoEvent(asset);
+        return true;
+    }
+
     public Asset updateAsset(Asset updatedAsset) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
         if(assetOpt.isEmpty()) {
@@ -116,7 +149,7 @@ public class AssetService {
         existing.updateUser = updatedAsset.updateUser;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing);
-        return updatedAsset;
+        return existing;
     }
 
     void validateAssetFields(Asset a) {
@@ -153,7 +186,7 @@ public class AssetService {
 
     }
 
-    public Asset persistAsset(Asset asset) {
+    public Asset persistAsset(Asset asset, User user) {
         Optional<Asset> assetOpt = getAsset(asset.guid);
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
@@ -166,8 +199,7 @@ public class AssetService {
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class).createAsset(asset);
-        asset.asset_location = "/" + asset.institution + "/" + asset.collection + "/" + asset.guid;
-        // add the new asset to graph-cache for the  frontend
+        asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.guid, asset.parent_guid), user);
         this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }

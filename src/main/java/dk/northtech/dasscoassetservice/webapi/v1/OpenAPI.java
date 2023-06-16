@@ -67,7 +67,7 @@ public class OpenAPI {
     @Hidden
     @Path("openapi.json")
     @Produces(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public String json(@Context HttpServletRequest request) {
         return replaceServers(request, readFromClasspath("/openapi.json"));
     }
@@ -76,7 +76,7 @@ public class OpenAPI {
     @Hidden
     @Path("openapi.yaml")
     @Produces("text/plain; charset=utf-8")
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public String yaml(@Context HttpServletRequest request) {
         return replaceServers(request, readFromClasspath("/openapi.yaml"));
     }
