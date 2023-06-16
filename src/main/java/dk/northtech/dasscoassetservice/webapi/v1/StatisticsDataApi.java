@@ -27,6 +27,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.*;
 
+import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
+import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
@@ -59,7 +61,7 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getGraphDataDaily(@PathParam("timeframe") String timeFrame) {
         // {incremental (pr day data): data, exponential (continually adding pr day): data}
-        Map<String, Map<String, GraphData>> finalData;
+        Map<GraphType, Map<String, GraphData>> finalData;
 
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
             finalData = statisticsDataService.getCachedGraphData(GraphView.valueOf(timeFrame));
@@ -85,7 +87,7 @@ public class StatisticsDataApi {
     public Response getGraphDataCustomTimeframe(@QueryParam("view") String view, @QueryParam("start") long startDate, @QueryParam("end") long endDate) {
         // Custom start and end date with either daily or monthly view
         Map<String, GraphData> customData;
-        Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental data: data, exponential data: data
+        Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental data: data, exponential data: data
         Instant start = Instant.ofEpochMilli(startDate);
         Instant end = Instant.ofEpochMilli(endDate);
 
@@ -97,7 +99,7 @@ public class StatisticsDataApi {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
-            finalData.put("incremental", customData);
+            finalData.put(incremental, customData);
 
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
@@ -108,8 +110,8 @@ public class StatisticsDataApi {
             if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
                 Map<String, GraphData> exponData = statisticsDataService.generateExponData(incrData, yearFormatter);
 
-                finalData.put("incremental", incrData);
-                finalData.put("exponential", exponData);
+                finalData.put(incremental, incrData);
+                finalData.put(exponential, exponData);
                 return Response.status(Response.Status.OK).entity(finalData).build();
             }
 
@@ -118,7 +120,7 @@ public class StatisticsDataApi {
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
 
-            finalData.put("incremental", incrData);
+            finalData.put(incremental, incrData);
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else {
             logger.warn("View {} is invalid. It has to be either \"daily\" or \"monthly\".", view);

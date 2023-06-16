@@ -5,10 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.GraphData;
-import dk.northtech.dasscoassetservice.domain.GraphView;
-import dk.northtech.dasscoassetservice.domain.StatisticsData;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.StatisticsDataRepository;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
@@ -29,18 +26,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
+import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
+
 @Service
 public class StatisticsDataService {
     private static final Logger logger = LoggerFactory.getLogger(StatisticsDataService.class);
     private final StatisticsDataRepository statisticsDataRepository;
 
-    LoadingCache<GraphView, Map<String, Map<String, GraphData>>> cachedGraphData = CacheBuilder.newBuilder()
+    LoadingCache<GraphView, Map<GraphType, Map<String, GraphData>>> cachedGraphData = CacheBuilder.newBuilder()
             .expireAfterAccess(24, TimeUnit.HOURS)
             .build(
-                    new CacheLoader<GraphView, Map<String, Map<String, GraphData>>>() {
-                        public Map<String, Map<String, GraphData>> load(GraphView key) {
+                    new CacheLoader<GraphView, Map<GraphType, Map<String, GraphData>>>() {
+                        public Map<GraphType, Map<String, GraphData>> load(GraphView key) {
                             // {incremental (pr day data): data, exponential (continually adding pr day): data}
-                            Map<String, Map<String, GraphData>> finalData = new ListOrderedMap<>();
+                            Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>();
                             Map<String, GraphData> incrData;
 
                             if (key.equals(GraphView.WEEK)) {
@@ -48,13 +48,13 @@ public class StatisticsDataService {
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
 
-                                finalData.put("incremental", incrData);
+                                finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.MONTH)) {
                                 logger.info("Generating, and caching, daily data for the past month.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
                                 incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.MONTH);
 
-                                finalData.put("incremental", incrData);
+                                finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating, and caching, monthly data for the past year.");
                                 DateTimeFormatter dtf = getDateFormatter("MMM yyyy");
@@ -63,8 +63,8 @@ public class StatisticsDataService {
                                 Map<String, GraphData> totalData = generateTotalIncrData(incrData, dtf);
                                 Map<String, GraphData> exponData = generateExponData(incrData, dtf);
 
-                                finalData.put("incremental", totalData);
-                                finalData.put("exponential", exponData);
+                                finalData.put(incremental, totalData);
+                                finalData.put(exponential, exponData);
                             }
 
                             return finalData;
@@ -76,7 +76,7 @@ public class StatisticsDataService {
         this.statisticsDataRepository = statisticsDataRepository;
     }
 
-    public Map<String, Map<String, GraphData>> getCachedGraphData(GraphView timeFrame) {
+    public Map<GraphType, Map<String, GraphData>> getCachedGraphData(GraphView timeFrame) {
         try {
             return cachedGraphData.get(timeFrame);
         } catch (ExecutionException e) {
@@ -235,14 +235,14 @@ public class StatisticsDataService {
     public void addAssetToCache(Asset asset) {
         try {
             if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {
-                updateCache(asset, cachedGraphData.get(GraphView.WEEK), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
+                updateCache(asset, cachedGraphData.get(GraphView.WEEK), incremental, getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.MONTH)) {
-                updateCache(asset, cachedGraphData.get(GraphView.MONTH), "incremental", getDateFormatter("dd-MMM-yyyy"), false);
+                updateCache(asset, cachedGraphData.get(GraphView.MONTH), incremental, getDateFormatter("dd-MMM-yyyy"), false);
             }
             if (cachedGraphData.asMap().containsKey(GraphView.YEAR)) {
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "incremental", getDateFormatter("MMM yyyy"), true);
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), "exponential", getDateFormatter("MMM yyyy"), false);
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), incremental, getDateFormatter("MMM yyyy"), true);
+                updateCache(asset, cachedGraphData.get(GraphView.YEAR), exponential, getDateFormatter("MMM yyyy"), false);
             }
         } catch (ExecutionException e) {
             logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
@@ -250,7 +250,7 @@ public class StatisticsDataService {
         }
     }
 
-    public void updateCache(Asset asset, Map<String, Map<String, GraphData>> cachedFullData, String key, DateTimeFormatter dtf, boolean total) {
+    public void updateCache(Asset asset, Map<GraphType, Map<String, GraphData>> cachedFullData, GraphType key, DateTimeFormatter dtf, boolean total) {
         // bool total is bc when it's a total graph, the keys aren't the names of the institutes/etc, but an overall title
         Map<String, GraphData> cachedData = cachedFullData.get(key);
         String createdDate = dtf.format(asset.created_date);
