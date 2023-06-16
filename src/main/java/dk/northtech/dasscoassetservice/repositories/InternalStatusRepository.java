@@ -38,15 +38,15 @@ public class InternalStatusRepository {
         String sql =
                 """
                     SELECT * from cypher('dassco', $$
-                            MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event)
+                            MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
                             WHERE ae.timestamp >= 1686878830000
-                            WITH count(distinct assets) as assetcount
-                            OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event)
+                            WITH count(assets) as assetcount
+                            OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
                             WHERE ce.timestamp >= 1686878830000
-                            WITH count(distinct completed) as complcount, assetcount
-                            OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event)
+                            WITH count(completed) as complcount, assetcount
+                            OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
                             WHERE me.timestamp >= 1686878830000
-                            WITH count(distinct metadata) as metacount, complcount, assetcount
+                            WITH count(metadata) as metacount, complcount, assetcount
                             RETURN (assetcount + metacount), complcount
                         $$, #params) as (pendingcount agtype, complcount agtype);
                """;
