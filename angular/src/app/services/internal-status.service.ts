@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient, HttpResponse} from "@angular/common/http";
-import {catchError, Observable, of, switchMap, timer} from "rxjs";
+import {catchError, Observable, of, switchMap} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -16,19 +16,14 @@ export class InternalStatusService {
   ) { }
 
   internalStatuses$: Observable<HttpResponse<any> | undefined>
-    = timer(0, this.fiveMinutes)
+    = this.oidcSecurityService.getAccessToken()
     .pipe(
-      switchMap(() =>
-      this.oidcSecurityService.getAccessToken()
-        .pipe(
-          switchMap((token) => {
-            return this.http.get(`${this.baseUrl}/internalstatus`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
-              .pipe(
-                catchError(this.handleError(`get ${this.baseUrl}/internalstatus`, undefined))
-              );
-          })
-        )
-      )
+      switchMap((token) => {
+        return this.http.get(`${this.baseUrl}/internalstatus`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/internalstatus`, undefined))
+          );
+      })
     );
 
   private handleError<T>(operation = 'operation', result?: T) {
