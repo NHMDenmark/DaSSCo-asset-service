@@ -27,11 +27,6 @@ public class StatisticsDataRepository {
         this.jdbi = jdbi;
     }
 
-    private static final String boilerplate =
-            "CREATE EXTENSION IF NOT EXISTS age;\n" +
-                    "LOAD 'age';\n" +
-                    "SET search_path = ag_catalog, \"$user\", public;";
-
     public List<StatisticsData> getGraphData(long startDate, long endDate) {
         String sql =
             """
@@ -51,7 +46,7 @@ public class StatisticsDataRepository {
                     .add("endDate", endDate)
                     .build();
             Agtype agtype = AgtypeFactory.create(dateParam);
-            handle.execute(boilerplate);
+            handle.execute(DBConstants.AGE_BOILERPLATE);
             return handle.createQuery(sql)
                 .bind("params", agtype)
                 .map((rs, ctx) -> new StatisticsData(
