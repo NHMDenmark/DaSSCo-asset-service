@@ -232,6 +232,8 @@ public class StatisticsDataService {
                 .withZone(ZoneId.of("UTC"));
     }
 
+    // In connection with persisting assets
+
     public void addAssetToCache(Asset asset) {
         try {
             if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {

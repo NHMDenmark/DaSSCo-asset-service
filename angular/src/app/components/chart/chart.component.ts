@@ -108,7 +108,6 @@ export class ChartComponent {
     // as I want to reuse the datasetcreation code, but don't know if we're looking at institute, pipeline, or workstation
     if (statValue === StatValue.INSTITUTE) return stats.institutes;
     if (statValue === StatValue.PIPELINE) return stats.pipelines;
-    // if (statValue === StatValue.WORKSTATION) return stats.workstations;
     return stats.workstations;
   }
 
