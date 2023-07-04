@@ -41,7 +41,7 @@ public class FileProxyClient {
             smbRequest.users.add(user.username);
             String json = gson.toJson(smbRequest);
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/samba/createShare"))
+                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/samba/createShare"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
@@ -69,40 +69,70 @@ public class FileProxyClient {
         }
     }
 
-    public SambaInfo openSamba(MinimalAsset asset, User user) {
-        Optional<Asset> optionalAsset = assetService.getAsset(asset.guid());
-        if(optionalAsset.isPresent()){
-            Asset asset1 = optionalAsset.get();
-            SmbRequest smbRequest = new SmbRequest();
-            smbRequest.assets.add(new MinimalAsset(asset1.guid, asset1.parent_guid));
-            smbRequest.users.add(user.username);
-            return openSamba(smbRequest, user);
-        } else {
-            throw new IllegalArgumentException("Asset ["+asset.guid()+"] does not exist");
-        }
-    }
-//    public void pauseSamba(AssetSmbRequest assetSmbRequest, MinimalAsset asset, String token, String username) {
-//        Gson gson = new Gson();
-//        try {
-//            SmbRequest smbRequest = new SmbRequest();
-//            smbRequest.assets.add(asset);
-//            smbRequest.users.add(username);
-//            gson.toJson(smbRequest);
-//            HttpRequest.newBuilder().header("Authorization", token).uri(new URI("fileProxyConfiguration.url()")).POST(HttpRequest.BodyPublishers.);
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to contact fileProxy");
-//        }
-//    }
-
-    public SambaInfo closeSamba(User user, AssetSmbRequest assetSmbRequest, boolean syncErda) {
+    public SambaInfo openSamba(MinimalAsset asset1, User user) {
         SmbRequest smbRequest = new SmbRequest();
-        smbRequest.users = Arrays.asList(user.username);
+        smbRequest.assets.add(new MinimalAsset(asset1.guid(), asset1.parent_guid()));
+        smbRequest.users.add(user.username);
+        return openSamba(smbRequest, user);
+    }
+
+    public SambaInfo openSamba(AssetSmbRequest assetSmbRequest, User user) {
+        if(assetSmbRequest.asset() != null) {
+            Optional<Asset> optionalAsset = assetService.getAsset(assetSmbRequest.asset().guid());
+            if (optionalAsset.isPresent()) {
+                Asset asset1 = optionalAsset.get();
+                assetSmbRequest = new AssetSmbRequest(assetSmbRequest.shareName(), new MinimalAsset(asset1.guid, asset1.parent_guid));
+            } else {
+                 throw new IllegalArgumentException("Asset [" + assetSmbRequest.asset().guid() + "] does not exist");
+            }
+        }
+        return openSamba(user, assetSmbRequest);
+
+    }
+
+    public SambaInfo openSamba(User user, AssetSmbRequest assetSmbRequest) {
         Gson gson = new Gson();
         String json = gson.toJson(assetSmbRequest);
         SambaInfo sambaInfo = new SambaInfo();
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token)
+                    .header("Authorization", "Bearer " + user.token)
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .uri(
+                            new URIBuilder(fileProxyConfiguration.url() + "/samba/openShare")
+                                    .build())
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpClient httpClient = HttpClient.newBuilder().build();
+            HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            String body = send.body();
+            if (send.statusCode() > 199 && send.statusCode() < 300) {
+                return gson.fromJson(body, SambaInfo.class);
+            }
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;
+            if (send.statusCode() == 503) {
+                sambaInfo.sambaRequestStatusMessage = "Service unavailable";
+            } else {
+                logger.error("Failed to open share");
+                sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to open share, please try manually checking out the asset later";
+            }
+            logger.error("Failed to close SMB share, http status code: {}, response body: {}", send.statusCode(), body);
+            return sambaInfo;
+        } catch (Exception e) {
+            sambaInfo.sambaRequestStatus = SambaRequestStatus.INTERNAL_ERROR;
+            sambaInfo.sambaRequestStatusMessage = "Failed to open SMB due to an internal error";
+            logger.error("Failed to get samba share due to an internal error", e);
+            return sambaInfo;
+        }
+    }
+
+    public SambaInfo closeSamba(User user, AssetSmbRequest assetSmbRequest, boolean syncErda) {
+        Gson gson = new Gson();
+        String json = gson.toJson(assetSmbRequest);
+        SambaInfo sambaInfo = new SambaInfo();
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .header("Authorization","Bearer " + user.token)
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .uri(
                             new URIBuilder(fileProxyConfiguration.url() + "/samba/closeShare")
@@ -141,7 +171,7 @@ public class FileProxyClient {
         SambaInfo sambaInfo = new SambaInfo();
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", user.token).uri(new URI(fileProxyConfiguration.url() + "/samba/disconnectShare"))
+                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/samba/disconnectShare"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
@@ -167,6 +197,4 @@ public class FileProxyClient {
             return sambaInfo;
         }
     }
-
-
 }
