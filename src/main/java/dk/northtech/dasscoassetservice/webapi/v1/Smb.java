@@ -37,10 +37,10 @@ public class Smb {
     //Open a share for a single asset to upload media
     @POST
     @Path("/openAsset")
+    @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    public SambaInfo checkoutAsset(MinimalAsset asset, @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        User user = UserMapper.from(tkn);
+    public SambaInfo checkoutAsset(AssetSmbRequest asset, @Context SecurityContext securityContext) {
+        User user = UserMapper.from(securityContext);
         return fileProxyClient.openSamba(asset, user);
     }
 
@@ -50,10 +50,9 @@ public class Smb {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    public SambaInfo closeSmb(SmbRequest smbRequest
+    public SambaInfo openSmb(SmbRequest smbRequest
             , @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        User user = UserMapper.from(tkn);
+        User user = UserMapper.from(securityContext);
         return fileProxyClient.openSamba(smbRequest, user);
     }
 
@@ -64,8 +63,7 @@ public class Smb {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public SambaInfo pauseSmb(AssetSmbRequest smbRequest
         , @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        User from = UserMapper.from(tkn);
+        User from = UserMapper.from(securityContext);
         return fileProxyClient.disconnectSamba(from, smbRequest);
     }
 
@@ -77,8 +75,7 @@ public class Smb {
     public SambaInfo closeSmb(AssetSmbRequest smbRequest
             , @QueryParam("syncERDA") boolean syncERDA
             , @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        User from = UserMapper.from(tkn);
+        User from = UserMapper.from(securityContext);
         return fileProxyClient.closeSamba(from, smbRequest, syncERDA);
     }
 }
