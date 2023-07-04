@@ -1,11 +1,9 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Audit;
-import dk.northtech.dasscoassetservice.domain.Event;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -63,8 +61,9 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public boolean assetreceived(@PathParam("assetGuid") String assetGuid) {
-        return this.assetService.completeUpload(assetGuid);
+    public boolean assetreceived(@Context SecurityContext securityContext, AssetSmbRequest assetSmbRequest) {
+        User user = UserMapper.from(securityContext);
+        return this.assetService.completeUpload(assetSmbRequest, user);
     }
 
     @POST
@@ -105,10 +104,9 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset createInstitution(Asset asset
+    public Asset createAsset(Asset asset
             , @Context SecurityContext securityContext) {
-        JwtAuthenticationToken tkn = (JwtAuthenticationToken) securityContext.getUserPrincipal();
-        return this.assetService.persistAsset(asset, UserMapper.from(tkn));
+        return this.assetService.persistAsset(asset, UserMapper.from(securityContext));
     }
 
 

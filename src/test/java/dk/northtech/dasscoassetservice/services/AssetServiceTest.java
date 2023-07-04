@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,6 +51,29 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.payload_type).isEqualTo("nuclear");
         assertThat(result.funding).isEqualTo("Hundredetusindvis af dollars");
     }
+
+//    @Test
+//    void testParentRestricted() {
+//        Asset createAsset = getTestAsset("testParentRestricted");
+//        createAsset.specimen_barcodes = Arrays.asList("testParentRestricted-sp-1");
+//        createAsset.pipeline = "i1_p1";
+//        createAsset.workstation = "i1_w1";
+//        createAsset.tags.put("Tag1", "value1");
+//        createAsset.tags.put("Tag2", "value2");
+//        createAsset.institution = "institution_1";
+//        createAsset.collection = "i1_c1";
+//        createAsset.pid = "pid-createAsset";
+//        createAsset.status = AssetStatus.BEING_PROCESSED;
+//        createAsset.restricted_access = Arrays.asList(Role.SERVICE_USER);
+//        assetService.persistAsset(createAsset, user);
+////        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user));
+//        Asset child = getTestAsset("testParentRestricted_child");
+//        User user = new User();
+//        user.roles = new HashSet<>(Arrays.asList("dassco-user"));
+//        child.parent_guid = createAsset.guid;
+//        DasscoIllegalActionException illegalArgumentException = assertThrows(DasscoIllegalActionException.class, () -> assetService.persistAsset(createAsset, user));
+//        assertThat(illegalArgumentException.getCause()).isEqualTo("parent is restricted");
+//    }
 
     @Test
     void deleteAsset() {

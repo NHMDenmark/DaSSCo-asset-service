@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
@@ -92,13 +93,23 @@ public class AssetService {
         return true;
     }
 
-    public boolean completeUpload(String assetGuid) {
-        Optional<Asset> optAsset = getAsset(assetGuid);
+    public boolean completeUpload(AssetSmbRequest assetSmbRequest, User user) {
+        if(assetSmbRequest.asset() == null) {
+            throw new IllegalArgumentException("Asset cannot be null");
+        }
+        if(assetSmbRequest.shareName() == null) {
+            throw new IllegalArgumentException("Share id cannot be null");
+        }
+        Optional<Asset> optAsset = getAsset(assetSmbRequest.asset().guid());
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
+        //Mark as asset received
         Asset asset = optAsset.get();
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
+        // Close samba and sync ERDA
+        // If media is successfully moved to ERDA fileproxy will contact assetService and set status to completed.
+        fileProxyClient.closeSamba(user, assetSmbRequest, true);
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
         return true;
     }
@@ -132,7 +143,7 @@ public class AssetService {
         if(Strings.isNullOrEmpty(updatedAsset.updateUser)) {
             throw new IllegalArgumentException("Update user must be provided");
         }
-        validateAsset(updatedAsset);
+        validateAsset(updatedAsset );
         Asset existing = assetOpt.get();
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
@@ -182,10 +193,26 @@ public class AssetService {
         }
         Workstation workstation = workstationOpt.get();
         if(workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)){
-            throw new RuntimeException("Workstation [" + workstation.status() + "] is marked as out of service");
+            throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
+//        if(asset.parent_guid != null) {
+//            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
+//            if(parentOpt.isEmpty()) {
+//                throw new IllegalArgumentException("Parent doesnt exist");
+//            }
+//            Asset parent = parentOpt.get();
+//            if(!parent.restricted_access.isEmpty()) {
+//                parent.restricted_access.stream()
+//                        .filter(role -> user.roles.contains(role.roleName))
+//                        .findAny()
+//                        .orElseThrow(() -> new DasscoIllegalActionException("Parent is restricted"));
+//            }
+//
+//        }
 
     }
+
+
 
     public Asset persistAsset(Asset asset, User user) {
         Optional<Asset> assetOpt = getAsset(asset.guid);
