@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
@@ -22,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class FileProxyClient {
@@ -165,7 +167,7 @@ public class FileProxyClient {
 
     public SambaInfo disconnectSamba(User user, AssetSmbRequest assetSmbRequest) {
         SmbRequest smbRequest = new SmbRequest();
-        smbRequest.users = Arrays.asList(user.username);
+        smbRequest.users = Set.of(user.username);
         Gson gson = new Gson();
         String json = gson.toJson(assetSmbRequest);
         SambaInfo sambaInfo = new SambaInfo();

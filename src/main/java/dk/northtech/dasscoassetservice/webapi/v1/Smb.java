@@ -34,9 +34,9 @@ public class Smb {
         this.assetService = assetService;
     }
 
-    //Open a share for a single asset to upload media
+    //re-open a share that has been opened earlier
     @POST
-    @Path("/openAsset")
+    @Path("/reopen")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     public SambaInfo checkoutAsset(AssetSmbRequest asset, @Context SecurityContext securityContext) {
@@ -57,7 +57,7 @@ public class Smb {
     }
 
     @POST
-    @Path("/disconnectShare")
+    @Path("/disconnect")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -68,7 +68,7 @@ public class Smb {
     }
 
     @POST
-    @Path("/closeShare")
+    @Path("/close")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})

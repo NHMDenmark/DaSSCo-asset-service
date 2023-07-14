@@ -72,8 +72,8 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public boolean completeAsset(@PathParam("assetGuid") String assetGuid) {
-        return this.assetService.completeAsset(assetGuid);
+    public void completeAsset(@PathParam("assetGuid") String assetGuid) {
+        this.assetService.completeAsset(assetGuid);
     }
 
     @PUT
