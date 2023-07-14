@@ -44,7 +44,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.tags.get("Tag2")).isEqualTo("value2");
         assertThat(result.institution).isEqualTo("institution_1");
         assertThat(result.digitizer).isEqualTo("Karl-Børge");
-        assertThat(result.internal_status).isEqualTo(InternalStatus.METADATA_RECEIVED);
+        assertThat(result.internal_status).isEqualTo(InternalStatus.SMB_ERROR);
         assertThat(result.parent_guid).isNull();
         assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
         assertThat(result.specimen_barcodes).contains("createAsset-sp-2");

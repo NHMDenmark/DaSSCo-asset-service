@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
+import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
@@ -226,8 +227,12 @@ public class AssetService {
         asset.last_updated_date = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
-        jdbi.onDemand(AssetRepository.class).createAsset(asset);
+        jdbi.onDemand(AssetRepository.class)
+                .createAsset(asset);
         asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.guid, asset.parent_guid), user);
+        if(asset.sambaInfo.sambaRequestStatus != SambaRequestStatus.OK_OPEN) {
+            setFailedStatus(asset.guid, InternalStatus.SMB_ERROR.name());
+        }
         this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }
