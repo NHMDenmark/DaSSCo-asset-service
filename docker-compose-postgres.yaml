@@ -6,4 +6,4 @@ services:
       POSTGRES_USER: dassco_asset_service
       POSTGRES_PASSWORD: dassco_asset_service
     ports:
-      - "5433:5432"
+      - "5434:5432"

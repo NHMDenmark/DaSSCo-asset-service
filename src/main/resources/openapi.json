@@ -77,14 +77,15 @@
     "/v1/assetmetadata/{assetGuid}/assetreceived" : {
       "post" : {
         "operationId" : "assetreceived",
-        "parameters" : [ {
-          "name" : "assetGuid",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssetSmbRequest"
+              }
+            }
           }
-        } ],
+        },
         "responses" : {
           "200" : {
             "content" : {
@@ -193,7 +194,7 @@
     },
     "/v1/assetmetadata" : {
       "post" : {
-        "operationId" : "createInstitution",
+        "operationId" : "createAsset",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -460,7 +461,7 @@
         } ]
       },
       "post" : {
-        "operationId" : "createInstitution_1",
+        "operationId" : "createInstitution",
         "parameters" : [ {
           "name" : "institutionName",
           "in" : "path",
@@ -548,7 +549,7 @@
         } ]
       },
       "post" : {
-        "operationId" : "createInstitution_2",
+        "operationId" : "createInstitution_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -655,7 +656,7 @@
         } ]
       },
       "post" : {
-        "operationId" : "createInstitution_3",
+        "operationId" : "createInstitution_2",
         "parameters" : [ {
           "name" : "institutionName",
           "in" : "path",
@@ -824,43 +825,14 @@
         } ]
       }
     },
-    "/v1/shares/openAsset" : {
+    "/v1/shares/reopen" : {
       "post" : {
         "operationId" : "checkoutAsset",
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/MinimalAsset"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/shares/open" : {
-      "post" : {
-        "operationId" : "closeSmb",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/SmbRequest"
+                "$ref" : "#/components/schemas/AssetSmbRequest"
               }
             }
           }
@@ -882,9 +854,9 @@
         } ]
       }
     },
-    "/v1/shares/closeShare" : {
+    "/v1/shares/close" : {
       "post" : {
-        "operationId" : "closeSmb_1",
+        "operationId" : "closeSmb",
         "parameters" : [ {
           "name" : "syncERDA",
           "in" : "query",
@@ -918,7 +890,36 @@
         } ]
       }
     },
-    "/v1/shares/disconnectShare" : {
+    "/v1/shares/open" : {
+      "post" : {
+        "operationId" : "openSmb",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SmbRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SambaInfo"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/shares/disconnect" : {
       "post" : {
         "operationId" : "pauseSmb",
         "requestBody" : {
@@ -1582,7 +1583,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "USER", "ADMIN", "SERVICE_USER" ]
+              "enum" : [ "USER", "ADMIN", "SERVICE_USER", "DEVELOPER" ]
             }
           },
           "tags" : {
@@ -1699,6 +1700,28 @@
           }
         }
       },
+      "AssetSmbRequest" : {
+        "type" : "object",
+        "properties" : {
+          "shareName" : {
+            "type" : "string"
+          },
+          "asset" : {
+            "$ref" : "#/components/schemas/MinimalAsset"
+          }
+        }
+      },
+      "MinimalAsset" : {
+        "type" : "object",
+        "properties" : {
+          "guid" : {
+            "type" : "string"
+          },
+          "parent_guid" : {
+            "type" : "string"
+          }
+        }
+      },
       "Audit" : {
         "type" : "object",
         "properties" : {
@@ -1787,21 +1810,11 @@
           }
         }
       },
-      "MinimalAsset" : {
-        "type" : "object",
-        "properties" : {
-          "guid" : {
-            "type" : "string"
-          },
-          "parent_guid" : {
-            "type" : "string"
-          }
-        }
-      },
       "SmbRequest" : {
         "type" : "object",
         "properties" : {
           "users" : {
+            "uniqueItems" : true,
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -1812,17 +1825,6 @@
             "items" : {
               "$ref" : "#/components/schemas/MinimalAsset"
             }
-          }
-        }
-      },
-      "AssetSmbRequest" : {
-        "type" : "object",
-        "properties" : {
-          "shareName" : {
-            "type" : "string"
-          },
-          "assetId" : {
-            "type" : "string"
           }
         }
       },
