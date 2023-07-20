@@ -24,7 +24,7 @@ export class InstituteService {
             catchError(this.handleError(`get ${this.baseUrl}`, undefined))
           );
       })
-    )
+    );
 
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {

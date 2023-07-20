@@ -2,9 +2,9 @@ import { Component} from '@angular/core';
 import {InternalStatusService} from '../../services/internal-status.service';
 import {combineLatest, filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import {MatTableDataSource} from "@angular/material/table";
-import {InternalStatusDataSource} from "../../types";
-import {HttpStatusCode} from "@angular/common/http";
+import {MatTableDataSource} from '@angular/material/table';
+import {InternalStatusDataSource} from '../../types';
+import {HttpStatusCode} from '@angular/common/http';
 
 @Component({
   selector: 'dassco-status-widget',
@@ -28,6 +28,8 @@ export class StatusWidgetComponent {
         const totalListData: InternalStatusDataSource[] = [];
         this.dailyDataSource.data = dailyListData;
         this.totalDataSource.data = totalListData;
+
+        // todo please don't look at this code by god i just needed it to work for now okay please i swear i'll change it
 
         if (dailyStatuses.status === HttpStatusCode.NoContent || !dailyStatuses.body) {
           console.warn('No data received or data is null.');

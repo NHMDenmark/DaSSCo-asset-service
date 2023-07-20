@@ -1,7 +1,11 @@
-services:
+ervices:
   nginx:
     image: nginx
     ports:
-      - "80:80"
+      - 80:80
     volumes:
-      - ./default.conf:/etc/nginx/conf.d/default.conf:rw
+      - ./nginx.conf:/etc/nginx/templates/nginx.conf.template
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+      PROXY_PASS: http://app:8084
+
