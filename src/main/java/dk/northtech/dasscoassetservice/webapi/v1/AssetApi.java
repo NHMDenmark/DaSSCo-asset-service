@@ -14,6 +14,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -52,13 +53,13 @@ public class AssetApi {
     }
 
     @GET
-    @Path("/internalstatus")
+    @Path("/internalstatus/{timeframe}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getInternalStatusAmt() {
-        Optional<Map<String, Integer>> statusAmts = this.internalStatusService.getInternalStatusAmt();
+    public Response getInternalStatusAmt(@PathParam("timeframe") String timeframe) {
+        Map<String, Integer> statusAmts = this.internalStatusService.getCachedStatuses(timeframe);
         return Response.status(Response.Status.OK).entity(statusAmts).build();
     }
 }

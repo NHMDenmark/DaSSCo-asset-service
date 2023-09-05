@@ -29,42 +29,87 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-    public Optional<Map<String, Integer>> getInternalStatusAmt(long currMillisecs) {
-        String sql =
-                """
-                    SELECT * from cypher('dassco', $$
-                            MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
-                            WHERE ae.timestamp >= 1686878830000
-                            WITH count(assets) as assetcount
-                            OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
-                            WHERE ce.timestamp >= 1686878830000
-                            WITH count(completed) as complcount, assetcount
-                            OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
-                            WHERE me.timestamp >= 1686878830000
-                            WITH count(metadata) as metacount, complcount, assetcount
-                            RETURN (assetcount + metacount), complcount
-                        $$, #params) as (pendingcount agtype, complcount agtype);
-               """;
+    String totalAmountSql =
+            """
+                SELECT * from cypher('dassco', $$
+                        MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                        WITH count(assets) as assetcount
+                        OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                        WITH count(completed) as complcount, assetcount
+                        OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                        WITH count(metadata) as metacount, complcount, assetcount
+                        OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                        WITH count(smberror) as smbcount, metacount, complcount, assetcount
+                        OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
+                        WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
+                        RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
+                    $$) as (completed agtype, pending agtype, failed agtype);
+           """;
 
+    String dailyAmountSql =
+            """
+                SELECT * from cypher('dassco', $$
+                        MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                        WHERE ae.timestamp >= $today
+                        WITH count(assets) as assetcount
+                        OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                        WHERE ce.timestamp >= $today
+                        WITH count(completed) as complcount, assetcount
+                        OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                        WHERE me.timestamp >= $today
+                        WITH count(metadata) as metacount, complcount, assetcount
+                        OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                        WHERE smbe.timestamp >= $today
+                        WITH count(smberror) as smbcount, metacount, complcount, assetcount
+                        OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
+                        WHERE erde.timestamp >= $today
+                        WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
+                        RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
+                    $$, #params) as (completed agtype, pending agtype, failed agtype);
+           """;
 
-            return jdbi.withHandle(handle -> {
-                AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();
-                Agtype agtype = AgtypeFactory.create(today);
-                handle.execute(boilerplate);
-                return handle.createQuery(sql)
-                        .bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            Map<String, Integer> amountMap = new HashMap<>();
+    public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
+        return jdbi.withHandle(handle -> {
+            AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();
+            Agtype agtype = AgtypeFactory.create(today);
+            handle.execute(boilerplate);
+            return handle.createQuery(this.dailyAmountSql)
+                    .bind("params", agtype)
+                    .map((rs, ctx) -> {
+                        Map<String, Integer> amountMap = new HashMap<>();
 
-                            Integer pendingcount = rs.getInt("pendingcount");
-                            Integer complcount = rs.getInt("complcount");
+                        Integer failedcount = rs.getInt("failed");
+                        Integer pendingcount = rs.getInt("pending");
+                        Integer complcount = rs.getInt("completed");
 
-                            amountMap.put("pending", pendingcount);
-                            amountMap.put("completed", complcount);
+                        amountMap.put("failed", failedcount);
+                        amountMap.put("pending", pendingcount);
+                        amountMap.put("completed", complcount);
 
-                            return amountMap;
-                        })
-                        .findFirst();
-            });
+                        return amountMap;
+                    })
+                    .findFirst();
+        });
+    }
+
+    public Optional<Map<String, Integer>> getTotalInternalStatusAmt() {
+        return jdbi.withHandle(handle -> {
+            handle.execute(boilerplate);
+            return handle.createQuery(this.totalAmountSql)
+                    .map((rs, ctx) -> {
+                        Map<String, Integer> amountMap = new HashMap<>();
+
+                        Integer failedcount = rs.getInt("failed");
+                        Integer pendingcount = rs.getInt("pending");
+                        Integer complcount = rs.getInt("completed");
+
+                        amountMap.put("failed", failedcount);
+                        amountMap.put("pending", pendingcount);
+                        amountMap.put("completed", complcount);
+
+                        return amountMap;
+                    })
+                    .findFirst();
+        });
     }
 }

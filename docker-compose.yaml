@@ -11,14 +11,14 @@ services:
     extends:
       file: ./docker-compose-age-viewer.yaml
       service: age-viewer
-#  app:
-#    extends:
-#      file: ./docker-compose-app.yaml
-#      service: app
-#  nginx:
-#    extends:
-#      file: ./docker-compose-nginx.yaml
-#      service: nginx
+  app:
+    extends:
+      file: ./docker-compose-app.yaml
+      service: app
+  nginx:
+    extends:
+      file: ./docker-compose-nginx.yaml
+      service: nginx
 #  springadmin:
 #    extends:
 #      file: ./docker-compose-springadmin.yaml

@@ -38,9 +38,17 @@
         } ]
       }
     },
-    "/v1/assets/internalstatus" : {
+    "/v1/assets/internalstatus/{timeframe}" : {
       "get" : {
         "operationId" : "getInternalStatusAmt",
+        "parameters" : [ {
+          "name" : "timeframe",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
