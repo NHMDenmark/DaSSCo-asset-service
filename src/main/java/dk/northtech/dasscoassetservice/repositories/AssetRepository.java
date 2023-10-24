@@ -53,7 +53,7 @@ public interface AssetRepository extends SqlObject {
         boilerplate();
         persistAsset(asset);
         createSpecimenRepository().persistSpecimens(asset);
-        connectParentChild(asset.parent_guid, asset.guid);
+        connectParentChild(asset.parent_guid, asset.asset_guid);
         return asset;
     }
 
@@ -85,7 +85,7 @@ public interface AssetRepository extends SqlObject {
     default Asset updateAsset(Asset asset) {
         boilerplate();
         update_asset_internal(asset);
-        connectParentChild(asset.parent_guid, asset.guid);
+        connectParentChild(asset.parent_guid, asset.asset_guid);
         createSpecimenRepository().persistSpecimens(asset);
         return asset;
     }
@@ -102,16 +102,16 @@ public interface AssetRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                     , $$
-                         MATCH (a:Asset{name: $guid})
+                         MATCH (a:Asset{name: $asset_guid})
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event{event:'CREATE_ASSET'})<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e)
                          MATCH (p:Pipeline)<-[:USED]-(e)
                          MATCH (w:Workstation)<-[:USED]-(e)
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $guid})
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $asset_guid})
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                         RETURN a.guid
+                         RETURN a.asset_guid
                          , a.pid
                          , a.status
                          , a.multi_specimen
@@ -121,7 +121,7 @@ public interface AssetRepository extends SqlObject {
                          , a.asset_taken_date
                          , a.internal_status
                          , a.asset_locked
-                         , pa.guid
+                         , pa.name --//TODO verify that this workz instead of guid
                          , a.restricted_access
                          , a.tags
                          , collect(s.name)
@@ -134,7 +134,7 @@ public interface AssetRepository extends SqlObject {
                          , u.name
                       $$
                     , #params)
-                    as (guid agtype
+                    as (asset_guid agtype
                     , pid agtype
                     , status agtype
                     , multi_specimen agtype
@@ -159,8 +159,9 @@ public interface AssetRepository extends SqlObject {
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("guid", assetGuid)
-                    .add("guid", assetGuid)
+                    .add("asset_guid", assetGuid)
+                    .add("asset_guid", assetGuid)//TODO see if we can delete this
+
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)
@@ -180,7 +181,7 @@ public interface AssetRepository extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (e:Event)<-[:CHANGED_BY]-(a:Asset{name: $guid})
+                            MATCH (e:Event)<-[:CHANGED_BY]-(a:Asset{name: $asset_guid})
                             MATCH (u:User)<-[:INITIATED_BY]-(e)
                             OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e)
                             OPTIONAL MATCH (w:Workstation)<-[:USED]-(e)
@@ -200,7 +201,7 @@ public interface AssetRepository extends SqlObject {
 
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("guid", guid)
+                    .add("asset_guid", guid)
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             List<Event> events = handle.createQuery(sql)
@@ -247,9 +248,9 @@ public interface AssetRepository extends SqlObject {
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})
-                            MERGE (a:Asset {name: $guid
+                            MERGE (a:Asset {name: $asset_guid
                                 , pid: $pid
-                                , guid: $guid
+                                , asset_guid: $asset_guid
                                 , status: $status
                                 , funding: $funding
                                 , subject: $subject
@@ -288,7 +289,7 @@ public interface AssetRepository extends SqlObject {
                         .add("workstation_name", asset.workstation)
                         .add("pipeline_name", asset.pipeline)
                         .add("pid", asset.pid)
-                        .add("guid", asset.guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("status", asset.status.name())
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
@@ -325,7 +326,7 @@ public interface AssetRepository extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (a:Asset {name: $guid})
+                            MATCH (a:Asset {name: $asset_guid})
                             SET a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
                         $$
@@ -334,7 +335,7 @@ public interface AssetRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("guid", asset.guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("internal_status", asset.internal_status.name())
                         .add("asset_locked", asset.asset_locked);
                 Agtype agtype = AgtypeFactory.create(builder.build());
@@ -357,7 +358,7 @@ public interface AssetRepository extends SqlObject {
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})
-                            MATCH (a:Asset {name: $guid})
+                            MATCH (a:Asset {name: $asset_guid})
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
                             MERGE (u:User{user_id: $user, name: $user})
@@ -392,7 +393,7 @@ public interface AssetRepository extends SqlObject {
                         .add("collection_name", asset.collection)
                         .add("workstation_name", asset.workstation)
                         .add("pipeline_name", asset.pipeline)
-                        .add("guid", asset.guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("status", asset.status.name())
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
@@ -433,7 +434,7 @@ public interface AssetRepository extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (a:Asset {name: $guid})
+                            MATCH (a:Asset {name: $asset_guid})
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
                             MERGE (e)-[pb:INITIATED_BY]->(u)
@@ -444,7 +445,7 @@ public interface AssetRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("guid", asset.guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("user", user)
                         .add("event", dasscoEvent.name())
                         .add("updated_date", Instant.now().toEpochMilli());

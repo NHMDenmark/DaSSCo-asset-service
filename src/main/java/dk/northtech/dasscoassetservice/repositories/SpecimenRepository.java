@@ -44,7 +44,7 @@ public interface SpecimenRepository extends SqlObject {
                 AgtypeMap parms = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
-                        .add("guid", asset.guid)
+                        .add("guid", asset.asset_guid)
                         .add("specimen_barcode", specimenBarcode).build();
                 Agtype agtype = AgtypeFactory.create(parms);
                 handle.createUpdate(cypher)
@@ -52,7 +52,7 @@ public interface SpecimenRepository extends SqlObject {
                         .execute();
 
                 AgtypeMap specimenEdgeParam = new AgtypeMapBuilder()
-                        .add("guid", asset.guid)
+                        .add("guid", asset.asset_guid)
                         .add("specimen_barcode", specimenBarcode).build();
                 Agtype specimenEdge = AgtypeFactory.create(specimenEdgeParam);
                 handle.createUpdate(updateCreatedBy)

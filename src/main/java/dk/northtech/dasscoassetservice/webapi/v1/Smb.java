@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
+import dk.northtech.dasscoassetservice.domain.AssetUpdateRequest;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.User;
@@ -72,7 +73,7 @@ public class Smb {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    public SambaInfo closeSmb(AssetSmbRequest smbRequest
+    public SambaInfo closeSmb(AssetUpdateRequest smbRequest
             , @QueryParam("syncERDA") boolean syncERDA
             , @Context SecurityContext securityContext) {
         User from = UserMapper.from(securityContext);

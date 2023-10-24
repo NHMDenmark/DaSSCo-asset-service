@@ -141,7 +141,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Asset asset = new Asset();
         asset.asset_locked = false;
         asset.digitizer = "Karl-Børge";
-        asset.guid = guid;
+        asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.asset_taken_date = Instant.now();
         asset.subject = "Folder";

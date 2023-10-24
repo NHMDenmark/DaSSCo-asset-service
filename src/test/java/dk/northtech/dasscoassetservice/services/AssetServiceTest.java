@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -116,7 +115,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result);
         assetService.completeAsset("createAssetUpdateAsset");
         assetService.auditAsset(new Audit("Audrey Auditor"), "createAssetUpdateAsset");
-        List<Event> resultEvents = assetService.getEvents(result.guid);
+        List<Event> resultEvents = assetService.getEvents(result.asset_guid);
         resultEvents.forEach(z -> System.out.println(z));
         assertThat(resultEvents.size()).isEqualTo(4);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
@@ -188,7 +187,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         Asset lockedAsset = lockedAssetOpt.get();
         assertThat(lockedAsset.asset_locked).isTrue();
-        assetService.unlockAsset(asset.guid);
+        assetService.unlockAsset(asset.asset_guid);
         Optional<Asset> unlockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         Asset unlockedAsset = unlockedAssetOpt.get();
         assertThat(unlockedAsset.asset_locked).isFalse();
@@ -207,10 +206,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user);
-        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.guid));
+        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
-        assetService.completeAsset(asset.guid);
-        DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.guid));
+        assetService.completeAsset(asset.asset_guid);
+        DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }
 
@@ -218,7 +217,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset asset = new Asset();
         asset.asset_locked = false;
         asset.digitizer = "Karl-Børge";
-        asset.guid = guid;
+        asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.asset_taken_date = Instant.now();
         asset.subject = "Folder";

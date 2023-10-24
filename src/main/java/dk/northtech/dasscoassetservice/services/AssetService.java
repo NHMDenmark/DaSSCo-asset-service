@@ -3,7 +3,6 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -94,14 +93,14 @@ public class AssetService {
         return true;
     }
 
-    public boolean completeUpload(AssetSmbRequest assetSmbRequest, User user) {
-        if(assetSmbRequest.asset() == null) {
+    public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
+        if(assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
         }
         if(assetSmbRequest.shareName() == null) {
             throw new IllegalArgumentException("Share id cannot be null");
         }
-        Optional<Asset> optAsset = getAsset(assetSmbRequest.asset().guid());
+        Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().guid());
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
@@ -137,9 +136,9 @@ public class AssetService {
     }
 
     public Asset updateAsset(Asset updatedAsset) {
-        Optional<Asset> assetOpt = getAsset(updatedAsset.guid);
+        Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
         if(assetOpt.isEmpty()) {
-            throw new IllegalArgumentException("Asset " + updatedAsset.guid + " does not exist");
+            throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
         if(Strings.isNullOrEmpty(updatedAsset.updateUser)) {
             throw new IllegalArgumentException("Update user must be provided");
@@ -169,7 +168,7 @@ public class AssetService {
         if(a.pid == null){
             throw new IllegalArgumentException("PID cannot be null");
         }
-        if(a.guid == null) {
+        if(a.asset_guid == null) {
             throw new IllegalArgumentException("GUID cannot be null");
         }
         if(a.status == null) {
@@ -185,7 +184,7 @@ public class AssetService {
         if(collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
-        if(asset.guid.equals(asset.parent_guid)) {
+        if(asset.asset_guid.equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
         Optional<Workstation> workstationOpt = workstationService.findWorkstation(asset.workstation);
@@ -216,9 +215,9 @@ public class AssetService {
 
 
     public Asset persistAsset(Asset asset, User user) {
-        Optional<Asset> assetOpt = getAsset(asset.guid);
+        Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if(assetOpt.isPresent()) {
-            throw new IllegalArgumentException("Asset " + asset.guid + " already exists");
+            throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
         validateAssetFields(asset);
         validateAsset(asset);
@@ -229,9 +228,9 @@ public class AssetService {
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class)
                 .createAsset(asset);
-        asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.guid, asset.parent_guid), user);
+        asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.asset_guid, asset.parent_guid), user);
         if(asset.sambaInfo.sambaRequestStatus != SambaRequestStatus.OK_OPEN) {
-            setFailedStatus(asset.guid, InternalStatus.SMB_ERROR.name());
+            setFailedStatus(asset.asset_guid, InternalStatus.SMB_ERROR.name());
         }
         this.statisticsDataService.addAssetToCache(asset);
         return asset;

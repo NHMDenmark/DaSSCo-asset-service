@@ -56,7 +56,7 @@ public class AssetApi {
     @Path("/internalstatus/{timeframe}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getInternalStatusAmt(@PathParam("timeframe") String timeframe) {
         Map<String, Integer> statusAmts = this.internalStatusService.getCachedStatuses(timeframe);

@@ -3,7 +3,6 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
-import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +14,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -61,7 +59,7 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public boolean assetreceived(@Context SecurityContext securityContext, AssetSmbRequest assetSmbRequest) {
+    public boolean assetreceived(@Context SecurityContext securityContext, AssetUpdateRequest assetSmbRequest) {
         User user = UserMapper.from(securityContext);
         return this.assetService.completeUpload(assetSmbRequest, user);
     }
@@ -118,7 +116,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset updateAsset(Asset asset,
                              @PathParam("assetGuid") String assetGuid) {
-        asset.guid = assetGuid;
+        asset.asset_guid = assetGuid;
         return this.assetService.updateAsset(asset);
     }
 

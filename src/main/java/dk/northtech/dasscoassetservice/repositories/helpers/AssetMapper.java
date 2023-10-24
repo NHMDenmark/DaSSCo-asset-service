@@ -33,7 +33,7 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype assetLocked = rs.getObject("asset_locked", Agtype.class);
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
         asset.specimen_barcodes = specimenBarcodes.getList().stream().map(Object::toString).collect(Collectors.toList());
-        asset.guid = guid.getString();
+        asset.asset_guid = guid.getString();
         asset.pid = pid.getString();
         asset.status = AssetStatus.valueOf(status.getString());
         asset.file_formats = fileFormats.getList().stream().map(x -> FileFormat.valueOf(x.toString())).collect(Collectors.toList());

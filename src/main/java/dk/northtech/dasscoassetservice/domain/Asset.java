@@ -13,7 +13,7 @@ public class Asset {
     @Schema(description = "Pid", example = "asdf-1234-3333-1000")
     public String pid;
     @Schema(description = "Unique key for the asset?", example = "ti-a01-202305241657")
-    public String guid;
+    public String asset_guid;
     @Schema(description = "The status of the asset", example = "BEING_PROCESSED")
     public AssetStatus status;
     @Schema(description = "Basically a multispecimen is a single image (or other type of media) that actually contains multiple specimens in it", example = "false")
@@ -62,7 +62,7 @@ public class Asset {
     public Instant pushed_to_specify_date;
     @Schema(description = "Username of the person that digitised the asset,", example = "THBO")
     public String digitizer;
-    @Schema(description = "The pipeline that created or updtated the asset", example = "ti-p1")
+    @Schema(description = "The pipeline that created or updated the asset", example = "ti-p1")
     public String pipeline;
     @Schema(description = "The name of the workstation that created or updated the asset", example = "ti-ws1")
     public String workstation;

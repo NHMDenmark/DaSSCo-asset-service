@@ -2,10 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.InternalStatus;
-import dk.northtech.dasscoassetservice.domain.MinimalAsset;
-import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
@@ -21,7 +18,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
@@ -83,7 +79,7 @@ public class FileProxyClient {
             Optional<Asset> optionalAsset = assetService.getAsset(assetSmbRequest.asset().guid());
             if (optionalAsset.isPresent()) {
                 Asset asset1 = optionalAsset.get();
-                assetSmbRequest = new AssetSmbRequest(assetSmbRequest.shareName(), new MinimalAsset(asset1.guid, asset1.parent_guid));
+                assetSmbRequest = new AssetSmbRequest(assetSmbRequest.shareName(), new MinimalAsset(asset1.asset_guid, asset1.parent_guid));
             } else {
                  throw new IllegalArgumentException("Asset [" + assetSmbRequest.asset().guid() + "] does not exist");
             }
@@ -128,7 +124,7 @@ public class FileProxyClient {
         }
     }
 
-    public SambaInfo closeSamba(User user, AssetSmbRequest assetSmbRequest, boolean syncErda) {
+    public SambaInfo closeSamba(User user, AssetUpdateRequest assetSmbRequest, boolean syncErda) {
         Gson gson = new Gson();
         String json = gson.toJson(assetSmbRequest);
         SambaInfo sambaInfo = new SambaInfo();
