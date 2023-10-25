@@ -140,7 +140,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     public Asset getTestAsset(String guid, String instituteName) {
         Asset asset = new Asset();
         asset.asset_locked = false;
-        asset.digitizer = "Karl-Børge";
+        asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.asset_taken_date = Instant.now();
@@ -155,7 +155,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.tags.put("Tag2", "value2");
         asset.institution = instituteName;
         asset.collection = "i1_c1";
-        asset.pid = "pid-createAsset";
+        asset.asset_pid = "pid-createAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
         return asset;
     }

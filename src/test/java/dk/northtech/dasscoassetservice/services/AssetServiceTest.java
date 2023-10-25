@@ -28,7 +28,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
         createAsset.collection = "i1_c1";
-        createAsset.pid = "pid-createAsset";
+        createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user));
@@ -42,7 +42,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.tags.get("Tag1")).isEqualTo("value1");
         assertThat(result.tags.get("Tag2")).isEqualTo("value2");
         assertThat(result.institution).isEqualTo("institution_1");
-        assertThat(result.digitizer).isEqualTo("Karl-Børge");
+        assertThat(result.digitiser).isEqualTo("Karl-Børge");
         assertThat(result.internal_status).isEqualTo(InternalStatus.SMB_ERROR);
         assertThat(result.parent_guid).isNull();
         assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
@@ -83,7 +83,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
         createAsset.collection = "i1_c1";
-        createAsset.pid = "pid-createAsset";
+        createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user);
         assetService.deleteAsset("Karl-Børge", "deleteAsset");
@@ -102,7 +102,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
         createAsset.collection = "i1_c1";
-        createAsset.pid = "pid-createAsset";
+        createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
@@ -138,7 +138,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.tags.put("Tag2", "value2");
         asset.institution = "institution_1";
         asset.collection = "i1_c1";
-        asset.pid = "pid-updateAsset";
+        asset.asset_pid = "pid-updateAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user);
         asset.tags.remove("Tag1");
@@ -151,7 +151,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.funding = "Funding secured";
         asset.file_formats = Arrays.asList(FileFormat.RAW);
         asset.payload_type = "Conventional";
-        asset.digitizer = "Diane Digitiser";
+        asset.digitiser = "Diane Digitiser";
         assetService.updateAsset(asset);
         Optional<Asset> updateAsset = assetService.getAsset("updateAsset");
         assertThat(updateAsset.isPresent()).isTrue();
@@ -168,8 +168,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.file_formats.size()).isEqualTo(1);
         assertThat(result.file_formats.get(0)).isEqualTo(FileFormat.RAW);
         assertThat(result.payload_type).isEqualTo("Conventional");
-        //Digitizer is the original creator of the asset. The name of the new digitizer appears on the update event in the graph
-        assertThat(result.digitizer).isEqualTo("Karl-Børge");
+        //Digitizer is the original creator of the asset. The name of the new digitiser appears on the update event in the graph
+        assertThat(result.digitiser).isEqualTo("Karl-Børge");
     }
 
     @Test
@@ -180,7 +180,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i1_w2";
         asset.institution = "institution_1";
         asset.collection = "i1_c2";
-        asset.pid = "pid-lockUnlock";
+        asset.asset_pid = "pid-lockUnlock";
         asset.asset_locked = true;
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user);
@@ -202,7 +202,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i2_w1";
         asset.institution = "institution_2";
         asset.collection = "i1_c2";
-        asset.pid = "pid-auditAsset";
+        asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user);
@@ -216,7 +216,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
-        asset.digitizer = "Karl-Børge";
+        asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.asset_taken_date = Instant.now();

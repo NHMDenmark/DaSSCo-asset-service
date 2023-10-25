@@ -112,7 +112,7 @@ public interface AssetRepository extends SqlObject {
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $asset_guid})
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
                          RETURN a.asset_guid
-                         , a.pid
+                         , a.asset_pid
                          , a.status
                          , a.multi_specimen
                          , a.funding, a.subject
@@ -121,7 +121,7 @@ public interface AssetRepository extends SqlObject {
                          , a.asset_taken_date
                          , a.internal_status
                          , a.asset_locked
-                         , pa.name --//TODO verify that this workz instead of guid
+                         , pa.asset_guid 
                          , a.restricted_access
                          , a.tags
                          , collect(s.name)
@@ -135,7 +135,7 @@ public interface AssetRepository extends SqlObject {
                       $$
                     , #params)
                     as (asset_guid agtype
-                    , pid agtype
+                    , asset_pid agtype
                     , status agtype
                     , multi_specimen agtype
                     , funding agtype
@@ -161,7 +161,6 @@ public interface AssetRepository extends SqlObject {
             AgtypeMap agParams = new AgtypeMapBuilder()
                     .add("asset_guid", assetGuid)
                     .add("asset_guid", assetGuid)//TODO see if we can delete this
-
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)
@@ -249,7 +248,7 @@ public interface AssetRepository extends SqlObject {
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})
                             MERGE (a:Asset {name: $asset_guid
-                                , pid: $pid
+                                , asset_pid: $asset_pid
                                 , asset_guid: $asset_guid
                                 , status: $status
                                 , funding: $funding
@@ -288,7 +287,7 @@ public interface AssetRepository extends SqlObject {
                         .add("collection_name", asset.collection)
                         .add("workstation_name", asset.workstation)
                         .add("pipeline_name", asset.pipeline)
-                        .add("pid", asset.pid)
+                        .add("asset_pid", asset.asset_pid)
                         .add("asset_guid", asset.asset_guid)
                         .add("status", asset.status.name())
                         .add("funding", asset.funding)
@@ -298,7 +297,7 @@ public interface AssetRepository extends SqlObject {
                         .add("created_date", asset.created_date.toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
                         .add("parent_id",asset.parent_guid)
-                        .add("user", asset.digitizer)
+                        .add("user", asset.digitiser)
                         .add("tags",tags.build())
                         .add("restricted_access", restrictedAcces.build())
                         .add("asset_locked", asset.asset_locked);

@@ -46,7 +46,7 @@ public class AssetService {
         if(!InternalStatus.COMPLETED.equals(asset.internal_status)){
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
-        if(Objects.equals(asset.digitizer, audit.user())) {
+        if(Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), DasscoEvent.AUDIT_ASSET, asset);
@@ -156,7 +156,7 @@ public class AssetService {
         existing.funding = updatedAsset.funding;
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
-        existing.digitizer = updatedAsset.digitizer;
+        existing.digitiser = updatedAsset.digitiser;
         existing.parent_guid = updatedAsset.parent_guid;
         existing.updateUser = updatedAsset.updateUser;
         validateAssetFields(existing);
@@ -165,7 +165,7 @@ public class AssetService {
     }
 
     void validateAssetFields(Asset a) {
-        if(a.pid == null){
+        if(a.asset_pid == null){
             throw new IllegalArgumentException("PID cannot be null");
         }
         if(a.asset_guid == null) {

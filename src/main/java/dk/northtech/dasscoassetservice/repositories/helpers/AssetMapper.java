@@ -17,8 +17,8 @@ public class AssetMapper implements RowMapper<Asset> {
     @Override
     public Asset map(ResultSet rs, StatementContext ctx) throws SQLException {
         Asset asset = new Asset();
-        Agtype guid = rs.getObject("guid", Agtype.class);
-        Agtype pid = rs.getObject("pid", Agtype.class);
+        Agtype guid = rs.getObject("asset_guid", Agtype.class);
+        Agtype pid = rs.getObject("asset_pid", Agtype.class);
         Agtype institutionName = rs.getObject("institution_name", Agtype.class);
         Agtype collectionName = rs.getObject("collection_name", Agtype.class);
         Agtype pipelineName = rs.getObject("pipeline_name", Agtype.class);
@@ -34,7 +34,7 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
         asset.specimen_barcodes = specimenBarcodes.getList().stream().map(Object::toString).collect(Collectors.toList());
         asset.asset_guid = guid.getString();
-        asset.pid = pid.getString();
+        asset.asset_pid = pid.getString();
         asset.status = AssetStatus.valueOf(status.getString());
         asset.file_formats = fileFormats.getList().stream().map(x -> FileFormat.valueOf(x.toString())).collect(Collectors.toList());
         asset.multi_specimen = asset.specimen_barcodes.size() > 1;
@@ -43,7 +43,7 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.pipeline = pipelineName.getString();
         asset.workstation = workstationName.getString();
         asset.asset_locked = assetLocked.getBoolean();
-        asset.digitizer = userName.getString();
+        asset.digitiser = userName.getString();
         asset.restricted_access = restrictedAccess.getList().stream().map(role -> Role.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();
         tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null? tag.getValue().toString(): null));
