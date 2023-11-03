@@ -150,9 +150,7 @@ public class AssetService {
         Set<String> collect = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
 
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !collect.contains(s.barcode())).collect(Collectors.toList());
-        if(updatedAsset.specimens != null) {
-            existing.specimens = updatedAsset.specimens;
-        }
+        existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
         existing.pipeline = updatedAsset.pipeline;
