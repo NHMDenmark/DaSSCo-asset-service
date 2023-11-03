@@ -19,7 +19,8 @@ public class Asset {
     @Schema(description = "Basically a multispecimen is a single image (or other type of media) that actually contains multiple specimens in it", example = "false")
     public boolean multi_specimen;
     @Schema(description = "The barcodes of associated specimens", example = "'[\"ti-sp-00012\"']")
-    public List<String> specimen_barcodes = new ArrayList<>();
+//    public List<String> specimen_barcodes = new ArrayList<>();
+    public List<Specimen> specimens = new ArrayList<>();
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
     public String funding;
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
@@ -68,4 +69,6 @@ public class Asset {
     public String workstation;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")
     public String updateUser;
+    @Schema(description = "This relates to the way the specimen has been prepared (e.g., a pinned insect or mounted on a slide)", example = "pinned")
+    public String preparation_type;
 }

@@ -12,26 +12,31 @@ import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 public interface SpecimenRepository extends SqlObject {
 
-    default void persistSpecimens(Asset asset) {
+    default void persistSpecimens(Asset asset, List<Specimen> specimensToDetach) {
         String cypher = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (i:Institution {name: $institution_name})
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (a:Asset {name: $guid})
-                            MERGE (s:Specimen{name: $specimen_barcode, barcode: $specimen_barcode})                       
+                            MERGE (s:Specimen{name: $specimen_barcode, specimen_barcode: $specimen_barcode})                       
                             MERGE (s)-[u:USED_BY]->(a)
                             MERGE (s)-[bt:IS_PART_OF]->(c)
                             MERGE (s)-[bts:BELONGS_TO]->(i)
+                            SET s.preparation_type = $preparation_type
+                                , s.specimen_pid = $specimen_pid
                         $$
                         , #params) as (a agtype);
                 """;
         String updateCreatedBy = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
+                            MATCH (i:Institution {name: $institution_name})
+                            MATCH (c:Collection {name: $collection_name})
                             MATCH (a:Asset{name: $guid})
                             MATCH (s:Specimen{name: $specimen_barcode})
                             WHERE NOT EXISTS((s)-[:CREATED_BY]-(:Asset))
@@ -39,13 +44,31 @@ public interface SpecimenRepository extends SqlObject {
                         $$
                         , #params) as (ag agtype);
                 """;
+
+        String deleteUsedBy = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (i:Institution {name: $institution_name})
+                            MATCH (c:Collection {name: $collection_name})
+                            MATCH (a:Asset{name: $guid})
+                            MATCH (s:Specimen{name: $specimen_barcode})
+                            MATCH (s)-[u:USED_BY]->(a)
+                            MATCH (s)-[bt:IS_PART_OF]->(c)
+                            MATCH (s)-[bts:BELONGS_TO]->(i)
+                            DELETE u
+                        $$
+                        , #params) as (ag agtype);
+                """;
         withHandle(handle -> {
-            for (String specimenBarcode : asset.specimen_barcodes) {
+            for (Specimen specimen : asset.specimens) {
                 AgtypeMap parms = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
                         .add("guid", asset.asset_guid)
-                        .add("specimen_barcode", specimenBarcode).build();
+                        .add("specimen_pid", specimen.specimen_pid())
+                        .add("preparation_type", specimen.preparation_type())
+                        .add("specimen_barcode", specimen.barcode())
+                        .build();
                 Agtype agtype = AgtypeFactory.create(parms);
                 handle.createUpdate(cypher)
                         .bind("params", agtype)
@@ -53,12 +76,27 @@ public interface SpecimenRepository extends SqlObject {
 
                 AgtypeMap specimenEdgeParam = new AgtypeMapBuilder()
                         .add("guid", asset.asset_guid)
-                        .add("specimen_barcode", specimenBarcode).build();
+                        .add("institution_name", asset.institution)
+                        .add("collection_name", asset.collection)
+                        .add("specimen_barcode", specimen.barcode())
+                        .build();
                 Agtype specimenEdge = AgtypeFactory.create(specimenEdgeParam);
                 handle.createUpdate(updateCreatedBy)
                         .bind("params", specimenEdge)
                         .execute();
 
+            }
+            for(Specimen specimen : specimensToDetach) {
+                AgtypeMap deleteEdgeParams = new AgtypeMapBuilder()
+                        .add("guid", asset.asset_guid)
+                        .add("institution_name", asset.institution)
+                        .add("collection_name", asset.collection)
+                        .add("specimen_barcode", specimen.barcode())
+                        .build();
+                Agtype deleteSpecimenEdge = AgtypeFactory.create(deleteEdgeParams);
+                handle.createUpdate(deleteUsedBy)
+                        .bind("params", deleteSpecimenEdge)
+                        .execute();
             }
             return handle;
         });

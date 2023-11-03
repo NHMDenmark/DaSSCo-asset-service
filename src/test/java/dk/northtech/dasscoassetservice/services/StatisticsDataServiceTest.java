@@ -148,7 +148,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
-        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
+        asset.specimens = Arrays.asList(new Specimen(instituteName, "i1_c1", "creatAsset-sp-1", "spid1", "slide"), new Specimen(instituteName, "i1_c1", "creatAsset-sp-2", "spid1", "slide"));
         asset.pipeline = "i1_p1";
         asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");

@@ -258,16 +258,16 @@ public class StatisticsDataService {
         String createdDate = dtf.format(asset.created_date);
 
         if (cachedData.containsKey(createdDate)) {
-            logger.info("New asset with {} specimens is being added.", asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());
-            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());
+            logger.info("New asset with {} specimens is being added.", asset.specimens.size());
+            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimens.size());
+            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimens.size());
+            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimens.size());
         } else {
             logger.info("Cached data does not contain today's date {}, and will be added.", createdDate);
             cachedData.put(createdDate, new GraphData(
-                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimen_barcodes.size());}},
-                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimen_barcodes.size());}}
+                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimens.size());}},
+                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimens.size());}},
+                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimens.size());}}
             ));
             cachedFullData.put(key, sortMapOnDateKeys(cachedData, getDateFormatter("dd-MMM-yyyy")));
         }

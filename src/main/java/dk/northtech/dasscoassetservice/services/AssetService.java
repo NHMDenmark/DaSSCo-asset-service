@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AssetService {
@@ -145,6 +147,12 @@ public class AssetService {
         }
         validateAsset(updatedAsset );
         Asset existing = assetOpt.get();
+        Set<String> collect = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+
+        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !collect.contains(s.barcode())).collect(Collectors.toList());
+        if(updatedAsset.specimens != null) {
+            existing.specimens = updatedAsset.specimens;
+        }
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
         existing.pipeline = updatedAsset.pipeline;
@@ -160,7 +168,7 @@ public class AssetService {
         existing.parent_guid = updatedAsset.parent_guid;
         existing.updateUser = updatedAsset.updateUser;
         validateAssetFields(existing);
-        jdbi.onDemand(AssetRepository.class).updateAsset(existing);
+        jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
         return existing;
     }
 

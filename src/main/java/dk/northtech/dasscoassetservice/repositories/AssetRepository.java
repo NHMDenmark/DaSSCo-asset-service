@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.repositories;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
+import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
@@ -20,10 +21,7 @@ import org.postgresql.jdbc.PgConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 //@Repository
@@ -52,7 +50,7 @@ public interface AssetRepository extends SqlObject {
     default Asset createAsset(Asset asset) {
         boilerplate();
         persistAsset(asset);
-        createSpecimenRepository().persistSpecimens(asset);
+        createSpecimenRepository().persistSpecimens(asset, new ArrayList<>());
         connectParentChild(asset.parent_guid, asset.asset_guid);
         return asset;
     }
@@ -82,11 +80,11 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default Asset updateAsset(Asset asset) {
+    default Asset updateAsset(Asset asset, List<Specimen> specimenToDetach) {
         boilerplate();
         update_asset_internal(asset);
         connectParentChild(asset.parent_guid, asset.asset_guid);
-        createSpecimenRepository().persistSpecimens(asset);
+        createSpecimenRepository().persistSpecimens(asset, specimenToDetach);
         return asset;
     }
 
@@ -124,7 +122,7 @@ public interface AssetRepository extends SqlObject {
                          , pa.asset_guid 
                          , a.restricted_access
                          , a.tags
-                         , collect(s.name)
+                         , collect(s)
                          , i.name
                          , c.name
                          , p.name
@@ -132,6 +130,7 @@ public interface AssetRepository extends SqlObject {
                          , e.timestamp
                          , a.pushed_to_specify_date
                          , u.name
+                         , a.preparation_type
                       $$
                     , #params)
                     as (asset_guid agtype
@@ -148,14 +147,15 @@ public interface AssetRepository extends SqlObject {
                     , parent_guid agtype
                     , restricted_access agtype
                     , tags agtype
-                    , specimen_barcodes agtype
+                    , specimens agtype
                     , institution_name agtype
                     , collection_name agtype
                     , pipeline_name agtype
                     , workstation_name agtype
                     , creation_date agtype
                     , pushed_to_specify_date agtype
-                    , user_name agtype);
+                    , user_name agtype
+                    , preparation_type agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -170,11 +170,14 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
+
+
     @Transaction
     default List<Event> readEvents(String guid) {
         boilerplate();
         return readEvents_internal(guid);
     }
+
     default List<Event> readEvents_internal(String guid) {
         String sql =
                 """
@@ -377,6 +380,7 @@ public interface AssetRepository extends SqlObject {
                             , a.parent_id = $parent_id
                             , a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
+                            , a.preparation_type = $preparation_type
                         $$
                         , #params) as (a agtype);
                         """;
@@ -404,7 +408,8 @@ public interface AssetRepository extends SqlObject {
                         .add("user", asset.updateUser)
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
-                        .add("restricted_access", restrictedAcces.build());
+                        .add("restricted_access", restrictedAcces.build())
+                        .add("preparation_type", asset.preparation_type);
                 if(asset.pushed_to_specify_date != null) {
                     builder.add("pushed_to_specify_date", asset.pushed_to_specify_date.toEpochMilli());
                 } else {
