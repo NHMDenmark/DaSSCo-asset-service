@@ -51,7 +51,8 @@ public class AssetService {
         if(Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
-        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), DasscoEvent.AUDIT_ASSET, asset);
+        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
         return true;
     }
 
@@ -67,7 +68,8 @@ public class AssetService {
         if(asset.asset_deleted_date != null) {
             throw new IllegalArgumentException("Asset is already deleted");
         }
-        jdbi.onDemand(AssetRepository.class).setEvent(user, DasscoEvent.DELETE_ASSET, asset);
+        Event event = new Event(user, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(user, event, asset);
         return true;
     }
 

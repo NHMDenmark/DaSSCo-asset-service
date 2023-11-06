@@ -30,7 +30,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide"), new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", "pinning"));
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
-        createAsset.preparation_type = "pinning";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user);
         //Check that the same asset cannot be added multiple times

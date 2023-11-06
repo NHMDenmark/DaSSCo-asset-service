@@ -32,6 +32,7 @@ public interface AssetRepository extends SqlObject {
     @CreateSqlObject
     SpecimenRepository createSpecimenRepository();
 
+    //This must be called once per transaction
     default void boilerplate() {
         withHandle(handle -> {
             Connection connection = handle.getConnection();
@@ -59,23 +60,24 @@ public interface AssetRepository extends SqlObject {
     default Optional<Asset> readAsset(String assetId) {
         boilerplate();
         Optional<Asset> asset = readAssetInternal(assetId);
-        if(asset.isEmpty()) {
+        if (asset.isEmpty()) {
             return asset;
         }
         Asset asset1 = asset.get();
         List<Event> events = readEvents_internal(assetId);
 
-        for(Event event : events) {
-            if(DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+        for (Event event : events) {
+            if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
-            } else if(DasscoEvent.UPDATE_ASSET.equals(event.event) && asset1.last_updated_date == null) {
+            } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.last_updated_date == null) {
                 asset1.last_updated_date = event.timeStamp;
-            } else if(DasscoEvent.CREATE_ASSET.equals(event.event) && asset1.last_updated_date == null) {
+            } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.last_updated_date == null) {
                 asset1.last_updated_date = event.timeStamp;
-            } else if(DasscoEvent.DELETE_ASSET.equals(event.event)) {
+            } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
                 asset1.asset_deleted_date = event.timeStamp;
             }
         }
+        asset1.events = events;
         return Optional.of(asset1);
     }
 
@@ -102,7 +104,7 @@ public interface AssetRepository extends SqlObject {
                     , $$
                          MATCH (a:Asset{name: $asset_guid})
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                         MATCH (e:Event{event:'CREATE_ASSET'})<-[:CHANGED_BY]-(a)
+                         MATCH (e:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e)
                          MATCH (p:Pipeline)<-[:USED]-(e)
                          MATCH (w:Workstation)<-[:USED]-(e)
@@ -171,7 +173,6 @@ public interface AssetRepository extends SqlObject {
     }
 
 
-
     @Transaction
     default List<Event> readEvents(String guid) {
         boilerplate();
@@ -215,8 +216,9 @@ public interface AssetRepository extends SqlObject {
             return events;
         });
     }
+
     default void connectParentChild(String parentGuid, String childGuid) {
-        if(Strings.isNullOrEmpty(parentGuid)) {
+        if (Strings.isNullOrEmpty(parentGuid)) {
             return;
         }
         String sql =
@@ -231,16 +233,17 @@ public interface AssetRepository extends SqlObject {
                         """;
         withHandle(handle -> {
 
-        AgtypeMap parentChildRelation = new AgtypeMapBuilder()
-                .add("pGuid", parentGuid)
-                .add("cGuid", childGuid).build();
-        Agtype specimenEdge = AgtypeFactory.create(parentChildRelation);
-        handle.createUpdate(sql)
-                .bind("params", specimenEdge)
-                .execute();
-        return handle;
+            AgtypeMap parentChildRelation = new AgtypeMapBuilder()
+                    .add("pGuid", parentGuid)
+                    .add("cGuid", childGuid).build();
+            Agtype specimenEdge = AgtypeFactory.create(parentChildRelation);
+            handle.createUpdate(sql)
+                    .bind("params", specimenEdge)
+                    .execute();
+            return handle;
         });
     }
+
     default Asset persistAsset(Asset asset) {
         String sql =
                 """
@@ -265,7 +268,7 @@ public interface AssetRepository extends SqlObject {
                                 , asset_locked: $asset_locked
                             })
                             MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET', name: 'CREATE_ASSET'})
+                            MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET_METADATA', name: 'CREATE_ASSET_METADATA'})
                             MERGE (e)-[uw:USED]->(w)
                             MERGE (e)-[up:USED]->(p)
                             MERGE (e)-[pb:INITIATED_BY]->(u)
@@ -299,13 +302,13 @@ public interface AssetRepository extends SqlObject {
                         .add("file_formats", agtypeListBuilder.build())
                         .add("created_date", asset.created_date.toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
-                        .add("parent_id",asset.parent_guid)
+                        .add("parent_id", asset.parent_guid)
                         .add("user", asset.digitiser)
-                        .add("tags",tags.build())
+                        .add("tags", tags.build())
                         .add("restricted_access", restrictedAcces.build())
                         .add("asset_locked", asset.asset_locked);
 
-                if(asset.asset_taken_date != null) {
+                if (asset.asset_taken_date != null) {
                     agBuilder.add("asset_taken_date", asset.asset_taken_date.toEpochMilli());
                 } else {
                     agBuilder.add("asset_taken_date", (String) null);
@@ -364,7 +367,7 @@ public interface AssetRepository extends SqlObject {
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
                             MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET', name: 'UPDATE_ASSET'})
+                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
                             MERGE (e)-[uw:USED]->(w)
                             MERGE (e)-[up:USED]->(p)
                             MERGE (e)-[pb:INITIATED_BY]->(u)
@@ -380,7 +383,6 @@ public interface AssetRepository extends SqlObject {
                             , a.parent_id = $parent_id
                             , a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
-                            , a.preparation_type = $preparation_type
                         $$
                         , #params) as (a agtype);
                         """;
@@ -408,9 +410,8 @@ public interface AssetRepository extends SqlObject {
                         .add("user", asset.updateUser)
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
-                        .add("restricted_access", restrictedAcces.build())
-                        .add("preparation_type", asset.preparation_type);
-                if(asset.pushed_to_specify_date != null) {
+                        .add("restricted_access", restrictedAcces.build());
+                if (asset.pushed_to_specify_date != null) {
                     builder.add("pushed_to_specify_date", asset.pushed_to_specify_date.toEpochMilli());
                 } else {
                     builder.addNull("pushed_to_specify_date");
@@ -428,33 +429,68 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void setEvent(String user, DasscoEvent event, Asset asset) {
+    default void setEvent(String user, Event event, Asset asset) {
         boilerplate();
         internal_setEvent(user, event, asset);
-    };
+    }
 
-    default void internal_setEvent(String user, DasscoEvent dasscoEvent, Asset asset) {
+    default void internal_setEvent(String user, Event event, Asset asset) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (a:Asset {name: $asset_guid})
-                            MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
-                            MERGE (e)-[pb:INITIATED_BY]->(u)
-                            MERGE (a)-[ca:CHANGED_BY]-(e)
+                            """;
+        if (event.pipeline != null) {
+            sql += "MATCH (p:Pipeline {name: $pipeline_name}) ";
+        }
+        if (event.workstation != null) {
+            sql += "MATCH (w:Workstation {name: $workstation_name}) ";
+        }
+        if (event.user != null) {
+
+            sql += "MERGE (u:User{user_id: $user, name: $user}) ";
+        }
+        sql +=
+                """
+                        MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
+                        MERGE (a)-[ca:CHANGED_BY]-(e)
+                        """;
+        if (event.user != null) {
+            sql += " MERGE (e)-[pb:INITIATED_BY]->(u) ";
+        }
+        if (event.pipeline != null) {
+            sql += " MERGE (e)-[pu:USED]->(p) ";
+        }
+        if (event.workstation != null) {
+            sql += " MERGE (e)-[wu:USED]->(w) ";
+        }
+        sql +=
+                """
                         $$
                         , #params) as (a agtype);
                         """;
+
         try {
+            String finalSql = sql;
             withHandle(handle -> {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("asset_guid", asset.asset_guid)
-                        .add("user", user)
-                        .add("event", dasscoEvent.name())
-                        .add("updated_date", Instant.now().toEpochMilli());
+//                        .add("user", user)
+                        .add("event", event.event.name())
+                        .add("updated_date", event.timeStamp.toEpochMilli());
+                if (event.user != null) {
+                    builder.add("user", event.user);
+                }
+                if (event.workstation != null) {
+                    builder.add("workstation_name", event.workstation);
+                }
+                if (event.pipeline != null) {
+                    builder.add("pipeline_name", event.pipeline);
+                }
+
                 Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
+                handle.createUpdate(finalSql)
                         .bind("params", agtype)
                         .execute();
                 return handle;
@@ -462,5 +498,5 @@ public interface AssetRepository extends SqlObject {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    };
+    }
 }

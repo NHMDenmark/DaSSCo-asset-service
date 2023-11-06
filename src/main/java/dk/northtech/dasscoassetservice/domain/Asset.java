@@ -69,6 +69,8 @@ public class Asset {
     public String workstation;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")
     public String updateUser;
-    @Schema(description = "This relates to the way the specimen has been prepared (e.g., a pinned insect or mounted on a slide)", example = "pinned")
-    public String preparation_type;
+//    @Schema(description = "This relates to the way the specimen has been prepared (e.g., a pinned insect or mounted on a slide)", example = "pinned")
+//    public String preparation_type;
+
+    public List<Event> events;
 }

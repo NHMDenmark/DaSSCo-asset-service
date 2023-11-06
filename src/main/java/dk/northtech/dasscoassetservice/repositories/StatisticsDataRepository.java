@@ -31,7 +31,7 @@ public class StatisticsDataRepository {
         String sql =
             """
                 SELECT * from cypher('dassco', $$
-                        MATCH (event:Event {name: 'CREATE_ASSET'})-[:CHANGED_BY]-(asset)-[:CREATED_BY]-(specimen)
+                        MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})-[:CHANGED_BY]-(asset)-[:CREATED_BY]-(specimen)
                         MATCH (pipeline:Pipeline)<-[:USED]-(event)
                         MATCH (workstation:Workstation)<-[:USED]-(event)
                         MATCH (institution)-[:BELONGS_TO]-(asset)

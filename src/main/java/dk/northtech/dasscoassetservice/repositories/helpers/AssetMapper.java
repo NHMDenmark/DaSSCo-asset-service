@@ -86,11 +86,6 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
             asset.parent_guid = parent_guid.getString();
         }
-        rs.getString("preparation_type");
-        if(!rs.wasNull()) {
-            Agtype preparation_type = rs.getObject("preparation_type", Agtype.class);
-            asset.preparation_type = preparation_type.getString();
-        }
         return asset;
     }
 
