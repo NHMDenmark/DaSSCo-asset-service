@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -86,14 +87,15 @@ public class AssetService {
     public List<Event> getEvents(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
     }
-    public boolean completeAsset(String assetGuid) {
-        Optional<Asset> optAsset = getAsset(assetGuid);
+    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().guid());
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
         asset.internal_status = InternalStatus.COMPLETED;
-        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
+        jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
         return true;
     }
 

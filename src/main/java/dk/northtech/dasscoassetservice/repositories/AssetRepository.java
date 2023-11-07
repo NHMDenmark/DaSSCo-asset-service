@@ -97,6 +97,14 @@ public interface AssetRepository extends SqlObject {
         return asset;
     }
 
+    @Transaction
+    default Asset updateAssetAndEvent(Asset asset, Event event) {
+        boilerplate();
+        updateAssetNoEventInternal(asset);
+        setEvent(event.user, event, asset);
+        return asset;
+    }
+
     default Optional<Asset> readAssetInternal(String assetGuid) {
         String sql = """
                 SELECT * FROM ag_catalog.cypher(

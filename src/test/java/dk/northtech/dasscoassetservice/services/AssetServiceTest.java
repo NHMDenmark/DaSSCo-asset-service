@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -125,19 +126,18 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result);
         result.payload_type = "nuclear";
         assetService.updateAsset(result);
-        assetService.completeAsset("createAssetUpdateAsset");
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null),"i1_w1", "i1_p1", "bob"));
         assetService.auditAsset(new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid);
-        resultEvents.forEach(z -> System.out.println(z));
-        assertThat(resultEvents.size()).isEqualTo(4);
+        assertThat(resultEvents.size()).isEqualTo(5);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         Asset resultAsset = resultOpt2.get();
         assertThat(resultAsset.payload_type).isEqualTo("nuclear");
-        resultEvents.forEach(x -> System.out.println(x.timeStamp));
+        Instant latestUpdate;
+        List<Instant> updates = resultEvents.stream().filter(x -> x.event.equals(DasscoEvent.UPDATE_ASSET_METADATA)).map(x -> x.timeStamp).sorted().collect(Collectors.toList());
         //The last update event
-        assertThat(resultAsset.last_updated_date).isEqualTo(resultEvents.get(1).timeStamp);
+        assertThat(resultAsset.last_updated_date).isEqualTo(updates.get(1));
         assertThat(resultAsset.audited).isTrue();
-
     }
 
     @Test
@@ -230,7 +230,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset, user);
         DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
-        assetService.completeAsset(asset.asset_guid);
+//        assetService.completeAsset(asset.asset_guid);
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null),"i2_w1", "i2_p1", "bob"));
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }
