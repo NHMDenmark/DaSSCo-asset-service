@@ -60,7 +60,7 @@ public class Asset {
     @Schema(description = "An internal status field used to track the status of the upload of related media", example = "COMPLETED")
     public InternalStatus internal_status;
     @Schema(description = "Date the asset was pushed to specify", example = "2023-05-24T00:00:00.000Z")
-    public Instant pushed_to_specify_date;
+    public Instant date_asset_finalised;
     @Schema(description = "Username of the person that digitised the asset,", example = "THBO")
     public String digitiser;
     @Schema(description = "The pipeline that created or updated the asset", example = "ti-p1")
@@ -69,8 +69,7 @@ public class Asset {
     public String workstation;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")
     public String updateUser;
-//    @Schema(description = "This relates to the way the specimen has been prepared (e.g., a pinned insect or mounted on a slide)", example = "pinned")
-//    public String preparation_type;
 
+    public Instant date_metadata_taken;
     public List<Event> events;
 }

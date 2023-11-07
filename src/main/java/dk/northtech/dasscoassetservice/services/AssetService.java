@@ -3,7 +3,6 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.webapi.domain.AssetSmbRequest;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -158,7 +157,7 @@ public class AssetService {
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
         existing.pipeline = updatedAsset.pipeline;
-        existing.pushed_to_specify_date = updatedAsset.pushed_to_specify_date;
+        existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
         existing.asset_locked = updatedAsset.asset_locked;
         existing.subject = updatedAsset.subject;

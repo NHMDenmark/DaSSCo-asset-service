@@ -56,14 +56,19 @@ public class AssetMapper implements RowMapper<Asset> {
 //        System.out.println(list);
         asset.specimens = list.stream().map(x -> mapSpecimen((AgtypeMap) x)).collect(Collectors.toList());
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
-        rs.getString("pushed_to_specify_date");
+        rs.getString("date_asset_finalised");
         if (!rs.wasNull()) {
-            Agtype pushedToSpecifyDate = rs.getObject("pushed_to_specify_date", Agtype.class);
-            asset.pushed_to_specify_date = Instant.ofEpochMilli(pushedToSpecifyDate.getLong());
+            Agtype dateAssetFinalised = rs.getObject("date_asset_finalised", Agtype.class);
+            asset.date_asset_finalised = Instant.ofEpochMilli(dateAssetFinalised.getLong());
         }
-        rs.getString("asset_taken_date");
+        rs.getString("date_metadata_taken");
         if (!rs.wasNull()) {
-            Agtype assetTakenDate = rs.getObject("asset_taken_date", Agtype.class);
+            Agtype dateMetaDataTaken = rs.getObject("date_metadata_taken", Agtype.class);
+            asset.date_asset_finalised = Instant.ofEpochMilli(dateMetaDataTaken.getLong());
+        }
+        rs.getString("date_asset_taken");
+        if (!rs.wasNull()) {
+            Agtype assetTakenDate = rs.getObject("date_asset_taken", Agtype.class);
             asset.asset_taken_date = Instant.ofEpochMilli(assetTakenDate.getLong());
         }
         rs.getString("payload_type");

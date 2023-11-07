@@ -138,9 +138,11 @@ public interface AssetRepository extends SqlObject {
                          , p.name
                          , w.name
                          , e.timestamp
-                         , a.pushed_to_specify_date
+                         , a.date_asset_finalised
                          , u.name
                          , a.preparation_type
+                         , a.date_metadata_taken
+                         , a.date_asset_taken
                       $$
                     , #params)
                     as (asset_guid agtype
@@ -163,9 +165,11 @@ public interface AssetRepository extends SqlObject {
                     , pipeline_name agtype
                     , workstation_name agtype
                     , creation_date agtype
-                    , pushed_to_specify_date agtype
+                    , date_asset_finalised agtype
                     , user_name agtype
-                    , preparation_type agtype);
+                    , preparation_type agtype
+                    , date_metadata_taken agtype
+                    , date_asset_taken agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -274,6 +278,7 @@ public interface AssetRepository extends SqlObject {
                                 , restricted_access: $restricted_access
                                 , tags: $tags
                                 , asset_locked: $asset_locked
+                                , date_metadata_taken: $date_metadata_taken
                             })
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET_METADATA', name: 'CREATE_ASSET_METADATA'})
@@ -317,9 +322,14 @@ public interface AssetRepository extends SqlObject {
                         .add("asset_locked", asset.asset_locked);
 
                 if (asset.asset_taken_date != null) {
-                    agBuilder.add("asset_taken_date", asset.asset_taken_date.toEpochMilli());
+                    agBuilder.add("date_asset_taken", asset.asset_taken_date.toEpochMilli());
                 } else {
-                    agBuilder.add("asset_taken_date", (String) null);
+                    agBuilder.add("date_asset_taken", (String) null);
+                }
+                if (asset.date_metadata_taken != null) {
+                    agBuilder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
+                } else {
+                    agBuilder.add("date_metadata_taken", (String) null);
                 }
                 AgtypeMap parms = agBuilder.build();
                 Agtype agtype = AgtypeFactory.create(parms);
@@ -387,10 +397,12 @@ public interface AssetRepository extends SqlObject {
                             , a.payload_type = $payload_type
                             , a.file_formats = $file_formats
                             , a.restricted_access = $restricted_access
-                            , a.pushed_to_specify_date = $pushed_to_specify_date
+                            , a.date_asset_finalised = $date_asset_finalised
                             , a.parent_id = $parent_id
                             , a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
+                            , a.date_metadata_taken = $date_metadata_taken
+                            , a.date_asset_taken = $date_asset_taken
                         $$
                         , #params) as (a agtype);
                         """;
@@ -419,10 +431,20 @@ public interface AssetRepository extends SqlObject {
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
                         .add("restricted_access", restrictedAcces.build());
-                if (asset.pushed_to_specify_date != null) {
-                    builder.add("pushed_to_specify_date", asset.pushed_to_specify_date.toEpochMilli());
+                if (asset.date_metadata_taken != null) {
+                    builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
                 } else {
-                    builder.addNull("pushed_to_specify_date");
+                    builder.addNull("date_metadata_taken");
+                }
+                if (asset.date_asset_finalised != null) {
+                    builder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
+                } else {
+                    builder.addNull("date_asset_finalised");
+                }
+                if (asset.asset_taken_date != null) {
+                    builder.add("date_asset_taken", asset.date_asset_finalised.toEpochMilli());
+                } else {
+                    builder.addNull("date_asset_taken");
                 }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)

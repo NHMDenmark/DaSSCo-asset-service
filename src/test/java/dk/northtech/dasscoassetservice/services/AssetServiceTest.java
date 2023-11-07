@@ -134,7 +134,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset resultAsset = resultOpt2.get();
         assertThat(resultAsset.payload_type).isEqualTo("nuclear");
         Instant latestUpdate;
-        List<Instant> updates = resultEvents.stream().filter(x -> x.event.equals(DasscoEvent.UPDATE_ASSET_METADATA)).map(x -> x.timeStamp).sorted().collect(Collectors.toList());
+        List<Instant> updates = resultEvents.stream()
+                .filter(x -> x.event.equals(DasscoEvent.UPDATE_ASSET_METADATA))
+                .map(x -> x.timeStamp)
+                .sorted().toList();
         //The last update event
         assertThat(resultAsset.last_updated_date).isEqualTo(updates.get(1));
         assertThat(resultAsset.audited).isTrue();
