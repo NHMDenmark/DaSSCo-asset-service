@@ -36,9 +36,7 @@ paths:
       responses:
         "200":
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssetV1'
+            application/json: {}
         "400-599":
           content:
             application/json:
@@ -53,7 +51,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/AssetSmbRequest'
+              $ref: '#/components/schemas/AssetUpdateRequest'
       responses:
         "200":
           content:
@@ -97,12 +95,11 @@ paths:
   /v1/assetmetadata/{assetGuid}/complete:
     post:
       operationId: completeAsset
-      parameters:
-      - name: assetGuid
-        in: path
-        required: true
-        schema:
-          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/AssetUpdateRequest'
       responses:
         "200":
           content:
@@ -526,7 +523,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssetSmbRequest'
+              $ref: '#/components/schemas/AssetUpdateRequest'
       responses:
         default:
           description: default response
@@ -941,11 +938,11 @@ components:
     Asset:
       type: object
       properties:
-        pid:
+        asset_pid:
           type: string
           description: Pid
           example: asdf-1234-3333-1000
-        guid:
+        asset_guid:
           type: string
           description: Unique key for the asset?
           example: ti-a01-202305241657
@@ -966,14 +963,12 @@ components:
           description: Basically a multispecimen is a single image (or other type
             of media) that actually contains multiple specimens in it
           example: false
-        specimen_barcodes:
+        specimens:
           type: array
           description: The barcodes of associated specimens
           example: "'[\"ti-sp-00012\"']"
           items:
-            type: string
-            description: The barcodes of associated specimens
-            example: "'[\"ti-sp-00012\"']"
+            $ref: '#/components/schemas/Specimen'
         funding:
           type: string
           description: A short description of funding source used to create the asset
@@ -1066,18 +1061,18 @@ components:
           - COMPLETED
           - SMB_ERROR
           - ERDA_ERROR
-        pushed_to_specify_date:
+        date_asset_finalised:
           type: string
           description: Date the asset was pushed to specify
           format: date-time
           example: 2023-05-24T00:00:00Z
-        digitizer:
+        digitiser:
           type: string
           description: "Username of the person that digitised the asset,"
           example: THBO
         pipeline:
           type: string
-          description: The pipeline that created or updtated the asset
+          description: The pipeline that created or updated the asset
           example: ti-p1
         workstation:
           type: string
@@ -1087,6 +1082,38 @@ components:
           type: string
           description: Username of the person that updated the asset
           example: THBO
+        date_metadata_taken:
+          type: string
+          format: date-time
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    Event:
+      type: object
+      properties:
+        user:
+          type: string
+        timeStamp:
+          type: string
+          format: date-time
+        event:
+          type: string
+          enum:
+          - CREATE_ASSET
+          - UPDATE_ASSET
+          - AUDIT_ASSET
+          - DELETE_ASSET
+          - CREATE_ASSET_METADATA
+          - UPDATE_ASSET_METADATA
+          - AUDIT_ASSET_METADATA
+          - DELETE_ASSET_METADATA
+          - METADATA_TAKEN
+          - ASSET_FINALISED
+        pipeline:
+          type: string
+        workstation:
+          type: string
     SambaInfo:
       type: object
       properties:
@@ -1110,13 +1137,32 @@ components:
           - INTERNAL_ERROR
         sambaRequestStatusMessage:
           type: string
-    AssetSmbRequest:
+    Specimen:
+      type: object
+      properties:
+        institution:
+          type: string
+        collection:
+          type: string
+        barcode:
+          type: string
+        specimen_pid:
+          type: string
+        preparation_type:
+          type: string
+    AssetUpdateRequest:
       type: object
       properties:
         shareName:
           type: string
-        asset:
+        minimalAsset:
           $ref: '#/components/schemas/MinimalAsset'
+        workstation:
+          type: string
+        pipeline:
+          type: string
+        digitiser:
+          type: string
     MinimalAsset:
       type: object
       properties:
@@ -1128,25 +1174,6 @@ components:
       type: object
       properties:
         user:
-          type: string
-    Event:
-      type: object
-      properties:
-        user:
-          type: string
-        timeStamp:
-          type: string
-          format: date-time
-        event:
-          type: string
-          enum:
-          - CREATE_ASSET
-          - UPDATE_ASSET
-          - AUDIT_ASSET
-          - DELETE_ASSET
-        pipeline:
-          type: string
-        workstation:
           type: string
     Collection:
       type: object
@@ -1189,6 +1216,13 @@ components:
         timestamp:
           type: string
           format: date-time
+    AssetSmbRequest:
+      type: object
+      properties:
+        shareName:
+          type: string
+        asset:
+          $ref: '#/components/schemas/MinimalAsset'
     SmbRequest:
       type: object
       properties:
@@ -1201,19 +1235,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MinimalAsset'
-    Specimen:
-      type: object
-      properties:
-        institution:
-          type: string
-        collection:
-          type: string
-        barcode:
-          type: string
-        specimen_pid:
-          type: string
-        preparation_type:
-          type: string
     GraphData:
       type: object
       properties:

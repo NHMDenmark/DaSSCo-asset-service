@@ -15,11 +15,9 @@ public class EventMapper implements RowMapper<Event> {
     @Override
     public Event map(ResultSet rs, StatementContext ctx) throws SQLException {
         Event event = new Event();
-        Agtype userName = rs.getObject("event_user", Agtype.class);
         Agtype eventType = rs.getObject("event", Agtype.class);
         Agtype eventTimestamp = rs.getObject("timestamp", Agtype.class);
         event.event = DasscoEvent.valueOf(eventType.getString());
-        event.user = userName.getString();
         event.timeStamp = Instant.ofEpochMilli(eventTimestamp.getLong());
 
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
@@ -32,6 +30,11 @@ public class EventMapper implements RowMapper<Event> {
         if (!rs.wasNull()) {
             Agtype pipeline = rs.getObject("pipeline", Agtype.class);
             event.pipeline = pipeline.getString();
+        }
+        rs.getString("event_user");
+        if(!rs.wasNull()){
+            Agtype userName = rs.getObject("event_user", Agtype.class);
+            event.user = userName.getString();
         }
         return event;
     }

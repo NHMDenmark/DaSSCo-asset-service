@@ -30,7 +30,7 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype workstationName = rs.getObject("workstation_name", Agtype.class);
         Agtype restrictedAccess = rs.getObject("restricted_access", Agtype.class);
         Agtype tags = rs.getObject("tags", Agtype.class);
-        Agtype userName = rs.getObject("user_name", Agtype.class);
+
         Agtype assetLocked = rs.getObject("asset_locked", Agtype.class);
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
 
@@ -47,15 +47,19 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.pipeline = pipelineName.getString();
         asset.workstation = workstationName.getString();
         asset.asset_locked = assetLocked.getBoolean();
-        asset.digitiser = userName.getString();
         asset.restricted_access = restrictedAccess.getList().stream().map(role -> Role.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();
-        tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null? tag.getValue().toString(): null));
+        tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null ? tag.getValue().toString() : null));
         asset.tags = tagsMap;
         AgtypeList list = specimens.getList();
 //        System.out.println(list);
         asset.specimens = list.stream().map(x -> mapSpecimen((AgtypeMap) x)).collect(Collectors.toList());
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
+        rs.getString("user_name");
+        if (!rs.wasNull()) {
+            Agtype userName = rs.getObject("user_name", Agtype.class);
+            asset.digitiser = userName.getString();
+        }
         rs.getString("date_asset_finalised");
         if (!rs.wasNull()) {
             Agtype dateAssetFinalised = rs.getObject("date_asset_finalised", Agtype.class);
@@ -77,25 +81,25 @@ public class AssetMapper implements RowMapper<Asset> {
             asset.payload_type = assetTakenDate.getString();
         }
         rs.getString("subject");
-        if(!rs.wasNull()) {
+        if (!rs.wasNull()) {
             Agtype subject = rs.getObject("subject", Agtype.class);
             asset.subject = subject.getString();
         }
         rs.getString("funding");
-        if(!rs.wasNull()) {
+        if (!rs.wasNull()) {
             Agtype funding = rs.getObject("funding", Agtype.class);
             asset.funding = funding.getString();
         }
         rs.getString("parent_guid");
-        if(!rs.wasNull()) {
+        if (!rs.wasNull()) {
             Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
             asset.parent_guid = parent_guid.getString();
         }
         return asset;
     }
 
-     Specimen mapSpecimen(AgtypeMap agtype) {
-         AgtypeMap properties = agtype.getMap("properties");
-         return new Specimen(properties.getString("specimen_barcode"), properties.getString("specimen_pid"), properties.getString("preparation_type"));
+    Specimen mapSpecimen(AgtypeMap agtype) {
+        AgtypeMap properties = agtype.getMap("properties");
+        return new Specimen(properties.getString("specimen_barcode"), properties.getString("specimen_pid"), properties.getString("preparation_type"));
     }
 }

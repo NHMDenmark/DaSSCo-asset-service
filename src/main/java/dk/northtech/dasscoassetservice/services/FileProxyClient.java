@@ -114,7 +114,7 @@ public class FileProxyClient {
                 logger.error("Failed to open share");
                 sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to open share, please try manually checking out the asset later";
             }
-            logger.error("Failed to close SMB share, http status code: {}, response body: {}", send.statusCode(), body);
+            logger.error("Failed to open SMB share, http status code: {}, response body: {}", send.statusCode(), body);
             return sambaInfo;
         } catch (Exception e) {
             sambaInfo.sambaRequestStatus = SambaRequestStatus.INTERNAL_ERROR;
@@ -149,7 +149,7 @@ public class FileProxyClient {
                 sambaInfo.sambaRequestStatusMessage = "Service unavailable";
             } else {
                 logger.error("Failed to close share");
-                sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to close share, please try manually checking out the asset later";
+                sambaInfo.sambaRequestStatusMessage = "Server encountered an error when attempting to close share, please try manually checking if the share has been closed";
             }
             logger.error("Failed to close SMB share, http status code: {}, response body: {}", send.statusCode(), body);
             return sambaInfo;
