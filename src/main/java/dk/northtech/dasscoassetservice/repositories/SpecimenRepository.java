@@ -64,7 +64,7 @@ public interface SpecimenRepository extends SqlObject {
                 AgtypeMap parms = new AgtypeMapBuilder()
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
-                        .add("guid", asset.asset_guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("specimen_pid", specimen.specimen_pid())
                         .add("preparation_type", specimen.preparation_type())
                         .add("specimen_barcode", specimen.barcode())
@@ -75,7 +75,7 @@ public interface SpecimenRepository extends SqlObject {
                         .execute();
 
                 AgtypeMap specimenEdgeParam = new AgtypeMapBuilder()
-                        .add("guid", asset.asset_guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
                         .add("specimen_barcode", specimen.barcode())
@@ -88,7 +88,7 @@ public interface SpecimenRepository extends SqlObject {
             }
             for(Specimen specimen : specimensToDetach) {
                 AgtypeMap deleteEdgeParams = new AgtypeMapBuilder()
-                        .add("guid", asset.asset_guid)
+                        .add("asset_guid", asset.asset_guid)
                         .add("institution_name", asset.institution)
                         .add("collection_name", asset.collection)
                         .add("specimen_barcode", specimen.barcode())
