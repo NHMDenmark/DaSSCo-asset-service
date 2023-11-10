@@ -69,19 +69,19 @@ public class FileProxyClient {
 
     public SambaInfo openSamba(MinimalAsset asset1, User user) {
         SmbRequest smbRequest = new SmbRequest();
-        smbRequest.assets.add(new MinimalAsset(asset1.guid(), asset1.parent_guid()));
+        smbRequest.assets.add(new MinimalAsset(asset1.asset_guid(), asset1.parent_guid()));
         smbRequest.users.add(user.username);
         return openSamba(smbRequest, user);
     }
 
     public SambaInfo openSamba(AssetSmbRequest assetSmbRequest, User user) {
         if(assetSmbRequest.asset() != null) {
-            Optional<Asset> optionalAsset = assetService.getAsset(assetSmbRequest.asset().guid());
+            Optional<Asset> optionalAsset = assetService.getAsset(assetSmbRequest.asset().asset_guid());
             if (optionalAsset.isPresent()) {
                 Asset asset1 = optionalAsset.get();
                 assetSmbRequest = new AssetSmbRequest(assetSmbRequest.shareName(), new MinimalAsset(asset1.asset_guid, asset1.parent_guid));
             } else {
-                 throw new IllegalArgumentException("Asset [" + assetSmbRequest.asset().guid() + "] does not exist");
+                 throw new IllegalArgumentException("Asset [" + assetSmbRequest.asset().asset_guid() + "] does not exist");
             }
         }
         return openSamba(user, assetSmbRequest);

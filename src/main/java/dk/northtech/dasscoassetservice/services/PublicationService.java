@@ -25,7 +25,7 @@ public class PublicationService {
 //TODO Test, TODO dont publish restricted access
     public PublicationLink publish(PublicationLink publicationLink) {
         if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
-            throw new IllegalArgumentException("Asset guid cannot be null or empty");
+            throw new IllegalArgumentException("Asset asset_guid cannot be null or empty");
         }
         if(Strings.isNullOrEmpty(publicationLink.link())) {
             throw new IllegalArgumentException("Link cannot be null or empty");
@@ -39,7 +39,7 @@ public class PublicationService {
 
     public void pull(PublicationLink publicationLink) {
         if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
-            throw new IllegalArgumentException("Asset guid cannot be null or empty");
+            throw new IllegalArgumentException("Asset asset_guid cannot be null or empty");
         }
         if(Strings.isNullOrEmpty(publicationLink.link())) {
             throw new IllegalArgumentException("Link cannot be null or empty");

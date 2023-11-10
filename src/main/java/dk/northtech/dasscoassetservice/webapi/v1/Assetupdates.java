@@ -35,6 +35,7 @@ public class Assetupdates {
     @POST
     @Path("{assetGuid}/audit")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -55,6 +56,7 @@ public class Assetupdates {
 
     @POST
     @Path("{assetGuid}/assetreceived")
+    @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
@@ -66,9 +68,10 @@ public class Assetupdates {
 
     @POST
     @Path("{assetGuid}/complete")
+    @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "200")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void completeAsset(AssetUpdateRequest assetUpdateRequest) {
         this.assetService.completeAsset(assetUpdateRequest);
@@ -76,6 +79,7 @@ public class Assetupdates {
 
     @PUT
     @Path("{assetGuid}/seterrorstatus")
+    @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))

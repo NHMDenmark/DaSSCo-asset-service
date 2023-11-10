@@ -87,7 +87,7 @@ public class AssetService {
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
     }
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
-        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().guid());
+        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
@@ -105,7 +105,7 @@ public class AssetService {
         if(assetSmbRequest.shareName() == null) {
             throw new IllegalArgumentException("Share id cannot be null");
         }
-        Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().guid());
+        Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
