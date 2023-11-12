@@ -82,7 +82,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 //        Asset child = getTestAsset("testParentRestricted_child");
 //        User user = new User();
 //        user.roles = new HashSet<>(Arrays.asList("dassco-user"));
-//        child.parent_guid = createAsset.guid;
+//        child.parent_guid = createAsset.asset_guid;
 //        DasscoIllegalActionException illegalArgumentException = assertThrows(DasscoIllegalActionException.class, () -> assetService.persistAsset(createAsset, user));
 //        assertThat(illegalArgumentException.getCause()).isEqualTo("parent is restricted");
 //    }

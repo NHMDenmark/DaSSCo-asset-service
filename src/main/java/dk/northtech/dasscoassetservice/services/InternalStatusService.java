@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import dk.northtech.dasscoassetservice.domain.AssetError;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -14,10 +15,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -55,6 +53,10 @@ public class InternalStatusService {
             logger.warn("An error occurred when loading the internal status cache {}", e.getMessage());
             throw new RuntimeException("An error occurred when loading the internal status cache {}", e);
         }
+    }
+
+    public List<AssetError> getFailedAssets() {
+        return internalStatusRepository.getFailed();
     }
 
     public Optional<Map<String, Integer>> getInternalStatusAmt(boolean daily) {

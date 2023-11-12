@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
+import dk.northtech.dasscoassetservice.domain.AssetError;
 import dk.northtech.dasscoassetservice.domain.AssetV1;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
@@ -61,5 +62,15 @@ public class AssetApi {
     public Response getInternalStatusAmt(@PathParam("timeframe") String timeframe) {
         Map<String, Integer> statusAmts = this.internalStatusService.getCachedStatuses(timeframe);
         return Response.status(Response.Status.OK).entity(statusAmts).build();
+    }
+
+    @GET
+    @Path("/failed")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<AssetError> getInternalStatusAmt() {
+        return this.internalStatusService.getFailedAssets();
     }
 }

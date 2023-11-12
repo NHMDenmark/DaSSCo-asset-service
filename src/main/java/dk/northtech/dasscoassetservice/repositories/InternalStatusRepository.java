@@ -1,6 +1,8 @@
 package dk.northtech.dasscoassetservice.repositories;
 
+import dk.northtech.dasscoassetservice.domain.AssetError;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
+import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,8 +24,9 @@ public class InternalStatusRepository {
 
     private static final String boilerplate =
             "CREATE EXTENSION IF NOT EXISTS age;\n" +
-                         "LOAD 'age';\n" +
-                         "SET search_path = ag_catalog, \"$user\", public;";
+            "LOAD 'age';\n" +
+            "SET search_path = ag_catalog, \"$user\", public;";
+
     @Inject
     public InternalStatusRepository(Jdbi jdbi, DataSource dataSource) {
         this.dataSource = dataSource;
@@ -31,42 +35,44 @@ public class InternalStatusRepository {
 
     String totalAmountSql =
             """
-                SELECT * from cypher('dassco', $$
-                        MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
-                        WITH count(assets) as assetcount
-                        OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
-                        WITH count(completed) as complcount, assetcount
-                        OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
-                        WITH count(metadata) as metacount, complcount, assetcount
-                        OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
-                        WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                        OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
-                        WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
-                        RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
-                    $$) as (completed agtype, pending agtype, failed agtype);
-           """;
+                         SELECT * from cypher('dassco', $$
+                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                                 WITH count(assets) as assetcount
+                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                                 WITH count(completed) as complcount, assetcount
+                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                                 WITH count(metadata) as metacount, complcount, assetcount
+                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                                 WITH count(smberror) as smbcount, metacount, complcount, assetcount
+                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
+                                 WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
+                                 RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
+                             $$) as (completed agtype, pending agtype, failed agtype);
+                    """;
+
+
 
     String dailyAmountSql =
             """
-                SELECT * from cypher('dassco', $$
-                        MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
-                        WHERE ae.timestamp >= $today
-                        WITH count(assets) as assetcount
-                        OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
-                        WHERE ce.timestamp >= $today
-                        WITH count(completed) as complcount, assetcount
-                        OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
-                        WHERE me.timestamp >= $today
-                        WITH count(metadata) as metacount, complcount, assetcount
-                        OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
-                        WHERE smbe.timestamp >= $today
-                        WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                        OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
-                        WHERE erde.timestamp >= $today
-                        WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
-                        RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
-                    $$, #params) as (completed agtype, pending agtype, failed agtype);
-           """;
+                         SELECT * from cypher('dassco', $$
+                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                                 WHERE ae.timestamp >= $today
+                                 WITH count(assets) as assetcount
+                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                                 WHERE ce.timestamp >= $today
+                                 WITH count(completed) as complcount, assetcount
+                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                                 WHERE me.timestamp >= $today
+                                 WITH count(metadata) as metacount, complcount, assetcount
+                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                                 WHERE smbe.timestamp >= $today
+                                 WITH count(smberror) as smbcount, metacount, complcount, assetcount
+                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
+                                 WHERE erde.timestamp >= $today
+                                 WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
+                                 RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
+                             $$, #params) as (completed agtype, pending agtype, failed agtype);
+                    """;
 
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
@@ -110,6 +116,39 @@ public class InternalStatusRepository {
                         return amountMap;
                     })
                     .findFirst();
+        });
+    }
+
+    String assetErrorSQL =
+            """
+                         SELECT * FROM cypher('dassco', $$
+                                                          MATCH (a:Asset {internal_status: 'SMB_ERROR'})
+                                                          return a.asset_guid, a.parent_guid, a.internal_status
+                                                      $$) as (asset_guid text, parent_guid text, status text)
+                                  UNION ALL                    \s
+                                  SELECT * FROM cypher('dassco', $$
+                                                          MATCH (a:Asset {internal_status: 'ERDA_ERROR'})
+                                                          return a.asset_guid, a.parent_guid, a.internal_status
+                                                      $$) as (asset_guid text, parent_guid text, status text)
+                                                      ;
+                    """;
+    public List<AssetError> getFailed() {
+        return jdbi.withHandle(handle -> {
+            handle.execute(boilerplate);
+            return handle.createQuery(this.assetErrorSQL)
+                    .map((rs, ctx) -> {
+                        AssetError assetError = new AssetError();
+//                        String parentId = null;
+//                        rs.getString("parent_guid");
+//                        if (!rs.wasNull()) {
+//                            parentId = rs.getObject("parent_guid", Agtype.class).getString();
+//                        }
+
+                        assetError.asset = new MinimalAsset(rs.getString("asset_guid"), rs.getString("parent_guid"));
+                        assetError.status = InternalStatus.valueOf(rs.getString("status"));
+                        return assetError;
+                    })
+                    .list();
         });
     }
 }
