@@ -22,7 +22,7 @@ public interface SpecimenRepository extends SqlObject {
                         , $$
                             MATCH (i:Institution {name: $institution_name})
                             MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset {name: $guid})
+                            MATCH (a:Asset {name: $asset_guid})
                             MERGE (s:Specimen{name: $specimen_barcode, specimen_barcode: $specimen_barcode})                       
                             MERGE (s)-[u:USED_BY]->(a)
                             MERGE (s)-[bt:IS_PART_OF]->(c)
@@ -37,7 +37,7 @@ public interface SpecimenRepository extends SqlObject {
                         , $$
                             MATCH (i:Institution {name: $institution_name})
                             MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset{name: $guid})
+                            MATCH (a:Asset{name: $asset_guid})
                             MATCH (s:Specimen{name: $specimen_barcode})
                             WHERE NOT EXISTS((s)-[:CREATED_BY]-(:Asset))
                             MERGE (s)-[scb:CREATED_BY]->(a)
@@ -50,7 +50,7 @@ public interface SpecimenRepository extends SqlObject {
                         , $$
                             MATCH (i:Institution {name: $institution_name})
                             MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset{name: $guid})
+                            MATCH (a:Asset{name: $asset_guid})
                             MATCH (s:Specimen{name: $specimen_barcode})
                             MATCH (s)-[u:USED_BY]->(a)
                             MATCH (s)-[bt:IS_PART_OF]->(c)

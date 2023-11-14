@@ -52,7 +52,6 @@ public class AssetMapper implements RowMapper<Asset> {
         tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null ? tag.getValue().toString() : null));
         asset.tags = tagsMap;
         AgtypeList list = specimens.getList();
-//        System.out.println(list);
         asset.specimens = list.stream().map(x -> mapSpecimen((AgtypeMap) x)).collect(Collectors.toList());
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
         rs.getString("user_name");

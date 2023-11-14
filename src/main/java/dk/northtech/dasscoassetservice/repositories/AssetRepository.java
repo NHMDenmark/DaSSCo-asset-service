@@ -123,7 +123,8 @@ public interface AssetRepository extends SqlObject {
                          , a.asset_pid
                          , a.status
                          , a.multi_specimen
-                         , a.funding, a.subject
+                         , a.funding
+                         , a.subject
                          , a.payload_type
                          , a.file_formats
                          , a.asset_taken_date
@@ -140,7 +141,6 @@ public interface AssetRepository extends SqlObject {
                          , e.timestamp
                          , a.date_asset_finalised
                          , u.name
-                         , a.preparation_type
                          , a.date_metadata_taken
                          , a.date_asset_taken
                       $$
@@ -167,7 +167,6 @@ public interface AssetRepository extends SqlObject {
                     , creation_date agtype
                     , date_asset_finalised agtype
                     , user_name agtype
-                    , preparation_type agtype
                     , date_metadata_taken agtype
                     , date_asset_taken agtype);
                   """;
