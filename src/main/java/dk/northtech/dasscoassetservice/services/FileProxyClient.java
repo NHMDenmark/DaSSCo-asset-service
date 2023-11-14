@@ -128,6 +128,18 @@ public class FileProxyClient {
         Gson gson = new Gson();
         String json = gson.toJson(assetSmbRequest);
         SambaInfo sambaInfo = new SambaInfo();
+        if(syncErda) {
+            if(assetSmbRequest.minimalAsset() == null) {
+                throw new IllegalArgumentException("Asset missing");
+            }
+            Optional<Asset> asset = assetService.getAsset(assetSmbRequest.minimalAsset().asset_guid());
+            if(asset.isEmpty()) {
+                throw new IllegalArgumentException("Asset not found");
+            }
+            if(asset.get().asset_locked) {
+                throw new DasscoIllegalActionException("Asset locked");
+            }
+        }
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .header("Authorization","Bearer " + user.token)

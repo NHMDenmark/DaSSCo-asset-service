@@ -111,6 +111,9 @@ public class AssetService {
         }
         //Mark as asset received
         Asset asset = optAsset.get();
+        if(asset.asset_locked) {
+            throw new DasscoIllegalActionException("Asset is locked");
+        }
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA
         // If media is successfully moved to ERDA fileproxy will contact assetService and set status to completed.
