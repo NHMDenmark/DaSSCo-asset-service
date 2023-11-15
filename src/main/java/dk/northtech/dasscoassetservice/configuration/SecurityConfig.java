@@ -4,8 +4,10 @@ import dk.northtech.dasscoassetservice.configuration.httpheaders.CorsHeaders;
 import dk.northtech.dasscoassetservice.configuration.httpheaders.CspHeaders;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -33,18 +35,11 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    JwtAuthenticationConverter keycloakJwtAuthenticationConverter = new JwtAuthenticationConverter();
-    keycloakJwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-            (Jwt jwt) ->
-                    jwt.<Map<String, List<String>>>getClaim("realm_access")
-                            .getOrDefault("roles", Collections.emptyList())
-                            .stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                            .collect(Collectors.toList())
-    );
+    JwtAuthenticationConverter jwtAuthenticationConverter = getJwtAuthenticationConverter();
 
     http
             // Default is to use a CorsConfigurationSource bean (provided below).
-            .httpBasic().disable()
+            .httpBasic(AbstractHttpConfigurer::disable)
             .sessionManagement(
                     sessionManagement ->
                             sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -52,24 +47,31 @@ public class SecurityConfig {
             .oauth2ResourceServer(
                     httpSecurityOAuth2ResourceServerConfigurer ->
                             httpSecurityOAuth2ResourceServerConfigurer
-                                    .jwt()
-                                    .jwtAuthenticationConverter(keycloakJwtAuthenticationConverter)
+                                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
             )
-            .authorizeRequests(
+            .authorizeHttpRequests(
                     authorizeRequestsCustomizer ->
                             authorizeRequestsCustomizer
                                     // can use .authenticated() and do the role check on each JAX-RS method
                                     .anyRequest().permitAll() // use this until we know what to lock
             )
-            .cors()
-            .and()
-            .headers()
-            .addHeaderWriter(this.cspHeaders::writeHeaders);
-
-    // For now, disable CSRF token validation.
-    http.csrf().disable();
+            .cors(Customizer.withDefaults())
+            .headers(headers -> headers.addHeaderWriter(this.cspHeaders::writeHeaders))
+            .csrf(AbstractHttpConfigurer::disable);
 
     return http.build();
+  }
+
+  private JwtAuthenticationConverter getJwtAuthenticationConverter() {
+    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
+            (Jwt jwt) ->
+                    jwt.<Map<String, List<String>>>getClaim("realm_access")
+                            .getOrDefault("roles", Collections.emptyList())
+                            .stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                            .collect(Collectors.toList())
+    );
+    return jwtAuthenticationConverter;
   }
 
   @Bean

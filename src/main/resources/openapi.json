@@ -38,9 +38,33 @@
         } ]
       }
     },
-    "/v1/assets/internalstatus/{timeframe}" : {
+    "/v1/assets/failed" : {
       "get" : {
         "operationId" : "getInternalStatusAmt",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : { }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/internalstatus/{timeframe}" : {
+      "get" : {
+        "operationId" : "getInternalStatusAmt_1",
         "parameters" : [ {
           "name" : "timeframe",
           "in" : "path",
@@ -75,7 +99,7 @@
         "operationId" : "assetreceived",
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/AssetUpdateRequest"
               }
@@ -120,7 +144,7 @@
         } ],
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Audit"
               }
@@ -157,7 +181,7 @@
         "operationId" : "completeAsset",
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/AssetUpdateRequest"
               }
@@ -165,15 +189,6 @@
           }
         },
         "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
-          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -1513,6 +1528,29 @@
           }
         }
       },
+      "AssetError" : {
+        "type" : "object",
+        "properties" : {
+          "asset" : {
+            "$ref" : "#/components/schemas/MinimalAsset"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "SMB_ERROR", "ERDA_ERROR" ]
+          }
+        }
+      },
+      "MinimalAsset" : {
+        "type" : "object",
+        "properties" : {
+          "asset_guid" : {
+            "type" : "string"
+          },
+          "parent_guid" : {
+            "type" : "string"
+          }
+        }
+      },
       "Asset" : {
         "type" : "object",
         "properties" : {
@@ -1763,17 +1801,6 @@
             "type" : "string"
           },
           "digitiser" : {
-            "type" : "string"
-          }
-        }
-      },
-      "MinimalAsset" : {
-        "type" : "object",
-        "properties" : {
-          "guid" : {
-            "type" : "string"
-          },
-          "parent_guid" : {
             "type" : "string"
           }
         }
