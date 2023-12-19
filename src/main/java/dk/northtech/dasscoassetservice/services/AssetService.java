@@ -56,20 +56,24 @@ public class AssetService {
         return true;
     }
 
-    public boolean deleteAsset(String user, String assetGuid) {
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if(Strings.isNullOrEmpty(user)) {
+    public boolean deleteAsset(String assetGuid, User user) {
+        String userId = user.username;
+        if(Strings.isNullOrEmpty(userId)) {
             throw new IllegalArgumentException("User is null");
         }
+        Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        if(asset.asset_deleted_date != null) {
+        if(asset.asset_locked) {
+            throw new DasscoIllegalActionException("Asset is locked");
+        }
+        if(asset.date_asset_deleted != null) {
             throw new IllegalArgumentException("Asset is already deleted");
         }
-        Event event = new Event(user, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(user, event, asset);
+        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
         return true;
     }
 
@@ -151,7 +155,7 @@ public class AssetService {
         if(Strings.isNullOrEmpty(updatedAsset.updateUser)) {
             throw new IllegalArgumentException("Update user must be provided");
         }
-        validateAsset(updatedAsset );
+        validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
         Set<String> collect = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
 
@@ -162,6 +166,9 @@ public class AssetService {
         existing.pipeline = updatedAsset.pipeline;
         existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
+        if(existing.asset_locked && !updatedAsset.asset_locked) {
+            throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+        }
         existing.asset_locked = updatedAsset.asset_locked;
         existing.subject = updatedAsset.subject;
         existing.restricted_access = updatedAsset.restricted_access;
@@ -177,16 +184,17 @@ public class AssetService {
     }
 
     void validateAssetFields(Asset a) {
-        if(a.asset_pid == null){
-            throw new IllegalArgumentException("PID cannot be null");
-        }
         if(a.asset_guid == null) {
-            throw new IllegalArgumentException("GUID cannot be null");
+            throw new IllegalArgumentException("asset_guid cannot be null");
+        }
+        if(a.asset_pid == null){
+            throw new IllegalArgumentException("asset_pid cannot be null");
         }
         if(a.status == null) {
             throw new IllegalArgumentException("Status cannot be null");
         }
     }
+
     void validateAsset(Asset asset){
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
         if(ifExists.isEmpty()){
@@ -235,7 +243,7 @@ public class AssetService {
         validateAsset(asset);
 
         // Default values on creation
-        asset.last_updated_date = Instant.now();
+        asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         jdbi.onDemand(AssetRepository.class)
