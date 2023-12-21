@@ -53,7 +53,7 @@ public class Asset {
     //References
     @Schema(description = "The institution", example = "NNAD")
     public String institution;
- //   @Schema(description = "The institution", example = "NNAD")
+
     @Schema(description = "GUID of the parent asset", example = "ti-a02-202305241657")
     public String parent_guid;
     @Schema(description = "Name of the collection the asset belongs to", example = "test-collection")

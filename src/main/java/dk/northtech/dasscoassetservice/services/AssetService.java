@@ -23,16 +23,17 @@ public class AssetService {
     private final WorkstationService workstationService;
     private final StatisticsDataService statisticsDataService;
     private final FileProxyClient fileProxyClient;
-
+    private final PipelineService pipelineService;
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService, PipelineService pipelineService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
         this.fileProxyClient = fileProxyClient;
         this.statisticsDataService = statisticsDataService;
+        this.pipelineService = pipelineService;
         this.jdbi = jdbi;
     }
 
@@ -203,6 +204,10 @@ public class AssetService {
         Optional<Collection> collectionOpt = collectionService.findCollection(asset.collection);
         if(collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
+        }
+        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
+        if(pipelineOpt.isEmpty()) {
+            throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
         }
         if(asset.asset_guid.equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");

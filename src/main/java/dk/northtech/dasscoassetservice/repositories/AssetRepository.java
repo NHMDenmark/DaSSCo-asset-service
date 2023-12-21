@@ -447,7 +447,7 @@ public interface AssetRepository extends SqlObject {
                     builder.addNull("date_asset_taken");
                 }
                 if (asset.digitiser != null) {
-                    builder.add("digitiser", asset.date_asset_finalised.toEpochMilli());
+                    builder.add("digitiser", asset.digitiser);
                 } else {
                     builder.addNull("digitiser");
                 }
