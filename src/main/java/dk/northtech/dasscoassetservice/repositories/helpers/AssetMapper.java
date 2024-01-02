@@ -72,7 +72,7 @@ public class AssetMapper implements RowMapper<Asset> {
         rs.getString("date_asset_taken");
         if (!rs.wasNull()) {
             Agtype assetTakenDate = rs.getObject("date_asset_taken", Agtype.class);
-            asset.asset_taken_date = Instant.ofEpochMilli(assetTakenDate.getLong());
+            asset.date_asset_taken = Instant.ofEpochMilli(assetTakenDate.getLong());
         }
         rs.getString("payload_type");
         if (!rs.wasNull()) {
