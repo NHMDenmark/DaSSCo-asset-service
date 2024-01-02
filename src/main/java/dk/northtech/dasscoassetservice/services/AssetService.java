@@ -158,9 +158,9 @@ public class AssetService {
         }
         validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
-        Set<String> collect = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+        Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
 
-        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !collect.contains(s.barcode())).collect(Collectors.toList());
+        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation= updatedAsset.workstation;
@@ -179,16 +179,17 @@ public class AssetService {
         existing.digitiser = updatedAsset.digitiser;
         existing.parent_guid = updatedAsset.parent_guid;
         existing.updateUser = updatedAsset.updateUser;
+        existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
         return existing;
     }
 
     void validateAssetFields(Asset a) {
-        if(a.asset_guid == null) {
+        if(Strings.isNullOrEmpty(a.asset_guid)) {
             throw new IllegalArgumentException("asset_guid cannot be null");
         }
-        if(a.asset_pid == null){
+        if(Strings.isNullOrEmpty(a.asset_pid)){
             throw new IllegalArgumentException("asset_pid cannot be null");
         }
         if(a.status == null) {
@@ -220,6 +221,7 @@ public class AssetService {
         if(workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)){
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
+
 //        if(asset.parent_guid != null) {
 //            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
 //            if(parentOpt.isEmpty()) {

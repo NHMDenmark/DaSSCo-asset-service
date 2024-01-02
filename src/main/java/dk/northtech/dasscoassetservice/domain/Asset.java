@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Asset {
-    @Schema(description = "See answer for asset_guid. One possible PID is to construct a URL like pid.dassco.dk/GUID1234555677243. This is then the unique and resolvable identifier that we will use when sharing.", example = "asdf-1234-3333-1000")
+    @Schema(description = "See asset_guid. One possible PID is to construct a URL like pid.dassco.dk/GUID1234555677243. This is then the unique and resolvable identifier that we will use when sharing.", example = "asdf-1234-3333-1000")
     public String asset_pid;
     @Schema(description = "This is the unique GUID generated for each asset and is generated before incorporation into the storage system. Parts of the string are defined based on things such as the workstation and institution, the other parts are randomly generated. This is to enable a unique name for each asset. It is mandatory for our funding that we also have persistent identifiers for each asset (ideally resolvable as well). So we imagined an easy way to do this would be to incorporate the guid into a persistent identifier that can be clicked on to resolve (see asset_pid).", example = "ti-a01-202305241657")
     public String asset_guid;

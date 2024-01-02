@@ -64,6 +64,50 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
     }
 
+    //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
+    @Test
+    void createAssetUpdateWithMaxNull() {
+        Asset createAsset = getTestAsset("createAssetUpdateWithMaxNull");
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset, user);
+        Asset asset = new Asset();
+        asset.pipeline = "i1_p1";
+        asset.workstation = "i1_w1";
+        asset.institution = "institution_1";
+        asset.collection = "i1_c1";
+        asset.asset_pid = "createAssetUpdateWithMaxNull_pid";
+        asset.asset_guid = "createAssetUpdateWithMaxNull";
+        asset.updateUser = "thbo";
+        asset.status = AssetStatus.ISSUE_WITH_METADATA;
+        assetService.updateAsset(asset);
+        Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateWithMaxNull");
+        assertThat(resultOpt.isPresent()).isTrue();
+    }
+    //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
+    @Test
+    void createAssetMaxNulls() {
+        Asset createAsset = new Asset();
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "createAssetMaxNulls_pid";
+        createAsset.asset_guid = "createAssetMaxNulls";
+        createAsset.updateUser = "thbo";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset, user);
+        assetService.updateAsset(createAsset);
+        Optional<Asset> resultOpt = assetService.getAsset("createAssetMaxNulls");
+        assertThat(resultOpt.isPresent()).isTrue();
+    }
+
 //    @Test
 //    void testParentRestricted() {
 //        Asset createAsset = getTestAsset("testParentRestricted");
