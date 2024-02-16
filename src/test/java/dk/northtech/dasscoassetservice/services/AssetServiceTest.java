@@ -32,9 +32,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user, 10);
         //Check that the same asset cannot be added multiple times
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 11));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset createAsset already exists");
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -46,7 +46,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.tags.get("Tag2")).isEqualTo("value2");
         assertThat(result.institution).isEqualTo("institution_1");
         assertThat(result.digitiser).isEqualTo("Karl-Børge");
-        assertThat(result.internal_status).isEqualTo(InternalStatus.SMB_ERROR);
+        assertThat(result.internal_status).isEqualTo(InternalStatus.ERDA_FAILED);
         assertThat(result.parent_guid).isNull();
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-2");
@@ -76,7 +76,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,10);
         Asset asset = new Asset();
         asset.pipeline = "i1_p1";
         asset.workstation = "i1_w1";
@@ -102,7 +102,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.asset_guid = "createAssetMaxNulls";
         createAsset.updateUser = "thbo";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,10);
         assetService.updateAsset(createAsset);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetMaxNulls");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -142,7 +142,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,10);
         assetService.deleteAsset("deleteAsset", user);
         Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset");
         Asset result = deleteAssetOpt.get();
@@ -161,7 +161,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,10);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
@@ -170,7 +170,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result);
         result.payload_type = "nuclear";
         assetService.updateAsset(result);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null),"i1_w1", "i1_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null, null, null),"i1_w1", "i1_p1", "bob"));
         assetService.auditAsset(new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid);
         assertThat(resultEvents.size()).isEqualTo(5);
@@ -198,7 +198,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        createAsset = assetService.persistAsset(createAsset, user);
+        createAsset = assetService.persistAsset(createAsset, user, 11);
 
         createAsset.updateUser = "Uffe Updater";
         createAsset.asset_locked = true;
@@ -224,7 +224,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.asset_pid = "pid-updateAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user, 11);
         asset.tags.remove("Tag1");
         asset.tags.remove("Tag2");
         asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", "slide"));
@@ -276,7 +276,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-lockUnlock";
         asset.asset_locked = true;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user, 11);
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         Asset lockedAsset = lockedAssetOpt.get();
         assertThat(lockedAsset.asset_locked).isTrue();
@@ -297,11 +297,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user,11);
         DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
 //        assetService.completeAsset(asset.asset_guid);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null),"i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null, null, null),"i2_w1", "i2_p1", "bob"));
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }

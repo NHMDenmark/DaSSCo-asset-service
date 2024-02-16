@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.AssetError;
+import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class InternalStatusService {
@@ -55,8 +57,8 @@ public class InternalStatusService {
         }
     }
 
-    public List<AssetError> getFailedAssets() {
-        return internalStatusRepository.getFailed();
+    public List<AssetError> getWorkInProgressAssets(boolean onlyFailed) {
+        return internalStatusRepository.getFailed().stream().filter(x -> !onlyFailed || x.status == InternalStatus.ERDA_ERROR || x.status == InternalStatus.ERDA_FAILED).collect(Collectors.toList());
     }
 
     public Optional<Map<String, Integer>> getInternalStatusAmt(boolean daily) {

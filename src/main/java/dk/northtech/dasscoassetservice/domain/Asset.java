@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -59,7 +60,7 @@ public class Asset {
     @Schema(description = "Name of the collection the asset belongs to", example = "test-collection")
     public String collection;
     @Schema(description = "The location on the storage where asset media can be uploaded")
-    public SambaInfo sambaInfo;
+    public HttpInfo httpInfo;
     @Schema(description = "An internal status field used to track the status of the upload of related media", example = "COMPLETED")
     public InternalStatus internal_status;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")

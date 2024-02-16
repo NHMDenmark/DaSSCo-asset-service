@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -134,7 +135,7 @@ public class AssetService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.SMB_ERROR) {
+        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
@@ -241,23 +242,26 @@ public class AssetService {
 
 
 
-    public Asset persistAsset(Asset asset, User user) {
+    public Asset persistAsset(Asset asset, User user, int allocation) {
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
         validateAssetFields(asset);
         validateAsset(asset);
-
+        //TODO
+        asset.httpInfo = fileProxyClient.openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
-        jdbi.onDemand(AssetRepository.class)
-                .createAsset(asset);
-        asset.sambaInfo = fileProxyClient.openSamba(new MinimalAsset(asset.asset_guid, asset.parent_guid), user);
-        if(asset.sambaInfo.sambaRequestStatus != SambaRequestStatus.OK_OPEN) {
-            setFailedStatus(asset.asset_guid, InternalStatus.SMB_ERROR.name());
+
+        if(asset.httpInfo.httpAllocationStatus() == HttpAllocationStatus.SUCCESS) {
+            jdbi.onDemand(AssetRepository.class)
+                    .createAsset(asset);
+        } else {
+            //Do not persist azzet if share wasnt created
+            return asset;
         }
         this.statisticsDataService.addAssetToCache(asset);
         return asset;

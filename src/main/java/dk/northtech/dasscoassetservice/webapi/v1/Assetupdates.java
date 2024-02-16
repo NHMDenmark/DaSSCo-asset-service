@@ -107,8 +107,9 @@ public class Assetupdates {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset createAsset(Asset asset
-            , @Context SecurityContext securityContext) {
-        return this.assetService.persistAsset(asset, UserMapper.from(securityContext));
+            , @Context SecurityContext securityContext
+            , @QueryParam("allocation_mb") int allocation) {
+        return this.assetService.persistAsset(asset, UserMapper.from(securityContext), allocation);
     }
 
 

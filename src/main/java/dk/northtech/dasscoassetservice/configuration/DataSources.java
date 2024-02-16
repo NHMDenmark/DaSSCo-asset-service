@@ -34,7 +34,8 @@ public class DataSources {
     return Jdbi.create(dataSource)
             .installPlugin(new PostgresPlugin())
             .installPlugin(new SqlObjectPlugin())
-            .installPlugin(new Jackson2Plugin()).setSqlParser(new HashPrefixSqlParser());
+            .installPlugin(new Jackson2Plugin())
+            .setSqlParser(new HashPrefixSqlParser());
   }
 }
 

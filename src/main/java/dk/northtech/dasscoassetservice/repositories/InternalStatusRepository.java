@@ -123,13 +123,27 @@ public class InternalStatusRepository {
             """
                          SELECT * FROM cypher('dassco', $$
                                                           MATCH (a:Asset {internal_status: 'SMB_ERROR'})
-                                                          return a.asset_guid, a.parent_guid, a.internal_status
-                                                      $$) as (asset_guid text, parent_guid text, status text)
-                                  UNION ALL                    \s
+                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                                                          return a.asset_guid, a.internal_status, i.name, c.name , pa.asset_guid
+                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)
+                                  UNION ALL
                                   SELECT * FROM cypher('dassco', $$
                                                           MATCH (a:Asset {internal_status: 'ERDA_ERROR'})
-                                                          return a.asset_guid, a.parent_guid, a.internal_status
-                                                      $$) as (asset_guid text, parent_guid text, status text)
+                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                                                          return a.asset_guid, a.internal_status, i.name, c.name, pa.asset_guid
+                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)
+                                  UNION ALL
+                                  SELECT * FROM cypher('dassco', $$
+                                                          MATCH (a:Asset {internal_status: 'METADATA_RECEIVED'})
+                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                                                          return a.asset_guid, a.internal_status, i.name, c.name, pa.asset_guid
+                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)                                                        
                                                       ;
                     """;
     public List<AssetError> getFailed() {
@@ -144,7 +158,10 @@ public class InternalStatusRepository {
 //                            parentId = rs.getObject("parent_guid", Agtype.class).getString();
 //                        }
 
-                        assetError.asset = new MinimalAsset(rs.getString("asset_guid"), rs.getString("parent_guid"));
+                        assetError.asset = new MinimalAsset(rs.getString("asset_guid")
+                                , rs.getString("parent_guid")
+                                , rs.getString("institution")
+                                , rs.getString("collection"));
                         assetError.status = InternalStatus.valueOf(rs.getString("status"));
                         return assetError;
                     })
