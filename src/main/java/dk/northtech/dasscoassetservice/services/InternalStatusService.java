@@ -3,7 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import dk.northtech.dasscoassetservice.domain.AssetError;
+import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import jakarta.inject.Inject;
@@ -57,8 +57,15 @@ public class InternalStatusService {
         }
     }
 
-    public List<AssetError> getWorkInProgressAssets(boolean onlyFailed) {
-        return internalStatusRepository.getFailed().stream().filter(x -> !onlyFailed || x.status == InternalStatus.ERDA_ERROR || x.status == InternalStatus.ERDA_FAILED).collect(Collectors.toList());
+    public List<AssetStatusInfo> getWorkInProgressAssets(boolean onlyFailed) {
+        return internalStatusRepository.getInprogress().stream()
+                .filter(x -> !onlyFailed
+                             || x.status() == InternalStatus.ERDA_ERROR
+                             )
+                .collect(Collectors.toList());
+    }
+    public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
+        return internalStatusRepository.getAssetStatus(assetGuid);
     }
 
     public Optional<Map<String, Integer>> getInternalStatusAmt(boolean daily) {

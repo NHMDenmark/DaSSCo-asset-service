@@ -1,7 +1,11 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -13,11 +17,15 @@ import java.util.Optional;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
-    @Inject
-    AssetService assetService;
+//    @Inject
+//    AssetService assetService;
+//
+
 
     User user = new User("Teztuzer");
     @Test
@@ -46,7 +54,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.tags.get("Tag2")).isEqualTo("value2");
         assertThat(result.institution).isEqualTo("institution_1");
         assertThat(result.digitiser).isEqualTo("Karl-Børge");
-        assertThat(result.internal_status).isEqualTo(InternalStatus.ERDA_FAILED);
+        assertThat(result.internal_status).isEqualTo(InternalStatus.METADATA_RECEIVED);
         assertThat(result.parent_guid).isNull();
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-2");

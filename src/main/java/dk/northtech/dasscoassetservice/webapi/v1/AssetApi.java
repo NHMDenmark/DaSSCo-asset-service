@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.AssetError;
 import dk.northtech.dasscoassetservice.domain.AssetV1;
+import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -65,7 +66,21 @@ public class AssetApi {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetError> getInternalStatusAmt(@QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {
+    public List<AssetStatusInfo> getInternalStatusAmt(@QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {
         return this.internalStatusService.getWorkInProgressAssets(onlyFailed);
+    }
+
+    @GET
+    @Path("/status/{assetGuid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER,SecurityRoles.DEVELOPER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Response getAssetStatus(@PathParam("assetGuid") String assetGuid) {
+        Optional<AssetStatusInfo> assetStatus = this.internalStatusService.getAssetStatus(assetGuid);
+        if(!assetStatus.isPresent()) {
+            return Response.status(404).build();
+        }
+        return Response.status(200).entity(assetStatus.get()).build();
     }
 }

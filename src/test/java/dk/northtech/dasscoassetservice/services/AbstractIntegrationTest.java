@@ -1,5 +1,9 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.domain.MinimalAsset;
+import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -10,6 +14,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.*;
+
 @SpringBootTest
 @Testcontainers
 @DirtiesContext
@@ -17,19 +25,27 @@ public class AbstractIntegrationTest {
     @Container
     static GenericContainer postgreSQL = new GenericContainer(DockerImageName.parse("apache/age:v1.1.0"))
             .withExposedPorts(5432)
-            .withEnv("POSTGRES_DB", "dassco_asset_service")
-            .withEnv("POSTGRES_USER", "dassco_asset_service")
-            .withEnv("POSTGRES_PASSWORD", "dassco_asset_service");
+            .withEnv("POSTGRES_DB", "dassco_file_proxy")
+            .withEnv("POSTGRES_USER", "dassco_file_proxy")
+            .withEnv("POSTGRES_PASSWORD", "dassco_file_proxy");
 
     @Inject InstitutionService institutionService;
     @Inject PipelineService pipelineService;
     @Inject StatisticsDataService statisticsDataService;
-    @Inject AssetService assetService;
+    AssetService assetService;
+
+    @Inject
+    void setAssetService(AssetService assetService) {
+        AssetService spyAssetService = spy(assetService);
+        HttpInfo success = new HttpInfo("/", "host.dk", 10000, 20000, 9990, 10, "success", HttpAllocationStatus.SUCCESS);
+        doReturn(success).when(spyAssetService).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
+        this.assetService = spyAssetService;
+    }
 
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
         // These tests assume the dev dataset, so roll that context on:
         registry.add("spring.liquibase.contexts", () -> "default, development");
-        registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_asset_service");
+        registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_file_proxy");
     }
 }

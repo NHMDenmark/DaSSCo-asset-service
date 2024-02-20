@@ -133,6 +133,8 @@ public interface AssetRepository extends SqlObject {
                          , pa.asset_guid 
                          , a.restricted_access
                          , a.tags
+                         , a.error_message
+                         , a.error_timestamp
                          , collect(s)
                          , i.name
                          , c.name
@@ -159,6 +161,8 @@ public interface AssetRepository extends SqlObject {
                     , parent_guid agtype
                     , restricted_access agtype
                     , tags agtype
+                    , error_message agtype
+                    , error_timestamp agtype
                     , specimens agtype
                     , institution_name agtype
                     , collection_name agtype
@@ -351,6 +355,8 @@ public interface AssetRepository extends SqlObject {
                             MATCH (a:Asset {name: $asset_guid})
                             SET a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
+                            , a.error_message = $error_message
+                            , a.error_timestamp = $error_timestamp
                         $$
                         , #params) as (a agtype);
                         """;
@@ -359,7 +365,13 @@ public interface AssetRepository extends SqlObject {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("asset_guid", asset.asset_guid)
                         .add("internal_status", asset.internal_status.name())
+                        .add("error_message", asset.error_message)
                         .add("asset_locked", asset.asset_locked);
+                if (asset.error_timestamp != null) {
+                    builder.add("error_timestamp", asset.error_timestamp.toEpochMilli());
+                } else {
+                    builder.add("error_timestamp", (String) null);
+                }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)

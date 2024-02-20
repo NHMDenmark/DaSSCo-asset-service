@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
-import dk.northtech.dasscoassetservice.webapi.domain.SambaRequestStatus;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
@@ -99,6 +99,8 @@ public class AssetService {
         }
         Asset asset = optAsset.get();
         asset.internal_status = InternalStatus.COMPLETED;
+        asset.error_message = null;
+        asset.error_timestamp = null;
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
         return true;
@@ -121,21 +123,19 @@ public class AssetService {
             throw new DasscoIllegalActionException("Asset is locked");
         }
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
-        // Close samba and sync ERDA
-        // If media is successfully moved to ERDA fileproxy will contact assetService and set status to completed.
-        fileProxyClient.closeSamba(user, assetSmbRequest, true);
+        // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
         return true;
     }
 
-    public boolean setFailedStatus(String assetGuid, String status) {
+    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
             assetStatus = InternalStatus.valueOf(status);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED) {
+        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED && assetStatus != InternalStatus.ASSET_RECEIVED) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
@@ -144,6 +144,10 @@ public class AssetService {
         }
         Asset asset = optAsset.get();
         asset.internal_status = assetStatus;
+        asset.error_message = errorMessage;
+        if(!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
+            asset.error_timestamp = Instant.now();
+        }
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
         return true;
@@ -249,8 +253,8 @@ public class AssetService {
         }
         validateAssetFields(asset);
         validateAsset(asset);
-        //TODO
-        asset.httpInfo = fileProxyClient.openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+
+        asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
@@ -267,6 +271,10 @@ public class AssetService {
         return asset;
     }
 
+    //This is here for mocking
+    public HttpInfo openHttpShare(MinimalAsset minimalAsset, User updateUser, int allocation) {
+        return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);
+    }
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }

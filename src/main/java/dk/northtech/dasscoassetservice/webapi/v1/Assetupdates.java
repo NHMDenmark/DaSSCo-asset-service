@@ -78,7 +78,7 @@ public class Assetupdates {
     }
 
     @PUT
-    @Path("{assetGuid}/seterrorstatus")
+    @Path("{assetGuid}/setstatus")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
@@ -86,8 +86,9 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public boolean setErrorStatus(
             @PathParam("assetGuid") String assetGuid
-            , @QueryParam("newStatus") String newStatus) {
-        return this.assetService.setFailedStatus(assetGuid, newStatus);
+            , @QueryParam("newStatus") String newStatus
+            , @QueryParam("errorMessage") String errorMessage) {
+        return this.assetService.setAssetStatus(assetGuid, newStatus, errorMessage);
     }
 
     @GET

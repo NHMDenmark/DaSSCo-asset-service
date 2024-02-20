@@ -4,7 +4,7 @@ public record StatisticsData(
         String instituteName,
         String pipelineName,
         String workstationName,
-        Long createdDate, // event's timestamp in millis
+        Long createdDate, // event's error_timestamp in millis
         Integer specimens // number of specimens in the specific asset
 ) {
     public StatisticsData(String instituteName, String pipelineName, String workstationName, Long createdDate, Integer specimens) {

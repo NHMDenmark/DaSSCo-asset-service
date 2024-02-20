@@ -1,8 +1,7 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.AssetError;
+import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
-import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -12,6 +11,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,50 +122,87 @@ public class InternalStatusRepository {
     String assetErrorSQL =
             """
                          SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'SMB_ERROR'})
+                                                          MATCH (a:Asset {internal_status: 'ASSET_RECEIVED'})
                                                           MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                                                           MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                                                           OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, i.name, c.name , pa.asset_guid
-                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)
+                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
+                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
                                   UNION ALL
                                   SELECT * FROM cypher('dassco', $$
                                                           MATCH (a:Asset {internal_status: 'ERDA_ERROR'})
                                                           MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                                                           MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                                                           OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)
+                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name, pa.asset_guid
+                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
                                   UNION ALL
                                   SELECT * FROM cypher('dassco', $$
                                                           MATCH (a:Asset {internal_status: 'METADATA_RECEIVED'})
                                                           MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                                                           MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                                                           OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, institution text, collection text, parent_guid text)                                                        
+                                                          return a.asset_guid, a.internal_status, a.error_timestamp, a.error_message, i.name, c.name, pa.asset_guid
+                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)                                                        
                                                       ;
                     """;
-    public List<AssetError> getFailed() {
+    public List<AssetStatusInfo> getInprogress() {
         return jdbi.withHandle(handle -> {
             handle.execute(boilerplate);
             return handle.createQuery(this.assetErrorSQL)
                     .map((rs, ctx) -> {
-                        AssetError assetError = new AssetError();
-//                        String parentId = null;
-//                        rs.getString("parent_guid");
-//                        if (!rs.wasNull()) {
-//                            parentId = rs.getObject("parent_guid", Agtype.class).getString();
-//                        }
-
-                        assetError.asset = new MinimalAsset(rs.getString("asset_guid")
+                        Instant errorTimestamp = null;
+                        rs.getString("error_timestamp");
+                        if (!rs.wasNull()) {
+//                            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
+                            errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
+                        }
+                        return new AssetStatusInfo(rs.getString("asset_guid")
                                 , rs.getString("parent_guid")
-                                , rs.getString("institution")
-                                , rs.getString("collection"));
-                        assetError.status = InternalStatus.valueOf(rs.getString("status"));
-                        return assetError;
+                                , errorTimestamp
+                                , InternalStatus.valueOf(rs.getString("status"))
+                                , rs.getString("error_message")
+                                );
                     })
                     .list();
+        });
+    }
+
+    String assetStatusSQL =
+            """
+                         SELECT * FROM cypher('dassco', $$
+                                                          MATCH (a:Asset {name: $asset_guid})
+                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
+                                                      $$, #params) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
+                                                              
+                                                      ;
+                    """;
+    public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
+        return jdbi.withHandle(handle -> {
+            handle.execute(boilerplate);
+            AgtypeMap agParams = new AgtypeMapBuilder()
+                    .add("asset_guid", assetGuid).build();
+            Agtype agtypeParams = AgtypeFactory.create(agParams);
+            return handle.createQuery(this.assetStatusSQL)
+                    .bind("params", agtypeParams)
+                    .map((rs, ctx) -> {
+                        Instant errorTimestamp = null;
+                        rs.getString("error_timestamp");
+                        if (!rs.wasNull()) {
+//                            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
+                            errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
+                        }
+                        return new AssetStatusInfo(rs.getString("asset_guid")
+                                , rs.getString("parent_guid")
+                                , errorTimestamp
+                                , InternalStatus.valueOf(rs.getString("status"))
+                                , rs.getString("error_message")
+                        );
+                    })
+                    .findOne();
         });
     }
 }

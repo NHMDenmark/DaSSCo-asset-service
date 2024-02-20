@@ -73,4 +73,8 @@ public class Asset {
     public String workstation;
     @Schema(description = "The pipeline that created or updated the asset", example = "ti-p1")
     public String pipeline;
+    @Schema(description = "If an error happened during digitisation of the asset an error message can be displayed here", example = "Failed to upload to ERDA: connectin reset")
+    public String error_message;
+    @Schema(description = "Tiem that the error happened", example = "2023-05-24T00:00:00.000Z")
+    public Instant error_timestamp;
 }
