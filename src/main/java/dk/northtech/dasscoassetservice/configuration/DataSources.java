@@ -2,7 +2,9 @@ package dk.northtech.dasscoassetservice.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import dk.northtech.dasscoassetservice.domain.Directory;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.postgres.PostgresPlugin;
@@ -35,6 +37,7 @@ public class DataSources {
             .installPlugin(new PostgresPlugin())
             .installPlugin(new SqlObjectPlugin())
             .installPlugin(new Jackson2Plugin())
+            .registerRowMapper(ConstructorMapper.factory(Directory.class))
             .setSqlParser(new HashPrefixSqlParser());
   }
 }

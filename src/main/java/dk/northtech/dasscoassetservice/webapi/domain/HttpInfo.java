@@ -1,6 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.domain;
 
-public record HttpInfo(String path, String hostname, int total_storage_mb, int cache_storage_mb, int remaining_storage_mb, int allocated_storage_mb, String proxy_allocation_status_text, HttpAllocationStatus httpAllocationStatus) {
+public record HttpInfo(String path, String hostname, int total_storage_mb, int cache_storage_mb, int remaining_storage_mb, int allocated_storage_mb, String proxy_allocation_status_text, HttpAllocationStatus http_allocation_status) {
     public HttpInfo {
     }
 

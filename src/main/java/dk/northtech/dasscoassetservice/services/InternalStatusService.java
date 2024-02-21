@@ -4,9 +4,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
+import dk.northtech.dasscoassetservice.domain.Directory;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
+import dk.northtech.dasscoassetservice.repositories.DirectoryRepository;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import jakarta.inject.Inject;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,10 +28,11 @@ import java.util.stream.Collectors;
 public class InternalStatusService {
     private static final Logger logger = LoggerFactory.getLogger(InternalStatusService.class);
     private InternalStatusRepository internalStatusRepository;
-
+    private Jdbi jdbi;
     @Inject
-    public InternalStatusService(InternalStatusRepository internalStatusRepository) {
+    public InternalStatusService(InternalStatusRepository internalStatusRepository, Jdbi jdbi) {
         this.internalStatusRepository = internalStatusRepository;
+        this.jdbi = jdbi;
     }
 
     LoadingCache<String, Map<String, Integer>> cachedInternalStatus = CacheBuilder.newBuilder()
@@ -58,13 +62,25 @@ public class InternalStatusService {
     }
 
     public List<AssetStatusInfo> getWorkInProgressAssets(boolean onlyFailed) {
+        HashMap<String, Integer> guidAllocated = new HashMap<>();
+        jdbi.withHandle(h -> {
+            DirectoryRepository attach = h.attach(DirectoryRepository.class);
+            return attach.getWriteableDirectories();
+        }).forEach(x -> guidAllocated.put(x.assetGuid(), x.allocatedStorageMb()));
+
+
         return internalStatusRepository.getInprogress().stream()
-                .filter(x -> !onlyFailed
-                             || x.status() == InternalStatus.ERDA_ERROR
-                             )
+                .filter(x -> !onlyFailed || x.status() == InternalStatus.ERDA_ERROR)
+                .map(assetStatusInfo -> new AssetStatusInfo(assetStatusInfo.asset_guid()
+                        , assetStatusInfo.parent_guid()
+                        , assetStatusInfo.error_timestamp()
+                        , assetStatusInfo.status()
+                        , assetStatusInfo.error_message()
+                        , guidAllocated.getOrDefault(assetStatusInfo.asset_guid(), null)))
                 .collect(Collectors.toList());
     }
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
+
         return internalStatusRepository.getAssetStatus(assetGuid);
     }
 

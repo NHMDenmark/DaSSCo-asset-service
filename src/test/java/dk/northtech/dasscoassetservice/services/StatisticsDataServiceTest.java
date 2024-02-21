@@ -127,7 +127,6 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(createAssetNew, user,11);
         Map<GraphType, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
         Integer instSumAfter = dataAfter.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
-        System.out.println(dataAfter);
 
         assertThat(dataAfter).containsKey(incremental);
         assertThat(dataAfter.get(incremental)).containsKey(currentDate);

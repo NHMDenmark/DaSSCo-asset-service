@@ -260,7 +260,7 @@ public class AssetService {
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
 
-        if(asset.httpInfo.httpAllocationStatus() == HttpAllocationStatus.SUCCESS) {
+        if(asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
         } else {
