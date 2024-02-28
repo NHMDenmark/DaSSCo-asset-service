@@ -37,7 +37,7 @@ public class FileProxyClient {
             httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/"+httpShareRequest.assets.get(0).asset_guid() + "/createShare"))
+                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/"+httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
