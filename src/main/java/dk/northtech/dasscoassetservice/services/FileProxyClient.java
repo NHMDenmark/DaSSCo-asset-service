@@ -48,12 +48,20 @@ public class FileProxyClient {
                 return gson.fromJson(body, HttpInfo.class);
             }
 //            HttpInfo sambaInfo = new HttpInfo();
-//            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;
+//            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;;
+            if(body != null) {
+                try {
+                    HttpInfo httpInfo = gson.fromJson(body, HttpInfo.class);
+                    return httpInfo;
+                } catch (Exception e) {
+                    logger.error("Failed to parse body, content: {}", body);
+                }
+            }
             if (send.statusCode() == 503) {
                 return new HttpInfo("Fileservice is currently unavailable, please try again later", HttpAllocationStatus.UPSTREAM_ERROR);
-            } else {
-                return new HttpInfo( "FileService encountered an error when attempting to create workdir", HttpAllocationStatus.UPSTREAM_ERROR);
             }
+
+                return new HttpInfo( "FileService encountered an error when attempting to create workdir", HttpAllocationStatus.UPSTREAM_ERROR);
         } catch (Exception e) {
             logger.error("Failed to prepare workdir due to an internal errorin asset service", e);
             return new HttpInfo("Failed to prepare workdir due an internal error, metadata has not been persisted", HttpAllocationStatus.INTERNAL_ERROR);

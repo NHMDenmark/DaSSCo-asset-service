@@ -29,12 +29,10 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/v1/assets")
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
-    private final StatisticsDataService specimenService;
     private final InternalStatusService internalStatusService;
 
     @Inject
-    public AssetApi(StatisticsDataService specimenService, InternalStatusService internalStatusService) {
-        this.specimenService = specimenService;
+    public AssetApi(InternalStatusService internalStatusService) {
         this.internalStatusService = internalStatusService;
     }
 
@@ -78,7 +76,7 @@ public class AssetApi {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getAssetStatus(@PathParam("assetGuid") String assetGuid) {
         Optional<AssetStatusInfo> assetStatus = this.internalStatusService.getAssetStatus(assetGuid);
-        if(!assetStatus.isPresent()) {
+        if(assetStatus.isEmpty()) {
             return Response.status(404).build();
         }
         return Response.status(200).entity(assetStatus.get()).build();
