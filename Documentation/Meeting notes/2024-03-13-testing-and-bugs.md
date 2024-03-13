@@ -8,7 +8,7 @@
 Updates to fileproxy
 -
 - New status for reopened asset that has files in ERDA
-- Remove uploaded file it CRC doesn't match
+- Remove uploaded file it CRC doesn't match (feedback from Bhupjit)
 - Health checks
 
 Documentation updates
