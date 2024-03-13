@@ -9,3 +9,5 @@ To update it you have to clone the project at build the jar on your own machine.
 https://github.com/apache/age/tree/master/drivers/jdbc
 
 Maven is set up to install this file.
+
+Mvn clean will move the jar to your m2 files.

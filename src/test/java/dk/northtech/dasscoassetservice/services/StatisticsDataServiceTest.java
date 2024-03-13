@@ -21,7 +21,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateWeek() {
         Asset createAsset = getTestAsset("week-asset", "institution_1");
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,11);
 
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
@@ -42,7 +42,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     @Test
     public void calculcateMonth() {
         Asset createAsset = getTestAsset("month-asset", "institution_1");
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,11);
 
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
@@ -64,7 +64,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     public void calculcateCachedWeekWithNewAsset() {
         String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
         Asset createAsset = getTestAsset("week-cached-asset", "institution_1");
-            assetService.persistAsset(createAsset, user);
+            assetService.persistAsset(createAsset, user,11);
 
 
         Map<GraphType, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
@@ -74,7 +74,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         int prevInstituteSpecimens = firstData.get(incremental).get(currentDate).getInstitutes().get("institution_1");
 
         Asset newCreateAsset = getTestAsset("new-week-cached-asset", "institution_1");
-        assetService.persistAsset(newCreateAsset, user);
+        assetService.persistAsset(newCreateAsset, user,11);
 
         // adds a new asset with 2 specimens
         Map<GraphType, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.WEEK);
@@ -89,7 +89,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
 
         Asset createAsset = getTestAsset("year-cached-asset", "institution_1");
-        assetService.persistAsset(createAsset,user);
+        assetService.persistAsset(createAsset,user,11);
 
         Map<GraphType, Map<String, GraphData>> firstData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
 
@@ -100,9 +100,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assertThat(firstData.get(exponential)).containsKey(currentDate);
         int prevInstituteSpecimensExpon = firstData.get(exponential).get(currentDate).getInstitutes().get("institution_1");
 
-
         Asset newCreateAsset = getTestAsset("new-year-cached-asset", "institution_1");
-        assetService.persistAsset(newCreateAsset, user);
+        assetService.persistAsset(newCreateAsset, user,11);
 
         // adds a new asset with 2 specimens
         Map<GraphType, Map<String, GraphData>> secondData = statisticsDataService.getCachedGraphData(GraphView.YEAR);
@@ -120,15 +119,14 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
 
         Asset createAsset = getTestAsset("year-total-asset", "institution_1");
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,11);
         Map<GraphType, Map<String, GraphData>> beforeData = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
         Integer instSumBefore = beforeData.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
 
-        Asset createAssetNew = getTestAsset("new-year-total-asset", "institution_2");
-        assetService.persistAsset(createAssetNew, user);
+        Asset createAssetNew = getTestAsset("new-year-total-asset", "institution_2", "i2_p1");
+        assetService.persistAsset(createAssetNew, user,11);
         Map<GraphType, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
         Integer instSumAfter = dataAfter.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
-        System.out.println(dataAfter);
 
         assertThat(dataAfter).containsKey(incremental);
         assertThat(dataAfter.get(incremental)).containsKey(currentDate);
@@ -138,18 +136,21 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     }
 
     public Asset getTestAsset(String guid, String instituteName) {
+        return getTestAsset(guid,instituteName, "i1_p1");
+    }
+    public Asset getTestAsset(String guid, String instituteName, String pipelineName) {
         Asset asset = new Asset();
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
-        asset.asset_taken_date = Instant.now();
+        asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         asset.specimens = Arrays.asList(new Specimen(instituteName, "i1_c1", "creatAsset-sp-1", "spid1", "slide"), new Specimen(instituteName, "i1_c1", "creatAsset-sp-2", "spid1", "slide"));
-        asset.pipeline = "i1_p1";
+        asset.pipeline = pipelineName;
         asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");
         asset.tags.put("Tag2", "value2");

@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
@@ -78,7 +79,7 @@ public class Assetupdates {
     }
 
     @PUT
-    @Path("{assetGuid}/seterrorstatus")
+    @Path("{assetGuid}/setstatus")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
@@ -86,8 +87,9 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public boolean setErrorStatus(
             @PathParam("assetGuid") String assetGuid
-            , @QueryParam("newStatus") String newStatus) {
-        return this.assetService.setFailedStatus(assetGuid, newStatus);
+            , @QueryParam("newStatus") String newStatus
+            , @QueryParam("errorMessage") String errorMessage) {
+        return this.assetService.setAssetStatus(assetGuid, newStatus, errorMessage);
     }
 
     @GET
@@ -106,9 +108,12 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset createAsset(Asset asset
-            , @Context SecurityContext securityContext) {
-        return this.assetService.persistAsset(asset, UserMapper.from(securityContext));
+    public Response createAsset(Asset asset
+            , @Context SecurityContext securityContext
+            , @QueryParam("allocation_mb") int allocation) {
+        Asset createdAsset = this.assetService.persistAsset(asset, UserMapper.from(securityContext), allocation);
+        int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
+        return Response.status(httpCode).entity(createdAsset).build();
     }
 
 
@@ -132,5 +137,15 @@ public class Assetupdates {
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid) {
         return this.assetService.getAsset(assetGuid).orElse(null);
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Path("/{assetGuid}")
+    public void deleteAsset(@PathParam("assetGuid") String assetGuid , @Context SecurityContext securityContext) {
+        this.assetService.deleteAsset(assetGuid, UserMapper.from(securityContext));
     }
 }

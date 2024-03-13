@@ -23,7 +23,7 @@ public class PipelineService {
 
     public Pipeline persistPipeline(Pipeline pipeline) {
         Optional<Institution> ifExists = institutionService.getIfExists(pipeline.institution());
-        if(ifExists.isEmpty()){
+        if(ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institute doesnt exist");
         }
         Optional<Pipeline> piplOpt = findPipeline(pipeline.name());
@@ -43,5 +43,9 @@ public class PipelineService {
 
     public Optional<Pipeline> findPipeline(String pipelineName) {
         return this.pipelineRepository.findPipeline(pipelineName);
+    }
+
+    public Optional<Pipeline> findPipelineByInstitutionAndName(String pipelineName, String institutionName) {
+        return this.pipelineRepository.findPipelineByInstitutionAndName(pipelineName, institutionName);
     }
 }

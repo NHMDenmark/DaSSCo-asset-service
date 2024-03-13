@@ -8,4 +8,11 @@ public class User {
     public String token;
     public String keycloakId;
     public Set<String> roles = new HashSet<>();
+
+    public User() {
+    }
+
+    public User(String username) {
+        this.username = username;
+    }
 }

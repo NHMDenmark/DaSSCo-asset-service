@@ -129,4 +129,39 @@ public class PipelineRepository {
             throw new RuntimeException(e);
         }
     }
+
+    public Optional<Pipeline> findPipelineByInstitutionAndName(String pipelineName, String institutionName) {
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                         , $$
+                             MATCH (p:Pipeline{name: $pipeline_name})-[:USED_BY]->(i:Institution{name: $institution_name})
+                             RETURN p.name, i.name
+                           $$
+                         , #params
+                        ) as (pipeline_name agtype, institution_name agtype);""";
+
+
+        try {
+            return jdbi.withHandle(handle -> {
+                // We have to register the type
+                Connection connection = handle.getConnection();
+                PgConnection pgConn = connection.unwrap(PgConnection.class);
+                pgConn.addDataType("agtype", Agtype.class);
+                AgtypeMap name = new AgtypeMapBuilder()
+                        .add("pipeline_name", pipelineName)
+                        .add("institution_name", institutionName).build();
+                Agtype agtype = AgtypeFactory.create(name);
+                handle.execute(DBConstants.AGE_BOILERPLATE);
+                return handle.createQuery(sql).bind("params", agtype)
+                        .map((rs, ctx) -> {
+                            Agtype pipeline_name = rs.getObject("pipeline_name", Agtype.class);
+                            Agtype institution_name = rs.getObject("institution_name", Agtype.class);
+                            return new Pipeline(pipeline_name.getString(), institution_name.getString());
+                        }).findOne();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

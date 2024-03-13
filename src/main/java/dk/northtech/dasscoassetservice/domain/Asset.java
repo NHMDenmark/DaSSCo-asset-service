@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -10,9 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 public class Asset {
-    @Schema(description = "Pid", example = "asdf-1234-3333-1000")
+    @Schema(description = "See asset_guid. One possible PID is to construct a URL like pid.dassco.dk/GUID1234555677243. This is then the unique and resolvable identifier that we will use when sharing.", example = "asdf-1234-3333-1000")
     public String asset_pid;
-    @Schema(description = "Unique key for the asset?", example = "ti-a01-202305241657")
+    @Schema(description = "This is the unique GUID generated for each asset and is generated before incorporation into the storage system. Parts of the string are defined based on things such as the workstation and institution, the other parts are randomly generated. This is to enable a unique name for each asset. It is mandatory for our funding that we also have persistent identifiers for each asset (ideally resolvable as well). So we imagined an easy way to do this would be to incorporate the guid into a persistent identifier that can be clicked on to resolve (see asset_pid).", example = "ti-a01-202305241657")
     public String asset_guid;
     @Schema(description = "The status of the asset", example = "BEING_PROCESSED")
     public AssetStatus status;
@@ -35,41 +36,45 @@ public class Asset {
 
     @Schema(description = "A dictionary of dynamic properties")
     public Map<String, String> tags = new HashMap<>();
-    @Schema(description = "Marking if this asset has been audited atleast once", example = "true")
+    @Schema(description = "Marking if this asset has been audited at least once", example = "true")
     public boolean audited;
 
     @Schema(description = "Date the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z")
     public Instant created_date;
     @Schema(description = "Date the asset metadata was last updated", example = "2023-05-24T00:00:00.000Z")
-    public Instant last_updated_date;
+    public Instant date_metadata_updated;
     @Schema(description = "Date the asset was taken", example = "2023-05-24T00:00:00.000Z")
-    public Instant asset_taken_date;
+    public Instant date_asset_taken;
     @Schema(description = "Date the asset was marked as deleted in the metadata", example = "2023-05-24T00:00:00.000Z")
-    public Instant asset_deleted_date;
+    public Instant date_asset_deleted;
+    @Schema(description = "Date the asset was pushed to specify", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_asset_finalised;
+    public Instant date_metadata_taken;
 
     //References
     @Schema(description = "The institution", example = "NNAD")
     public String institution;
- //   @Schema(description = "The institution", example = "NNAD")
+
     @Schema(description = "GUID of the parent asset", example = "ti-a02-202305241657")
     public String parent_guid;
     @Schema(description = "Name of the collection the asset belongs to", example = "test-collection")
     public String collection;
     @Schema(description = "The location on the storage where asset media can be uploaded")
-    public SambaInfo sambaInfo;
+    public HttpInfo httpInfo;
     @Schema(description = "An internal status field used to track the status of the upload of related media", example = "COMPLETED")
     public InternalStatus internal_status;
-    @Schema(description = "Date the asset was pushed to specify", example = "2023-05-24T00:00:00.000Z")
-    public Instant date_asset_finalised;
-    @Schema(description = "Username of the person that digitised the asset,", example = "THBO")
-    public String digitiser;
-    @Schema(description = "The pipeline that created or updated the asset", example = "ti-p1")
-    public String pipeline;
-    @Schema(description = "The name of the workstation that created or updated the asset", example = "ti-ws1")
-    public String workstation;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")
     public String updateUser;
-
-    public Instant date_metadata_taken;
     public List<Event> events;
+
+    @Schema(description = "Username of the person that digitised the asset,", example = "THBO")
+    public String digitiser;
+    @Schema(description = "The name of the workstation that created or updated the asset", example = "ti-ws1")
+    public String workstation;
+    @Schema(description = "The pipeline that created or updated the asset", example = "ti-p1")
+    public String pipeline;
+    @Schema(description = "If an error happened during digitisation of the asset an error message can be displayed here", example = "Failed to upload to ERDA: connectin reset")
+    public String error_message;
+    @Schema(description = "Tiem that the error happened", example = "2023-05-24T00:00:00.000Z")
+    public Instant error_timestamp;
 }

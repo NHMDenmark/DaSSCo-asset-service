@@ -69,12 +69,12 @@ public interface AssetRepository extends SqlObject {
         for (Event event : events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
-            } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.last_updated_date == null) {
-                asset1.last_updated_date = event.timeStamp;
-            } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.last_updated_date == null) {
-                asset1.last_updated_date = event.timeStamp;
+            } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
+                asset1.date_metadata_updated = event.timeStamp;
+            } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
+                asset1.date_metadata_updated = event.timeStamp;
             } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
-                asset1.asset_deleted_date = event.timeStamp;
+                asset1.date_asset_deleted = event.timeStamp;
             }
         }
         asset1.events = events;
@@ -133,6 +133,8 @@ public interface AssetRepository extends SqlObject {
                          , pa.asset_guid 
                          , a.restricted_access
                          , a.tags
+                         , a.error_message
+                         , a.error_timestamp
                          , collect(s)
                          , i.name
                          , c.name
@@ -159,6 +161,8 @@ public interface AssetRepository extends SqlObject {
                     , parent_guid agtype
                     , restricted_access agtype
                     , tags agtype
+                    , error_message agtype
+                    , error_timestamp agtype
                     , specimens agtype
                     , institution_name agtype
                     , collection_name agtype
@@ -320,8 +324,8 @@ public interface AssetRepository extends SqlObject {
                         .add("restricted_access", restrictedAcces.build())
                         .add("asset_locked", asset.asset_locked);
 
-                if (asset.asset_taken_date != null) {
-                    agBuilder.add("date_asset_taken", asset.asset_taken_date.toEpochMilli());
+                if (asset.date_asset_taken != null) {
+                    agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
                 } else {
                     agBuilder.add("date_asset_taken", (String) null);
                 }
@@ -351,6 +355,8 @@ public interface AssetRepository extends SqlObject {
                             MATCH (a:Asset {name: $asset_guid})
                             SET a.asset_locked = $asset_locked
                             , a.internal_status = $internal_status
+                            , a.error_message = $error_message
+                            , a.error_timestamp = $error_timestamp
                         $$
                         , #params) as (a agtype);
                         """;
@@ -359,7 +365,13 @@ public interface AssetRepository extends SqlObject {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("asset_guid", asset.asset_guid)
                         .add("internal_status", asset.internal_status.name())
+                        .add("error_message", asset.error_message)
                         .add("asset_locked", asset.asset_locked);
+                if (asset.error_timestamp != null) {
+                    builder.add("error_timestamp", asset.error_timestamp.toEpochMilli());
+                } else {
+                    builder.add("error_timestamp", (String) null);
+                }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)
@@ -379,7 +391,7 @@ public interface AssetRepository extends SqlObject {
                         , $$
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (w:Workstation {name: $workstation_name})
-                            MATCH (p:Pipeline {name: $pipeline_name})
+                            MATCH (p:Pipeline {name: $pipeline_name})                        
                             MATCH (a:Asset {name: $asset_guid})
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
@@ -402,6 +414,7 @@ public interface AssetRepository extends SqlObject {
                             , a.internal_status = $internal_status
                             , a.date_metadata_taken = $date_metadata_taken
                             , a.date_asset_taken = $date_asset_taken
+                            , a.digitiser = $digitiser
                         $$
                         , #params) as (a agtype);
                         """;
@@ -440,10 +453,15 @@ public interface AssetRepository extends SqlObject {
                 } else {
                     builder.addNull("date_asset_finalised");
                 }
-                if (asset.asset_taken_date != null) {
+                if (asset.date_asset_taken != null) {
                     builder.add("date_asset_taken", asset.date_asset_finalised.toEpochMilli());
                 } else {
                     builder.addNull("date_asset_taken");
+                }
+                if (asset.digitiser != null) {
+                    builder.add("digitiser", asset.digitiser);
+                } else {
+                    builder.addNull("digitiser");
                 }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)

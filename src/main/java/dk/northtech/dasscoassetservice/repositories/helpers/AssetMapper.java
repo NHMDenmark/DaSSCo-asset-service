@@ -59,6 +59,16 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype userName = rs.getObject("user_name", Agtype.class);
             asset.digitiser = userName.getString();
         }
+        rs.getString("error_message");
+        if (!rs.wasNull()) {
+            Agtype errorMessage = rs.getObject("error_message", Agtype.class);
+            asset.error_message = errorMessage.getString();
+        }
+        rs.getString("error_timestamp");
+        if (!rs.wasNull()) {
+            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
+            asset.error_timestamp = Instant.ofEpochMilli(dateAssetFinalised.getLong());
+        }
         rs.getString("date_asset_finalised");
         if (!rs.wasNull()) {
             Agtype dateAssetFinalised = rs.getObject("date_asset_finalised", Agtype.class);
@@ -72,7 +82,7 @@ public class AssetMapper implements RowMapper<Asset> {
         rs.getString("date_asset_taken");
         if (!rs.wasNull()) {
             Agtype assetTakenDate = rs.getObject("date_asset_taken", Agtype.class);
-            asset.asset_taken_date = Instant.ofEpochMilli(assetTakenDate.getLong());
+            asset.date_asset_taken = Instant.ofEpochMilli(assetTakenDate.getLong());
         }
         rs.getString("payload_type");
         if (!rs.wasNull()) {

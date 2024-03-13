@@ -1,7 +1,11 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
+import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -9,17 +13,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
-    @Inject
-    AssetService assetService;
+//    @Inject
+//    AssetService assetService;
+//
 
-    User user = new User();
+
+    User user = new User("Teztuzer");
     @Test
     void createAsset() {
         Asset createAsset = getTestAsset("createAsset");
@@ -32,9 +40,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user, 10);
         //Check that the same asset cannot be added multiple times
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 11));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset createAsset already exists");
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -46,7 +54,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.tags.get("Tag2")).isEqualTo("value2");
         assertThat(result.institution).isEqualTo("institution_1");
         assertThat(result.digitiser).isEqualTo("Karl-Børge");
-        assertThat(result.internal_status).isEqualTo(InternalStatus.SMB_ERROR);
+        assertThat(result.internal_status).isEqualTo(InternalStatus.METADATA_RECEIVED);
         assertThat(result.parent_guid).isNull();
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-2");
@@ -62,6 +70,50 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
         assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
+    }
+
+    //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
+    @Test
+    void createAssetUpdateWithMaxNull() {
+        Asset createAsset = getTestAsset("createAssetUpdateWithMaxNull");
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset, user,10);
+        Asset asset = new Asset();
+        asset.pipeline = "i1_p1";
+        asset.workstation = "i1_w1";
+        asset.institution = "institution_1";
+        asset.collection = "i1_c1";
+        asset.asset_pid = "createAssetUpdateWithMaxNull_pid";
+        asset.asset_guid = "createAssetUpdateWithMaxNull";
+        asset.updateUser = "thbo";
+        asset.status = AssetStatus.ISSUE_WITH_METADATA;
+        assetService.updateAsset(asset);
+        Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateWithMaxNull");
+        assertThat(resultOpt.isPresent()).isTrue();
+    }
+    //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
+    @Test
+    void createAssetMaxNulls() {
+        Asset createAsset = new Asset();
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "createAssetMaxNulls_pid";
+        createAsset.asset_guid = "createAssetMaxNulls";
+        createAsset.updateUser = "thbo";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset, user,10);
+        assetService.updateAsset(createAsset);
+        Optional<Asset> resultOpt = assetService.getAsset("createAssetMaxNulls");
+        assertThat(resultOpt.isPresent()).isTrue();
     }
 
 //    @Test
@@ -98,11 +150,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
-        assetService.deleteAsset("Karl-Børge", "deleteAsset");
+        assetService.persistAsset(createAsset, user,10);
+        assetService.deleteAsset("deleteAsset", user);
         Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset");
         Asset result = deleteAssetOpt.get();
-        assertThat(result.asset_deleted_date).isNotNull();
+        assertThat(result.date_asset_deleted).isNotNull();
     }
 
     @Test
@@ -117,7 +169,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(createAsset, user);
+        assetService.persistAsset(createAsset, user,10);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
@@ -126,7 +178,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result);
         result.payload_type = "nuclear";
         assetService.updateAsset(result);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null),"i1_w1", "i1_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null, null, null),"i1_w1", "i1_p1", "bob"));
         assetService.auditAsset(new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid);
         assertThat(resultEvents.size()).isEqualTo(5);
@@ -139,8 +191,31 @@ class AssetServiceTest extends AbstractIntegrationTest {
                 .map(x -> x.timeStamp)
                 .sorted().toList();
         //The last update event
-        assertThat(resultAsset.last_updated_date).isEqualTo(updates.get(1));
+        assertThat(resultAsset.date_metadata_updated).isEqualTo(updates.get(1));
         assertThat(resultAsset.audited).isTrue();
+    }
+
+    @Test
+    void doNotPermitUnlocking() {
+        Asset createAsset = getTestAsset("doNotPermitUnlocking");
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        createAsset = assetService.persistAsset(createAsset, user, 11);
+
+        createAsset.updateUser = "Uffe Updater";
+        createAsset.asset_locked = true;
+        assetService.updateAsset(createAsset);
+        createAsset.asset_locked = false;
+        Asset finalCreateAsset = createAsset;
+        DasscoIllegalActionException illegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(finalCreateAsset));
+        assertThat(illegalActionException.getMessage()).isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+
     }
 
     @Test
@@ -157,7 +232,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.asset_pid = "pid-updateAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user, 11);
         asset.tags.remove("Tag1");
         asset.tags.remove("Tag2");
         asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", "slide"));
@@ -209,7 +284,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-lockUnlock";
         asset.asset_locked = true;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user, 11);
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         Asset lockedAsset = lockedAssetOpt.get();
         assertThat(lockedAsset.asset_locked).isTrue();
@@ -230,11 +305,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user);
+        assetService.persistAsset(asset, user,11);
         DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
 //        assetService.completeAsset(asset.asset_guid);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null),"i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null, null, null),"i2_w1", "i2_p1", "bob"));
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }
@@ -245,7 +320,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
-        asset.asset_taken_date = Instant.now();
+        asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";

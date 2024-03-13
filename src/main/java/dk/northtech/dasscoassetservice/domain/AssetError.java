@@ -5,4 +5,5 @@ import java.util.List;
 public class AssetError {
     public MinimalAsset asset;
     public InternalStatus status;
+    public String errorMessage;
 }
