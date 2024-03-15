@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -62,8 +63,12 @@ public class FileProxyClient {
             }
 
                 return new HttpInfo( "FileService encountered an error when attempting to create workdir", HttpAllocationStatus.UPSTREAM_ERROR);
-        } catch (Exception e) {
-            logger.error("Failed to prepare workdir due to an internal errorin asset service", e);
+        } catch (ConnectException connex) {
+            logger.error("Failed to prepare workdir cannot contact fileproxy", connex);
+            return new HttpInfo("Failed to prepare workdir cannot contact file-proxy, metadata has not been persisted", HttpAllocationStatus.UPSTREAM_ERROR);
+        }
+        catch (Exception e) {
+            logger.error("Failed to prepare workdir due to an internal error in asset service", e);
             return new HttpInfo("Failed to prepare workdir due an internal error, metadata has not been persisted", HttpAllocationStatus.INTERNAL_ERROR);
         }
     }
