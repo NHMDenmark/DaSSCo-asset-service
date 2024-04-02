@@ -10,6 +10,38 @@
     "variables" : { }
   } ],
   "paths" : {
+    "/v1/assets/status/{assetGuid}" : {
+      "get" : {
+        "operationId" : "getAssetStatus",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : { }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assets" : {
       "get" : {
         "operationId" : "getAssets",
@@ -38,9 +70,17 @@
         } ]
       }
     },
-    "/v1/assets/failed" : {
+    "/v1/assets/inprogress" : {
       "get" : {
         "operationId" : "getInternalStatusAmt",
+        "parameters" : [ {
+          "name" : "onlyFailed",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
@@ -207,6 +247,14 @@
     "/v1/assetmetadata" : {
       "post" : {
         "operationId" : "createAsset",
+        "parameters" : [ {
+          "name" : "allocation_mb",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -318,6 +366,40 @@
         "security" : [ {
           "dassco-idp" : [ ]
         } ]
+      },
+      "delete" : {
+        "operationId" : "deleteAsset",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
       }
     },
     "/v1/assetmetadata/{assetGuid}/events" : {
@@ -356,7 +438,7 @@
         } ]
       }
     },
-    "/v1/assetmetadata/{assetGuid}/seterrorstatus" : {
+    "/v1/assetmetadata/{assetGuid}/setstatus" : {
       "put" : {
         "operationId" : "setErrorStatus",
         "parameters" : [ {
@@ -368,6 +450,12 @@
           }
         }, {
           "name" : "newStatus",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "errorMessage",
           "in" : "query",
           "schema" : {
             "type" : "string"
@@ -837,129 +925,6 @@
         } ]
       }
     },
-    "/v1/shares/reopen" : {
-      "post" : {
-        "operationId" : "checkoutAsset",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AssetSmbRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/shares/close" : {
-      "post" : {
-        "operationId" : "closeSmb",
-        "parameters" : [ {
-          "name" : "syncERDA",
-          "in" : "query",
-          "schema" : {
-            "type" : "boolean"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AssetUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/shares/open" : {
-      "post" : {
-        "operationId" : "openSmb",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/SmbRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/shares/disconnect" : {
-      "post" : {
-        "operationId" : "pauseSmb",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AssetSmbRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SambaInfo"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/collections/{collectionName}/specimens" : {
       "get" : {
         "operationId" : "getSpecimen",
@@ -1296,6 +1261,26 @@
   },
   "components" : {
     "schemas" : {
+      "DaSSCoError" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "Error" ]
+          },
+          "protocolVersion" : {
+            "type" : "string",
+            "enum" : [ "1.0" ]
+          },
+          "errorCode" : {
+            "type" : "string",
+            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
+          },
+          "errorMessage" : {
+            "type" : "string"
+          }
+        }
+      },
       "AssetV1" : {
         "type" : "object",
         "properties" : {
@@ -1508,39 +1493,7 @@
           }
         }
       },
-      "DaSSCoError" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "enum" : [ "Error" ]
-          },
-          "protocolVersion" : {
-            "type" : "string",
-            "enum" : [ "1.0" ]
-          },
-          "errorCode" : {
-            "type" : "string",
-            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
-          },
-          "errorMessage" : {
-            "type" : "string"
-          }
-        }
-      },
-      "AssetError" : {
-        "type" : "object",
-        "properties" : {
-          "asset" : {
-            "$ref" : "#/components/schemas/MinimalAsset"
-          },
-          "status" : {
-            "type" : "string",
-            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "SMB_ERROR", "ERDA_ERROR" ]
-          }
-        }
-      },
-      "MinimalAsset" : {
+      "AssetStatusInfo" : {
         "type" : "object",
         "properties" : {
           "asset_guid" : {
@@ -1548,6 +1501,21 @@
           },
           "parent_guid" : {
             "type" : "string"
+          },
+          "error_timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "ERDA_FAILED", "ERDA_ERROR" ]
+          },
+          "error_message" : {
+            "type" : "string"
+          },
+          "share_allocation_mb" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -1556,12 +1524,12 @@
         "properties" : {
           "asset_pid" : {
             "type" : "string",
-            "description" : "Pid",
+            "description" : "See asset_guid. One possible PID is to construct a URL like pid.dassco.dk/GUID1234555677243. This is then the unique and resolvable identifier that we will use when sharing.",
             "example" : "asdf-1234-3333-1000"
           },
           "asset_guid" : {
             "type" : "string",
-            "description" : "Unique key for the asset?",
+            "description" : "This is the unique GUID generated for each asset and is generated before incorporation into the storage system. Parts of the string are defined based on things such as the workstation and institution, the other parts are randomly generated. This is to enable a unique name for each asset. It is mandatory for our funding that we also have persistent identifiers for each asset (ideally resolvable as well). So we imagined an easy way to do this would be to incorporate the guid into a persistent identifier that can be clicked on to resolve (see asset_pid).",
             "example" : "ti-a01-202305241657"
           },
           "status" : {
@@ -1604,7 +1572,7 @@
             "items" : {
               "type" : "string",
               "description" : "File format enum, can contain multiple formats",
-              "enum" : [ "TIF", "JPEG", "RAW" ]
+              "enum" : [ "TIF", "JPEG", "RAW", "RAF", "CR3", "DNG", "TXT" ]
             }
           },
           "asset_locked" : {
@@ -1629,7 +1597,7 @@
           },
           "audited" : {
             "type" : "boolean",
-            "description" : "Marking if this asset has been audited atleast once",
+            "description" : "Marking if this asset has been audited at least once",
             "example" : true
           },
           "created_date" : {
@@ -1638,23 +1606,33 @@
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
-          "last_updated_date" : {
+          "date_metadata_updated" : {
             "type" : "string",
             "description" : "Date the asset metadata was last updated",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
-          "asset_taken_date" : {
+          "date_asset_taken" : {
             "type" : "string",
             "description" : "Date the asset was taken",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
-          "asset_deleted_date" : {
+          "date_asset_deleted" : {
             "type" : "string",
             "description" : "Date the asset was marked as deleted in the metadata",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
+          },
+          "date_asset_finalised" : {
+            "type" : "string",
+            "description" : "Date the asset was pushed to specify",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
+          },
+          "date_metadata_taken" : {
+            "type" : "string",
+            "format" : "date-time"
           },
           "institution" : {
             "type" : "string",
@@ -1671,50 +1649,51 @@
             "description" : "Name of the collection the asset belongs to",
             "example" : "test-collection"
           },
-          "sambaInfo" : {
-            "$ref" : "#/components/schemas/SambaInfo"
+          "httpInfo" : {
+            "$ref" : "#/components/schemas/HttpInfo"
           },
           "internal_status" : {
             "type" : "string",
             "description" : "An internal status field used to track the status of the upload of related media",
             "example" : "COMPLETED",
-            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "SMB_ERROR", "ERDA_ERROR" ]
-          },
-          "date_asset_finalised" : {
-            "type" : "string",
-            "description" : "Date the asset was pushed to specify",
-            "format" : "date-time",
-            "example" : "2023-05-24T00:00:00Z"
-          },
-          "digitiser" : {
-            "type" : "string",
-            "description" : "Username of the person that digitised the asset,",
-            "example" : "THBO"
-          },
-          "pipeline" : {
-            "type" : "string",
-            "description" : "The pipeline that created or updated the asset",
-            "example" : "ti-p1"
-          },
-          "workstation" : {
-            "type" : "string",
-            "description" : "The name of the workstation that created or updated the asset",
-            "example" : "ti-ws1"
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "ERDA_FAILED", "ERDA_ERROR" ]
           },
           "updateUser" : {
             "type" : "string",
             "description" : "Username of the person that updated the asset",
             "example" : "THBO"
           },
-          "date_metadata_taken" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
           "events" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Event"
             }
+          },
+          "digitiser" : {
+            "type" : "string",
+            "description" : "Username of the person that digitised the asset,",
+            "example" : "THBO"
+          },
+          "workstation" : {
+            "type" : "string",
+            "description" : "The name of the workstation that created or updated the asset",
+            "example" : "ti-ws1"
+          },
+          "pipeline" : {
+            "type" : "string",
+            "description" : "The pipeline that created or updated the asset",
+            "example" : "ti-p1"
+          },
+          "error_message" : {
+            "type" : "string",
+            "description" : "If an error happened during digitisation of the asset an error message can be displayed here",
+            "example" : "Failed to upload to ERDA: connectin reset"
+          },
+          "error_timestamp" : {
+            "type" : "string",
+            "description" : "Tiem that the error happened",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           }
         }
       },
@@ -1740,30 +1719,40 @@
           }
         }
       },
-      "SambaInfo" : {
+      "HttpInfo" : {
         "type" : "object",
         "properties" : {
-          "port" : {
-            "type" : "integer",
-            "format" : "int32"
+          "path" : {
+            "type" : "string"
           },
           "hostname" : {
             "type" : "string"
           },
-          "smb_name" : {
+          "total_storage_mb" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cache_storage_mb" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "remaining_storage_mb" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "allocated_storage_mb" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "allocation_status_text" : {
             "type" : "string"
           },
-          "token" : {
-            "type" : "string"
-          },
-          "sambaRequestStatus" : {
+          "http_allocation_status" : {
             "type" : "string",
-            "enum" : [ "OK_OPEN", "OK_DISCONNECTED", "OK_CLOSED", "NO_PORT_AVAILABLE", "UPSTREAM_ERROR", "INTERNAL_ERROR" ]
-          },
-          "sambaRequestStatusMessage" : {
-            "type" : "string"
+            "enum" : [ "DISK_FULL", "SUCCESS", "BAD_REQUEST", "UNKNOWN_ERROR", "UPSTREAM_ERROR", "SHARE_NOT_FOUND", "INTERNAL_ERROR" ]
           }
-        }
+        },
+        "description" : "The location on the storage where asset media can be uploaded"
       },
       "Specimen" : {
         "type" : "object",
@@ -1801,6 +1790,23 @@
             "type" : "string"
           },
           "digitiser" : {
+            "type" : "string"
+          }
+        }
+      },
+      "MinimalAsset" : {
+        "type" : "object",
+        "properties" : {
+          "asset_guid" : {
+            "type" : "string"
+          },
+          "parent_guid" : {
+            "type" : "string"
+          },
+          "institution" : {
+            "type" : "string"
+          },
+          "collection" : {
             "type" : "string"
           }
         }
@@ -1868,35 +1874,6 @@
           "timestamp" : {
             "type" : "string",
             "format" : "date-time"
-          }
-        }
-      },
-      "AssetSmbRequest" : {
-        "type" : "object",
-        "properties" : {
-          "shareName" : {
-            "type" : "string"
-          },
-          "asset" : {
-            "$ref" : "#/components/schemas/MinimalAsset"
-          }
-        }
-      },
-      "SmbRequest" : {
-        "type" : "object",
-        "properties" : {
-          "users" : {
-            "uniqueItems" : true,
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "assets" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/MinimalAsset"
-            }
           }
         }
       },

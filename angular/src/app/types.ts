@@ -38,7 +38,7 @@ export enum ChartDataTypes {
 
 export const defaultView = 1; // Weekly fluctuation.
 
-export const MY_FORMATS = {
+export const CUSTOM_DATE_FORMAT = {
   parse: {
     dateInput: 'DD-MM-YYYY'
   },

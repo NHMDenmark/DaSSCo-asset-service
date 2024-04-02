@@ -91,6 +91,8 @@ public class StatisticsDataService {
 
     public Map<String, GraphData> generateIncrData(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, GraphView timeFrame) {
         List<StatisticsData> statisticsData = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
+        System.out.println("start " + startDate.toEpochMilli());
+        System.out.println("end " + endDate.toEpochMilli());
         Map<String, GraphData> incrData = new HashMap<>();
 
         statisticsData.forEach(data -> {

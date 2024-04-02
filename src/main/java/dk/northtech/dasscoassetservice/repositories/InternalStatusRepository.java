@@ -36,17 +36,19 @@ public class InternalStatusRepository {
     String totalAmountSql =
             """
                          SELECT * from cypher('dassco', $$
-                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET_METADATA'})
                                  WITH count(assets) as assetcount
-                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET_METADATA'})
                                  WITH count(completed) as complcount, assetcount
-                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET_METADATA'})
                                  WITH count(metadata) as metacount, complcount, assetcount
-                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET_METADATA'})
                                  WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
-                                 WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
-                                 RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
+                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET_METADATA'})
+                                 WITH count(erdaerror) as erdaerr, smbcount, metacount, complcount, assetcount
+                                 OPTIONAL MATCH (erdafailed:Asset {internal_status: 'ERDA_FAILED'})-[:CHANGED_BY]->(erdf:Event {name: 'CREATE_ASSET_METADATA'})
+                                 WITH count(erdafailed) as erdafail, erdaerr, smbcount, metacount, complcount, assetcount
+                                 RETURN complcount, (assetcount + metacount), (erdaerr + erdafail + smbcount)
                              $$) as (completed agtype, pending agtype, failed agtype);
                     """;
 
@@ -55,19 +57,19 @@ public class InternalStatusRepository {
     String dailyAmountSql =
             """
                          SELECT * from cypher('dassco', $$
-                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
+                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET_METADATA'})
                                  WHERE ae.timestamp >= $today
                                  WITH count(assets) as assetcount
-                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET_METADATA'})
                                  WHERE ce.timestamp >= $today
                                  WITH count(completed) as complcount, assetcount
-                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET_METADATA'})
                                  WHERE me.timestamp >= $today
                                  WITH count(metadata) as metacount, complcount, assetcount
-                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET_METADATA'})
                                  WHERE smbe.timestamp >= $today
                                  WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
+                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET_METADATA'})
                                  WHERE erde.timestamp >= $today
                                  WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
                                  RETURN complcount, (assetcount + metacount), (erdacount + smbcount)

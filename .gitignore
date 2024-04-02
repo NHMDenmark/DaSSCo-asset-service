@@ -33,12 +33,13 @@ src/main/resources/static/*
 ### Angular ###
 ## Angular ##
 # compiled output
-dist/
+angular/dist/
 tmp/
 app/**/*.js
 app/**/*.js.map
 
 # dependencies
+angular/node_modules/
 node_modules/
 bower_components/
 
