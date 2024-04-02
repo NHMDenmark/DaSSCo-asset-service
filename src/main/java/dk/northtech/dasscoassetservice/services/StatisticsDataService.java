@@ -85,12 +85,21 @@ public class StatisticsDataService {
         }
     }
 
+    public void refreshCachedGraphData() {
+        for (GraphView view : GraphView.values()) {
+            if (cachedGraphData.asMap().containsKey(view)) {
+                cachedGraphData.refresh(view); // refresh only "refreshes" next time .get() is called
+            }
+        }
+    }
+
     public List<StatisticsData> getGraphData(long timeFrame) {
         return this.statisticsDataRepository.getGraphData(timeFrame, Instant.now().toEpochMilli());
     }
 
     public Map<String, GraphData> generateIncrData(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, GraphView timeFrame) {
         List<StatisticsData> statisticsData = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
+        System.out.println(timeFrame);
         System.out.println("start " + startDate.toEpochMilli());
         System.out.println("end " + endDate.toEpochMilli());
         Map<String, GraphData> incrData = new HashMap<>();
@@ -103,18 +112,6 @@ public class StatisticsDataService {
                     data.instituteName(), data.specimens(),
                     data.workstationName(), data.specimens(),
                     data.pipelineName(), data.specimens());
-
-//            if (!incrData.containsKey(dateString)) {
-//                incrData.put(dateString, new GraphData(
-//                    new HashMap<>() {{put(data.instituteName(), data.specimens());}},
-//                    new HashMap<>() {{put(data.pipelineName(), data.specimens());}},
-//                    new HashMap<>() {{put(data.workstationName(), data.specimens());}}
-//                ));
-//            } else {
-//                updateData(incrData.get(dateString).getInstitutes(), data.instituteName(), data.specimens());
-//                updateData(incrData.get(dateString).getPipelines(), data.pipelineName(), data.specimens());
-//                updateData(incrData.get(dateString).getWorkstations(), data.workstationName(), data.specimens());
-//            }
 
         });
 
@@ -235,43 +232,44 @@ public class StatisticsDataService {
     }
 
     // In connection with persisting assets
+    // todo can this be removed?
 
-    public void addAssetToCache(Asset asset) {
-        try {
-            if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {
-                updateCache(asset, cachedGraphData.get(GraphView.WEEK), incremental, getDateFormatter("dd-MMM-yyyy"), false);
-            }
-            if (cachedGraphData.asMap().containsKey(GraphView.MONTH)) {
-                updateCache(asset, cachedGraphData.get(GraphView.MONTH), incremental, getDateFormatter("dd-MMM-yyyy"), false);
-            }
-            if (cachedGraphData.asMap().containsKey(GraphView.YEAR)) {
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), incremental, getDateFormatter("MMM yyyy"), true);
-                updateCache(asset, cachedGraphData.get(GraphView.YEAR), exponential, getDateFormatter("MMM yyyy"), false);
-            }
-        } catch (ExecutionException e) {
-            logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
-            throw new RuntimeException("An error occurred when loading the graph cache {}", e);
-        }
-    }
+//    public void addAssetToCache(Asset asset) {
+//        try {
+//            if (cachedGraphData.asMap().containsKey(GraphView.WEEK)) {
+//                updateCache(asset, cachedGraphData.get(GraphView.WEEK), incremental, getDateFormatter("dd-MMM-yyyy"), false);
+//            }
+//            if (cachedGraphData.asMap().containsKey(GraphView.MONTH)) {
+//                updateCache(asset, cachedGraphData.get(GraphView.MONTH), incremental, getDateFormatter("dd-MMM-yyyy"), false);
+//            }
+//            if (cachedGraphData.asMap().containsKey(GraphView.YEAR)) {
+//                updateCache(asset, cachedGraphData.get(GraphView.YEAR), incremental, getDateFormatter("MMM yyyy"), true);
+//                updateCache(asset, cachedGraphData.get(GraphView.YEAR), exponential, getDateFormatter("MMM yyyy"), false);
+//            }
+//        } catch (ExecutionException e) {
+//            logger.warn("An error occurred when loading the graph cache {}", e.getMessage());
+//            throw new RuntimeException("An error occurred when loading the graph cache {}", e);
+//        }
+//    }
 
-    public void updateCache(Asset asset, Map<GraphType, Map<String, GraphData>> cachedFullData, GraphType key, DateTimeFormatter dtf, boolean total) {
-        // bool total is bc when it's a total graph, the keys aren't the names of the institutes/etc, but an overall title
-        Map<String, GraphData> cachedData = cachedFullData.get(key);
-        String createdDate = dtf.format(asset.created_date);
-
-        if (cachedData.containsKey(createdDate)) {
-            logger.info("New asset with {} specimens is being added.", asset.specimens.size());
-            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimens.size());
-            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimens.size());
-            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimens.size());
-        } else {
-            logger.info("Cached data does not contain today's date {}, and will be added.", createdDate);
-            cachedData.put(createdDate, new GraphData(
-                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimens.size());}},
-                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimens.size());}},
-                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimens.size());}}
-            ));
-            cachedFullData.put(key, sortMapOnDateKeys(cachedData, getDateFormatter("dd-MMM-yyyy")));
-        }
-    }
+//    public void updateCache(Asset asset, Map<GraphType, Map<String, GraphData>> cachedFullData, GraphType key, DateTimeFormatter dtf, boolean total) {
+//        // bool total is bc when it's a total graph, the keys aren't the names of the institutes/etc, but an overall title
+//        Map<String, GraphData> cachedData = cachedFullData.get(key);
+//        String createdDate = dtf.format(asset.created_date);
+//
+//        if (cachedData.containsKey(createdDate)) {
+//            logger.info("New asset with {} specimens is being added.", asset.specimens.size());
+//            cachedData.get(createdDate).addInstituteAmts(total ? "Institutes" : asset.institution, asset.specimens.size());
+//            cachedData.get(createdDate).addWorkstationAmts(total ? "Workstations" : asset.workstation, asset.specimens.size());
+//            cachedData.get(createdDate).addPipelineAmts(total ? "Pipelines" : asset.pipeline, asset.specimens.size());
+//        } else {
+//            logger.info("Cached data does not contain today's date {}, and will be added.", createdDate);
+//            cachedData.put(createdDate, new GraphData(
+//                    new HashMap<>() {{put(total ? "Institutes" : asset.institution, asset.specimens.size());}},
+//                    new HashMap<>() {{put(total ? "Pipelines" : asset.pipeline, asset.specimens.size());}},
+//                    new HashMap<>() {{put(total ? "Workstations" : asset.workstation, asset.specimens.size());}}
+//            ));
+//            cachedFullData.put(key, sortMapOnDateKeys(cachedData, getDateFormatter("dd-MMM-yyyy")));
+//        }
+//    }
 }

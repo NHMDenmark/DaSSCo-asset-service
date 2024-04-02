@@ -62,6 +62,8 @@ public class StatisticsDataApi {
         Map<GraphType, Map<String, GraphData>> finalData;
 
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
+            System.out.println("in API");
+            System.out.println(timeFrame);
             finalData = statisticsDataService.getCachedGraphData(GraphView.valueOf(timeFrame));
         } else {
             logger.warn("Received time frame {} is invalid.", timeFrame);
