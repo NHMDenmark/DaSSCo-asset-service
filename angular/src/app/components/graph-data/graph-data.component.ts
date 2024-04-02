@@ -11,6 +11,8 @@ import moment, {Moment} from 'moment-timezone';
 import {FormControl, FormGroup} from '@angular/forms';
 import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/core';
 import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {HttpStatusCode} from "@angular/common/http";
 
 @Component({
   selector: 'dassco-graph-data',
@@ -50,7 +52,8 @@ export class GraphDataComponent {
       })
     );
 
-  constructor(public specimenGraphService: SpecimenGraphService) {
+  constructor(public specimenGraphService: SpecimenGraphService
+              , private snackBar: MatSnackBar) {
     this.timeFrameForm.valueChanges
       .pipe(startWith(null))
       .subscribe(range => {
@@ -139,5 +142,26 @@ export class GraphDataComponent {
   clearCustomTimeFrame(clearView: boolean) {
     this.timeFrameForm.reset();
     if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
+  }
+
+  refreshGraph() {
+    this.specimenGraphService.refreshGraph()
+      .pipe(
+        filter(isNotUndefined)
+      )
+      .subscribe(response => {
+        if (response.ok) {
+          this.viewForm.updateValueAndValidity({onlySelf: false, emitEvent: true});
+          this.openSnackBar("Cache has been refreshed", "OK")
+        } else if (response.status == HttpStatusCode.NoContent) {
+          this.openSnackBar("No data in cache to be refreshed", "OK")
+        } else {
+          this.openSnackBar("An error occurred and cache was not refreshed", "OK")
+        }
+      })
+  }
+
+  openSnackBar(message: string, action: string) {
+    this.snackBar.open(message, action, {duration: 3000});
   }
 }

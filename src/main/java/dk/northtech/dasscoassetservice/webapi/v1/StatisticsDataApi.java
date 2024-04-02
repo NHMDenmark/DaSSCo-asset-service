@@ -28,6 +28,7 @@ import java.util.Map;
 import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Component
 @Path("/v1/graphdata/")
@@ -126,4 +127,18 @@ public class StatisticsDataApi {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
     }
+
+    @GET
+    @Path("/refreshcache")
+    @Produces(TEXT_PLAIN)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = TEXT_PLAIN))
+    public Response refreshGraphCache() {
+        if (this.statisticsDataService.refreshCachedGraphData()) {
+            return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
+        }
+        return Response.status(Response.Status.NO_CONTENT).entity("Cache has no data to refresh").build();
+    }
+
 }

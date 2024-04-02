@@ -75,6 +75,18 @@ export class SpecimenGraphService {
       );
   }
 
+  refreshGraph(): Observable<HttpResponse<any> | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.baseUrl}/refreshcache`, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text', observe: 'response'})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/refreshcache`, undefined))
+            );
+        })
+      );
+  }
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);

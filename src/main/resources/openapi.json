@@ -1146,6 +1146,26 @@
         } ]
       }
     },
+    "/v1/graphdata/refreshcache" : {
+      "get" : {
+        "operationId" : "refreshGraphCache",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/plain" : { }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "text/plain" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/workstations" : {
       "get" : {
         "operationId" : "getWorkstations",

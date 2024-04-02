@@ -85,12 +85,16 @@ public class StatisticsDataService {
         }
     }
 
-    public void refreshCachedGraphData() {
+    public boolean refreshCachedGraphData() {
+        if (cachedGraphData == null || cachedGraphData.asMap().isEmpty()) {
+            return false;
+        }
         for (GraphView view : GraphView.values()) {
             if (cachedGraphData.asMap().containsKey(view)) {
                 cachedGraphData.refresh(view); // refresh only "refreshes" next time .get() is called
             }
         }
+        return true;
     }
 
     public List<StatisticsData> getGraphData(long timeFrame) {

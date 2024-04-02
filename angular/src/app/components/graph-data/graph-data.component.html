@@ -48,6 +48,15 @@
           <mat-button-toggle [value]="2">Workstation</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
+
+      <div class="refresh-btn">
+        <button mat-icon-button (click)="refreshGraph()"
+                #tooltip="matTooltip"
+                matTooltip="Refresh graph"
+                [matTooltipPosition]="'above'">
+          <mat-icon class="material-icons-outlined">sync</mat-icon>
+        </button>
+      </div>
     </div>
   </div>
 <!--  <dassco-export-graph></dassco-export-graph>-->
