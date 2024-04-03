@@ -57,5 +57,5 @@ export class StatusWidgetComponent {
       })
     );
 
-  constructor(public internalStatusService: InternalStatusService) { }
+  constructor(public internalStatusService: InternalStatusService) {}
 }

@@ -96,6 +96,7 @@ public class InternalStatusService {
 
             String formattedDateString = dtf.format(Instant.now());
             long epochFormatted = Instant.from(dtf.parse(formattedDateString)).toEpochMilli();
+            System.out.println("timestamp for $today: " + epochFormatted);
             return internalStatusRepository.getDailyInternalStatusAmt(epochFormatted);
         } else {
             return internalStatusRepository.getTotalInternalStatusAmt();

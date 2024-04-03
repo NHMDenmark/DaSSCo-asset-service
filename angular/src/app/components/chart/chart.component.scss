@@ -4,6 +4,8 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
+  height: 100%;
+  padding: 0 1rem 0 1rem;
 
   .export {
     display: flex;
@@ -12,14 +14,12 @@
 
     dassco-export-chart {
       position: absolute;
+       margin-top: 1rem;
     }
   }
 
   .canvas-container {
     position: relative;
-    height: fit-content; // 50vh
-    width: 80vw;
-    display: flex;
-    justify-content: center;
+    height: 100%;
   }
 }
