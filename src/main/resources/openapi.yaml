@@ -625,6 +625,28 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/graphdata/{timeframe}:
+    get:
+      operationId: getGraphData
+      parameters:
+      - name: timeframe
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphData'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/graphdata/custom:
     get:
       operationId: getGraphDataCustomTimeframe
@@ -649,28 +671,6 @@ paths:
             application/json:
               schema:
                 type: string
-        "400-599":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaSSCoError'
-      security:
-      - dassco-idp: []
-  /v1/graphdata/{timeframe}:
-    get:
-      operationId: getGraphDataDaily
-      parameters:
-      - name: timeframe
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GraphData'
         "400-599":
           content:
             application/json:

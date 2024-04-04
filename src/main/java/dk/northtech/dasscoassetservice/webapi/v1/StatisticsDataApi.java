@@ -58,13 +58,12 @@ public class StatisticsDataApi {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getGraphDataDaily(@PathParam("timeframe") String timeFrame) {
+    public Response getGraphData(@PathParam("timeframe") String timeFrame) {
         // {incremental (pr day data): data, exponential (continually adding pr day): data}
         Map<GraphType, Map<String, GraphData>> finalData;
 
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
-            System.out.println("in API");
-            System.out.println(timeFrame);
+            logger.info("Getting data for time frame {}.", timeFrame);
             finalData = statisticsDataService.getCachedGraphData(GraphView.valueOf(timeFrame));
         } else {
             logger.warn("Received time frame {} is invalid.", timeFrame);
@@ -100,6 +99,7 @@ public class StatisticsDataApi {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
+            logger.info("Data has been gathered for time frame {} to {}.", start, end);
             finalData.put(incremental, customData);
 
             return Response.status(Response.Status.OK).entity(finalData).build();
@@ -135,7 +135,7 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = TEXT_PLAIN))
     public Response refreshGraphCache() {
-        if (this.statisticsDataService.refreshCachedGraphData()) {
+        if (this.statisticsDataService.refreshCachedData()) {
             return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
         }
         return Response.status(Response.Status.NO_CONTENT).entity("Cache has no data to refresh").build();

@@ -47,7 +47,6 @@ export class GraphDataComponent {
     .pipe(
       filter(isNotUndefined),
       map((data: Map<string, Map<string, GraphStatsV2>>) => {
-        console.log(data)
         return data;
       })
     );
@@ -98,7 +97,6 @@ export class GraphDataComponent {
               distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
             )
             .subscribe(data => {
-              console.log('weekly data', data)
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });

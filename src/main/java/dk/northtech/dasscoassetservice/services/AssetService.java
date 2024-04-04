@@ -77,7 +77,7 @@ public class AssetService {
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -106,7 +106,7 @@ public class AssetService {
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -130,7 +130,7 @@ public class AssetService {
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -157,7 +157,7 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -196,7 +196,7 @@ public class AssetService {
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
         return existing;
     }
 
@@ -278,7 +278,7 @@ public class AssetService {
             return asset;
         }
 
-        statisticsDataService.refreshCachedGraphData();
+        statisticsDataService.refreshCachedData();
 
 //        this.statisticsDataService.addAssetToCache(asset);
         return asset;
