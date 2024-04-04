@@ -1,10 +1,10 @@
 import { Component} from '@angular/core';
 import {InternalStatusService} from '../../services/internal-status.service';
-import {combineLatest, filter, map, Observable} from 'rxjs';
+import {filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {MatTableDataSource} from '@angular/material/table';
 import {InternalStatusDataSource} from '../../types';
-import {HttpStatusCode} from '@angular/common/http';
+import {HttpResponse} from '@angular/common/http';
 
 @Component({
   selector: 'dassco-status-widget',
@@ -14,48 +14,38 @@ import {HttpStatusCode} from '@angular/common/http';
 export class StatusWidgetComponent {
   today = new Date();
   displayedColumns: string[] = ['status', 'no'];
-  dailyDataSource = new MatTableDataSource<InternalStatusDataSource>();
-  totalDataSource = new MatTableDataSource<InternalStatusDataSource>();
 
-  dailyInternalStatuses$: Observable<InternalStatusDataSource[]>
-  = combineLatest([
-    this.internalStatusService.dailyInternalStatuses$.pipe(filter(isNotUndefined)),
-    this.internalStatusService.totalInternalStatuses$.pipe(filter(isNotUndefined))
-  ])
+  dailyStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
+  = this.internalStatusService.dailyInternalStatuses$
+    .pipe(filter(isNotUndefined))
     .pipe(
-      map(([dailyStatuses, totalStatuses]) => {
-        const dailyListData: InternalStatusDataSource[] = [];
-        const totalListData: InternalStatusDataSource[] = [];
-        this.dailyDataSource.data = dailyListData;
-        this.totalDataSource.data = totalListData;
-
-        // todo please don't look at this code by god i just needed it to work for now okay please i swear i'll change it
-
-        if (dailyStatuses.status === HttpStatusCode.NoContent || !dailyStatuses.body) {
-          console.warn('No data received or data is null.');
-
-          dailyListData.push({status: 'COMPLETED', no: 0} as InternalStatusDataSource);
-          dailyListData.push({status: 'PENDING', no: 0} as InternalStatusDataSource);
-          dailyListData.push({status: 'FAILED', no: 0} as InternalStatusDataSource);
-
-          totalListData.push({status: 'COMPLETED', no: 0} as InternalStatusDataSource);
-          totalListData.push({status: 'PENDING', no: 0} as InternalStatusDataSource);
-          totalListData.push({status: 'FAILED', no: 0} as InternalStatusDataSource);
-        }
-
-        const mapData = new Map(Object.entries(dailyStatuses.body));
-        dailyListData.push({status: 'COMPLETED', no: mapData.get('completed')} as InternalStatusDataSource);
-        dailyListData.push({status: 'PENDING', no: mapData.get('pending')} as InternalStatusDataSource);
-        dailyListData.push({status: 'FAILED', no: mapData.get('failed')} as InternalStatusDataSource);
-
-        const mapDataTotal = new Map(Object.entries(totalStatuses.body));
-        totalListData.push({status: 'COMPLETED', no: mapDataTotal.get('completed')} as InternalStatusDataSource);
-        totalListData.push({status: 'PENDING', no: mapDataTotal.get('pending')} as InternalStatusDataSource);
-        totalListData.push({status: 'FAILED', no: mapDataTotal.get('failed')} as InternalStatusDataSource);
-
-        return dailyListData;
+      map((status: HttpResponse<InternalStatusDataSource>) => {
+        let dailyStatuses = new MatTableDataSource<InternalStatusDataSource>();
+        return this.getStatusFromResponse(status, dailyStatuses);
       })
-    );
+    )
+
+  totalStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
+  = this.internalStatusService.totalInternalStatuses$
+    .pipe(filter(isNotUndefined))
+    .pipe(
+      map((status: HttpResponse<InternalStatusDataSource>) => {
+        let totalStatuses = new MatTableDataSource<InternalStatusDataSource>();
+        return this.getStatusFromResponse(status, totalStatuses);
+      })
+    )
+
+  getStatusFromResponse(response: HttpResponse<InternalStatusDataSource>, dataSource: MatTableDataSource<InternalStatusDataSource>): MatTableDataSource<InternalStatusDataSource> {
+    if (response.ok && response.body) {
+      const statusMap = new Map(Object.entries(response.body));
+      statusMap.forEach((value: number, key: string) => {
+        dataSource.data.push(<InternalStatusDataSource>{status: key, no: value})
+      })
+    } else {
+      dataSource.data = <InternalStatusDataSource[]>[{status: 'COMPLETED', no: 0}, {status: 'PENDING', no: 0}, {status: 'FAILED', no: 0}];
+    }
+    return dataSource;
+  }
 
   constructor(public internalStatusService: InternalStatusService) {}
 }

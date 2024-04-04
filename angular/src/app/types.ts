@@ -14,7 +14,7 @@ export interface Institute {
 }
 
 export interface InternalStatusDataSource {
-  status: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
   no: number;
 }
 
