@@ -1,11 +1,14 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 
 public class Event {
     public String user;
     public Instant timeStamp;
     public DasscoEvent event;
+    @Schema(description = "name of the pipeline that started the event")
     public String pipeline;
     public String workstation;
 
