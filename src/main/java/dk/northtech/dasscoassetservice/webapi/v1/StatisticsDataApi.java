@@ -135,10 +135,8 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = TEXT_PLAIN))
     public Response refreshGraphCache() {
-        if (this.statisticsDataService.refreshCachedData()) {
-            return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
-        }
-        return Response.status(Response.Status.NO_CONTENT).entity("Cache has no data to refresh").build();
+        statisticsDataService.refreshCachedData();
+        return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
     }
 
 }

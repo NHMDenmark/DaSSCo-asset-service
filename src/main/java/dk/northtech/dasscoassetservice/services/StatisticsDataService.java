@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.StatisticsDataRepository;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 import joptsimple.internal.Strings;
 import org.apache.commons.collections4.MapIterator;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -87,22 +88,23 @@ public class StatisticsDataService {
         }
     }
 
-    public boolean refreshCachedData() {
-        if (cachedGraphData == null || cachedGraphData.asMap().isEmpty()) {
-            return false;
-        }
-        if (internalStatusService.cachedInternalStatus == null || internalStatusService.cachedInternalStatus.asMap().isEmpty()) {
-            return false;
-        }
-        for (GraphView view : GraphView.values()) {
-            if (cachedGraphData.asMap().containsKey(view)) {
-                cachedGraphData.refresh(view); // refresh only "refreshes" next time .get() is called
+    public void refreshCachedData() {
+        refreshGraphDataCache();
+        if (internalStatusService.cachedInternalStatus != null && !internalStatusService.cachedInternalStatus.asMap().isEmpty()) {
+            for (InternalStatusTimeFrame view : InternalStatusTimeFrame.values()) {
+                internalStatusService.cachedInternalStatus.refresh(view); // refresh only "refreshes" next time .get() is called
             }
         }
-        for (InternalStatusTimeFrame view : InternalStatusTimeFrame.values()) {
-            internalStatusService.cachedInternalStatus.refresh(view); // refresh only "refreshes" next time .get() is called
+    }
+
+    public void refreshGraphDataCache() {
+        if (cachedGraphData != null && !cachedGraphData.asMap().isEmpty()) {
+            for (GraphView view : GraphView.values()) {
+                if (cachedGraphData.asMap().containsKey(view)) {
+                    cachedGraphData.refresh(view); // refresh only "refreshes" next time .get() is called
+                }
+            }
         }
-        return true;
     }
 
     public List<StatisticsData> getGraphData(long timeFrame) {
