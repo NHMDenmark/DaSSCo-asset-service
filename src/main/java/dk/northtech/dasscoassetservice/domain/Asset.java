@@ -35,7 +35,7 @@ public class Asset {
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "false")
     public boolean asset_locked;
     // TODO: Does this mean the User can access or can not access?
-    @Schema(description = "", example = "ADMIN")
+    @Schema(description = "List of possible roles for users", example = "ADMIN")
     public List<Role> restricted_access = new ArrayList<>();
 
     @Schema(description = "A dictionary of dynamic properties")
@@ -57,7 +57,7 @@ public class Asset {
     public Instant date_metadata_taken;
 
     //References
-    @Schema(description = "The name of the institution which owns and digitised the specimen", example = "NNAD")
+    @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
     public String institution;
 
     @Schema(description = "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)", example = "ti-a02-202305241657")

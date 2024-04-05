@@ -1497,25 +1497,37 @@
         "type" : "object",
         "properties" : {
           "asset_guid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The Global Unique Identifier generated for each asset",
+            "example" : "ti-a01-202305241657"
           },
           "parent_guid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
+            "example" : "ti-a02-202305241657"
           },
           "error_timestamp" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time that the error happened",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "status" : {
             "type" : "string",
+            "description" : "The current status of an asset",
+            "example" : "BEING_PROCESSED",
             "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "ERDA_FAILED", "ERDA_ERROR" ]
           },
           "error_message" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "If an error happened during digitisation of the asset an error message can be displayed here",
+            "example" : "Failed to upload to ERDA: connection reset"
           },
           "share_allocation_mb" : {
             "type" : "integer",
-            "format" : "int32"
+            "description" : "Number of MB allocated for the asset",
+            "format" : "int32",
+            "example" : 10
           }
         }
       },
@@ -1793,13 +1805,19 @@
             "$ref" : "#/components/schemas/MinimalAsset"
           },
           "workstation" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the workstation used to do the imaging",
+            "example" : "ti-ws1"
           },
           "pipeline" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
+            "example" : "ti-p1"
           },
           "digitiser" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the person who imaged the specimens (creating the assets)",
+            "example" : "THBO"
           }
         }
       },

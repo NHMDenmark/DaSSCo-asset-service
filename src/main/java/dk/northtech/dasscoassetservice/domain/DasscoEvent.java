@@ -1,5 +1,8 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "What happened to the asset", example = "UPDATE_ASSET")
 public enum DasscoEvent {
     CREATE_ASSET,
     UPDATE_ASSET,

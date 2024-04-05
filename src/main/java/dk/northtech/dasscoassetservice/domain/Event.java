@@ -5,16 +5,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 
 public class Event {
-    // TODO: Add examples
-    @Schema(description = "Username of the user that initiated the event")
+    @Schema(description = "Username of the person that initiated the event", example = "test-username")
     public String user;
-    // TODO: Missing from Confluence: Timestamp
+    @Schema(description = "Date and time when the event was initiated", example = "2023-05-24T00:00:00.000Z")
     public Instant timeStamp;
-    @Schema (description = "what happened to the asset")
+    @Schema (description = "What happened to the asset", example = "DELETE_ASSET")
     public DasscoEvent event;
-    @Schema(description = "name of the pipeline that started the event")
+    @Schema(description = "The name of the pipeline that sent a create, update or delete request to the storage service", example = "ti-p1")
     public String pipeline;
-    @Schema(description = "name of the workstation that was used")
+    @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
     public String workstation;
 
     public Event(String user, Instant timeStamp, DasscoEvent event, String pipeline, String workstation) {
