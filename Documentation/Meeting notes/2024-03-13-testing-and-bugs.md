@@ -23,13 +23,8 @@ Thomas Bornerup <thomas@northtech.dk> wrote:
 - Add urls in confluence api doc
 - Document workflows
 - Document API for downloading asset events
+
  
-
-
-
-
-
-
 
 2024-04-13 Testing and bugs
 - 
@@ -48,3 +43,25 @@ Documentation updates
 - 
 - Document sync status for file info API
 - Move documentation to GitHub
+
+
+
+**Friday, 5 April 2024 at 17.34**
+-
+Thomas Bornerup <thomas@northtech.dk> wrote: 
+
+**API Changes:**
+-
+- Delete uploaded file if CRC check fails.
+  -If the failed file was overwriting an existing file, the existing file will be recreated.
+- proxy_allocation_status_text renamed to allocation_status_text to match asset service naming.
+ 
+**Bugfixes:**
+-
+- Add missing share_allocation_mb to asset status.
+- Reject allocation if existing files and parent files take up too much space.
+- Reject negative storage allocations.           
+ 
+**Improvements:**
+-
+- Better error messages when file proxy is down.
