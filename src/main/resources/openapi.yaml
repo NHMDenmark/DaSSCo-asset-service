@@ -947,8 +947,9 @@ components:
           example: 2023-05-24T00:00:00Z
         status:
           type: string
-          description: The current status of an asset
-          example: BEING_PROCESSED
+          description: An internal status field used to track the status of the upload
+            of related media
+          example: COMPLETED
           enum:
           - METADATA_RECEIVED
           - ASSET_RECEIVED
@@ -971,7 +972,7 @@ components:
         asset_pid:
           type: string
           description: Persistent Identifier for the asset
-          example: asdf-1234-3333-1000
+          example: asdf-12346-3333-100a21
         asset_guid:
           type: string
           description: The Global Unique Identifier generated for each asset
@@ -1015,7 +1016,8 @@ components:
         file_formats:
           type: array
           description: The format of the asset
-          example: JPEG
+          example:
+          - JPEG
           items:
             type: string
             description: The format of the asset
@@ -1035,9 +1037,12 @@ components:
           example: false
         restricted_access:
           type: array
-          example: ADMIN
+          description: List of possible roles for users
+          example:
+          - ADMIN
           items:
             type: string
+            description: Possible roles for the User
             example: ADMIN
             enum:
             - USER
@@ -1087,12 +1092,12 @@ components:
         institution:
           type: string
           description: The name of the institution which owns and digitised the specimen
-          example: NNAD
+          example: test-institution
         parent_guid:
           type: string
           description: "Name of the parent media (in most cases, the same as original_parent_name,\
             \ it can be different if it is a derivative of a derivative)"
-          example: ti-a02-202305241657
+          nullable: true
         collection:
           type: string
           description: The collection name within the institution that holds the specimen
@@ -1126,7 +1131,7 @@ components:
         workstation:
           type: string
           description: The name of the workstation used to do the imaging
-          example: ti-ws1
+          example: ti-ws-01
         pipeline:
           type: string
           description: "The name of the pipeline that sent a create, update or delete\
@@ -1147,13 +1152,17 @@ components:
       properties:
         user:
           type: string
-          description: Username of the user that initiated the event
+          description: Username of the person that initiated the event
+          example: test-username
         timeStamp:
           type: string
+          description: Date and time when the event was initiated
           format: date-time
+          example: 2023-05-24T00:00:00Z
         event:
           type: string
-          description: what happened to the asset
+          description: What happened to the asset
+          example: UPDATE_ASSET
           enum:
           - CREATE_ASSET
           - UPDATE_ASSET
@@ -1167,33 +1176,54 @@ components:
           - ASSET_FINALISED
         pipeline:
           type: string
-          description: name of the pipeline that started the event
+          description: "The name of the pipeline that sent a create, update or delete\
+            \ request to the storage service"
+          example: ti-p1
         workstation:
           type: string
-          description: name of the workstation that was used
+          description: The name of the workstation used to do the imaging
+          example: ti-ws1
     HttpInfo:
       type: object
       properties:
         path:
           type: string
+          description: Path to the asset
+          example: /assetfiles/<institution>/<collection>/<asset_guid>/
         hostname:
           type: string
+          description: Name of the host where the asset is uploaded
+          example: https://storage.test.dassco.dk/file_proxy/api
         total_storage_mb:
           type: integer
+          description: The total storage of the server where the FileProxy is deployed
           format: int32
+          example: 90000
         cache_storage_mb:
           type: integer
+          description: The total amount of storage dedicated for “caching” files for
+            external linking and other use
           format: int32
+          example: 20000
         remaining_storage_mb:
           type: integer
+          description: "The remaining storage on the server: total - cache - all_allocated\
+            \ = remaining"
           format: int32
+          example: 60000
         allocated_storage_mb:
           type: integer
+          description: The amount of storage allocated on the server to the new asset
           format: int32
+          example: 5000
         allocation_status_text:
           type: string
+          description: A detailed error message if an error happens
+          example: "Allocation failed, no more disk space"
         http_allocation_status:
           type: string
+          description: Status of the allocation
+          example: SUCCESS
           enum:
           - DISK_FULL
           - SUCCESS
@@ -1208,14 +1238,28 @@ components:
       properties:
         institution:
           type: string
+          description: The name of the institution which owns and digitised the specimen
+          example: test-institution
         collection:
           type: string
+          description: The collection name within the institution that holds the specimen
+          example: test-collection
         barcode:
           type: string
+          description: The barcodes of associated specimens
+          example: "'[\"ti-sp-00012\"']"
         specimen_pid:
           type: string
+          description: Persistent Identifier for the specimen
         preparation_type:
           type: string
+          description: The way that the specimen has been prepared (pinned insect
+            or mounted on a slide)
+          example: slide
+      description: Specimens are created together with Assets and inherit the institution
+        and collection from the asset it was created with. If another asset is created
+        with a specimen containing the same information it will be linked to the previously
+        created specimen
     AssetUpdateRequest:
       type: object
       properties:
@@ -1242,12 +1286,21 @@ components:
       properties:
         asset_guid:
           type: string
+          description: The Global Unique Identifier generated for each asset
+          example: ti-a01-202305241657
         parent_guid:
           type: string
+          description: "Name of the parent media (in most cases, the same as original_parent_name,\
+            \ it can be different if it is a derivative of a derivative)"
+          example: ti-a02-202305241657
         institution:
           type: string
+          description: The name of the institution which owns and digitised the specimen
+          example: NNAD
         collection:
           type: string
+          description: The collection name within the institution that holds the specimen
+          example: test-collection
     Audit:
       type: object
       properties:
@@ -1258,11 +1311,11 @@ components:
       properties:
         name:
           type: string
-          description: The name of the collection
+          description: The collection name within the institution that holds the specimen
           example: test-collection
         institution:
           type: string
-          description: The name of the institution to which the collection belong
+          description: The name of the institution which owns and digitised the specimen
           example: test-institution
     Institution:
       type: object
@@ -1276,24 +1329,32 @@ components:
       properties:
         name:
           type: string
-          description: The name of the pipeline
+          description: "The name of the pipeline that sent a create, update or delete\
+            \ request to the storage service"
           example: ti-p1
         institution:
           type: string
-          description: The institution that the pipeline belongs to
+          description: The name of the institution which owns and digitised the specimen
           example: test-institution
     PublicationLink:
       type: object
       properties:
         asset_guid:
           type: string
+          description: The Global Unique Identifier generated for each asset
+          example: ti-a01-202305241657
         link:
           type: string
+          description: The URL for the publisher site
         publisher_name:
           type: string
+          description: Name of the publisher
         timestamp:
           type: string
+          description: Date and time of the publication
           format: date-time
+          example: 2023-05-24T00:00:00Z
+      description: URL to external publisher sites to which the asset is published
     GraphData:
       type: object
       properties:
@@ -1317,22 +1378,32 @@ components:
       properties:
         instituteName:
           type: string
+          description: The name of the institution which owns and digitised the specimen
+          example: test-institution
         pipelineName:
           type: string
+          description: "The name of the pipeline that sent a create, update or delete\
+            \ request to the storage service"
+          example: ti-p1
         workstationName:
           type: string
+          description: The name of the workstation used to do the imaging
+          example: ti-ws1
         createdDate:
           type: integer
+          description: Date and time
           format: int64
         specimens:
           type: integer
+          description: Number of specimens in the specific asset
           format: int32
+          example: 42
     Workstation:
       type: object
       properties:
         name:
           type: string
-          description: The name of the workstation
+          description: The name of the workstation used to do the imaging
           example: ti-ws1
         status:
           type: string
@@ -1343,7 +1414,7 @@ components:
           - OUT_OF_SERVICE
         institution_name:
           type: string
-          description: The institution that where the workstation is located
+          description: The name of the institution which owns and digitised the specimen
           example: test-institution
   securitySchemes:
     dassco-idp:

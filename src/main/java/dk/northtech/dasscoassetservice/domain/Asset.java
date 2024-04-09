@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Asset {
-    @Schema(description = "Persistent Identifier for the asset", example = "asdf-1234-3333-1000")
+    @Schema(description = "Persistent Identifier for the asset", example = "asdf-12346-3333-100a21")
     public String asset_pid;
     @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
     public String asset_guid;
@@ -30,12 +30,12 @@ public class Asset {
     public String subject;
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")
     public String payload_type;
-    @Schema(description = "The format of the asset", example = "JPEG")
+    @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
     public List<FileFormat> file_formats = new ArrayList<>();
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "false")
     public boolean asset_locked;
     // TODO: Does this mean the User can access or can not access?
-    @Schema(description = "List of possible roles for users", example = "ADMIN")
+    @Schema(description = "List of possible roles for users", example = "[\"ADMIN\"]")
     public List<Role> restricted_access = new ArrayList<>();
 
     @Schema(description = "A dictionary of dynamic properties")
@@ -76,7 +76,7 @@ public class Asset {
 
     @Schema(description = "The name of the person who imaged the specimens (creating the assets)", example = "THBO")
     public String digitiser;
-    @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
+    @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws-01")
     public String workstation;
     @Schema(description = "The name of the pipeline that sent a create, update or delete request to the storage service", example = "ti-p1")
     public String pipeline;

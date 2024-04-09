@@ -255,6 +255,9 @@ public class AssetService {
         validateAsset(asset);
 
         asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+
+        // TODO: Before here the error happens.
+
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
