@@ -38,7 +38,7 @@ public class AssetService {
         this.jdbi = jdbi;
     }
 
-    public boolean auditAsset(Audit audit, String assetGuid) {
+    public void auditAsset(Audit audit, String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(Strings.isNullOrEmpty(audit.user())) {
             throw new IllegalArgumentException("Audit must have a user!");
@@ -55,7 +55,6 @@ public class AssetService {
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
-        return true;
     }
 
     public boolean deleteAsset(String assetGuid, User user) {
@@ -79,7 +78,7 @@ public class AssetService {
         return true;
     }
 
-    public boolean unlockAsset(String assetGuid) {
+    public void unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
@@ -87,7 +86,6 @@ public class AssetService {
         Asset asset = optAsset.get();
         asset.asset_locked = false;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
-        return true;
     }
     public List<Event> getEvents(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
@@ -106,7 +104,7 @@ public class AssetService {
         return true;
     }
 
-    public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
+    public void completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if(assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
         }
@@ -125,10 +123,9 @@ public class AssetService {
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
-        return true;
     }
 
-    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
+    public void setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
             assetStatus = InternalStatus.valueOf(status);
@@ -150,7 +147,6 @@ public class AssetService {
         }
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
-        return true;
     }
 
     public Asset updateAsset(Asset updatedAsset) {
@@ -251,6 +247,11 @@ public class AssetService {
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
+
+        if(allocation == 0){
+            throw new IllegalArgumentException("Allocation cannot be 0");
+        }
+
         validateAssetFields(asset);
         validateAsset(asset);
 
