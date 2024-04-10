@@ -260,6 +260,15 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Asset"
+              },
+              "examples" : {
+                "Asset Creation (No parent_guid)" : {
+                  "description" : "Asset Creation (No parent_guid)",
+                  "value" : "application/json"
+                },
+                "Asset Creation (with parent_guid)" : {
+                  "description" : "Asset Creation (with parent_guid)"
+                }
               }
             }
           }
@@ -1660,8 +1669,7 @@
           },
           "parent_guid" : {
             "type" : "string",
-            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
-            "nullable" : true
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)"
           },
           "collection" : {
             "type" : "string",
@@ -1696,7 +1704,7 @@
           "workstation" : {
             "type" : "string",
             "description" : "The name of the workstation used to do the imaging",
-            "example" : "ti-ws-01"
+            "example" : "ti-ws1"
           },
           "pipeline" : {
             "type" : "string",

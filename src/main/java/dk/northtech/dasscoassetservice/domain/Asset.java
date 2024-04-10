@@ -32,7 +32,7 @@ public class Asset {
     public String payload_type;
     @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
     public List<FileFormat> file_formats = new ArrayList<>();
-    @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "false")
+    @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "true")
     public boolean asset_locked;
     // TODO: Does this mean the User can access or can not access?
     @Schema(description = "List of possible roles for users", example = "[\"ADMIN\"]")
@@ -40,7 +40,7 @@ public class Asset {
 
     @Schema(description = "A dictionary of dynamic properties")
     public Map<String, String> tags = new HashMap<>();
-    @Schema(description = "Records if the asset has been manually audited", example = "true")
+    @Schema(description = "Records if the asset has been manually audited", example = "false")
     public boolean audited;
 
     @Schema(description = "Date and time the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z")
@@ -60,7 +60,7 @@ public class Asset {
     @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
     public String institution;
 
-    @Schema(description = "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)", example = "ti-a02-202305241657")
+    @Schema(description = "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)", example = "")
     public String parent_guid;
     @Schema(description = "The collection name within the institution that holds the specimen", example = "test-collection")
     public String collection;
@@ -70,13 +70,12 @@ public class Asset {
     public InternalStatus internal_status;
     @Schema(description = "Username of the person that updated the asset", example = "THBO")
     public String updateUser;
-    // TODO: Does not appear in Confluence. If we want to add a description I need to know what it is.
-    @Schema(description = "")
+    @Schema(description = "List of the events associated with an asset")
     public List<Event> events;
 
     @Schema(description = "The name of the person who imaged the specimens (creating the assets)", example = "THBO")
     public String digitiser;
-    @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws-01")
+    @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
     public String workstation;
     @Schema(description = "The name of the pipeline that sent a create, update or delete request to the storage service", example = "ti-p1")
     public String pipeline;
