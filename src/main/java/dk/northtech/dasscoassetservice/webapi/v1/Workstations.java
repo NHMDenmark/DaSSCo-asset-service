@@ -5,10 +5,12 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.Workstation;
 import dk.northtech.dasscoassetservice.services.WorkstationService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -21,6 +23,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/institutions/{institutionName}/workstations")
+@Tag(name = "Workstations", description = "Endpoints related to institutions workstations")
 @SecurityRequirement(name = "dassco-idp")
 public class Workstations {
     private WorkstationService workstationService;
@@ -31,6 +34,8 @@ public class Workstations {
     }
 
     @GET
+    @Operation(summary = "List Workstations", description = "Lists workstations belonging to an institution.")
+    // TODO: Wrong institution name = 200 status and empty object.
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Workstation.class)))

@@ -25,6 +25,11 @@ public class CollectionService {
         Optional<Institution> ifExists = institutionService.getIfExists(collection.institution());
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institute doesnt exist");
+        } else {
+            Institution institution = ifExists.get();
+            if (collectionRepository.listCollections(institution).contains(collection)){
+                throw new IllegalArgumentException("Collection already exists in this institute");
+            }
         }
         collectionRepository.persistCollection(collection);
         return collection;
@@ -32,8 +37,11 @@ public class CollectionService {
     }
 
     public List<Collection> listCollections(Institution institution) {
+        Optional<Institution> ifExists = institutionService.getIfExists(institution.name());
+        if(ifExists.isEmpty()){
+            throw new IllegalArgumentException("Institute doesnt exist");
+        }
         return collectionRepository.listCollections(institution);
-
     }
 
     public Optional<Collection> findCollection(String collectionName) {

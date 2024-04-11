@@ -25,8 +25,8 @@ import java.util.List;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
-@Tag(name = "Assets", description = "Endpoints related to assets.")
 @Path("/v1/assetmetadata/")
+@Tag(name = "Assets", description = "Endpoints related to assets.")
 @SecurityRequirement(name = "dassco-idp")
 public class Assetupdates {
 
@@ -38,12 +38,12 @@ public class Assetupdates {
     }
 
     @POST
-    @Operation(summary = "Audit Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (AUDIT_ASSET).\n\n" +
-                                                        "Changes \"audited\" to true.\n\n" +
-                                                        "The asset should be completed before auditing.\n\n" +
-                                                        "The asset cannot be audited by the same person that digitized it."
-    )
     @Path("{assetGuid}/audit")
+    @Operation(summary = "Audit Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (AUDIT_ASSET).\n\n" +
+            "Changes \"audited\" to true.\n\n" +
+            "The asset should be completed before auditing.\n\n" +
+            "The asset cannot be audited by the same person that digitized it."
+    )
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
@@ -55,8 +55,8 @@ public class Assetupdates {
     }
 
     @PUT
-    @Operation(summary = "Unlock Asset", description = "Unlocks an asset.")
     @Path("{assetGuid}/unlock")
+    @Operation(summary = "Unlock Asset", description = "Unlocks an asset.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "204", description = "No Content")
@@ -66,8 +66,8 @@ public class Assetupdates {
     }
 
     @POST
-    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED")
     @Path("{assetGuid}/assetreceived")
+    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
@@ -79,10 +79,10 @@ public class Assetupdates {
     }
 
     @POST
-    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n\n" +
-                                                            "The only case where this endpoint should be used is when all files belonging to an asset has been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA."
-    )
     @Path("{assetGuid}/complete")
+    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n\n" +
+            "The only case where this endpoint should be used is when all files belonging to an asset has been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA."
+    )
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
@@ -93,9 +93,10 @@ public class Assetupdates {
     }
 
     @PUT
-    @Operation(summary = "Set Asset Status", description = "Manually updates the status of an asset.\n\n" +
-                                                            "The available status are: METADATA_RECEIVED, ASSET_RECEIVED, COMPLETED, ERDA_FAILED, ERDA_ERROR")
     @Path("{assetGuid}/setstatus")
+    @Operation(summary = "Set Asset Status", description = "Manually updates the status of an asset.\n\n" +
+            "The available status are: METADATA_RECEIVED, ASSET_RECEIVED, COMPLETED, ERDA_FAILED, ERDA_ERROR"
+    )
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
@@ -121,8 +122,9 @@ public class Assetupdates {
 
     @POST
     @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n" +
-                                                        "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n" +
-                                                        "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded.")
+            "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n" +
+            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded."
+    )
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -144,8 +146,8 @@ public class Assetupdates {
 
 
     @PUT
-    @Operation(summary = "Update Asset", description = "Updates asset metadata")
     @Path("{assetGuid}")
+    @Operation(summary = "Update Asset", description = "Updates asset metadata")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -158,8 +160,8 @@ public class Assetupdates {
     }
 
     @GET
-    @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "204", description = "No Content. AssetGuid does not exist.")

@@ -27,9 +27,10 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     @Test
     void persistCollectionAlreadyExists() {
         collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1"));
-        Institution institution1 = new Institution("Institution_1");
+        Institution institution1 = new Institution("institution_1");
         List<Collection> before = collectionService.listCollections(institution1);
-        collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1"));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection already exists in this institute");
         List<Collection> after = collectionService.listCollections(institution1);
         assertThat(before.size()).isEqualTo(after.size());
     }

@@ -6,11 +6,14 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.CollectionService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -24,6 +27,7 @@ import java.util.List;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @ApiOperation("Collection API")
 @Component
+@Tag(name = "Collections", description = "Endpoints related to collections.")
 @Path("/v1/institutions/{institutionName}/collections/")
 @SecurityRequirement(name = "dassco-idp")
 public class Collections {
@@ -35,6 +39,7 @@ public class Collections {
     }
 
     @GET
+    @Operation(summary = "Get Collections", description = "List collections under a given institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiOperation(value = "List collections",  notes = "Lists all collections that belongs to given institution")
@@ -46,6 +51,7 @@ public class Collections {
     }
 
     @POST
+    @Operation(summary = "Create Collection", description = "Creates a new collection under an institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -57,7 +63,10 @@ public class Collections {
         return this.collectionService.persistCollection(new Collection(collection.name(), institutionName));
     }
 
+    // Hidden until implemented
+    @Hidden
     @DELETE
+    @Operation(summary = "Delete Collection", description = "Deletes a collection from an institution.")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     //@ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
