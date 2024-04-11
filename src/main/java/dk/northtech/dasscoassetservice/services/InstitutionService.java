@@ -28,6 +28,9 @@ public class InstitutionService {
         if(Strings.isNullOrEmpty(institution.name())) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
+        if (institutionRepository.findInstitution(institution.name()).isPresent()){
+            throw new IllegalArgumentException("Institute already exists");
+        }
 //        else if (!institution.name().matches(name_regex)){
 //            throw new IllegalArgumentException("Name must be alphanumeric");
 //        }

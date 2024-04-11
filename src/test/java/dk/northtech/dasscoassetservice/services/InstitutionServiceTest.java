@@ -32,7 +32,8 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
             return institution.name().equals("Teztitution");
         }).findAny();
         assertThat(result.isPresent()).isTrue();
-        institutionService.createInstitution(new Institution("Teztitution"));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("Teztitution")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute already exists");
         //Verify that institution is not created if already exists
         List<Institution> resultList = institutionService.listInstitutions();
         assertThat(resultList.size()).isEqualTo(institutions.size());

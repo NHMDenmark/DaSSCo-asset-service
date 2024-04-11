@@ -47,10 +47,10 @@ public class Institutions {
     @GET
     @Path("/{institutionName}")
     @Operation(summary = "Get Institution", description = "Returns an institution.")
-    // TODO: Sending empty string returns all: is this correct?. Sending non existent institution returns 204 and empty body.
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
+    @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Institution getInstitutes(@PathParam("institutionName") String institutionName) {
         Optional<Institution> instOpt = institutionService.getIfExists(institutionName);
@@ -59,7 +59,6 @@ public class Institutions {
 
     @POST
     @Operation(summary = "Create Institution", description = "Registers a new institution.")
-    // TODO: Trying to register an already existing institution gives a 200, and no error message.
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
