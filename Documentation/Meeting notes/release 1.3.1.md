@@ -1,5 +1,7 @@
 **Release 1.3.1** 
 -
+2024-04-12
+
 **API Changes:**
 -
 - Delete uploaded file if CRC check fails.
