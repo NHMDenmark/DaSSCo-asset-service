@@ -80,8 +80,17 @@ public class InternalStatusService {
                 .collect(Collectors.toList());
     }
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
-
-        return internalStatusRepository.getAssetStatus(assetGuid);
+        Optional<AssetStatusInfo> assetStatus = internalStatusRepository.getAssetStatus(assetGuid);
+        if(assetStatus.isEmpty()){
+            return assetStatus;
+        }
+        AssetStatusInfo assetStatusInfoWithMb = jdbi.withHandle(h -> {
+            AssetStatusInfo assetStatusInfo = assetStatus.get();
+            DirectoryRepository dirRepository = h.attach(DirectoryRepository.class);
+            Directory writeableDirectory = dirRepository.getWriteableDirectory(assetGuid);
+            return new AssetStatusInfo(assetGuid, assetStatusInfo.parent_guid(), assetStatusInfo.error_timestamp(), assetStatusInfo.status(), assetStatusInfo.error_message(), writeableDirectory.allocatedStorageMb());
+        });
+        return Optional.of(assetStatusInfoWithMb);
     }
 
     public Optional<Map<String, Integer>> getInternalStatusAmt(boolean daily) {
