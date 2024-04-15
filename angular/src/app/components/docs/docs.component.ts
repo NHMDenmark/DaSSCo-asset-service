@@ -9,18 +9,29 @@ import {Subject, takeUntil} from "rxjs";
 })
 export class DocsComponent implements OnInit, OnDestroy {
   #componentDestroyed!: Subject<unknown>;
-  constructor(private oidcSecurityService: OidcSecurityService) { }
+  selectedDoc : string;
+  urls : { label: string, value: string }[] = [
+    { label: "dassco-asset-service", value: "/api/openapi.json" },
+    { label: "dassco-file-proxy", value: "http://localhost:8080/file_proxy/api/openapi.json"}
+  ]
+  constructor(private oidcSecurityService: OidcSecurityService) {
+    this.selectedDoc = this.urls[0].value;
+  }
 
   ngOnInit(): void {
     this.#componentDestroyed = new Subject<unknown>();
+    this.loadData(this.selectedDoc);
+  }
+
+  loadData(url : string){
     let docEl = document.getElementById("rapidocs");
     this.oidcSecurityService.getAccessToken()
       .pipe(takeUntil(this.#componentDestroyed))
       .subscribe(token => {
         const headers = new Headers({
           'Authorization': 'Bearer ' + token
-        });
-        fetch('/api/openapi.json', { headers: headers })
+        })
+        fetch(url, { headers: headers })
           .then(response => response.json())
           .then(data => {
             if (docEl) {
@@ -62,5 +73,9 @@ export class DocsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.#componentDestroyed.next(true);
     this.#componentDestroyed.complete();
+  }
+
+  onSelectChange() {
+    this.loadData(this.selectedDoc);
   }
 }

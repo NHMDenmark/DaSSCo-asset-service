@@ -24,6 +24,9 @@ public class WorkstationService {
 
 
     public List<Workstation> listWorkstations(Institution institution) {
+        if (institutionService.getIfExists(institution.name()).isEmpty()){
+            throw new IllegalArgumentException("Institution does not exist");
+        }
         return workstationRepository.listWorkStations(institution);
     }
 
@@ -53,6 +56,9 @@ public class WorkstationService {
     }
 
     public void updateWorkstation(Workstation workstation) {
+        if (institutionService.getIfExists(workstation.institution_name()).isEmpty()){
+            throw new IllegalArgumentException("Institution does not exist");
+        }
         workstationRepository.updateWorkstation(workstation);
     }
 }

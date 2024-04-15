@@ -3,10 +3,13 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -29,8 +32,11 @@ import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+// Hidden for now
+@Hidden
 @Component
 @Path("/v1/graphdata/")
+@Tag(name = "Statistics Data", description = "Endpoints related to statistics data.")
 @SecurityRequirement(name = "dassco-idp")
 public class StatisticsDataApi {
     private static final Logger logger = LoggerFactory.getLogger(StatisticsDataApi.class);
@@ -41,7 +47,11 @@ public class StatisticsDataApi {
         this.statisticsDataService = statisticsDataService;
     }
 
+    // TODO: I need access to some documentation to be able to understand these endpoints.
+    // TODO: No mention of it on Confluence.
+
     @GET
+    @Operation(summary = "Get Graph Data", description = "")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = StatisticsData.class)))
@@ -52,6 +62,7 @@ public class StatisticsDataApi {
     }
 
     @GET
+    @Operation(summary = "Get Graph Data during timeframe", description = "")
     @Path("/{timeframe}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -77,6 +88,7 @@ public class StatisticsDataApi {
     }
 
     @GET
+    @Operation(summary = "Get Custom Graph Data", description = "")
     @Path("/custom")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})

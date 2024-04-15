@@ -6,6 +6,7 @@ import dk.northtech.dasscoassetservice.domain.Publisher;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.PublicationService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +22,7 @@ import java.util.List;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Hidden
 @Component
 @Path("/v1/publishers/{publisherName}")
 @Tag(name = "Publishers", description = "Endpoints related to publishers.")

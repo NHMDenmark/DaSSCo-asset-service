@@ -13,10 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.*;
 import org.springframework.stereotype.Component;
 
 import javax.print.attribute.standard.Media;
@@ -26,7 +23,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/assetmetadata/")
-@Tag(name = "Assets", description = "Endpoints related to assets.")
+@Tag(name = "Asset Metadata", description = "Endpoints related to asset's metadata")
 @SecurityRequirement(name = "dassco-idp")
 public class Assetupdates {
 

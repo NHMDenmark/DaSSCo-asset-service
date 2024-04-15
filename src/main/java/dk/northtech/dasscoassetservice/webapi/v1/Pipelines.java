@@ -35,7 +35,6 @@ public class Pipelines {
 
 
     @GET
-    // TODO: Sending un existent institution returns a 200 and no error.
     @Operation(summary = "List Pipelines", description = "List all pipelines belonging to an institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})

@@ -6,10 +6,13 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -27,6 +30,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/assets")
+@Tag(name = "Assets", description = "Endpoints related to assets.")
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
     private final InternalStatusService internalStatusService;
@@ -37,6 +41,7 @@ public class AssetApi {
     }
 
     @GET
+    @Operation(summary = "Get Assets", description = "Returns a list of assets.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
@@ -47,6 +52,8 @@ public class AssetApi {
         return list;
     }
 
+    // TODO: Hidden for now.
+    @Hidden
     @GET
     @Path("/internalstatus/{timeframe}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -58,6 +65,8 @@ public class AssetApi {
         return Response.status(Response.Status.OK).entity(statusAmts).build();
     }
 
+    // TODO: Hidden for now.
+    @Hidden
     @GET
     @Path("/inprogress")
     @Produces(MediaType.APPLICATION_JSON)
@@ -72,7 +81,7 @@ public class AssetApi {
     @Path("/status/{assetGuid}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER,SecurityRoles.DEVELOPER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetStatusInfo.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getAssetStatus(@PathParam("assetGuid") String assetGuid) {
         Optional<AssetStatusInfo> assetStatus = this.internalStatusService.getAssetStatus(assetGuid);
