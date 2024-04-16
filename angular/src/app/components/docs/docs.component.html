@@ -1,8 +1,3 @@
-<div style="background: #a7d5db; padding: 10px" >
-  <select id="selector" [(ngModel)]="selectedDoc" (change)="onSelectChange()">
-    <option *ngFor="let url of urls" [value]="url.value">{{ url.label }}</option>
-  </select>
-</div>
 <rapi-doc
   id="rapidocs"
   show-header="false"
@@ -21,4 +16,11 @@
   allow-try="true"
   schema-style="table"
 >
+  <div id="selector-div">
+    <label for="selector">Choose Documentation:</label>
+    <br>
+    <select id="selector" [(ngModel)]="selectedDoc" (change)="onSelectChange()">
+      <option *ngFor="let url of urls" [value]="url.value">{{ url.label }}</option>
+    </select>
+  </div>
 </rapi-doc>

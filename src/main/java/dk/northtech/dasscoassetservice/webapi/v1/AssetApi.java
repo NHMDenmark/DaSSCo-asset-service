@@ -79,6 +79,7 @@ public class AssetApi {
 
     @GET
     @Path("/status/{assetGuid}")
+    @Operation(summary = "Get Asset Status", description = "Returns the status of an asset.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER,SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetStatusInfo.class)))

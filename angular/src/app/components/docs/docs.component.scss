@@ -15,3 +15,20 @@ rapi-doc::part(section-operation) {
   --red: #E64831;
   --green: #054791;
 }
+
+#selector-div {
+  background: #a7d5db;
+  padding: 20px;
+}
+
+#selector {
+  appearance: none;
+  width: 30%;
+  font-size: 1rem;
+  background-color: #fff;
+  border: 1px solid #054F91FF;
+  color: #000;
+  cursor: pointer;
+  -moz-appearance:none;
+
+}
