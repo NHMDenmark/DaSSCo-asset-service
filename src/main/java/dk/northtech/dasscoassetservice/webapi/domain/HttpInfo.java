@@ -12,7 +12,7 @@ public record HttpInfo(
         int total_storage_mb,
         @Schema(description = "The total amount of storage dedicated for “caching” files for external linking and other use", example = "20000")
         int cache_storage_mb,
-        @Schema(description = "The remaining storage on the server: total - cache - all_allocated = remaining", example = "60000")
+        @Schema(description = "The remaining storage on the server: total - cache - all_allocated = remaining", example = "70000")
         int remaining_storage_mb,
         @Schema(description = "The amount of storage allocated on the server to the new asset", example = "5000")
         int allocated_storage_mb,

@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 
+@Schema(description = "Asset information consisting only on asset_guid, parent_guid, institution and collection.")
 public record MinimalAsset(
         @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
         String asset_guid,

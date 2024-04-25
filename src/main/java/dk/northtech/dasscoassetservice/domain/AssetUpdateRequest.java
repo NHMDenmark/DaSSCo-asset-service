@@ -4,10 +4,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 
 public record AssetUpdateRequest(
-        // TODO: Understand what shareName and minimalAsset are so I can put a description.
+        // TODO: Missing ShareName.
         @Schema(description = "", example = "")
         @Nullable String shareName,
-        @Schema(description = "", example = "")
+        @Schema(description = "Asset information consisting only on asset_guid, parent_guid, institution and collection.")
         @Nullable MinimalAsset minimalAsset,
         @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
         @Nullable String workstation,

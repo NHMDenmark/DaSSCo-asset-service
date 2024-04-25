@@ -65,7 +65,7 @@ public class AssetApi {
         return Response.status(Response.Status.OK).entity(statusAmts).build();
     }
 
-    // TODO: Hidden for now.
+    // TODO: Hidden for now. Apparently it does not work yet, there's some change needed in the Database.
     @Hidden
     @GET
     @Path("/inprogress")

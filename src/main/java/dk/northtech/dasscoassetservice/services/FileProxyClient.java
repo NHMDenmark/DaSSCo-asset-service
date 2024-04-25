@@ -34,15 +34,13 @@ public class FileProxyClient {
     public HttpInfo prepareWorkDir(HttpShareRequest httpShareRequest, User user) {
         Gson gson = new Gson();
         try {
-            // TODO: Is this duplicated? It is also present in openHttpShare.
-            // httpShareRequest.users.add(user.username);
+            httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
             HttpRequest request = HttpRequest.newBuilder()
                     .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/"+httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
-            // TODO: IF THE ASSET HAS A PARENT_GUID, THE CREATION FAILS.
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             String body = send.body();

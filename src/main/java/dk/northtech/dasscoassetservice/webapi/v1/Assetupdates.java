@@ -120,7 +120,7 @@ public class Assetupdates {
     @POST
     @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n" +
             "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n" +
-            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded."
+            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status and digitiser. The Workstation has to be IN_SERVICE."
     )
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -144,7 +144,7 @@ public class Assetupdates {
 
     @PUT
     @Path("{assetGuid}")
-    @Operation(summary = "Update Asset", description = "Updates asset metadata")
+    @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and uploadUser.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -165,7 +165,6 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid) {
-        // TODO: If wrong asset_guid, the code is 204. I added it as an extra code response, but maybe we could raise an exception instead.
         return this.assetService.getAsset(assetGuid).orElse(null);
     }
 

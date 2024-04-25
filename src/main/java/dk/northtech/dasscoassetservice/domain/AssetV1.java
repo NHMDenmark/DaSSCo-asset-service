@@ -5,13 +5,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 
-// TODO: Add @Schema information.
 public record AssetV1(
         @Schema(description = "", example = "CP0002637_L_selago_Fuji_ICC")
         String originalMedia,
-        @Schema(description = "", example = "1970-01-01T00:00:00.000Z")
+        @Schema(description = "Date and time when the media was taken", example = "1970-01-01T00:00:00.000Z")
         Instant originalMediaTaken,
-        @Schema(description = "", example = "Justin Hungerford")
+        @Schema(description = "The name of the person who imaged the specimens (creating the assets)", example = "Justin Hungerford")
         String digitiser,
         @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
         String workstationName,
@@ -21,19 +20,19 @@ public record AssetV1(
         String institution,
         @Schema(description = "The collection name within the institution that holds the specimen", example = "test-collection")
         String collection,
-        @Schema(description = "", example = "1970-01-01T00:00:00.000Z")
+        @Schema(description = "Date and time when the media was created", example = "1970-01-01T00:00:00.000Z")
         Instant dateMediaCreated,
-        @Schema(description = "", example = "PIPEHERB0001")
+        @Schema(description = "Pipeline used for creating the media", example = "PIPEHERB0001")
         String mediaCreatedBy,
-        @Schema(description = "", example = "[\"1970-01-01T00:00:00.000Z\"]")
+        @Schema(description = "Date and time when the media was updated", example = "[\"1970-01-01T00:00:00.000Z\"]")
         List<Instant> dateMediaUpdated,
-        @Schema(description = "", example = "[\"PIPEHERB0001\"]")
+        @Schema(description = "Pipeline used for updating the media", example = "[\"PIPEHERB0001\"]")
         List<String> mediaUpdatedBy,
-        @Schema(description = "", example = "1970-01-01T00:00:00.000Z")
+        @Schema(description = "Date and time when the media was deleted", example = "1970-01-01T00:00:00.000Z")
         String dateMediaDeleted,
-        @Schema(description = "", example = "PIPEHERB0001")
+        @Schema(description = "Pipeline used for deleting the media", example = "PIPEHERB0001")
         String mediaDeletedBy,
-        @Schema(description = "", example = "1970-01-01T00:00:00.000Z")
+        @Schema(description = "Date and time when the metadata was created", example = "1970-01-01T00:00:00.000Z")
         Instant dateMetadataCreated,
         @Schema(description = "", example = "[\"PIPEHERB0001\"]")
         List<String> metadataCreatedBy,

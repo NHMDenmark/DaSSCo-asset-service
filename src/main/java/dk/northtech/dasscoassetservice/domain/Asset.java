@@ -25,7 +25,6 @@ public class Asset {
     public List<Specimen> specimens = new ArrayList<>();
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
     public String funding;
-    // TODO: Subject is not present in Confluence. What does it refer to?
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
     public String subject;
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")
@@ -34,7 +33,6 @@ public class Asset {
     public List<FileFormat> file_formats = new ArrayList<>();
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "true")
     public boolean asset_locked;
-    // TODO: Does this mean the User can access or can not access?
     @Schema(description = "List of possible roles for users", example = "[\"ADMIN\"]")
     public List<Role> restricted_access = new ArrayList<>();
 

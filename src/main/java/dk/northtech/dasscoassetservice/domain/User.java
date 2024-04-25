@@ -8,7 +8,6 @@ import java.util.Set;
 public class User {
     @Schema(description = "Username of the user", example = "THBO")
     public String username;
-    // TODO: Token does not seem to be used or created.
     public String token;
     public String keycloakId;
     @Schema(description = "Role/s for the user", example = "ADMIN")
