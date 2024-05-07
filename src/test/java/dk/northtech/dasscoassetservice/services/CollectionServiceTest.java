@@ -41,4 +41,10 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(collection));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
     }
+
+    @Test
+    void persistCollectionNameIsNull(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("", "institution_1")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
+    }
 }

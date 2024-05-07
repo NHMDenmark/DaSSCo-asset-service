@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.CollectionRepository;
 import jakarta.inject.Inject;
+import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,6 +31,9 @@ public class CollectionService {
             if (collectionRepository.listCollections(institution).contains(collection)){
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
+        }
+        if (Strings.isNullOrEmpty(collection.name())){
+            throw new IllegalArgumentException("Name cannot be null or empty");
         }
         collectionRepository.persistCollection(collection);
         return collection;
