@@ -55,7 +55,8 @@ public class Assetupdates {
     @Path("{assetGuid}/unlock")
     @Operation(summary = "Unlock Asset", description = "Unlocks an asset.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN})
+    // TODO: I changed Roles Allowed from ADMIN only to Admin + Service.
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void unlockAsset(@PathParam("assetGuid") String assetGuid) {
@@ -92,7 +93,7 @@ public class Assetupdates {
     @PUT
     @Path("{assetGuid}/setstatus")
     @Operation(summary = "Set Asset Status", description = "Manually updates the status of an asset.\n\n" +
-            "The available status are: METADATA_RECEIVED, ASSET_RECEIVED, COMPLETED, ERDA_FAILED, ERDA_ERROR"
+            "The available status are: ASSET_RECEIVED, ERDA_FAILED, ERDA_ERROR"
     )
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

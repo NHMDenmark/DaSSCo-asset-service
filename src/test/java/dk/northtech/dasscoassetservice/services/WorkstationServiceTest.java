@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WorkstationServiceTest extends AbstractIntegrationTest {
     @Inject
@@ -23,6 +24,21 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
         Workstation workstation = result.get();
         assertThat(workstation.name()).isEqualTo("testPersistWorkstation");
         assertThat(workstation.status()).isEqualTo(WorkstationStatus.IN_SERVICE);
+        // Check that it is not possible to create same workstation twice.
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.createWorkStation("institution_1", new Workstation("testPersistWorkstation", WorkstationStatus.IN_SERVICE, "institution_1")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Workstation with name [testPersistWorkstation] already exists in institution [institution_1]");
+    }
+
+    @Test
+    void testPersistWorkstationIllegalName(){
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> workstationService.createWorkStation("institution_1", new Workstation("", WorkstationStatus.IN_SERVICE, "institution_1")));
+        assertThat(runtimeException).hasMessageThat().isEqualTo("Workstation must have a name");
+    }
+
+    @Test
+    void testPersistWorkstationNonExistentInstitution(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.createWorkStation("non-existent-institution", new Workstation("workstation-1", WorkstationStatus.IN_SERVICE, "non-existent-institution")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
     }
 
     @Test
@@ -38,10 +54,21 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testUpdateWorkstationNonExistentInstitution(){
+        Workstation workstation = new Workstation("testUpdateWorkstationFail", WorkstationStatus.IN_SERVICE, "non-existent-institution");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.updateWorkstation(workstation));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
+    }
+
+    @Test
     void testListWorkstation() {
         List<Workstation> institution1 = workstationService.listWorkstations(new Institution("institution_1"));
         assertThat(institution1.size()).isAtLeast(2);
-
     }
 
+    @Test
+    void testListWorkstationFail(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.listWorkstations(new Institution("non-existent-institution")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
+    }
 }

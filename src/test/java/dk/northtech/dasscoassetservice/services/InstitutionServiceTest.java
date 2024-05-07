@@ -37,8 +37,5 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
         //Verify that institution is not created if already exists
         List<Institution> resultList = institutionService.listInstitutions();
         assertThat(resultList.size()).isEqualTo(institutions.size());
-
     }
-
-
 }

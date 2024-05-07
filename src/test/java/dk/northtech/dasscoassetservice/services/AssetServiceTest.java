@@ -40,9 +40,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
+        // Check that creating asset without allocation throws error:
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 0));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
         assetService.persistAsset(createAsset, user, 10);
         //Check that the same asset cannot be added multiple times
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 11));
+        illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 11));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset createAsset already exists");
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
         assertThat(resultOpt.isPresent()).isTrue();
