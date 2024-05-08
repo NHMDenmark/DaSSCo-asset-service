@@ -87,9 +87,11 @@ public class AssetService {
         asset.asset_locked = false;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
     }
+
     public List<Event> getEvents(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
     }
+
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
         Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
         if(optAsset.isEmpty()) {

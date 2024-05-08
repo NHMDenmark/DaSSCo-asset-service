@@ -144,6 +144,42 @@ class AssetServiceTest extends AbstractIntegrationTest {
 //    }
 
     @Test
+    void testGetEvents(){
+        Asset asset = getTestAsset("assetEvents");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i1_c1";
+        asset.asset_pid = "pid-assetEvents";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        List<Event> events = assetService.getEvents("assetEvents");
+        assertThat(events.size()).isAtLeast(1);
+        assertThat(events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+    }
+
+    @Test
+    void testCompleteAsset(){
+        Asset asset = getTestAsset("assetComplete");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetComplete";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        Optional<Asset> optAsset = assetService.getAsset("assetComplete");
+        assertThat(optAsset.isPresent()).isTrue();
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
+        assertThat(assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("assetComplete", null, null, null),"i2_w1", "i2_p1", "bob"))).isTrue();
+        Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
+        assertThat(optCompletedAsset.isPresent()).isTrue();
+        assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
+    }
+
+    @Test
     void testDeleteAsset() {
         Asset createAsset = getTestAsset("deleteAsset");
         createAsset.pipeline = "i1_p1";
@@ -166,6 +202,30 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testAssetAlreadyDeleted(){
+        Asset createAsset = getTestAsset("deleteAsset2");
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-deleteAsset";
+        createAsset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(createAsset, user,10);
+        // Deleting returns true (no errors)
+        assertThat(assetService.deleteAsset("deleteAsset2", user)).isTrue();
+        Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset2");
+        // Check that asset has not really been deleted, just added new event:
+        assertThat(deleteAssetOpt.isPresent()).isTrue();
+        Asset result = deleteAssetOpt.get();
+        assertThat(result.date_asset_deleted).isNotNull();
+        assertThat(result.events.get(0).event).isEqualTo(DasscoEvent.DELETE_ASSET_METADATA);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAsset("deleteAsset2", user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset is already deleted");
+    }
+
+    @Test
     void testDeleteAssetNoUser(){
         Asset asset = getTestAsset("deleteAssetNoUser");
         asset.pipeline = "i2_p1";
@@ -178,6 +238,22 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset, user, 10);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAsset("deleteAssetNoUser", new User()));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("User is null");
+    }
+
+    @Test
+    void testDeleteAssetAssetIsLocked(){
+        Asset asset = getTestAsset("deleteAssetLocked");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-deleteAssetLocked";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.asset_locked = true;
+        assetService.persistAsset(asset, user, 10);
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.deleteAsset("deleteAssetLocked", user));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Asset is locked");
     }
 
     @Test
@@ -303,7 +379,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void lockUnlockAsset() {
+    void testLockUnlockAsset() {
         Asset asset = getTestAsset("lockUnlockAsset");
 //        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
         asset.pipeline = "i1_p2";
@@ -315,12 +391,20 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user, 11);
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
-        Asset lockedAsset = lockedAssetOpt.get();
-        assertThat(lockedAsset.asset_locked).isTrue();
+        assertThat(lockedAssetOpt.isPresent()).isTrue();
+        Asset locked = lockedAssetOpt.get();
+        assertThat(locked.asset_locked).isTrue();
         assetService.unlockAsset(asset.asset_guid);
         Optional<Asset> unlockedAssetOpt = assetService.getAsset("lockUnlockAsset");
+        assertThat(unlockedAssetOpt.isPresent()).isTrue();
         Asset unlockedAsset = unlockedAssetOpt.get();
         assertThat(unlockedAsset.asset_locked).isFalse();
+    }
+
+    @Test
+    void testUnlockAssetAssetDoesntExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.unlockAsset("non-existent-asset"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
     @Test
