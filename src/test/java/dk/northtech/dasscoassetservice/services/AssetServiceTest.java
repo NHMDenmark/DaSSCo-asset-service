@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestClassOrder;
 
 import javax.validation.constraints.Min;
 import java.time.Instant;
@@ -180,6 +181,122 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testCompleteAssetAssetDoesntExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("non-existent-asset", null, null, null),"i1_w1", "i1_p1", "bob")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
+    @Test
+    void testCompleteUpload(){
+        Asset asset = getTestAsset("assetUploadComplete");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetUploadComplete";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        assetService.completeUpload(new AssetUpdateRequest("share1", new MinimalAsset("assetUploadComplete", null, null, null), "i2_w1", "i2_p1", "bob"), user);
+        Optional<Asset> optAsset = assetService.getAsset("assetUploadComplete");
+        assertThat(optAsset.isPresent()).isTrue();
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("ASSET_RECEIVED");
+    }
+
+    @Test
+    void testCompleteUploadAssetIsNull(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(null, null, "i2_w1", "i2_p1", "bob"), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset cannot be null");
+    }
+
+    @Test
+    void testCompleteUploadShareIsNull(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(null, new MinimalAsset("non-existent-asset", null, null, null), "i2_w1", "i2_p1", "bob"), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Share id cannot be null");
+    }
+
+    @Test
+    void testCompleteUploadAssetDoesntExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest("Share1", new MinimalAsset("non-existent-asset", null, null, null), "i2_w1", "i2_p1", "bob"), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
+    @Test
+    void testCompleteUploadAssetIsLocked(){
+        Asset asset = getTestAsset("completeUploadAssetIsLocked");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i1_c1";
+        asset.asset_pid = "pid-completeUploadAssetIsLocked";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.asset_locked = true;
+        assetService.persistAsset(asset, user, 1);
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.completeUpload(new AssetUpdateRequest("Share1", new MinimalAsset("completeUploadAssetIsLocked", null, null, null), "i2_w1", "i2_p1", "bob"), user));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Asset is locked");
+    }
+
+    @Test
+    void testSetAssetStatus(){
+        Asset asset = getTestAsset("setAssetStatus");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatus";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        assetService.setAssetStatus("setAssetStatus", "ERDA_ERROR", "");
+        Optional<Asset> optAsset = assetService.getAsset("setAssetStatus");
+        assertThat(optAsset.isPresent()).isTrue();
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("ERDA_ERROR");
+    }
+
+    @Test
+    void testSetAssetStatusInvalidStatus(){
+        Asset asset = getTestAsset("setAssetStatusInvalidStatus");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("setAssetStatusInvalidStatus", "INVALID_STATUS", ""));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Invalid status: INVALID_STATUS");
+        Optional<Asset> optAsset = assetService.getAsset("setAssetStatusInvalidStatus");
+        assertThat(optAsset.isPresent()).isTrue();
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
+    }
+
+    @Test
+    void testSetAssetStatusUnsupportedStatus(){
+        Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusUnsupportedStatus";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("setAssetStatusUnsupportedStatus", "COMPLETED", ""));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Invalid status: COMPLETED");
+        Optional<Asset> optAsset = assetService.getAsset("setAssetStatusUnsupportedStatus");
+        assertThat(optAsset.isPresent()).isTrue();
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
+    }
+
+    @Test
+    void testSetAssetAssetDoesntExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("non-existent-asset", "ERDA_FAILED", ""));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
+    @Test
     void testDeleteAsset() {
         Asset createAsset = getTestAsset("deleteAsset");
         createAsset.pipeline = "i1_p1";
@@ -263,7 +380,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void createAssetUpdateAsset() {
+    void testUpdateAsset() {
         Asset createAsset = getTestAsset("createAssetUpdateAsset");
         createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide"));
         createAsset.pipeline = "i1_p1";
@@ -288,6 +405,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         List<Event> resultEvents = assetService.getEvents(result.asset_guid);
         assertThat(resultEvents.size()).isEqualTo(5);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
+        assertThat(resultOpt2.isPresent()).isTrue();
         Asset resultAsset = resultOpt2.get();
         assertThat(resultAsset.payload_type).isEqualTo("nuclear");
         Instant latestUpdate;
@@ -301,7 +419,30 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void doNotPermitUnlocking() {
+    void updateAssetAssetDoesntExist(){
+        Asset asset = getTestAsset("updateAssetAssetDoesntExist");
+
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset updateAssetAssetDoesntExist does not exist");
+    }
+
+    @Test
+    void updateAssetNoUpdateUser(){
+        Asset asset = getTestAsset("updateAssetNoUpdateUser");
+        asset.asset_pid = "pid-updateAssetNoUpdateUser";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        asset.updateUser = "";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided");
+    }
+
+    @Test
+    void testUpdateAssetdoNotPermitUnlocking() {
         Asset createAsset = getTestAsset("doNotPermitUnlocking");
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
@@ -376,6 +517,80 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
 
+    }
+
+    @Test
+    void testValidateAssetFieldsNoAssetGuid(){
+        Asset asset = new Asset();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAssetFields(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_guid cannot be null");
+    }
+
+    @Test
+    void testValidateAssetFieldsNoAssetPid(){
+        Asset asset = new Asset();
+        asset.asset_guid = "validateAssetFieldsNoAssetPid";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAssetFields(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_pid cannot be null");
+    }
+
+    @Test
+    void testValidateAssetFieldsNoStatus(){
+        Asset asset = new Asset();
+        asset.asset_guid = "validateAssetFieldsNoStatus";
+        asset.asset_pid = "pid-validateAssetFieldsNoStatus";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAssetFields(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Status cannot be null");
+    }
+
+    @Test
+    void testValidateAssetNoInstitution(){
+        Asset asset = new Asset();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution doesnt exist");
+    }
+
+    @Test
+    void testValidateAssetNoCollection(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");
+    }
+
+    @Test
+    void testValidateAssetNoPipeline(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i50_p1250";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Pipeline doesnt exist in this institution");
+
+    }
+
+    @Test
+    void testValidateAssetOwnParent(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        asset.asset_guid = "assetOwnParent";
+        asset.parent_guid = "assetOwnParent";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset cannot be its own parent");
+    }
+
+    @Test
+    void testValidateNoWorkstation(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        asset.asset_guid = "assetNoWorkstation";
+        //asset.workstation = "non-existent-workstation";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Workstation does not exist");
     }
 
     @Test

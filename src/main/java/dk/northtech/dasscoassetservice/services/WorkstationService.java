@@ -31,6 +31,7 @@ public class WorkstationService {
     }
 
     public Optional<Workstation> findWorkstation(String workstationName) {
+        // TODO: It is possible to search for null or empty workstations and it throws Null Pointer Exception.
         return workstationRepository.findWorkstation(workstationName);
     }
 
