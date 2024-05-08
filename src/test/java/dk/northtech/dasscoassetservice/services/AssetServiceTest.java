@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.validation.constraints.Min;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,7 +144,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 //    }
 
     @Test
-    void deleteAsset() {
+    void testDeleteAsset() {
         Asset createAsset = getTestAsset("deleteAsset");
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
@@ -151,13 +152,38 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
         createAsset.collection = "i1_c1";
-        createAsset.asset_pid = "pid-createAsset";
+        createAsset.asset_pid = "pid-deleteAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user,10);
-        assetService.deleteAsset("deleteAsset", user);
+        // Deleting returns true (no errors)
+        assertThat(assetService.deleteAsset("deleteAsset", user)).isTrue();
         Optional<Asset> deleteAssetOpt = assetService.getAsset("deleteAsset");
+        // Check that asset has not really been deleted, just added new event:
+        assertThat(deleteAssetOpt.isPresent()).isTrue();
         Asset result = deleteAssetOpt.get();
         assertThat(result.date_asset_deleted).isNotNull();
+        assertThat(result.events.get(0).event).isEqualTo(DasscoEvent.DELETE_ASSET_METADATA);
+    }
+
+    @Test
+    void testDeleteAssetNoUser(){
+        Asset asset = getTestAsset("deleteAssetNoUser");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-deleteAssetNoUser";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAsset("deleteAssetNoUser", new User()));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("User is null");
+    }
+
+    @Test
+    void testDeleteAssetAssetDoesntExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAsset("non-existent-asset", user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
     @Test
@@ -298,7 +324,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void auditAsset() {
+    void testAuditAsset() {
         Asset asset = getTestAsset("auditAsset");
 //        asset.specimen_barcodes = Arrays.asList("auditAsset-sp-1");
         asset.pipeline = "i2_p1";
@@ -309,12 +335,67 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user,11);
-        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
-        assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
 //        assetService.completeAsset(asset.asset_guid);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null, null, null),"i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null, null, null), "i2_w1", "i2_p1", "bob"));
+        assetService.auditAsset(new Audit("Not-Karl-Børge"), asset.asset_guid);
+        Optional<Asset> optionalAsset = assetService.getAsset("auditAsset");
+        assertThat(optionalAsset.isPresent()).isTrue();
+        Asset exists = optionalAsset.get();
+        assertThat(exists.asset_guid).isEqualTo("auditAsset");
+        assertThat(exists.asset_pid).isEqualTo("pid-auditAsset");
+    }
+
+    @Test
+    void testAuditAssetCannotBeAuditedByUserWhoDigitizedIt(){
+        Asset asset = getTestAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-auditAssetCannotBeAuditedBySameUserWhoDigitizedIt";
+        asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt", null, null, null),"i2_w1", "i2_p1", "bob"));
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
+    }
+
+    @Test
+    void testAuditAssetHasToBeComplete(){
+        Asset asset = getTestAsset("auditAssetMustBeComplete");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-auditAssetMustBeComplete";
+        asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
+        assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
+    }
+
+    @Test
+    void testAuditAssetMustHaveUser(){
+        Asset asset = getTestAsset("auditAssetNoUser");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-auditAssetNoUser";
+        asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAssetNoUser", null, null, null), "i2_w1", "i2_p1", "bob"));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.auditAsset(new Audit(""), asset.asset_guid));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Audit must have a user!");
+    }
+
+    @Test
+    void testAuditAssetAssetMustExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), "non-existent-asset"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
     public Asset getTestAsset(String guid) {

@@ -43,4 +43,24 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
         List<Institution> resultList = institutionService.listInstitutions();
         assertThat(resultList.size()).isEqualTo(institutions.size());
     }
+
+    @Test
+    void testListInstitutions(){
+        List<Institution> institutions = institutionService.listInstitutions();
+        assertThat(institutions.size()).isAtLeast(2);
+    }
+
+    @Test
+    void testGetIfExistst(){
+        Optional<Institution> optInstitution = institutionService.getIfExists("institution_1");
+        assertThat(optInstitution.isPresent()).isTrue();
+        Institution exists = optInstitution.get();
+        assertThat(exists.name()).isEqualTo("institution_1");
+    }
+
+    @Test
+    void testGetIfExistsDoesNotExist(){
+        Optional<Institution> optInstitution = institutionService.getIfExists("non-existent-institution");
+        assertThat(optInstitution.isPresent()).isFalse();
+    }
 }
