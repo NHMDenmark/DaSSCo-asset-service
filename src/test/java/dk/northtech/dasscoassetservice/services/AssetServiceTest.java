@@ -31,7 +31,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     User user = new User("Teztuzer");
     @Test
-    void createAsset() {
+    void testPersistAsset() {
         Asset createAsset = getTestAsset("createAsset");
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
@@ -42,13 +42,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
-        // Check that creating asset without allocation throws error:
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 0));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
         assetService.persistAsset(createAsset, user, 10);
-        //Check that the same asset cannot be added multiple times
-        illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(createAsset, user, 11));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset createAsset already exists");
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
@@ -75,6 +69,33 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
         assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
+    }
+
+    @Test
+    void testPersistAssetAllocationCannotBe0(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "persistAssetAllocationCannotBe0";
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 0));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
+    }
+
+    @Test
+    void testPersistAssetCannotSaveSameAssetTwice(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "persistAssetCannotSaveSameAssetTwice";
+        asset.asset_pid = "pid-persistAssetCannotSaveSameAssetTwice";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 1));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset persistAssetCannotSaveSameAssetTwice already exists");
     }
 
     //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
@@ -582,15 +603,26 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testValidateNoWorkstation(){
+    void testValidateAssetNoWorkstation(){
         Asset asset = new Asset();
         asset.institution = "institution_2";
         asset.collection = "i2_c1";
         asset.pipeline = "i2_p1";
         asset.asset_guid = "assetNoWorkstation";
-        //asset.workstation = "non-existent-workstation";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Workstation does not exist");
+    }
+
+    @Test
+    void testValidateAssetWorkstationOutOfService(){
+        Asset asset = new Asset();
+        asset.institution = "institution_1";
+        asset.collection = "i1_c1";
+        asset.pipeline = "i1_p1";
+        asset.asset_guid = "validateAssetWorkstationOutOfService";
+        asset.workstation = "i1_w3";
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.validateAsset(asset));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Workstation [OUT_OF_SERVICE] is marked as out of service");
     }
 
     @Test
@@ -695,6 +727,29 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testAuditAssetAssetMustExist(){
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), "non-existent-asset"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
+    @Test
+    void testGetAsset(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "testGetAsset";
+        asset.asset_pid = "pid-testGetAsset";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 1);
+        Optional<Asset> optionalAsset = assetService.getAsset("testGetAsset");
+        assertThat(optionalAsset.isPresent()).isTrue();
+        Asset retrievedAsset = optionalAsset.get();
+        assertThat(retrievedAsset.institution).isEqualTo("institution_2");
+        assertThat(retrievedAsset.workstation).isEqualTo("i2_w1");
+        assertThat(retrievedAsset.pipeline).isEqualTo("i2_p1");
+        assertThat(retrievedAsset.collection).isEqualTo("i2_c1");
+        assertThat(retrievedAsset.asset_guid).isEqualTo("testGetAsset");
+        assertThat(retrievedAsset.asset_pid).isEqualTo("pid-testGetAsset");
+        assertThat(retrievedAsset.status.toString()).isEqualTo("BEING_PROCESSED");
     }
 
     public Asset getTestAsset(String guid) {

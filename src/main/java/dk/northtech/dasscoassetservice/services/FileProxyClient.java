@@ -49,6 +49,9 @@ public class FileProxyClient {
             }
 //            HttpInfo sambaInfo = new HttpInfo();
 //            sambaInfo.sambaRequestStatus = SambaRequestStatus.UPSTREAM_ERROR;;
+            // TODO: If I send 0 Allocation it returns a 400 error: This is not contemplated in the cases here, and it makes the
+            // TODO: response HttpInfo just an empty object with null in all the fields.
+            // TODO: Should I add a case for when response is 400?
             if(body != null) {
                 try {
                     HttpInfo httpInfo = gson.fromJson(body, HttpInfo.class);
@@ -60,7 +63,9 @@ public class FileProxyClient {
             if (send.statusCode() == 503) {
                 return new HttpInfo("Fileservice is currently unavailable, please try again later", HttpAllocationStatus.UPSTREAM_ERROR);
             }
-                return new HttpInfo( "FileService encountered an error when attempting to create workdir", HttpAllocationStatus.UPSTREAM_ERROR);
+
+            return new HttpInfo( "FileService encountered an error when attempting to create workdir", HttpAllocationStatus.UPSTREAM_ERROR);
+
         } catch (Exception e) {
             logger.error("Failed to prepare workdir due to an internal errorin asset service", e);
             return new HttpInfo("Failed to prepare workdir due an internal error, metadata has not been persisted", HttpAllocationStatus.INTERNAL_ERROR);

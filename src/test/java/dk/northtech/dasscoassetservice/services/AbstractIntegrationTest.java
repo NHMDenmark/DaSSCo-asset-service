@@ -33,6 +33,7 @@ public class AbstractIntegrationTest {
     @Inject PipelineService pipelineService;
     @Inject StatisticsDataService statisticsDataService;
     AssetService assetService;
+    @Inject FileProxyClient fileProxyClient;
 
     @Inject
     void setAssetService(AssetService assetService) {
