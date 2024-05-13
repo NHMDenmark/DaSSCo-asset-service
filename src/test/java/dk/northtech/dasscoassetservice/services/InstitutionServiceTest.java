@@ -27,7 +27,6 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
     void testCreateInstitution() {
         institutionService.createInstitution(new Institution("Teztitution"));
         List<Institution> institutions = institutionService.listInstitutions();
-        System.out.println(institutions.size());
         Optional<Institution> result = institutions.stream().filter(institution -> {
             return institution.name().equals("Teztitution");
         }).findAny();

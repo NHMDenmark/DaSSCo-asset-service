@@ -79,8 +79,8 @@ public class InternalStatusService {
                         , guidAllocated.getOrDefault(assetStatusInfo.asset_guid(), null)))
                 .collect(Collectors.toList());
     }
-    public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
 
+    public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
         return internalStatusRepository.getAssetStatus(assetGuid);
     }
 

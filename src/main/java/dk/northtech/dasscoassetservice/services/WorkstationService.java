@@ -22,7 +22,6 @@ public class WorkstationService {
         this.workstationRepository = workstationRepository;
     }
 
-
     public List<Workstation> listWorkstations(Institution institution) {
         if (institutionService.getIfExists(institution.name()).isEmpty()){
             throw new IllegalArgumentException("Institution does not exist");
@@ -31,7 +30,6 @@ public class WorkstationService {
     }
 
     public Optional<Workstation> findWorkstation(String workstationName) {
-        // TODO: It is possible to search for null or empty workstations and it throws Null Pointer Exception.
         return workstationRepository.findWorkstation(workstationName);
     }
 

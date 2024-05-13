@@ -74,4 +74,20 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.listWorkstations(new Institution("non-existent-institution")));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
     }
+
+    @Test
+    void testFindWorkstation(){
+        Optional<Workstation> optWorkstation = workstationService.findWorkstation("i1_w1");
+        assertThat(optWorkstation.isPresent()).isTrue();
+        Workstation found = optWorkstation.get();
+        assertThat(found.name()).isEqualTo("i1_w1");
+        assertThat(found.institution_name()).isEqualTo("institution_1");
+        assertThat(found.status()).isEqualTo(WorkstationStatus.IN_SERVICE);
+    }
+
+    @Test
+    void testFindWorkstationFail(){
+        Optional<Workstation> optionalWorkstation = workstationService.findWorkstation("non-existent-workstation");
+        assertThat(optionalWorkstation.isPresent()).isFalse();
+    }
 }
