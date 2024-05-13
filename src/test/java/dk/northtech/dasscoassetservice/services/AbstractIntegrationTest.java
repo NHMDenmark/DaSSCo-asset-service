@@ -34,6 +34,8 @@ public class AbstractIntegrationTest {
     @Inject StatisticsDataService statisticsDataService;
     AssetService assetService;
     @Inject FileProxyClient fileProxyClient;
+    @Inject PublicationService publicationService;
+    @Inject InternalStatusService internalStatusService;
 
     @Inject
     void setAssetService(AssetService assetService) {
