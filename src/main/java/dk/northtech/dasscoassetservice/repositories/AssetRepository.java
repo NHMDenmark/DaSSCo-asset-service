@@ -91,6 +91,12 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
+    default void bulkUpdate(List<String> assetList){
+        boilerplate();
+
+    }
+
+    @Transaction
     default Asset updateAssetNoEvent(Asset asset) {
         boilerplate();
         updateAssetNoEventInternal(asset);

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -23,6 +24,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/assetmetadata/")
+@Tag(name = "Asset Metadata")
 @SecurityRequirement(name = "dassco-idp")
 public class Assetupdates {
 
@@ -127,6 +129,16 @@ public class Assetupdates {
                              @PathParam("assetGuid") String assetGuid) {
         asset.asset_guid = assetGuid;
         return this.assetService.updateAsset(asset);
+    }
+
+    @PUT
+    @Path("/bulkUpdate")
+    @Consumes(APPLICATION_JSON)
+    public void bulkUpdate(Asset asset,
+                           @QueryParam("assets") List<String> assetGuids){
+        // Pass an asset (the fields to be updated) and a list of assets to be updated.
+        // In the future maybe I need to create a new model that has only the editable fields for clarity.
+        this.assetService.bulkUpdate(assetGuids, asset);
     }
 
     @GET

@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
@@ -11,10 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -188,6 +186,32 @@ public class AssetService {
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
         return existing;
+    }
+
+    public void bulkUpdate(List<String> assets, Asset asset){
+        // TODO: don't forget to do the corner cases =)
+        // TODO: Validate that everything is as it should be =)
+        // TODO: Refactor? To make less calls to the DB?
+
+        // The assets will already exist, this is only an editing. So, how to check which fields are being passed?
+        // The Asset gets instantiated and I think the fields that are not present are getting default values.
+        // Maybe sanitize the Asset object first? Maybe check (if asset.field == null) then don't change it?
+
+
+        assets.forEach(a -> {
+            Optional<Asset> found = this.getAsset(a);
+            if (found.isPresent()){
+                Asset assetToUpdate = found.get();
+                Set<String> updatedSpecimenBarcodes = asset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+                List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+                assetToUpdate.tags = Objects.equals(assetToUpdate.tags, asset.tags) ? assetToUpdate.tags : asset.tags;
+                assetToUpdate.status = Objects.equals(assetToUpdate.status, asset.status) ? assetToUpdate.status : asset.status;
+                // Multi-specimen?
+                assetToUpdate.funding = Objects.equals(assetToUpdate.funding, asset.funding) ? assetToUpdate.funding : asset.funding;
+                jdbi.onDemand(AssetRepository.class).updateAsset(assetToUpdate, specimensToDetach);
+            }
+        });
+
     }
 
     void validateAssetFields(Asset a) {
