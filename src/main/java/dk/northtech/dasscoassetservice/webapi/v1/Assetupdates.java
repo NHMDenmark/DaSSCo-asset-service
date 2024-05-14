@@ -65,7 +65,8 @@ public class Assetupdates {
 
     @POST
     @Path("{assetGuid}/assetreceived")
-    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED")
+    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED. \n\n" +
+            "Required information is: shareName and a MinimalAsset with asset_guid.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
@@ -79,7 +80,7 @@ public class Assetupdates {
     @POST
     @Path("{assetGuid}/complete")
     @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n\n" +
-            "The only case where this endpoint should be used is when all files belonging to an asset has been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA."
+            "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA."
     )
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -93,7 +94,7 @@ public class Assetupdates {
     @PUT
     @Path("{assetGuid}/setstatus")
     @Operation(summary = "Set Asset Status", description = "Manually updates the status of an asset.\n\n" +
-            "The available status are: ASSET_RECEIVED, ERDA_FAILED, ERDA_ERROR"
+            "The available status are: ASSET_RECEIVED, ERDA_FAILED, ERDA_ERROR. Trying to set the status to COMPLETED will not work as there's a dedicated endpoint for that."
     )
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -121,7 +122,7 @@ public class Assetupdates {
     @POST
     @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n" +
             "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n" +
-            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status and digitiser. The Workstation has to be IN_SERVICE."
+            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status, institution, collection, and digitiser. The Workstation has to be IN_SERVICE."
     )
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -145,7 +146,7 @@ public class Assetupdates {
 
     @PUT
     @Path("{assetGuid}")
-    @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and uploadUser.")
+    @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
