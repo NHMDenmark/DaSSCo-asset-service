@@ -188,28 +188,39 @@ public class AssetService {
         return existing;
     }
 
-    public void bulkUpdate(List<String> assets, Asset asset){
+    public void bulkUpdate(List<String> assetList, Asset updatedAsset){
         // TODO: don't forget to do the corner cases =)
         // TODO: Validate that everything is as it should be =)
         // TODO: Refactor? To make less calls to the DB?
 
-        // The assets will already exist, this is only an editing. So, how to check which fields are being passed?
-        // The Asset gets instantiated and I think the fields that are not present are getting default values.
-        // Maybe sanitize the Asset object first? Maybe check (if asset.field == null) then don't change it?
+        Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
 
-
-        assets.forEach(a -> {
+        assetList.forEach(a -> {
             Optional<Asset> found = this.getAsset(a);
             if (found.isPresent()){
                 Asset assetToUpdate = found.get();
-                Set<String> updatedSpecimenBarcodes = asset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+                Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
                 List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
-                assetToUpdate.tags = Objects.equals(assetToUpdate.tags, asset.tags) ? assetToUpdate.tags : asset.tags;
-                assetToUpdate.status = Objects.equals(assetToUpdate.status, asset.status) ? assetToUpdate.status : asset.status;
-                // Multi-specimen?
-                assetToUpdate.funding = Objects.equals(assetToUpdate.funding, asset.funding) ? assetToUpdate.funding : asset.funding;
-                jdbi.onDemand(AssetRepository.class).updateAsset(assetToUpdate, specimensToDetach);
+                assetToUpdate.funding = (updatedAsset.funding != null && !Objects.equals(assetToUpdate.funding, updatedAsset.funding)) ? updatedAsset.funding : assetToUpdate.funding;
+                assetToUpdate.subject = (updatedAsset.subject != null && !Objects.equals(assetToUpdate.subject , updatedAsset.subject)) ? updatedAsset.subject : assetToUpdate.subject ;
+                assetToUpdate.payload_type = (updatedAsset.payload_type != null && !Objects.equals(assetToUpdate.payload_type , updatedAsset.payload_type)) ? updatedAsset.payload_type : assetToUpdate.payload_type ;
+                assetToUpdate.date_asset_finalised = (updatedAsset.date_asset_finalised != null && !Objects.equals(assetToUpdate.date_asset_finalised , updatedAsset.date_asset_finalised)) ? updatedAsset.date_asset_finalised : assetToUpdate.date_asset_finalised ;
+                assetToUpdate.digitiser = (updatedAsset.digitiser != null && !Objects.equals(assetToUpdate.digitiser , updatedAsset.digitiser)) ? updatedAsset.digitiser : assetToUpdate.digitiser ;
+                // Parent_Guid has to be an actual Asset, or it won't work:
+                assetToUpdate.parent_guid = (updatedAsset.parent_guid != null && !Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
+                assetToUpdate.workstation = (updatedAsset.workstation != null && !Objects.equals(assetToUpdate.workstation , updatedAsset.workstation)) ? updatedAsset.workstation : assetToUpdate.workstation ;
+                assetToUpdate.pipeline = (updatedAsset.pipeline != null && !Objects.equals(assetToUpdate.pipeline , updatedAsset.pipeline)) ? updatedAsset.pipeline : assetToUpdate.pipeline ;
+                assetToUpdate.status = (updatedAsset.status != null && !Objects.equals(assetToUpdate.status , updatedAsset.status)) ? updatedAsset.status : assetToUpdate.status ;
+                assetToUpdate.updateUser = (updatedAsset.updateUser != null && !Objects.equals(assetToUpdate.updateUser , updatedAsset.updateUser)) ? updatedAsset.updateUser : assetToUpdate.updateUser ;
+                assetToUpdate.asset_pid = (updatedAsset.asset_pid != null && !Objects.equals(assetToUpdate.asset_pid , updatedAsset.asset_pid)) ? updatedAsset.asset_pid : assetToUpdate.asset_pid ;
+                assetToUpdate.restricted_access = (!updatedAsset.restricted_access.isEmpty() && !assetToUpdate.restricted_access.equals(updatedAsset.restricted_access)) ? updatedAsset.restricted_access : assetToUpdate.restricted_access ;
+                assetToUpdate.file_formats = (!updatedAsset.file_formats.isEmpty() && !assetToUpdate.file_formats.equals(updatedAsset.file_formats)) ? updatedAsset.file_formats : assetToUpdate.file_formats;
+                assetToUpdate.tags = (!updatedAsset.tags.isEmpty() && !assetToUpdate.tags.equals(updatedAsset.tags)) ? updatedAsset.tags : assetToUpdate.tags;
+                assetAndSpecimens.put(assetToUpdate, specimensToDetach);
             }
+
+            jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens);
+
         });
 
     }

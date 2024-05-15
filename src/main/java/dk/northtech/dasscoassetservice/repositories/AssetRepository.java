@@ -91,9 +91,16 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(List<String> assetList){
+    default void bulkUpdate(Map<Asset, List<Specimen>> assetList){
         boilerplate();
+        for (Map.Entry<Asset, List<Specimen>> entry : assetList.entrySet()){
+            Asset asset = entry.getKey();
+            List<Specimen> specimenList = entry.getValue();
 
+            update_asset_internal(asset);
+            connectParentChild(asset.parent_guid, asset.asset_guid);
+            createSpecimenRepository().persistSpecimens(asset, specimenList);
+        }
     }
 
     @Transaction
