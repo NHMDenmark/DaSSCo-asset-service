@@ -134,10 +134,13 @@ public class Assetupdates {
     @PUT
     @Path("/bulkUpdate")
     @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void bulkUpdate(Asset asset,
                            @QueryParam("assets") List<String> assetGuids){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
-        // In the future maybe I need to create a new model that has only the editable fields for clarity.
+        // Return type?
+        // Roles Allowed?
         this.assetService.bulkUpdate(assetGuids, asset);
     }
 

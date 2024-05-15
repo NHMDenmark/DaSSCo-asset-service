@@ -157,7 +157,7 @@ paths:
         default:
           description: default response
           content:
-            '*/*': {}
+            application/json: {}
       security:
       - dassco-idp: []
   /v1/assetmetadata/{assetGuid}/complete:

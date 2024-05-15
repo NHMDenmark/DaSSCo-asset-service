@@ -245,7 +245,7 @@
           "default" : {
             "description" : "default response",
             "content" : {
-              "*/*" : { }
+              "application/json" : { }
             }
           }
         },

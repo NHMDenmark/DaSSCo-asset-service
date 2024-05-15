@@ -189,9 +189,13 @@ public class AssetService {
     }
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset){
-        // TODO: don't forget to do the corner cases =)
-        // TODO: Validate that everything is as it should be =)
         // TODO: Refactor? To make less calls to the DB?
+
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
+            throw new IllegalArgumentException("Update user must be provided!");
+        }
+
+        validateAsset(updatedAsset);
 
         Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
 
@@ -207,16 +211,30 @@ public class AssetService {
                 assetToUpdate.date_asset_finalised = (updatedAsset.date_asset_finalised != null && !Objects.equals(assetToUpdate.date_asset_finalised , updatedAsset.date_asset_finalised)) ? updatedAsset.date_asset_finalised : assetToUpdate.date_asset_finalised ;
                 assetToUpdate.digitiser = (updatedAsset.digitiser != null && !Objects.equals(assetToUpdate.digitiser , updatedAsset.digitiser)) ? updatedAsset.digitiser : assetToUpdate.digitiser ;
                 // Parent_Guid has to be an actual Asset, or it won't work:
-                assetToUpdate.parent_guid = (updatedAsset.parent_guid != null && !Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
+                if (updatedAsset.parent_guid != null){
+                    Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
+                    if (optParent.isPresent()){
+                        assetToUpdate.parent_guid = (!Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
+                    } else {
+                        throw new IllegalArgumentException("asset_parent does not exist!");
+                    }
+                }
+                if (assetToUpdate.asset_locked && !updatedAsset.asset_locked){
+                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+                }
+                assetToUpdate.asset_locked = (updatedAsset.asset_locked != assetToUpdate.asset_locked) ? updatedAsset.asset_locked : assetToUpdate.asset_locked;
                 assetToUpdate.workstation = (updatedAsset.workstation != null && !Objects.equals(assetToUpdate.workstation , updatedAsset.workstation)) ? updatedAsset.workstation : assetToUpdate.workstation ;
                 assetToUpdate.pipeline = (updatedAsset.pipeline != null && !Objects.equals(assetToUpdate.pipeline , updatedAsset.pipeline)) ? updatedAsset.pipeline : assetToUpdate.pipeline ;
                 assetToUpdate.status = (updatedAsset.status != null && !Objects.equals(assetToUpdate.status , updatedAsset.status)) ? updatedAsset.status : assetToUpdate.status ;
                 assetToUpdate.updateUser = (updatedAsset.updateUser != null && !Objects.equals(assetToUpdate.updateUser , updatedAsset.updateUser)) ? updatedAsset.updateUser : assetToUpdate.updateUser ;
-                assetToUpdate.asset_pid = (updatedAsset.asset_pid != null && !Objects.equals(assetToUpdate.asset_pid , updatedAsset.asset_pid)) ? updatedAsset.asset_pid : assetToUpdate.asset_pid ;
+                //assetToUpdate.asset_pid = (updatedAsset.asset_pid != null && !Objects.equals(assetToUpdate.asset_pid , updatedAsset.asset_pid)) ? updatedAsset.asset_pid : assetToUpdate.asset_pid ;
                 assetToUpdate.restricted_access = (!updatedAsset.restricted_access.isEmpty() && !assetToUpdate.restricted_access.equals(updatedAsset.restricted_access)) ? updatedAsset.restricted_access : assetToUpdate.restricted_access ;
                 assetToUpdate.file_formats = (!updatedAsset.file_formats.isEmpty() && !assetToUpdate.file_formats.equals(updatedAsset.file_formats)) ? updatedAsset.file_formats : assetToUpdate.file_formats;
                 assetToUpdate.tags = (!updatedAsset.tags.isEmpty() && !assetToUpdate.tags.equals(updatedAsset.tags)) ? updatedAsset.tags : assetToUpdate.tags;
+                validateAssetFields(assetToUpdate);
                 assetAndSpecimens.put(assetToUpdate, specimensToDetach);
+            } else {
+                throw new IllegalArgumentException("Asset " + a + " does not exist");
             }
 
             jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens);
