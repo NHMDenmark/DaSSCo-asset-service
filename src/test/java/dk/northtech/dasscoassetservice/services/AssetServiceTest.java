@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.bouncycastle.tsp.TSPUtil;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -318,34 +319,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testBulkUpdate(){
         // TODO: Make the test a little bit more interesting:
         // Create three different assets
-        Asset firstAsset = getTestAsset("bulk-asset-1");
-        Asset secondAsset = getTestAsset("bulk-asset-2");
-        Asset thirdAsset = getTestAsset("bulk-asset-3");
-        firstAsset.institution = "institution_2";
-        secondAsset.institution = "institution_2";
-        thirdAsset.institution = "institution_2";
-        firstAsset.pipeline = "i2_p1";
-        secondAsset.pipeline = "i2_p1";
-        thirdAsset.pipeline = "i2_p1";
-        firstAsset.workstation = "i2_w1";
-        secondAsset.workstation = "i2_w1";
-        thirdAsset.workstation = "i2_w1";
-        firstAsset.collection = "i2_c1";
-        secondAsset.collection = "i2_c1";
-        thirdAsset.collection = "i2_c1";
-        firstAsset.tags.put("First Tag First Asset", "first value first asset");
-        secondAsset.tags.put("First Tag Second Asset", "first value second asset");
-        secondAsset.funding = "1234";
-        thirdAsset.funding = "7894";
-        firstAsset.asset_pid = "pid-test-asset-1";
-        secondAsset.asset_pid = "pid-test-asset-2";
-        thirdAsset.asset_pid = "pid-test-asset-3";
-        firstAsset.status = AssetStatus.BEING_PROCESSED;
-        secondAsset.status = AssetStatus.BEING_PROCESSED;
-        thirdAsset.status = AssetStatus.BEING_PROCESSED;
+        Asset firstAsset = getBulkUpdateTestAsset("bulk-asset-1");
+        Asset secondAsset = getBulkUpdateTestAsset("bulk-asset-2");
+
         assetService.persistAsset(firstAsset, user, 1);
         assetService.persistAsset(secondAsset, user, 1);
-        assetService.persistAsset(thirdAsset, user, 1);
 
         Asset updatedAsset = getTestAsset("updatedAsset");
         updatedAsset.institution = "institution_2";
@@ -353,33 +331,69 @@ class AssetServiceTest extends AbstractIntegrationTest {
         updatedAsset.workstation = "i2_w1";
         updatedAsset.collection = "i2_c1";
         updatedAsset.status = AssetStatus.BEING_PROCESSED;
-        updatedAsset.updateUser = "test-user";
-        updatedAsset.funding = "a lot of funding for testing";
-        updatedAsset.tags.put("tag number one for testing", "value number one for testing");
+        Specimen specimen = new Specimen("BULK_UPDATE_TEST", "pid-BULK_UPDATE_TEST", "text");
+        List<Specimen> specimenList = new ArrayList<>();
+        specimenList.add(specimen);
+        updatedAsset.specimens = specimenList;
+        updatedAsset.asset_locked = true;
 
+        // Create list of assets to be updated:
         List<String> assetList = new ArrayList<String>();
         assetList.add("bulk-asset-1");
         assetList.add("bulk-asset-2");
-        assetList.add("bulk-asset-3");
         // Update assets with the new asset information:
         assetService.bulkUpdate(assetList, updatedAsset);
 
         Optional<Asset> optionalUpdatedFirstAsset = assetService.getAsset("bulk-asset-1");
         Optional<Asset> optionalUpdatedSecondAsset = assetService.getAsset("bulk-asset-2");
-        Optional<Asset> optionalUpdatedThirdAsset = assetService.getAsset("bulk-asset-3");
 
         assertThat(optionalUpdatedFirstAsset.isPresent()).isTrue();
         assertThat(optionalUpdatedSecondAsset.isPresent()).isTrue();
-        assertThat(optionalUpdatedThirdAsset.isPresent()).isTrue();
 
         Asset updatedFirstAsset = optionalUpdatedFirstAsset.get();
         Asset updatedSecondAsset = optionalUpdatedSecondAsset.get();
-        Asset updatedThirdAsset = optionalUpdatedThirdAsset.get();
 
         // Finally, the assertions:
-        assertThat(updatedFirstAsset.funding).isEqualTo("a lot of funding for testing");
-        assertThat(updatedSecondAsset.funding).isEqualTo("a lot of funding for testing");
-        assertThat(updatedThirdAsset.funding).isEqualTo("a lot of funding for testing");
+        assertThat(updatedFirstAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
+        assertThat(updatedSecondAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
+        assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
+        assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
+        assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
+        assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
+        assertThat(updatedFirstAsset.file_formats.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
+        assertThat(updatedSecondAsset.file_formats.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
+        assertThat(updatedFirstAsset.asset_locked).isTrue();
+        assertThat(updatedSecondAsset.asset_locked).isTrue();
+
+
+
+
+
+
+        /*
+        updatedAsset.funding = "now it's not funded anymore";
+        updatedAsset.asset_locked = false;
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+
+        Optional<Asset> foundThirdTimeAssetNumber1 = assetService.getAsset("bulk-asset-1");
+        assertThat(foundThirdTimeAssetNumber1.isPresent()).isTrue();
+        Asset thirdTimeTheCharm = foundThirdTimeAssetNumber1.get();
+        assertThat(thirdTimeTheCharm.funding).isEqualTo("Hundredetusindvis af dollars");
+        Optional<Asset> foundThirdTimeAssetNumber2 = assetService.getAsset("bulk-asset-2");
+        assertThat(foundThirdTimeAssetNumber2.isPresent()).isTrue();
+        Asset fourthCharm = foundThirdTimeAssetNumber2.get();
+        assertThat(fourthCharm.funding).isEqualTo("Hundredetusindvis af dollars");
+
+         */
     }
 
     public Asset getTestAsset(String guid) {
@@ -393,6 +407,30 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
+        return asset;
+    }
+
+    public Asset getBulkUpdateTestAsset(String guid){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-" + guid;
+        asset.asset_guid = guid;
+        asset.status = AssetStatus.WORKING_COPY;
+        asset.funding = "funding has depleted";
+        asset.subject = "subject-non-edited";
+        asset.payload_type = "payload-not-edited";
+        asset.file_formats.add(FileFormat.CR3);
+        asset.file_formats.add(FileFormat.RAF);
+
+        Specimen firstSpecimen = new Specimen("barcode-specimen-1", "pid-specimen-1", "image");
+        Specimen secondSpecimen = new Specimen("barcode-specimen-2", "pid-specimen-2", "image");
+        List<Specimen> specimenList = Arrays.asList(firstSpecimen, secondSpecimen);
+
+        asset.specimens = specimenList;
+
         return asset;
     }
 }

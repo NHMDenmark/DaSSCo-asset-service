@@ -205,6 +205,7 @@ public class AssetService {
                 Asset assetToUpdate = found.get();
                 Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
                 List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+                assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
                 assetToUpdate.funding = (updatedAsset.funding != null && !Objects.equals(assetToUpdate.funding, updatedAsset.funding)) ? updatedAsset.funding : assetToUpdate.funding;
                 assetToUpdate.subject = (updatedAsset.subject != null && !Objects.equals(assetToUpdate.subject , updatedAsset.subject)) ? updatedAsset.subject : assetToUpdate.subject ;
                 assetToUpdate.payload_type = (updatedAsset.payload_type != null && !Objects.equals(assetToUpdate.payload_type , updatedAsset.payload_type)) ? updatedAsset.payload_type : assetToUpdate.payload_type ;
@@ -236,10 +237,9 @@ public class AssetService {
             } else {
                 throw new IllegalArgumentException("Asset " + a + " does not exist");
             }
-
-            jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens);
-
         });
+
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens);
 
     }
 
