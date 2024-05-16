@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.bouncycastle.tsp.TSPUtil;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -317,7 +319,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testBulkUpdate(){
-        // TODO: Make the test a little bit more interesting:
         // Create three different assets
         Asset firstAsset = getBulkUpdateTestAsset("bulk-asset-1");
         Asset secondAsset = getBulkUpdateTestAsset("bulk-asset-2");
@@ -336,6 +337,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
         specimenList.add(specimen);
         updatedAsset.specimens = specimenList;
         updatedAsset.asset_locked = true;
+        updatedAsset.restricted_access.add(Role.DEVELOPER);
+        updatedAsset.tags.put("Tag 3", "Value 3");
+        updatedAsset.date_asset_finalised = Instant.now();
 
         // Create list of assets to be updated:
         List<String> assetList = new ArrayList<String>();
@@ -372,7 +376,19 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
         assertThat(updatedFirstAsset.asset_locked).isTrue();
         assertThat(updatedSecondAsset.asset_locked).isTrue();
-
+        assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        assertThat(updatedFirstAsset.tags.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
+        assertThat(updatedSecondAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
+        assertThat(updatedFirstAsset.updateUser).isEqualTo("update-user");
+        //assertThat(updatedFirstAsset.digitiser).isEqualTo("Karl-Børge");
+        //assertThat(updatedSecondAsset.digitiser).isEqualTo("Karl-Børge");
+        //assertThat(updatedFirstAsset.workstation).isEqualTo("i2_w3");
+        //assertThat(updatedSecondAsset.workstation).isEqualTo("i2_w3");
 
 
 
@@ -424,6 +440,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.payload_type = "payload-not-edited";
         asset.file_formats.add(FileFormat.CR3);
         asset.file_formats.add(FileFormat.RAF);
+        asset.restricted_access.add(Role.USER);
+        asset.restricted_access.add(Role.ADMIN);
+        asset.tags.put("Tag 1", "Value 1");
+        asset.tags.put("Tag 2", "Value 2");
+        asset.date_asset_finalised = Instant.now().minus(1, ChronoUnit.DAYS);
+        asset.digitiser = "test-user";
+        asset.updateUser = "update-user";
 
         Specimen firstSpecimen = new Specimen("barcode-specimen-1", "pid-specimen-1", "image");
         Specimen secondSpecimen = new Specimen("barcode-specimen-2", "pid-specimen-2", "image");

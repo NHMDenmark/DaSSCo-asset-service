@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.domain.Workstation;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
@@ -32,6 +33,8 @@ public class AbstractIntegrationTest {
     @Inject InstitutionService institutionService;
     @Inject PipelineService pipelineService;
     @Inject StatisticsDataService statisticsDataService;
+    @Inject
+    WorkstationService workstationService;
     AssetService assetService;
 
     @Inject
