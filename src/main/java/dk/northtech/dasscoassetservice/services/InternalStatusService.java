@@ -88,7 +88,7 @@ public class InternalStatusService {
             AssetStatusInfo assetStatusInfo = assetStatus.get();
             DirectoryRepository dirRepository = h.attach(DirectoryRepository.class);
             Directory writeableDirectory = dirRepository.getWriteableDirectory(assetGuid);
-            return new AssetStatusInfo(assetGuid, assetStatusInfo.parent_guid(), assetStatusInfo.error_timestamp(), assetStatusInfo.status(), assetStatusInfo.error_message(), writeableDirectory.allocatedStorageMb());
+            return new AssetStatusInfo(assetGuid, assetStatusInfo.parent_guid(), assetStatusInfo.error_timestamp(), assetStatusInfo.status(), assetStatusInfo.error_message(), writeableDirectory == null ? null :  writeableDirectory.allocatedStorageMb());
         });
         return Optional.of(assetStatusInfoWithMb);
     }
