@@ -189,8 +189,16 @@ public class AssetService {
     }
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset){
-        // TODO: Refactor? To make less calls to the DB?
 
+        // TODO: Refactor? To make less calls to the DB?
+        // TODO: Don't forget corner cases!!!!!!
+        // TODO: Check if the number of assets in the list and the number of existing assets with those names is the same. Otherwise, fail.
+        // TODO: Remove specimens and insert the new ones. How?
+        // TODO: Make the asset-parent check.
+        // TODO: Make the asset_locked check.
+
+        System.out.println(this.batchUpdateSqlStatementFactory(assetList, updatedAsset));
+/*
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
             throw new IllegalArgumentException("Update user must be provided!");
         }
@@ -199,48 +207,140 @@ public class AssetService {
 
         Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
 
-        assetList.forEach(a -> {
-            Optional<Asset> found = this.getAsset(a);
-            if (found.isPresent()){
-                Asset assetToUpdate = found.get();
-                Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
-                List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
-                assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
-                assetToUpdate.funding = (updatedAsset.funding != null && !Objects.equals(assetToUpdate.funding, updatedAsset.funding)) ? updatedAsset.funding : assetToUpdate.funding;
-                assetToUpdate.subject = (updatedAsset.subject != null && !Objects.equals(assetToUpdate.subject , updatedAsset.subject)) ? updatedAsset.subject : assetToUpdate.subject ;
-                assetToUpdate.payload_type = (updatedAsset.payload_type != null && !Objects.equals(assetToUpdate.payload_type , updatedAsset.payload_type)) ? updatedAsset.payload_type : assetToUpdate.payload_type ;
-                assetToUpdate.date_asset_finalised = (updatedAsset.date_asset_finalised != null && !Objects.equals(assetToUpdate.date_asset_finalised , updatedAsset.date_asset_finalised)) ? updatedAsset.date_asset_finalised : assetToUpdate.date_asset_finalised ;
-                assetToUpdate.digitiser = (updatedAsset.digitiser != null && !Objects.equals(assetToUpdate.digitiser , updatedAsset.digitiser)) ? updatedAsset.digitiser : assetToUpdate.digitiser ;
-                // Parent_Guid has to be an actual Asset, or it won't work:
-                if (updatedAsset.parent_guid != null){
-                    Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
-                    if (optParent.isPresent()){
-                        assetToUpdate.parent_guid = (!Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
-                    } else {
-                        throw new IllegalArgumentException("asset_parent does not exist!");
-                    }
+        List<Asset> list = jdbi.onDemand(AssetRepository.class).readMultipleAssetsInternal(assetList);
+
+        list.forEach(assetToUpdate -> {
+            Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+            List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+            assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
+            if (updatedAsset.parent_guid != null){
+                Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
+                if (optParent.isPresent()){
+                    assetToUpdate.parent_guid = (!Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
+                } else {
+                    throw new IllegalArgumentException("asset_parent does not exist!");
                 }
-                if (assetToUpdate.asset_locked && !updatedAsset.asset_locked){
-                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-                }
-                assetToUpdate.asset_locked = (updatedAsset.asset_locked != assetToUpdate.asset_locked) ? updatedAsset.asset_locked : assetToUpdate.asset_locked;
-                assetToUpdate.workstation = (updatedAsset.workstation != null && !Objects.equals(assetToUpdate.workstation , updatedAsset.workstation)) ? updatedAsset.workstation : assetToUpdate.workstation ;
-                assetToUpdate.pipeline = (updatedAsset.pipeline != null && !Objects.equals(assetToUpdate.pipeline , updatedAsset.pipeline)) ? updatedAsset.pipeline : assetToUpdate.pipeline ;
-                assetToUpdate.status = (updatedAsset.status != null && !Objects.equals(assetToUpdate.status , updatedAsset.status)) ? updatedAsset.status : assetToUpdate.status ;
-                assetToUpdate.updateUser = (updatedAsset.updateUser != null && !Objects.equals(assetToUpdate.updateUser , updatedAsset.updateUser)) ? updatedAsset.updateUser : assetToUpdate.updateUser ;
-                //assetToUpdate.asset_pid = (updatedAsset.asset_pid != null && !Objects.equals(assetToUpdate.asset_pid , updatedAsset.asset_pid)) ? updatedAsset.asset_pid : assetToUpdate.asset_pid ;
-                assetToUpdate.restricted_access = (!updatedAsset.restricted_access.isEmpty() && !assetToUpdate.restricted_access.equals(updatedAsset.restricted_access)) ? updatedAsset.restricted_access : assetToUpdate.restricted_access ;
-                assetToUpdate.file_formats = (!updatedAsset.file_formats.isEmpty() && !assetToUpdate.file_formats.equals(updatedAsset.file_formats)) ? updatedAsset.file_formats : assetToUpdate.file_formats;
-                assetToUpdate.tags = (!updatedAsset.tags.isEmpty() && !assetToUpdate.tags.equals(updatedAsset.tags)) ? updatedAsset.tags : assetToUpdate.tags;
-                validateAssetFields(assetToUpdate);
-                assetAndSpecimens.put(assetToUpdate, specimensToDetach);
-            } else {
-                throw new IllegalArgumentException("Asset " + a + " does not exist");
             }
+            if (assetToUpdate.asset_locked && !updatedAsset.asset_locked){
+                throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+            }
+            assetToUpdate.workstation = (updatedAsset.workstation != null && !Objects.equals(assetToUpdate.workstation , updatedAsset.workstation)) ? updatedAsset.workstation : assetToUpdate.workstation ;
+            assetToUpdate.pipeline = (updatedAsset.pipeline != null && !Objects.equals(assetToUpdate.pipeline , updatedAsset.pipeline)) ? updatedAsset.pipeline : assetToUpdate.pipeline ;
+            assetAndSpecimens.put(assetToUpdate, specimensToDetach);
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens);
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens, assetList, assetToUpdate);
 
+
+         */
+    }
+
+    String batchUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (c:Collection {name: $collection_name})
+                            MATCH (w:Workstation {name: $workstation_name})
+                            MATCH (p:Pipeline {name: $pipeline_name})
+                            MATCH (a:Asset)
+                            WHERE a.asset_guid IN [%s]
+                            OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
+                            DELETE co
+                            MERGE (u:User{user_id: $user, name: $user})
+                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
+                            MERGE (e)-[uw:USED]->(w)
+                            MERGE (e)-[up:USED]->(p)
+                            MERGE (e)-[pb:INITIATED_BY]->(u)
+                            MERGE (a)-[ca:CHANGED_BY]-(e)
+                            SET
+                """;
+
+        if (updatedFields.funding != null){
+            sql = sql + """
+                                a.funding = $funding,
+                    """;
+        }
+        if (updatedFields.subject != null){
+            sql = sql + """
+                                a.subject = $subject,
+                    """;
+        }
+        if (updatedFields.payload_type != null){
+            sql = sql + """
+                                a.payload_type = $payload_type,
+                    """;
+        }
+        if (updatedFields.tags != null){
+            sql = sql + """
+                                a.tags = $tags,
+                    """;
+        }
+        if (updatedFields.status != null){
+            sql = sql + """
+                                a.status = $status,
+                    """;
+        }
+        if (!updatedFields.file_formats.isEmpty()){
+            sql = sql + """
+                                a.file_formats = $file_formats,
+                    """;
+        }
+        if (!updatedFields.restricted_access.isEmpty()){
+            sql = sql + """
+                                a.restricted_access = $restricted_access,
+                    """;
+        }
+        if (updatedFields.date_asset_finalised != null){
+            sql = sql + """
+                                a.date_asset_finalised = $date_asset_finalised,
+                    """;
+        }
+        if (updatedFields.parent_guid != null){
+            sql = sql + """
+                                a.parent_id = $parent_id,
+                    """;
+        }
+        // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
+        if (updatedFields.asset_locked){
+            sql = sql + """
+                                a.asset_locked = $asset_locked,
+                    """;
+        }
+        if (updatedFields.internal_status != null){
+            sql = sql + """
+                                a.internal_status = $internal_status,
+                    """;
+        }
+        if (updatedFields.date_metadata_taken != null){
+            sql = sql + """
+                                a.date_metadata_taken = $date_metadata_taken,
+                    """;
+        }
+        if (updatedFields.date_asset_taken != null){
+            sql = sql + """
+                                a.date_asset_taken = $date_asset_taken,
+                    """;
+        }
+        if (updatedFields.digitiser != null){
+            sql = sql + """
+                                a.digitiser = $digitizer,
+                    """;
+        }
+        sql = sql + """
+                            a.workstation = $workstation,
+                            a.pipeline = $pipeline,
+                            a.updateUser = $updateUser
+                        $$
+                    )
+                """;
+
+
+
+
+
+
+
+        return sql;
     }
 
     void validateAssetFields(Asset a) {

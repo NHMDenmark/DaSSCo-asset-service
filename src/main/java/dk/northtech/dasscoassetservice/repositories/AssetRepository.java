@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 //@Repository
@@ -91,8 +92,10 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(Map<Asset, List<Specimen>> assetList){
+    default void bulkUpdate(){
         boilerplate();
+        bulkUpdateAssets();
+        /*
         for (Map.Entry<Asset, List<Specimen>> entry : assetList.entrySet()){
             Asset asset = entry.getKey();
             List<Specimen> specimenList = entry.getValue();
@@ -101,6 +104,8 @@ public interface AssetRepository extends SqlObject {
             connectParentChild(asset.parent_guid, asset.asset_guid);
             createSpecimenRepository().persistSpecimens(asset, specimenList);
         }
+
+         */
     }
 
     @Transaction
@@ -198,6 +203,86 @@ public interface AssetRepository extends SqlObject {
                     .map(new AssetMapper())
                     .findOne();
         });
+    }
+
+    default List<Asset> readMultipleAssetsInternal(List<String> assets){
+        String assetListAsString = assets.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                    , $$
+                         MATCH (a:Asset)
+                         WHERE a.asset_guid IN [%s]
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                         MATCH (e:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(a)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e)
+                         MATCH (p:Pipeline)<-[:USED]-(e)
+                         MATCH (w:Workstation)<-[:USED]-(e)
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a)
+                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         RETURN a.asset_guid
+                         , a.asset_pid
+                         , a.status
+                         , a.multi_specimen
+                         , a.funding
+                         , a.subject
+                         , a.payload_type
+                         , a.file_formats
+                         , a.asset_taken_date
+                         , a.internal_status
+                         , a.asset_locked
+                         , pa.asset_guid
+                         , a.restricted_access
+                         , a.tags
+                         , a.error_message
+                         , a.error_timestamp
+                         , collect(s)
+                         , i.name
+                         , c.name
+                         , p.name
+                         , w.name
+                         , e.timestamp
+                         , a.date_asset_finalised
+                         , u.name
+                         , a.date_metadata_taken
+                         , a.date_asset_taken
+                      $$
+                    )
+                    as (asset_guid agtype
+                    , asset_pid agtype
+                    , status agtype
+                    , multi_specimen agtype
+                    , funding agtype
+                    , subject agtype
+                    , payload_type agtype
+                    , file_formats agtype
+                    , asset_taken_date agtype
+                    , internal_status agtype
+                    , asset_locked agtype
+                    , parent_guid agtype
+                    , restricted_access agtype
+                    , tags agtype
+                    , error_message agtype
+                    , error_timestamp agtype
+                    , specimens agtype
+                    , institution_name agtype
+                    , collection_name agtype
+                    , pipeline_name agtype
+                    , workstation_name agtype
+                    , creation_date agtype
+                    , date_asset_finalised agtype
+                    , user_name agtype
+                    , date_metadata_taken agtype
+                    , date_asset_taken agtype);
+                  """.formatted(assetListAsString);
+
+        return withHandle(handle -> handle.createQuery(sql)
+                .map(new AssetMapper())
+                .list());
     }
 
 
@@ -486,6 +571,68 @@ public interface AssetRepository extends SqlObject {
             throw new RuntimeException(e);
         }
         return asset;
+    }
+
+    @Transaction
+    default void bulkUpdateAssets(){
+
+        /*
+        try {
+            withHandle(handle -> {
+                AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
+                AgtypeMapBuilder tags = new AgtypeMapBuilder();
+                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("collection_name", asset.collection)
+                        .add("workstation_name", asset.workstation)
+                        .add("pipeline_name", asset.pipeline)
+                        .add("asset_guid", asset.asset_guid)
+                        .add("status", asset.status.name())
+                        .add("funding", asset.funding)
+                        .add("subject", asset.subject)
+                        .add("payload_type", asset.payload_type)
+                        .add("file_formats", agtypeListBuilder.build())
+                        .add("updated_date", Instant.now().toEpochMilli())
+                        .add("internal_status", asset.internal_status.name())
+                        .add("parent_id", asset.parent_guid)
+                        .add("user", asset.updateUser)
+                        .add("tags", tags.build())
+                        .add("asset_locked", asset.asset_locked)
+                        .add("restricted_access", restrictedAcces.build());
+                if (asset.date_metadata_taken != null) {
+                    builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
+                } else {
+                    builder.addNull("date_metadata_taken");
+                }
+                if (asset.date_asset_finalised != null) {
+                    builder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
+                } else {
+                    builder.addNull("date_asset_finalised");
+                }
+                if (asset.date_asset_taken != null) {
+                    builder.add("date_asset_taken", asset.date_asset_finalised.toEpochMilli());
+                } else {
+                    builder.addNull("date_asset_taken");
+                }
+                if (asset.digitiser != null) {
+                    builder.add("digitiser", asset.digitiser);
+                } else {
+                    builder.addNull("digitiser");
+                }
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+         */
     }
 
     @Transaction

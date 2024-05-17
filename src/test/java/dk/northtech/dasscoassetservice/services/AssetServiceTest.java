@@ -371,22 +371,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
         assertThat(updatedFirstAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
         assertThat(updatedSecondAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
-
-        /*
-        updatedAsset.asset_locked = false;
-        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
-        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-
-        Optional<Asset> foundThirdTimeAssetNumber1 = assetService.getAsset("bulk-asset-1");
-        assertThat(foundThirdTimeAssetNumber1.isPresent()).isTrue();
-        Asset thirdTimeTheCharm = foundThirdTimeAssetNumber1.get();
-        assertThat(thirdTimeTheCharm.funding).isEqualTo("Hundredetusindvis af dollars");
-        Optional<Asset> foundThirdTimeAssetNumber2 = assetService.getAsset("bulk-asset-2");
-        assertThat(foundThirdTimeAssetNumber2.isPresent()).isTrue();
-        Asset fourthCharm = foundThirdTimeAssetNumber2.get();
-        assertThat(fourthCharm.funding).isEqualTo("Hundredetusindvis af dollars");
-
-         */
     }
 
     @Test
@@ -435,6 +419,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(optAsset2.isPresent()).isTrue();
         Asset found2 = optAsset2.get();
         assertThat(found2.asset_locked).isTrue();
+    }
+
+    @Test
+    void testBulkUpdateNoUpdateUser(){
+        Asset asset = new Asset();
+        List<String> assetList = new ArrayList<>();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided!");
     }
 
     public Asset getTestAsset(String guid) {
