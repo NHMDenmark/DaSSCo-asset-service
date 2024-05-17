@@ -197,7 +197,9 @@ public class AssetService {
         // TODO: Make the asset-parent check.
         // TODO: Make the asset_locked check.
 
-        System.out.println(this.batchUpdateSqlStatementFactory(assetList, updatedAsset));
+        String sql = this.batchUpdateSqlStatementFactory(assetList, updatedAsset);
+
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, updatedAsset);
 /*
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
             throw new IllegalArgumentException("Update user must be provided!");
@@ -236,6 +238,11 @@ public class AssetService {
     }
 
     String batchUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
+
+        String assetListAsString = assetList.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
@@ -334,13 +341,7 @@ public class AssetService {
                     )
                 """;
 
-
-
-
-
-
-
-        return sql;
+        return sql.formatted(assetListAsString);
     }
 
     void validateAssetFields(Asset a) {

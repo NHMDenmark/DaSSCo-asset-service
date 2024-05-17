@@ -92,9 +92,9 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(){
+    default void bulkUpdate(String sql, Asset updatedAsset){
         boilerplate();
-        bulkUpdateAssets();
+        bulkUpdateAssets(sql, updatedAsset);
         /*
         for (Map.Entry<Asset, List<Specimen>> entry : assetList.entrySet()){
             Asset asset = entry.getKey();
@@ -574,9 +574,8 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdateAssets(){
-
-        /*
+    default void bulkUpdateAssets(String sql, Asset asset){
+        // TODO: Find a way to also add the bindings dynamically, as it will error like this:
         try {
             withHandle(handle -> {
                 AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
@@ -596,7 +595,7 @@ public interface AssetRepository extends SqlObject {
                         .add("payload_type", asset.payload_type)
                         .add("file_formats", agtypeListBuilder.build())
                         .add("updated_date", Instant.now().toEpochMilli())
-                        .add("internal_status", asset.internal_status.name())
+                        .add("internal_status", (asset.internal_status == null) ? null : asset.internal_status.name())
                         .add("parent_id", asset.parent_guid)
                         .add("user", asset.updateUser)
                         .add("tags", tags.build())
@@ -631,8 +630,6 @@ public interface AssetRepository extends SqlObject {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-         */
     }
 
     @Transaction
