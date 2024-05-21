@@ -345,12 +345,16 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset updatedSecondAsset = optionalUpdatedSecondAsset.get();
 
         // Finally, the assertions:
+
         assertThat(updatedFirstAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
         assertThat(updatedSecondAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
-        //assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
-        //assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
-        //assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
-        //assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        /*
+        assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+
+         */
         assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
         assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
         assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
@@ -361,8 +365,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedFirstAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
         assertThat(updatedSecondAsset.file_formats.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
-        //assertThat(updatedFirstAsset.asset_locked).isTrue();
-        //assertThat(updatedSecondAsset.asset_locked).isTrue();
+        assertThat(updatedFirstAsset.asset_locked).isTrue();
+        assertThat(updatedSecondAsset.asset_locked).isTrue();
         assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
         assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
         assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
@@ -374,8 +378,27 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testBulkUpdateOneAssetNotFound(){
+        // Create three different assets
+        Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
+        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
+
+        assetService.persistAsset(firstAsset, user, 1);
+
+        Asset updatedAsset = getBulkUpdateAsset();
+
+        // Create list of assets to be updated:
+        List<String> assetList = new ArrayList<String>();
+        assetList.add("bulk-asset-exists");
+        assetList.add("bulk-asset-does-not");
+        // Update assets with the new asset information:
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
+    }
+
+    @Test
     void testBulkUpdateNoAssetParent(){
-        /*
+
         Asset toBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent");
         Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent-2");
         assetService.persistAsset(toBeUpdated, user, 1);
@@ -394,13 +417,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset notUpdated = optNotUpdated.get();
         // Using funding or subject or payload_type is the easiest way to check if an asset was updated or not.
         assertThat(notUpdated.funding).isEqualTo("funding has depleted");
-
-         */
     }
 
     @Test
     void testBulkUpdateNoUnlockAllowed(){
-        /*
+
         Asset firstToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed");
         Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed-2");
         secondToBeUpdated.asset_locked = true;
@@ -423,8 +444,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(optAsset2.isPresent()).isTrue();
         Asset found2 = optAsset2.get();
         assertThat(found2.asset_locked).isTrue();
-
-         */
     }
 
     @Test

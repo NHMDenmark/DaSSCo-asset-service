@@ -83,6 +83,12 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
+    default List<Asset> readMultipleAssets(List<String> assets){
+        boilerplate();
+        return readMultipleAssetsInternal(assets);
+    }
+
+    @Transaction
     default Asset updateAsset(Asset asset, List<Specimen> specimenToDetach) {
         boilerplate();
         update_asset_internal(asset);
@@ -92,9 +98,10 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(String sql, Asset updatedAsset){
+    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset){
         boilerplate();
-        bulkUpdateAssets(sql, updatedAsset);
+        // Update asset metadata: No event for now:
+        bulkUpdateAssets(sql, builder, updatedAsset);
         /*
         for (Map.Entry<Asset, List<Specimen>> entry : assetList.entrySet()){
             Asset asset = entry.getKey();
@@ -204,6 +211,7 @@ public interface AssetRepository extends SqlObject {
                     .findOne();
         });
     }
+
 
     default List<Asset> readMultipleAssetsInternal(List<String> assets){
         String assetListAsString = assets.stream()
@@ -574,53 +582,9 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdateAssets(String sql, Asset asset){
-        // TODO: Find a way to also add the bindings dynamically, as it will error like this:
+    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder, Asset asset){
         try {
             withHandle(handle -> {
-                AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
-                AgtypeMapBuilder tags = new AgtypeMapBuilder();
-                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
-                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-                AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("collection_name", asset.collection)
-                        .add("workstation_name", asset.workstation)
-                        .add("pipeline_name", asset.pipeline)
-                        .add("asset_guid", asset.asset_guid)
-                        .add("status", asset.status.name())
-                        .add("funding", asset.funding)
-                        .add("subject", asset.subject)
-                        .add("payload_type", asset.payload_type)
-                        .add("file_formats", agtypeListBuilder.build())
-                        .add("updated_date", Instant.now().toEpochMilli())
-                        .add("internal_status", (asset.internal_status == null) ? null : asset.internal_status.name())
-                        .add("parent_id", asset.parent_guid)
-                        .add("user", asset.updateUser)
-                        .add("tags", tags.build())
-                        .add("asset_locked", asset.asset_locked)
-                        .add("restricted_access", restrictedAcces.build());
-                if (asset.date_metadata_taken != null) {
-                    builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
-                } else {
-                    builder.addNull("date_metadata_taken");
-                }
-                if (asset.date_asset_finalised != null) {
-                    builder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
-                } else {
-                    builder.addNull("date_asset_finalised");
-                }
-                if (asset.date_asset_taken != null) {
-                    builder.add("date_asset_taken", asset.date_asset_finalised.toEpochMilli());
-                } else {
-                    builder.addNull("date_asset_taken");
-                }
-                if (asset.digitiser != null) {
-                    builder.add("digitiser", asset.digitiser);
-                } else {
-                    builder.addNull("digitiser");
-                }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)

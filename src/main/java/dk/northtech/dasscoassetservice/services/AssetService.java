@@ -7,6 +7,8 @@ import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
+import org.apache.age.jdbc.base.type.AgtypeListBuilder;
+import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -189,23 +191,48 @@ public class AssetService {
     }
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset){
-
-        // TODO: Refactor? To make less calls to the DB?
         // TODO: Don't forget corner cases!!!!!!
-        // TODO: Check if the number of assets in the list and the number of existing assets with those names is the same. Otherwise, fail.
         // TODO: Remove specimens and insert the new ones. How?
-        // TODO: Make the asset-parent check.
-        // TODO: Make the asset_locked check.
 
-        String sql = this.batchUpdateSqlStatementFactory(assetList, updatedAsset);
+        // Check if all the assets exist:
+        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, updatedAsset);
-/*
+        if (assets.size() != assetList.size()){
+            throw new IllegalArgumentException("One or more assets were not found!");
+        }
+
+        // UpdateUser must be present:
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
             throw new IllegalArgumentException("Update user must be provided!");
         }
 
+        // Validate the Update fields:
         validateAsset(updatedAsset);
+
+        // Parent_guid does not exist:
+        if (updatedAsset.parent_guid != null){
+            Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
+            if (!optParent.isPresent()){
+                throw new IllegalArgumentException("asset_parent does not exist!");
+            }
+        }
+
+        // Do not allow unlocking:
+        if (!updatedAsset.asset_locked){
+            for (Asset asset : assets) {
+                if (asset.asset_locked){
+                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+                }
+            }
+        }
+
+        String sql = this.batchUpdateSqlStatementFactory(assetList, updatedAsset);
+        AgtypeMapBuilder builder = this.batchUpdateBuilderFactory(updatedAsset);
+
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset);
+
+
+        /*
 
         Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
 
@@ -215,14 +242,6 @@ public class AssetService {
             Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
             List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
             assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
-            if (updatedAsset.parent_guid != null){
-                Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
-                if (optParent.isPresent()){
-                    assetToUpdate.parent_guid = (!Objects.equals(assetToUpdate.parent_guid , updatedAsset.parent_guid)) ? updatedAsset.parent_guid : assetToUpdate.parent_guid ;
-                } else {
-                    throw new IllegalArgumentException("asset_parent does not exist!");
-                }
-            }
             if (assetToUpdate.asset_locked && !updatedAsset.asset_locked){
                 throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
             }
@@ -235,6 +254,77 @@ public class AssetService {
 
 
          */
+    }
+
+    AgtypeMapBuilder batchUpdateBuilderFactory(Asset updatedFields){
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+
+        if (!updatedFields.file_formats.isEmpty()){
+            AgtypeListBuilder fileFormats = new AgtypeListBuilder();
+            updatedFields.file_formats.forEach(x -> fileFormats.add(x.name()));
+            builder.add("file_formats", fileFormats.build());
+        }
+
+        if (updatedFields.tags != null){
+            AgtypeMapBuilder tags = new AgtypeMapBuilder();
+            updatedFields.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+            builder.add("tags", tags.build());
+        }
+
+        if (!updatedFields.restricted_access.isEmpty()){
+            AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+            updatedFields.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+            builder.add("restricted_access", restrictedAcces.build());
+        }
+
+        if (updatedFields.status != null){
+            builder.add("status", updatedFields.status.name());
+        }
+
+        if (updatedFields.funding != null){
+            builder.add("funding", updatedFields.funding);
+        }
+
+        if (updatedFields.subject != null){
+            builder.add("subject", updatedFields.subject);
+        }
+
+        if (updatedFields.payload_type != null){
+            builder.add("payload_type", updatedFields.payload_type);
+        }
+
+        if (updatedFields.internal_status != null){
+            builder.add("internal_status", updatedFields.internal_status.name());
+        }
+
+        if (updatedFields.parent_guid != null){
+            builder.add("parent_id", updatedFields.parent_guid);
+        }
+
+        if (updatedFields.asset_locked) {
+            builder.add("asset_locked", true);
+        }
+
+        if (updatedFields.date_metadata_taken != null) {
+            builder.add("date_metadata_taken", updatedFields.date_metadata_taken.toEpochMilli());
+        }
+        if (updatedFields.date_asset_finalised != null) {
+            builder.add("date_asset_finalised", updatedFields.date_asset_finalised.toEpochMilli());
+        }
+        if (updatedFields.date_asset_taken != null) {
+            builder.add("date_asset_taken", updatedFields.date_asset_finalised.toEpochMilli());
+        }
+        if (updatedFields.digitiser != null) {
+            builder.add("digitiser", updatedFields.digitiser);
+        }
+
+        builder.add("updated_date", Instant.now().toEpochMilli())
+                .add("user", updatedFields.updateUser)
+                .add("collection_name", updatedFields.collection)
+                .add("workstation_name", updatedFields.workstation)
+                .add("pipeline_name", updatedFields.pipeline);
+
+        return builder;
     }
 
     String batchUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
@@ -253,12 +343,6 @@ public class AssetService {
                             WHERE a.asset_guid IN [%s]
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
-                            MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
-                            MERGE (e)-[uw:USED]->(w)
-                            MERGE (e)-[up:USED]->(p)
-                            MERGE (e)-[pb:INITIATED_BY]->(u)
-                            MERGE (a)-[ca:CHANGED_BY]-(e)
                             SET
                 """;
 
@@ -330,15 +414,16 @@ public class AssetService {
         }
         if (updatedFields.digitiser != null){
             sql = sql + """
-                                a.digitiser = $digitizer,
+                                a.digitiser = $digitiser,
                     """;
         }
+
         sql = sql + """
-                            a.workstation = $workstation,
-                            a.pipeline = $pipeline,
-                            a.updateUser = $updateUser
+                            a.collection = $collection_name,
+                            a.workstation = $workstation_name,
+                            a.pipeline = $pipeline_name
                         $$
-                    )
+                        , #params) as (a agtype);
                 """;
 
         return sql.formatted(assetListAsString);
