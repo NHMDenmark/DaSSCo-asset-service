@@ -328,8 +328,20 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
         Asset updatedAsset = getBulkUpdateAsset();
 
+        Optional<Asset> optionalFirstAsset = assetService.getAsset("bulk-asset-1");
+        Optional<Asset> optionalSecondAsset = assetService.getAsset("bulk-asset-2");
+        assertThat(optionalFirstAsset.isPresent()).isTrue();
+        assertThat(optionalSecondAsset.isPresent()).isTrue();
+        Asset persistedFirstAsset = optionalFirstAsset.get();
+        Asset persistedSecondAsset = optionalSecondAsset.get();
+
+        assertThat(persistedFirstAsset.events.size()).isEqualTo(1);
+        assertThat(persistedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+        assertThat(persistedSecondAsset.events.size()).isEqualTo(1);
+        assertThat(persistedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+
         // Create list of assets to be updated:
-        List<String> assetList = new ArrayList<String>();
+        List<String> assetList = new ArrayList<>();
         assetList.add("bulk-asset-1");
         assetList.add("bulk-asset-2");
         // Update assets with the new asset information:
@@ -345,34 +357,45 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset updatedSecondAsset = optionalUpdatedSecondAsset.get();
 
         // Finally, the assertions:
-
+        // Status changed:
         assertThat(updatedFirstAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
         assertThat(updatedSecondAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
-        /*
+        // Events changed (only one event for BULK_UPDATE_ASSET_METADATA):
+        assertThat(updatedFirstAsset.events.size()).isEqualTo(2);
+        assertThat(updatedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        assertThat(updatedSecondAsset.events.size()).isEqualTo(2);
+        assertThat(updatedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        // Specimens changed:
         assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
         assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
         assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
-
-         */
+        // Funding changed:
         assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
         assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        // Subject changed:
         assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
         assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
+        // Payload type changed:
         assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
         assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
+        // File formats changed:
         assertThat(updatedFirstAsset.file_formats.size()).isEqualTo(1);
         assertThat(updatedFirstAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
         assertThat(updatedSecondAsset.file_formats.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
+        // Asset locked changed:
         assertThat(updatedFirstAsset.asset_locked).isTrue();
         assertThat(updatedSecondAsset.asset_locked).isTrue();
+        // Restricted access changed:
         assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
         assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
         assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        // Tags changed:
         assertThat(updatedFirstAsset.tags.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
+        // Date asset finalised changed:
         assertThat(updatedFirstAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
         assertThat(updatedSecondAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
     }
@@ -448,13 +471,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testBulkUpdateNoUpdateUser(){
-        /*
+
         Asset asset = new Asset();
         List<String> assetList = new ArrayList<>();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided!");
-
-         */
     }
 
     public Asset getTestAsset(String guid) {
