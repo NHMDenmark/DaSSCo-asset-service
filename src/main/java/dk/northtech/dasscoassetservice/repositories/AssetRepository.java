@@ -98,21 +98,24 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset){
+    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens){
         boilerplate();
-        // Update asset metadata: No event for now:
-        bulkUpdateAssets(sql, builder, updatedAsset);
-        /*
-        for (Map.Entry<Asset, List<Specimen>> entry : assetList.entrySet()){
+        // Update asset metadata:
+        bulkUpdateAssets(sql, builder);
+        // Add Event to every asset:
+        // TODO: Could not make the bulk update create an event as well. It would either create multiple events
+        // TODO: or, when trying to UNWIND the assets to merge the new event with them, give errors with the compatibility with agtype vertex.
+
+        for (Map.Entry<Asset, List<Specimen>> entry : assetAndSpecimens.entrySet()) {
             Asset asset = entry.getKey();
             List<Specimen> specimenList = entry.getValue();
-
-            update_asset_internal(asset);
-            connectParentChild(asset.parent_guid, asset.asset_guid);
+            // Set event (individual calls)
+            setEvent(updatedAsset.updateUser, event, asset);
+            // Connect parent and child (individual calls)
+            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
+            // Detach and persist the specimens (individual calls).
             createSpecimenRepository().persistSpecimens(asset, specimenList);
         }
-
-         */
     }
 
     @Transaction
@@ -582,7 +585,7 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder, Asset asset){
+    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder){
         try {
             withHandle(handle -> {
                 Agtype agtype = AgtypeFactory.create(builder.build());

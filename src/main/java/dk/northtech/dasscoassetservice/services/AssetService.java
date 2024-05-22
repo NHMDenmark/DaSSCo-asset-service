@@ -9,6 +9,7 @@ import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
+import org.checkerframework.checker.units.qual.A;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -229,31 +230,27 @@ public class AssetService {
         String sql = this.batchUpdateSqlStatementFactory(assetList, updatedAsset);
         AgtypeMapBuilder builder = this.batchUpdateBuilderFactory(updatedAsset);
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset);
+        // Create the new BULK_UPDATE_ASSET_METADATA event:
+        Event event = new Event();
+        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
+        event.user = updatedAsset.updateUser;
+        event.workstation = updatedAsset.workstation;
+        event.pipeline = updatedAsset.pipeline;
+        event.timeStamp = Instant.now();
 
 
-        /*
-
+        // Detaching specimens:
         Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
 
-        List<Asset> list = jdbi.onDemand(AssetRepository.class).readMultipleAssetsInternal(assetList);
-
-        list.forEach(assetToUpdate -> {
+        assets.forEach(assetToUpdate -> {
             Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
             List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
             assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
-            if (assetToUpdate.asset_locked && !updatedAsset.asset_locked){
-                throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-            }
-            assetToUpdate.workstation = (updatedAsset.workstation != null && !Objects.equals(assetToUpdate.workstation , updatedAsset.workstation)) ? updatedAsset.workstation : assetToUpdate.workstation ;
-            assetToUpdate.pipeline = (updatedAsset.pipeline != null && !Objects.equals(assetToUpdate.pipeline , updatedAsset.pipeline)) ? updatedAsset.pipeline : assetToUpdate.pipeline ;
             assetAndSpecimens.put(assetToUpdate, specimensToDetach);
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(assetAndSpecimens, assetList, assetToUpdate);
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
 
-
-         */
     }
 
     AgtypeMapBuilder batchUpdateBuilderFactory(Asset updatedFields){
@@ -265,7 +262,7 @@ public class AssetService {
             builder.add("file_formats", fileFormats.build());
         }
 
-        if (updatedFields.tags != null){
+        if (!updatedFields.tags.isEmpty()){
             AgtypeMapBuilder tags = new AgtypeMapBuilder();
             updatedFields.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
             builder.add("tags", tags.build());
@@ -343,6 +340,7 @@ public class AssetService {
                             WHERE a.asset_guid IN [%s]
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
+                            
                             SET
                 """;
 
@@ -361,7 +359,7 @@ public class AssetService {
                                 a.payload_type = $payload_type,
                     """;
         }
-        if (updatedFields.tags != null){
+        if (!updatedFields.tags.isEmpty()){
             sql = sql + """
                                 a.tags = $tags,
                     """;
