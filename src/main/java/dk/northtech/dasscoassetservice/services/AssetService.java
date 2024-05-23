@@ -79,6 +79,11 @@ public class AssetService {
         return true;
     }
 
+    public boolean deleteAssetMetadata(String assetGuid, User user){
+
+        return true;
+    }
+
     public boolean unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {
