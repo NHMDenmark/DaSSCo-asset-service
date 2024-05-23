@@ -227,8 +227,8 @@ public class AssetService {
             }
         }
 
-        String sql = this.batchUpdateSqlStatementFactory(assetList, updatedAsset);
-        AgtypeMapBuilder builder = this.batchUpdateBuilderFactory(updatedAsset);
+        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
+        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
 
         // Create the new BULK_UPDATE_ASSET_METADATA event:
         Event event = new Event();
@@ -253,7 +253,7 @@ public class AssetService {
 
     }
 
-    AgtypeMapBuilder batchUpdateBuilderFactory(Asset updatedFields){
+    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
 
         if (!updatedFields.file_formats.isEmpty()){
@@ -290,10 +290,6 @@ public class AssetService {
             builder.add("payload_type", updatedFields.payload_type);
         }
 
-        if (updatedFields.internal_status != null){
-            builder.add("internal_status", updatedFields.internal_status.name());
-        }
-
         if (updatedFields.parent_guid != null){
             builder.add("parent_id", updatedFields.parent_guid);
         }
@@ -301,15 +297,8 @@ public class AssetService {
         if (updatedFields.asset_locked) {
             builder.add("asset_locked", true);
         }
-
-        if (updatedFields.date_metadata_taken != null) {
-            builder.add("date_metadata_taken", updatedFields.date_metadata_taken.toEpochMilli());
-        }
         if (updatedFields.date_asset_finalised != null) {
             builder.add("date_asset_finalised", updatedFields.date_asset_finalised.toEpochMilli());
-        }
-        if (updatedFields.date_asset_taken != null) {
-            builder.add("date_asset_taken", updatedFields.date_asset_finalised.toEpochMilli());
         }
         if (updatedFields.digitiser != null) {
             builder.add("digitiser", updatedFields.digitiser);
@@ -324,7 +313,7 @@ public class AssetService {
         return builder;
     }
 
-    String batchUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
+    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
 
         String assetListAsString = assetList.stream()
                 .map(asset -> "'" + asset + "'")
@@ -395,27 +384,12 @@ public class AssetService {
                                 a.asset_locked = $asset_locked,
                     """;
         }
-        if (updatedFields.internal_status != null){
-            sql = sql + """
-                                a.internal_status = $internal_status,
-                    """;
-        }
-        if (updatedFields.date_metadata_taken != null){
-            sql = sql + """
-                                a.date_metadata_taken = $date_metadata_taken,
-                    """;
-        }
-        if (updatedFields.date_asset_taken != null){
-            sql = sql + """
-                                a.date_asset_taken = $date_asset_taken,
-                    """;
-        }
         if (updatedFields.digitiser != null){
             sql = sql + """
                                 a.digitiser = $digitiser,
                     """;
         }
-
+        // AFTER PIPELINE IS NEW: DELETE IF IT DOES NOT WORK.
         sql = sql + """
                             a.collection = $collection_name,
                             a.workstation = $workstation_name,

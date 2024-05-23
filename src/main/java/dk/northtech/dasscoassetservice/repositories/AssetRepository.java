@@ -103,9 +103,10 @@ public interface AssetRepository extends SqlObject {
         // Update asset metadata:
         bulkUpdateAssets(sql, builder);
         // Add Event to every asset:
-        // TODO: Could not make the bulk update create an event as well. It would either create multiple events
-        // TODO: or, when trying to UNWIND the assets to merge the new event with them, give errors with the compatibility with agtype vertex.
+        // TODO: No way to do it in one call, UNWIND does not support agtype vertex, so any try to loop through the Assets to create the event will fail.
+        // TODO: Apparently it is now supported, but it needs AGE 1.5.0 and Postgres 14.
 
+        // TODO: This is a solution for the bulk update, but it takes individual calls.
         for (Map.Entry<Asset, List<Specimen>> entry : assetAndSpecimens.entrySet()) {
             Asset asset = entry.getKey();
             List<Specimen> specimenList = entry.getValue();
