@@ -13,6 +13,7 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
+import org.checkerframework.checker.units.qual.A;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
@@ -473,6 +474,73 @@ public interface AssetRepository extends SqlObject {
             throw new RuntimeException(e);
         }
         return asset;
+    }
+
+    @Transaction
+    default void deleteAsset(String assetGuid){
+        boilerplate();
+        System.out.println("Here");
+        internal_deleteAsset(assetGuid);
+        System.out.println("NOW HERE");
+        // Detach the not used specimens:
+        internal_detachSpecimens(assetGuid);
+    }
+
+
+    default void internal_detachSpecimens(String assetGuid){
+        // MISSING FROM-Clause entry for table ?
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH(s:Specimen)
+                    MATCH(a:Asset {name: $asset_guid})
+                    WHERE NOT EXISTS((s)-[:USED_BY]-())
+                    AND NOT EXISTS((s)-[:CREATED_BY]-())
+                    DELETE s
+                $$
+                , #params) as (s agtype);
+                """;
+
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder agtypeMapBuilder = new AgtypeMapBuilder()
+                        .add("asset_guid", assetGuid);
+                Agtype agType = AgtypeFactory.create(agtypeMapBuilder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agType)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    default void internal_deleteAsset(String assetGuid){
+        String sql = """
+                
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (a:Asset {name: $asset_guid})
+                    DETACH DELETE a
+                $$
+                , #params) as (a agtype);
+                """;
+
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("asset_guid", assetGuid);
+
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     @Transaction

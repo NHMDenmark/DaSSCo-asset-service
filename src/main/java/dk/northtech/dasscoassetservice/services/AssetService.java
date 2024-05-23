@@ -80,6 +80,9 @@ public class AssetService {
     }
 
     public boolean deleteAssetMetadata(String assetGuid, User user){
+        // TODO: Don't forget corner cases!
+
+        jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
 
         return true;
     }
