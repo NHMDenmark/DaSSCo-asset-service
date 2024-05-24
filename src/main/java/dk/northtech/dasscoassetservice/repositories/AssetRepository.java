@@ -485,19 +485,29 @@ public interface AssetRepository extends SqlObject {
     }
 
     default void internal_deleteAsset(String assetGuid){
+        // Get asset, get specimens associated with asset, delete specimen associated only with that asset (3 edges or less)
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                 , $$
                     MATCH (a:Asset {name: $asset_guid})
+                    
                     MATCH (s:Specimen)-[r1:USED_BY]->(a)
                     MATCH (s)-[r2:CREATED_BY]->(a)
-                    WITH a, s
+                    MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                    
+                    WITH a, s, e
                     MATCH (s)-[r]-()
                     WHERE type(r) IN ['USED_BY', 'CREATED_BY', 'IS_PART_OF']
-                    WITH s, a, COUNT(r) as rel_count
+                    WITH s, a, COUNT(r) as rel_count, e
                     WHERE rel_count <= 3
                     
-                    DETACH DELETE a, s
+                    WITH a, s, e
+                    MATCH (e)-[r3]-()
+                    WHERE type(r3) IN ['CHANGED_BY']
+                    WITH s, a, COUNT(r3) as rel_count
+                    WHERE rel_count = 1
+                    
+                    DETACH DELETE a, s, e
                 $$
                 , #params) as (a agtype);
                 """;
