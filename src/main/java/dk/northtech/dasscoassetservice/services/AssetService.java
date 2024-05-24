@@ -261,6 +261,9 @@ public class AssetService {
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
+        if (allocation == 0){
+            throw new IllegalArgumentException("Allocation cannot be 0");
+        }
         validateAssetFields(asset);
         validateAsset(asset);
 
