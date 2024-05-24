@@ -479,50 +479,25 @@ public interface AssetRepository extends SqlObject {
     @Transaction
     default void deleteAsset(String assetGuid){
         boilerplate();
-        System.out.println("Here");
+        // Detach Asset and Specimens connected ONLY to that Asset
+        // TODO: Detach Events connected ONLY to that Asset
         internal_deleteAsset(assetGuid);
-        System.out.println("NOW HERE");
-        // Detach the not used specimens:
-        internal_detachSpecimens(assetGuid);
-    }
-
-
-    default void internal_detachSpecimens(String assetGuid){
-        // MISSING FROM-Clause entry for table ?
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                , $$
-                    MATCH(s:Specimen)
-                    MATCH(a:Asset {name: $asset_guid})
-                    WHERE NOT EXISTS((s)-[:USED_BY]-())
-                    AND NOT EXISTS((s)-[:CREATED_BY]-())
-                    DELETE s
-                $$
-                , #params) as (s agtype);
-                """;
-
-        try {
-            withHandle(handle -> {
-                AgtypeMapBuilder agtypeMapBuilder = new AgtypeMapBuilder()
-                        .add("asset_guid", assetGuid);
-                Agtype agType = AgtypeFactory.create(agtypeMapBuilder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agType)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
     }
 
     default void internal_deleteAsset(String assetGuid){
         String sql = """
-                
                 SELECT * FROM ag_catalog.cypher('dassco'
                 , $$
                     MATCH (a:Asset {name: $asset_guid})
-                    DETACH DELETE a
+                    MATCH (s:Specimen)-[r1:USED_BY]->(a)
+                    MATCH (s)-[r2:CREATED_BY]->(a)
+                    WITH a, s
+                    MATCH (s)-[r]-()
+                    WHERE type(r) IN ['USED_BY', 'CREATED_BY', 'IS_PART_OF']
+                    WITH s, a, COUNT(r) as rel_count
+                    WHERE rel_count <= 3
+                    
+                    DETACH DELETE a, s
                 $$
                 , #params) as (a agtype);
                 """;
