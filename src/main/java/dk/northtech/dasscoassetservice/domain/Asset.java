@@ -81,4 +81,5 @@ public class Asset {
     public String error_message;
     @Schema(description = "Date and time that the error happened", example = "2023-05-24T00:00:00.000Z")
     public Instant error_timestamp;
+
 }

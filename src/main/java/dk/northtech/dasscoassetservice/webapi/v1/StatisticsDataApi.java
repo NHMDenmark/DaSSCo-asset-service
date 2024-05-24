@@ -31,6 +31,7 @@ import java.util.Map;
 import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 // Hidden for now
 @Hidden
@@ -68,11 +69,12 @@ public class StatisticsDataApi {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = GraphData.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response getGraphDataDaily(@PathParam("timeframe") String timeFrame) {
+    public Response getGraphData(@PathParam("timeframe") String timeFrame) {
         // {incremental (pr day data): data, exponential (continually adding pr day): data}
         Map<GraphType, Map<String, GraphData>> finalData;
 
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
+            logger.info("Getting data for time frame {}.", timeFrame);
             finalData = statisticsDataService.getCachedGraphData(GraphView.valueOf(timeFrame));
         } else {
             logger.warn("Received time frame {} is invalid.", timeFrame);
@@ -109,6 +111,7 @@ public class StatisticsDataApi {
                 logger.warn("No data available within the selected time frame.");
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
+            logger.info("Data has been gathered for time frame {} to {}.", start, end);
             finalData.put(incremental, customData);
 
             return Response.status(Response.Status.OK).entity(finalData).build();
@@ -136,4 +139,16 @@ public class StatisticsDataApi {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
     }
+
+    @GET
+    @Path("/refreshcache")
+    @Produces(TEXT_PLAIN)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = TEXT_PLAIN))
+    public Response refreshGraphCache() {
+        statisticsDataService.refreshCachedData();
+        return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
+    }
+
 }

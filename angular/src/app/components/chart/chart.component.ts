@@ -127,7 +127,7 @@ export class ChartComponent {
   getOptions(yaxis: string, title: string): ChartOptions { // only way to specify the type so I don't get annoying errors ¯\_(ツ)_/¯
     return {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       aspectRatio: 2.5,
       skipNull: true,
       layout: {

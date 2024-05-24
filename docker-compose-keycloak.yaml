@@ -11,6 +11,6 @@ services:
       - ./keycloak/data:/opt/keycloak/data:rw
       - ./keycloak/themes:/opt/keycloak/themes:rw
     ports:
-      - 8084:8080
+      - 8083:8080
     command:
       - start-dev --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false --spi-theme-cache-templates=false

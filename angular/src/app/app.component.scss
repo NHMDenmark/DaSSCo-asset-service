@@ -1,48 +1,58 @@
 @import '../style/base';
 
-mat-toolbar {
-  display: flex;
-  justify-content: flex-start;
-  background-color: $primaryColor;
+.container {
+  height: 100vh;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 
-  .title {
-    font-family: GraphikBold, sans-serif;
-    font-size: 2rem;
-  }
-
-  .title:hover {
-    cursor: pointer;
-  }
-
-  .user-icon {
+  mat-toolbar {
     display: flex;
-    align-items: center;
-    height: 100%;
+    justify-content: flex-start;
+    background-color: $primaryColor;
+    height: 7%;
+
+    .title {
+      font-family: GraphikBold, sans-serif;
+      font-size: 2rem;
+    }
+
+    .title:hover {
+      cursor: pointer;
+    }
+
+    .user-icon {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+      font-size: 2.2rem;
+      color: $secondaryColor;
+    }
+
+    user-icon:hover {
+      color: $secondaryColorHover;
+    }
+  }
+
+  .button-container {
+    display: flex;
+    justify-content: space-between;
     width: 100%;
-    font-size: 2.2rem;
-    color: $secondaryColor;
+    margin-left: 5rem;
   }
 
-  user-icon:hover {
-    color: $secondaryColorHover;
-  }
-}
+  .navigation-menu {
+    button {
+      font-size: 20px;
+      font-family: geomatrix-bold;
+      color: $secondaryColor;
+    }
 
-.button-container {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-left: 5rem;
-}
-
-.navigation-menu {
-  button {
-    font-size: 20px;
-    font-family: geomatrix-bold;
-    color: $secondaryColor;
-  }
-
-  button:hover {
-    color: $secondaryColorHover;
+    button:hover {
+      color: $secondaryColorHover;
+    }
   }
 }
+

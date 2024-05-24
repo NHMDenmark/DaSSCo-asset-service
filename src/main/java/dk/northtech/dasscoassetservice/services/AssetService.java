@@ -38,7 +38,7 @@ public class AssetService {
         this.jdbi = jdbi;
     }
 
-    public void auditAsset(Audit audit, String assetGuid) {
+    public boolean auditAsset(Audit audit, String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(Strings.isNullOrEmpty(audit.user())) {
             throw new IllegalArgumentException("Audit must have a user!");
@@ -55,6 +55,7 @@ public class AssetService {
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
+        return true;
     }
 
     public boolean deleteAsset(String assetGuid, User user) {
@@ -75,10 +76,12 @@ public class AssetService {
         }
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
-    public void unlockAsset(String assetGuid) {
+    public boolean unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
@@ -86,12 +89,11 @@ public class AssetService {
         Asset asset = optAsset.get();
         asset.asset_locked = false;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
     }
-
     public List<Event> getEvents(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
     }
-
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
         Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
         if(optAsset.isEmpty()) {
@@ -103,10 +105,12 @@ public class AssetService {
         asset.error_timestamp = null;
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
-    public void completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
+    public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if(assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
         }
@@ -125,9 +129,12 @@ public class AssetService {
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+
+        statisticsDataService.refreshCachedData();
+        return true;
     }
 
-    public void setAssetStatus(String assetGuid, String status, String errorMessage) {
+    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
             assetStatus = InternalStatus.valueOf(status);
@@ -149,6 +156,9 @@ public class AssetService {
         }
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
+
+        statisticsDataService.refreshCachedData();
+        return true;
     }
 
     public Asset updateAsset(Asset updatedAsset) {
@@ -185,6 +195,8 @@ public class AssetService {
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
+
+        statisticsDataService.refreshCachedData();
         return existing;
     }
 
@@ -249,16 +261,10 @@ public class AssetService {
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
-
-        if(allocation == 0){
-            throw new IllegalArgumentException("Allocation cannot be 0");
-        }
-
         validateAssetFields(asset);
         validateAsset(asset);
 
         asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
-
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
@@ -271,7 +277,10 @@ public class AssetService {
             //Do not persist azzet if share wasnt created
             return asset;
         }
-        this.statisticsDataService.addAssetToCache(asset);
+
+        statisticsDataService.refreshCachedData();
+
+//        this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }
 
