@@ -479,13 +479,13 @@ public interface AssetRepository extends SqlObject {
     @Transaction
     default void deleteAsset(String assetGuid){
         boilerplate();
-        // Detach Asset and Specimens connected ONLY to that Asset
-        // TODO: Detach Events connected ONLY to that Asset
+        // Deletes Asset and removes connections to Specimens and Events.
+        // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
         internal_deleteAsset(assetGuid);
     }
 
     default void internal_deleteAsset(String assetGuid){
-
+        // Deletes Asset
         String sqlAsset = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                 , $$
@@ -494,7 +494,7 @@ public interface AssetRepository extends SqlObject {
                 $$
                 , #params) as (a agtype);
                 """;
-
+        // Deletes orphaned Specimens:
         String sqlSpecimen = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                 , $$
@@ -504,7 +504,7 @@ public interface AssetRepository extends SqlObject {
                 $$
                 ) as (s agtype);
                 """;
-
+        // Deletes orphaned Events:
         String sqlEvent = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                 , $$

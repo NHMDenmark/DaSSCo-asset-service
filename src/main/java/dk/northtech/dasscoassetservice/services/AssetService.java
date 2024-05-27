@@ -79,8 +79,12 @@ public class AssetService {
         return true;
     }
 
-    public boolean deleteAssetMetadata(String assetGuid, User user){
-        // TODO: Don't forget corner cases!
+    public boolean deleteAssetMetadata(String assetGuid){
+        // Check that the asset exists:
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()){
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
 
         jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
 

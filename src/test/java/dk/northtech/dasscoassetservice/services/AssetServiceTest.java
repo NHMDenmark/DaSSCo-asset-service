@@ -314,6 +314,29 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }
 
+    @Test
+    void testDeleteAssetMetadata(){
+        Asset asset = getTestAsset("test-delete-asset-metadata");
+        asset.asset_pid = "test-delete-asset-metadata-pid";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        assetService.persistAsset(asset, user, 1);
+        assetService.deleteAssetMetadata(asset.asset_guid);
+        Optional<Asset> optionalAsset = assetService.getAsset(asset.asset_guid);
+        assertThat(optionalAsset.isPresent()).isFalse();
+        List<Event> assetEvents = assetService.getEvents(asset.asset_guid);
+        assertThat(assetEvents.size()).isEqualTo(0);
+    }
+
+    @Test
+    void testDeleteAssetMetadataNonExistentAsset(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAssetMetadata("non-existent-asset"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
