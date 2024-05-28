@@ -24,7 +24,6 @@ public class CollectionService {
     }
 
     public Collection persistCollection(Collection collection, String institutionName) {
-
         if (Objects.isNull(collection)){
             throw new IllegalArgumentException("POST method requires a body");
         }
@@ -43,9 +42,11 @@ public class CollectionService {
             }
         }
 
-        collectionRepository.persistCollection(collection);
-        return collection;
+        Collection col = new Collection(collection.name(), institutionName);
 
+        collectionRepository.persistCollection(col);
+
+        return collection;
     }
 
     public List<Collection> listCollections(Institution institution) {

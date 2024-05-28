@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,7 +45,10 @@ public class PipelineService {
 
         }
 
-        pipelineRepository.persistPipeline(pipeline);
+        Pipeline pipe = new Pipeline(pipeline.name(), institutionName);
+
+        pipelineRepository.persistPipeline(pipe);
+
         return pipeline;
     }
 

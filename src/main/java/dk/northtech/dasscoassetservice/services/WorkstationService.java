@@ -44,19 +44,25 @@ public class WorkstationService {
         if (workstation.status() == null) {
             workstation = new Workstation(workstation.name(), WorkstationStatus.IN_SERVICE, institutionName);
         }
+
         if (Strings.isNullOrEmpty(workstation.name())) {
             throw new RuntimeException("Workstation must have a name");
         }
+
         Optional<Institution> instopt = institutionService.getIfExists(institutionName);
         if (instopt.isEmpty()) {
             throw new IllegalArgumentException("Institution does not exist");
         }
+
         Optional<Workstation> workstationOpt = workstationRepository.findWorkstation(workstation.name());
         if (workstationOpt.isPresent()) {
             throw new IllegalArgumentException("Workstation with name [" + workstation.name() + "] already exists in institution [" + workstationOpt.get().institution_name() + "]");
         }
+
         Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
+
         workstationRepository.persistWorkstation(newWs);
+
         return workstation;
     }
 
@@ -66,9 +72,20 @@ public class WorkstationService {
             throw new IllegalArgumentException("UPDATE request requires a body");
         }
 
+        if (workstation.status() == null){
+            throw new IllegalArgumentException("Workstation needs a STATUS to be updated");
+        }
+
+        if (workstation.name() == null){
+            throw new IllegalArgumentException("Workstation name must be present");
+        }
+
         if (institutionService.getIfExists(institutionName).isEmpty()){
             throw new IllegalArgumentException("Institution does not exist");
         }
-        workstationRepository.updateWorkstation(workstation);
+
+        Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
+
+        workstationRepository.updateWorkstation(newWs);
     }
 }
