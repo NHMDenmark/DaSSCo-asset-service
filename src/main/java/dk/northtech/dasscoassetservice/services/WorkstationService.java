@@ -46,7 +46,7 @@ public class WorkstationService {
         }
 
         if (Strings.isNullOrEmpty(workstation.name())) {
-            throw new RuntimeException("Workstation must have a name");
+            throw new IllegalArgumentException("Workstation must have a name");
         }
 
         Optional<Institution> instopt = institutionService.getIfExists(institutionName);
