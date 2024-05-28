@@ -14,27 +14,33 @@ class PipelineServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testPersistPipeline() {
-        pipelineService.persistPipeline(new Pipeline("persistPipeline", "institution_1"));
+        pipelineService.persistPipeline(new Pipeline("persistPipeline", "institution_1"), "institution_1");
         Optional<Pipeline> persistPipeline = pipelineService.findPipeline("persistPipeline");
         assertThat(persistPipeline.isPresent()).isTrue();
     }
 
     @Test
     void testPersistPipelineInstitutionDoesNotExist(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("failed-pipeline", "non-existent-institution")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("failed-pipeline", "non-existent-institution"), "non_existent_institution"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
     }
 
     @Test
     void testPersistPipelineAlreadyExists(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("i1_p1", "institution_1")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("i1_p1", "institution_1"), "institution_1"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("A pipeline with name [i1_p1] already exists within institution [institution_1]");
     }
 
     @Test
     void testPersistPipelineNameIsNull(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("", "institution_1")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("", "institution_1"), "institution_1"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
+    }
+
+    @Test
+    void testPersistPipelineNullPipeline(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(null, "institution_1"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("POST request requires a body");
     }
 
     @Test

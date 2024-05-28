@@ -24,7 +24,13 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
         Workstation workstation = result.get();
         assertThat(workstation.name()).isEqualTo("testPersistWorkstation");
         assertThat(workstation.status()).isEqualTo(WorkstationStatus.IN_SERVICE);
-        }
+    }
+
+    @Test
+    void testPersistWorkstationNoWorkstation(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.createWorkStation("institution_1", null));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("POST request requires a body");
+    }
 
     @Test
     void testPersistWorkstationAlreadyExists(){
@@ -49,7 +55,7 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
         Workstation workstation = new Workstation("testUpdateWorkstation", WorkstationStatus.IN_SERVICE, "institution_1");
         workstationService.createWorkStation("institution_1",workstation );
         Workstation updatedWorkstation = new Workstation(workstation.name(), WorkstationStatus.OUT_OF_SERVICE, workstation.institution_name());
-        workstationService.updateWorkstation(updatedWorkstation);
+        workstationService.updateWorkstation(updatedWorkstation, "institution_1");
         Optional<Workstation> result = workstationService.findWorkstation("testUpdateWorkstation");
         assertThat(result.isPresent()).isTrue();
         Workstation restul = result.get();
@@ -59,7 +65,7 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
     @Test
     void testUpdateWorkstationNonExistentInstitution(){
         Workstation workstation = new Workstation("testUpdateWorkstationFail", WorkstationStatus.IN_SERVICE, "non-existent-institution");
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.updateWorkstation(workstation));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> workstationService.updateWorkstation(workstation, "non-existent-institution"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
     }
 

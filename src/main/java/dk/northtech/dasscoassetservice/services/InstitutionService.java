@@ -7,6 +7,7 @@ import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -25,6 +26,11 @@ public class InstitutionService {
     }
 
     public Institution createInstitution(Institution institution) {
+
+        if(Objects.isNull(institution)){
+            throw new IllegalArgumentException("POST request requires a body");
+        }
+
         if(Strings.isNullOrEmpty(institution.name())) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }

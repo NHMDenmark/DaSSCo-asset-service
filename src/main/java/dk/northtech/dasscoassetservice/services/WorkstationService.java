@@ -9,6 +9,7 @@ import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -35,6 +36,11 @@ public class WorkstationService {
 
 
     public Workstation createWorkStation(String institutionName, Workstation workstation) {
+
+        if (Objects.isNull(workstation)){
+            throw new IllegalArgumentException("POST request requires a body");
+        }
+
         if (workstation.status() == null) {
             workstation = new Workstation(workstation.name(), WorkstationStatus.IN_SERVICE, institutionName);
         }
@@ -54,8 +60,13 @@ public class WorkstationService {
         return workstation;
     }
 
-    public void updateWorkstation(Workstation workstation) {
-        if (institutionService.getIfExists(workstation.institution_name()).isEmpty()){
+    public void updateWorkstation(Workstation workstation, String institutionName) {
+
+        if (Objects.isNull(workstation)){
+            throw new IllegalArgumentException("UPDATE request requires a body");
+        }
+
+        if (institutionService.getIfExists(institutionName).isEmpty()){
             throw new IllegalArgumentException("Institution does not exist");
         }
         workstationRepository.updateWorkstation(workstation);
