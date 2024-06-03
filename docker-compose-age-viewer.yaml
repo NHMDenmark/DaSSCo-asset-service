@@ -4,9 +4,3 @@ services:
     ports:
       - "5455:5455"
       - "3000:3000"
-    networks:
-      - dassco-file-proxy_default
-networks:
-  dassco-file-proxy_default:
-    external: true
-    name: dassco-file-proxy_default
