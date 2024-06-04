@@ -66,10 +66,11 @@ public interface AssetRepository extends SqlObject {
         }
         Asset asset1 = asset.get();
         List<Event> events = readEvents_internal(assetId);
-
         for (Event event : events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
+            //} else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
+            //    asset1.date_metadata_updated = event.timeStamp;
             } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
                 asset1.date_metadata_updated = event.timeStamp;
             } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
@@ -98,25 +99,23 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens){
+    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Event event){
         boilerplate();
-        // Update asset metadata:
-        bulkUpdateAssets(sql, builder);
-        // Add Event to every asset:
-        // TODO: No way to do it in one call, UNWIND does not support agtype vertex, so any try to loop through the Assets to create the event will fail.
-        // TODO: Apparently it is now supported, but it needs AGE 1.5.0 and Postgres 14.
+        // DB Call #1: Bulk Updates Asset Metadata, Creates an Event and binds the event and the assets together. If there's a new asset_parent, it connects parent and child.
+        // DB Call #2: Binds the event to the user, pipeline and workstation.
 
+        bulkUpdateAssets(sql, builder, event);
+        /*
         // TODO: This is a solution for the bulk update, but it takes individual calls.
         for (Map.Entry<Asset, List<Specimen>> entry : assetAndSpecimens.entrySet()) {
             Asset asset = entry.getKey();
             List<Specimen> specimenList = entry.getValue();
-            // Set event (individual calls)
-            setEvent(updatedAsset.updateUser, event, asset);
             // Connect parent and child (individual calls)
-            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
             // Detach and persist the specimens (individual calls).
             createSpecimenRepository().persistSpecimens(asset, specimenList);
         }
+
+         */
     }
 
     @Transaction
@@ -586,12 +585,41 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder){
+    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder, Event event){
+
+        String sqlEvent =
+                """
+                    SELECT * FROM ag_catalog.cypher('dassco'
+                    , $$
+                    
+                        MATCH(e:Event {timestamp: $timestamp, event: $event, name: $event})
+                        MATCH (p:Pipeline {name: $pipeline_name}) 
+                        MATCH (w:Workstation {name: $workstation_name}) 
+                        
+                        MERGE (u:User{user_id: $user, name: $user}) 
+                        MERGE (e)-[pb:INITIATED_BY]->(u)
+                        MERGE (e)-[pu:USED]->(p)
+                        MERGE (e)-[wu:USED]->(w) 
+                        
+                    $$
+                    , #params) as (a agtype);
+""";
+
         try {
             withHandle(handle -> {
                 Agtype agtype = AgtypeFactory.create(builder.build());
+                AgtypeMapBuilder eventBuilder = new AgtypeMapBuilder()
+                        .add("timestamp", event.timeStamp.toEpochMilli())
+                        .add("event", event.event.toString())
+                        .add("pipeline_name", event.pipeline)
+                        .add("workstation_name", event.workstation)
+                        .add("user", event.user);
+                Agtype eventAgtype = AgtypeFactory.create(eventBuilder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)
+                        .execute();
+                handle.createUpdate(sqlEvent)
+                        .bind("params", eventAgtype)
                         .execute();
                 return handle;
             });

@@ -192,8 +192,6 @@ public class AssetService {
     }
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset){
-        // TODO: Don't forget corner cases!!!!!!
-        // TODO: Remove specimens and insert the new ones. How?
 
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
@@ -227,9 +225,6 @@ public class AssetService {
             }
         }
 
-        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
-        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
-
         // Create the new BULK_UPDATE_ASSET_METADATA event:
         Event event = new Event();
         event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
@@ -237,6 +232,9 @@ public class AssetService {
         event.workstation = updatedAsset.workstation;
         event.pipeline = updatedAsset.pipeline;
         event.timeStamp = Instant.now();
+
+        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
+        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset, event);
 
 
         // Detaching specimens:
@@ -249,11 +247,11 @@ public class AssetService {
             assetAndSpecimens.put(assetToUpdate, specimensToDetach);
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, event);
 
     }
 
-    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
+    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields, Event event){
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
 
         if (!updatedFields.file_formats.isEmpty()){
@@ -305,10 +303,10 @@ public class AssetService {
         }
 
         builder.add("updated_date", Instant.now().toEpochMilli())
-                .add("user", updatedFields.updateUser)
                 .add("collection_name", updatedFields.collection)
                 .add("workstation_name", updatedFields.workstation)
-                .add("pipeline_name", updatedFields.pipeline);
+                .add("pipeline_name", updatedFields.pipeline)
+                .add("event", event.event.toString());
 
         return builder;
     }
@@ -325,10 +323,33 @@ public class AssetService {
                             MATCH (c:Collection {name: $collection_name})
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})
+                """;
+
+        if (updatedFields.parent_guid != null){
+            sql += """
+                    MATCH (pa:Asset {name: $parent_id})
+                    """;
+        }
+
+        sql += """
                             MATCH (a:Asset)
                             WHERE a.asset_guid IN [%s]
+                            
                             OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
                             DELETE co
+                            
+                            MERGE (e:Event {timestamp: $updated_date, event: $event, name: $event})
+                """;
+
+        if (updatedFields.parent_guid != null){
+            sql += """
+                        MERGE (a)-[cf:CHILD_OF]->(pa)
+                    """;
+        }
+
+        sql += """
+                            WITH a, e
+                            MERGE(a)-[:CHANGED_BY]->(e)
                             
                             SET
                 """;
@@ -397,6 +418,8 @@ public class AssetService {
                         $$
                         , #params) as (a agtype);
                 """;
+
+        System.out.println(sql);
 
         return sql.formatted(assetListAsString);
     }
