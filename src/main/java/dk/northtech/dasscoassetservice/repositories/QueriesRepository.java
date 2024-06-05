@@ -1,23 +1,15 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.NodeProperty;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
-import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
-import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.sqlobject.SqlObject;
-import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Repository;
 
 import java.sql.Connection;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,14 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
 
-//@Repository
 public interface QueriesRepository extends SqlObject {
-//    private Jdbi jdbi;
-
-//    @Inject
-//    public QueriesRepository(Jdbi jdbi) {
-//        this.jdbi = jdbi;
-//    }
 
     default void boilerplate() {
         withHandle(handle -> {

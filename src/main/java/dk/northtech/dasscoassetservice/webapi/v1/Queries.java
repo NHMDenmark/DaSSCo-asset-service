@@ -1,8 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.QueriesRepository;
-import dk.northtech.dasscoassetservice.services.PublicationService;
 import dk.northtech.dasscoassetservice.services.QueriesService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -17,8 +15,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -53,14 +49,12 @@ public class Queries {
 
     @POST
     @Path("/{limit}")
-    @Operation(summary = "Get node properties", description = "Collects all the properties of all the Nodes.")
+    @Operation(summary = "Get assets from query", description = "Selects all assets based on the received queries.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Asset> getNodeProperties(Query[] queries, @PathParam("limit") int limit) {
-        System.out.println(queries.toString());
-        System.out.println(limit);
         return this.queriesService.unwrapQuery(Arrays.asList(queries), limit);
     }
 }

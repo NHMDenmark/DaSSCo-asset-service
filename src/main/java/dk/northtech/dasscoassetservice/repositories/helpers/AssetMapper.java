@@ -59,6 +59,11 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype userName = rs.getObject("user_name", Agtype.class);
             asset.digitiser = userName.getString();
         }
+        rs.getString("creation_date");
+        if (!rs.wasNull()) {
+            Agtype createdDate = rs.getObject("creation_date", Agtype.class);
+            asset.created_date = Instant.ofEpochMilli(createdDate.getLong());
+        }
         rs.getString("error_message");
         if (!rs.wasNull()) {
             Agtype errorMessage = rs.getObject("error_message", Agtype.class);

@@ -97,9 +97,7 @@ public class QueriesService {
     }
 
     public List<Asset> unwrapQuery(List<Query> queries, int limit) {
-//        String matches = "MATCH (a:Asset)";
-        String finalQuery = "";
-//        List<String> whereClauses = new ArrayList<>();
+        String finalQuery;
         Map<String, String> whereMap = new HashMap<>();
         whereMap.put("limit", Integer.toString(limit));
 
@@ -107,64 +105,35 @@ public class QueriesService {
             if (query.select.equalsIgnoreCase("Asset")) { // a
                 String assetString = joinFields(query.wheres, "a");
                 whereMap.put("asset", assetString);
-//                whereClauses.add(assetString);
             }
             if (query.select.equalsIgnoreCase("Institution")) { // i
-//                matches += "\nMATCH (a)-[:BELONGS_TO]->(i:Institution)";
                 whereMap.put("institution", joinFields(query.wheres, "i"));
-//                whereClauses.add(joinFields(query.wheres, "i"));
             }
             if (query.select.equalsIgnoreCase("Workstation")) { // w
-//                matches += "\nMATCH (w:Workstation)-[:STATIONED_AT]->(i:Institution)";
-//                whereClauses.add(joinFields(query.wheres, "w"));
                 whereMap.put("workstation", joinFields(query.wheres, "w"));
             }
             if (query.select.equalsIgnoreCase("Event")) { // w
-//                matches += "\nMATCH (w:Workstation)-[:STATIONED_AT]->(i:Institution)";
-//                whereClauses.add(joinFields(query.wheres, "w"));
                 whereMap.put("event", joinFields(query.wheres, "e"));
             }
             if (query.select.equalsIgnoreCase("Pipeline")) { // p
-//                matches += "\nMATCH (p:Pipeline)-[:USED_BY]->(i:Institution)";
                 whereMap.put("pipeline", joinFields(query.wheres, "p"));
-//                whereClauses.add(joinFields(query.wheres, "p"));
             }
             if (query.select.equalsIgnoreCase("User")) { // u
-//                matches += "\nMATCH (p:Pipeline)-[:USED_BY]->(i:Institution)";
                 whereMap.put("user", joinFields(query.wheres, "u"));
-//                whereClauses.add(joinFields(query.wheres, "p"));
             }
             if (query.select.equalsIgnoreCase("Collection"))  { // c
-//                matches += "\nMATCH (a:Asset)-[:IS_PART_OF]->(c:Collection)";
                 whereMap.put("collection", joinFields(query.wheres, "c"));
-//                whereClauses.add(joinFields(query.wheres, "c"));
             }
             if (query.select.equalsIgnoreCase("Specimen")) { // s
-//                matches += "\nMATCH (s:Specimen)-[:USED_BY]->(a:Asset)";
-//                whereClauses.add(joinFields(query.wheres, "s"));
                 whereMap.put("specimen", joinFields(query.wheres, "s"));
             }
         }
         StringSubstitutor substitutor = new StringSubstitutor(whereMap);
-//        String whereCombined = StringUtils.join(whereClauses, "\nand ");
-//        finalQuery = String.format(assetSql, "WHERE " + whereCombined);
         finalQuery = substitutor.replace(assetSql);
-
-//        System.out.println(matches);
-//        System.out.println(whereCombined);
-//        String matchWhere = StringUtils.join(matches, "\nWHERE ", whereCombined, "\nRETURN DISTINCT a \nLIMIT " + limit);
-//        String matchWhere = StringUtils.join(matches, "\nWHERE ", whereCombined, "\n", return1);
-//        finalQuery = "SELECT * FROM cypher('dassco', $$\n" + matchWhere + "\n$$) " + return2;
-
-//        System.out.println(finalQuery);
-
         if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
 
         logger.info("Getting assets from query:\n{}", finalQuery);
-//        return new ArrayList<>();
         List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
-//        System.out.println(assets.toString());
-//        System.out.println(assets.get(0).toString());
         return assets;
     }
 
@@ -177,13 +146,10 @@ public class QueriesService {
                 andJoiner.add(queryField.toBasicQueryString(match));
             }
             if (queryField.type.equalsIgnoreCase("or")) {
-                System.out.println("or?");
                 orJoiner.add(queryField.toBasicQueryString(match));
             }
         }
         String where = andJoiner.toString();
-        System.out.println("orjoiner:");
-        System.out.println(orJoiner.toString());
         if (!StringUtils.isBlank(orJoiner.toString())) {
             where = StringUtils.join(andJoiner, " or ", orJoiner);
         }
