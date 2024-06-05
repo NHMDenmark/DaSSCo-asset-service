@@ -1,0 +1,92 @@
+<div class="container">
+  <mat-card>
+    <mat-card-content>
+      <mat-form-field>
+        <mat-label>Choose Node Type</mat-label>
+        <mat-select (selectionChange)="chooseNode($event.value)" [(ngModel)]="chosenNode">
+          <mat-option *ngFor="let node of nodes | keyvalue" [value]="node.key">
+            {{node.key}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+        <form [formGroup]="queryForm">
+          <div formArrayName="wheres">
+            <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i" class="form-div">
+              <div *ngIf="(chosenNodeProperties$ | async) as properties">
+                <mat-form-field>
+                  <mat-label>Choose Property</mat-label>
+                  <mat-select formControlName="property" (selectionChange)="updateOperators(i)">
+                    <mat-option *ngFor="let node of properties || []" [value]="node">
+                      {{node}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field>
+                <mat-label>Operator</mat-label>
+                <mat-select formControlName="operator">
+                  <mat-option *ngFor="let operator of wheres.at(i).get('operators')?.value" [value]="operator">
+                    {{operator}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <div *ngIf="this.wheres.at(i).get('property')?.value!.includes('date') || this.wheres.at(i).get('property')?.value!.includes('timestamp'); else input">
+                <div *ngIf="this.wheres.at(i).get('operator')?.value!.includes('RANGE'); else oneDate">
+                  <mat-form-field appearance="fill">
+                    <mat-label>Enter a date range</mat-label>
+                    <mat-date-range-input [rangePicker]="picker">
+                      <input matStartDate formControlName="dateStart" placeholder="Start date">
+                      <input matEndDate formControlName="dateEnd" placeholder="End date">
+                    </mat-date-range-input>
+                    <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-date-range-picker #picker></mat-date-range-picker>
+                  </mat-form-field>
+                </div>
+                <ng-template #oneDate>
+                  <mat-form-field appearance="fill" class="example-form-field">
+                    <mat-label>Choose a date</mat-label>
+                    <input matInput [matDatepicker]="datepicker" formControlName="date">
+                    <mat-hint>MM/DD/YYYY</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="datepicker"></mat-datepicker-toggle>
+                    <mat-datepicker #datepicker>
+                    </mat-datepicker>
+                  </mat-form-field>
+                </ng-template>
+            </div>
+
+              <ng-template #input>
+                <div *ngIf="chosenNode == 'Event'; else defaultInput">
+                  <mat-form-field>
+                    <mat-label>Event</mat-label>
+                    <mat-select formControlName="value">
+                      <mat-option value="CREATE_ASSET_METADATA">Asset Created</mat-option>
+                      <mat-option value="UPDATE_ASSET_METADATA">Asset Updated</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <ng-template #defaultInput>
+                  <mat-form-field class="example-form-field" appearance="fill">
+                    <mat-label>Value</mat-label>
+                    <input matInput type="text" formControlName="value">
+                  </mat-form-field>
+                </ng-template>
+              </ng-template>
+              <button mat-raised-button (click)="removeWhere(i)">Delete</button>
+            </div>
+          </div>
+        </form>
+
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button (click)="addWhere('and')">And</button>
+      <button mat-raised-button (click)="addWhere('or')">Or</button>
+      <button mat-raised-button (click)="removeComponent()">Remove Component</button>
+      <button mat-raised-button (click)="save()">Save</button>
+    </mat-card-actions>
+  </mat-card>
+</div>
