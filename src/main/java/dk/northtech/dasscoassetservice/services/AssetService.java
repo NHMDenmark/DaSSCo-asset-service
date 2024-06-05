@@ -304,7 +304,7 @@ public class AssetService {
             builder.add("digitiser", updatedFields.digitiser);
         }
 
-        builder.add("updated_date", Instant.now().toEpochMilli())
+        builder
                 .add("user", updatedFields.updateUser)
                 .add("collection_name", updatedFields.collection)
                 .add("workstation_name", updatedFields.workstation)
