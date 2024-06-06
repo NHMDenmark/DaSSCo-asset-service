@@ -12,7 +12,8 @@ export class DocsComponent implements OnInit, OnDestroy {
   selectedDoc : string;
   urls : { label: string, value: string }[] = [
     { label: "dassco-asset-service", value: "/api/openapi.json" },
-    { label: "dassco-file-proxy", value: "http://localhost:8080/file_proxy/api/openapi.json"}
+    // TODO: Change this later:
+    { label: "dassco-file-proxy", value: "/file_proxy/api/openapi.json"}
   ]
   constructor(private oidcSecurityService: OidcSecurityService) {
     this.selectedDoc = this.urls[0].value;
