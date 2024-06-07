@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Repository
 public class InternalStatusRepository {
@@ -33,53 +35,35 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-    String totalAmountSql =
+    String statusBaseSql = // I know this looks insane but I'm not good enough at neo4j to find a better way yet :C
             """
-                         SELECT * from cypher('dassco', $$
-                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
-                                 WITH count(assets) as assetcount
-                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
-                                 WITH count(completed) as complcount, assetcount
-                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
-                                 WITH count(metadata) as metacount, complcount, assetcount
-                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
-                                 WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
-                                 WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
-                                 RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
-                             $$) as (completed agtype, pending agtype, failed agtype);
-                    """;
+                SELECT * from cypher('dassco', $$
+                    OPTIONAL MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
+                        WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']
+                        AND NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(a)) #and#
+            
+                        WITH
+                            count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] THEN 1 END) as pending,
+                            count(CASE WHEN a.internal_status = 'COMPLETED' THEN 1 END) as completed,
+                            count(CASE WHEN a.internal_status IN ['SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED'] THEN 1 END) as failed
 
+                        RETURN
+                            pending,
+                            completed,
+                            failed
 
+                $$, #params) as (pending agtype, completed agtype, failed agtype);
+            """;
 
-    String dailyAmountSql =
-            """
-                         SELECT * from cypher('dassco', $$
-                                 MATCH (assets:Asset {internal_status: 'ASSET_RECEIVED'})-[:CHANGED_BY]->(ae:Event {name: 'CREATE_ASSET'})
-                                 WHERE ae.timestamp >= $today
-                                 WITH count(assets) as assetcount
-                                 OPTIONAL MATCH (completed:Asset {internal_status: 'COMPLETED'})-[:CHANGED_BY]->(ce:Event {name: 'CREATE_ASSET'})
-                                 WHERE ce.timestamp >= $today
-                                 WITH count(completed) as complcount, assetcount
-                                 OPTIONAL MATCH (metadata:Asset {internal_status: 'METADATA_RECEIVED'})-[:CHANGED_BY]->(me:Event {name: 'CREATE_ASSET'})
-                                 WHERE me.timestamp >= $today
-                                 WITH count(metadata) as metacount, complcount, assetcount
-                                 OPTIONAL MATCH (smberror:Asset {internal_status: 'SMB_ERROR'})-[:CHANGED_BY]->(smbe:Event {name: 'CREATE_ASSET'})
-                                 WHERE smbe.timestamp >= $today
-                                 WITH count(smberror) as smbcount, metacount, complcount, assetcount
-                                 OPTIONAL MATCH (erdaerror:Asset {internal_status: 'ERDA_ERROR'})-[:CHANGED_BY]->(erde:Event {name: 'CREATE_ASSET'})
-                                 WHERE erde.timestamp >= $today
-                                 WITH count(erdaerror) as erdacount, smbcount, metacount, complcount, assetcount
-                                 RETURN complcount, (assetcount + metacount), (erdacount + smbcount)
-                             $$, #params) as (completed agtype, pending agtype, failed agtype);
-                    """;
+    String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");
+    String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
 
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
             AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();
             Agtype agtype = AgtypeFactory.create(today);
             handle.execute(boilerplate);
-            return handle.createQuery(this.dailyAmountSql)
+            return handle.createQuery(dailyAmountSql)
                     .bind("params", agtype)
                     .map((rs, ctx) -> {
                         Map<String, Integer> amountMap = new HashMap<>();
@@ -101,7 +85,7 @@ public class InternalStatusRepository {
     public Optional<Map<String, Integer>> getTotalInternalStatusAmt() {
         return jdbi.withHandle(handle -> {
             handle.execute(boilerplate);
-            return handle.createQuery(this.totalAmountSql)
+            return handle.createQuery(totalAmountSql)
                     .map((rs, ctx) -> {
                         Map<String, Integer> amountMap = new HashMap<>();
 

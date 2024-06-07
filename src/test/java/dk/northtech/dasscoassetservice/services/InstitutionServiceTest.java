@@ -27,17 +27,39 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
     void testCreateInstitution() {
         institutionService.createInstitution(new Institution("Teztitution"));
         List<Institution> institutions = institutionService.listInstitutions();
-        System.out.println(institutions.size());
         Optional<Institution> result = institutions.stream().filter(institution -> {
             return institution.name().equals("Teztitution");
         }).findAny();
         assertThat(result.isPresent()).isTrue();
-        institutionService.createInstitution(new Institution("Teztitution"));
+    }
+
+    @Test
+    void testCreateInstitutionAlreadyExists(){
+        List<Institution> institutions = institutionService.listInstitutions();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("institution_1")));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute already exists");
         //Verify that institution is not created if already exists
         List<Institution> resultList = institutionService.listInstitutions();
         assertThat(resultList.size()).isEqualTo(institutions.size());
-
     }
 
+    @Test
+    void testListInstitutions(){
+        List<Institution> institutions = institutionService.listInstitutions();
+        assertThat(institutions.size()).isAtLeast(2);
+    }
 
+    @Test
+    void testGetIfExistst(){
+        Optional<Institution> optInstitution = institutionService.getIfExists("institution_1");
+        assertThat(optInstitution.isPresent()).isTrue();
+        Institution exists = optInstitution.get();
+        assertThat(exists.name()).isEqualTo("institution_1");
+    }
+
+    @Test
+    void testGetIfExistsDoesNotExist(){
+        Optional<Institution> optInstitution = institutionService.getIfExists("non-existent-institution");
+        assertThat(optInstitution.isPresent()).isFalse();
+    }
 }

@@ -77,6 +77,8 @@ public class AssetService {
         }
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -104,6 +106,8 @@ public class AssetService {
         asset.error_timestamp = null;
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -126,6 +130,8 @@ public class AssetService {
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -151,6 +157,8 @@ public class AssetService {
         }
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
+
+        statisticsDataService.refreshCachedData();
         return true;
     }
 
@@ -188,6 +196,8 @@ public class AssetService {
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
+
+        statisticsDataService.refreshCachedData();
         return existing;
     }
 
@@ -462,6 +472,9 @@ public class AssetService {
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
+        if (allocation == 0){
+            throw new IllegalArgumentException("Allocation cannot be 0");
+        }
         validateAssetFields(asset);
         validateAsset(asset);
 
@@ -478,7 +491,10 @@ public class AssetService {
             //Do not persist azzet if share wasnt created
             return asset;
         }
-        this.statisticsDataService.addAssetToCache(asset);
+
+        statisticsDataService.refreshCachedData();
+
+//        this.statisticsDataService.addAssetToCache(asset);
         return asset;
     }
 

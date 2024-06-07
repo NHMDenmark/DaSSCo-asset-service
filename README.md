@@ -17,6 +17,6 @@
 * Run ``docker compose -f docker-compose-age-viewer.yaml up --build``
 * The compose file connects to the external network of the containers from the dassco-file-proxy project
 * It will be on _localhost:3000_ and the values needed are:
-  * _database:_ database
+  * _connect URL:_ database
   * _port:_ 5432
   * _dbname, user & pass_: dassco_file_proxy

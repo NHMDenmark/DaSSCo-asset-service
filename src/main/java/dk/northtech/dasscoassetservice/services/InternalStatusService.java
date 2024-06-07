@@ -6,6 +6,7 @@ import com.google.common.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.Directory;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
+import dk.northtech.dasscoassetservice.domain.InternalStatusTimeFrame;
 import dk.northtech.dasscoassetservice.repositories.DirectoryRepository;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import jakarta.inject.Inject;
@@ -29,30 +30,30 @@ public class InternalStatusService {
     private static final Logger logger = LoggerFactory.getLogger(InternalStatusService.class);
     private InternalStatusRepository internalStatusRepository;
     private Jdbi jdbi;
+
     @Inject
     public InternalStatusService(InternalStatusRepository internalStatusRepository, Jdbi jdbi) {
         this.internalStatusRepository = internalStatusRepository;
         this.jdbi = jdbi;
     }
 
-    LoadingCache<String, Map<String, Integer>> cachedInternalStatus = CacheBuilder.newBuilder()
+    LoadingCache<InternalStatusTimeFrame, Map<String, Integer>> cachedInternalStatus = CacheBuilder.newBuilder()
             .expireAfterAccess(24, TimeUnit.HOURS)
             .build(
-                    new CacheLoader<String, Map<String, Integer>>() {
-                        public Map<String, Integer> load(String key) {
+                    new CacheLoader<InternalStatusTimeFrame, Map<String, Integer>>() {
+                        public Map<String, Integer> load(InternalStatusTimeFrame key) {
                             Map<String, Integer> statuses = new HashMap<>();
 
-                            if (key.equals("total")) {
+                            if (key.equals(InternalStatusTimeFrame.total)) {
                                 statuses = getInternalStatusAmt(false).get();
-                            } else if (key.equals("daily")) {
+                            } else if (key.equals(InternalStatusTimeFrame.daily)) {
                                 statuses = getInternalStatusAmt(true).get();
                             }
-
                             return statuses;
                         }
                     });
 
-    public Map<String, Integer> getCachedStatuses(String key) {
+    public Map<String, Integer> getCachedStatuses(InternalStatusTimeFrame key) {
         try {
             return cachedInternalStatus.get(key);
         } catch (ExecutionException e) {
@@ -80,8 +81,17 @@ public class InternalStatusService {
                 .collect(Collectors.toList());
     }
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
-
-        return internalStatusRepository.getAssetStatus(assetGuid);
+        Optional<AssetStatusInfo> assetStatus = internalStatusRepository.getAssetStatus(assetGuid);
+        if(assetStatus.isEmpty()){
+            return assetStatus;
+        }
+        AssetStatusInfo assetStatusInfoWithMb = jdbi.withHandle(h -> {
+            AssetStatusInfo assetStatusInfo = assetStatus.get();
+            DirectoryRepository dirRepository = h.attach(DirectoryRepository.class);
+            Directory writeableDirectory = dirRepository.getWriteableDirectory(assetGuid);
+            return new AssetStatusInfo(assetGuid, assetStatusInfo.parent_guid(), assetStatusInfo.error_timestamp(), assetStatusInfo.status(), assetStatusInfo.error_message(), writeableDirectory == null ? null :  writeableDirectory.allocatedStorageMb());
+        });
+        return Optional.of(assetStatusInfoWithMb);
     }
 
     public Optional<Map<String, Integer>> getInternalStatusAmt(boolean daily) {

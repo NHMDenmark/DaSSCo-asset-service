@@ -4,10 +4,16 @@
   height: 100%;
 
   .data-container {
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
+
+    .chart-container {
+      flex-grow: 3;
+      width: 100%;
+    }
 
     .config {
       width: 100%;
@@ -16,6 +22,7 @@
       flex-direction: row;
       align-items: center;
       justify-content: center;
+      font-size: 0.8rem;
 
       .datepicker {
         display: flex;

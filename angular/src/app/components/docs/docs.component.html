@@ -2,14 +2,25 @@
   id="rapidocs"
   show-header="false"
   route-prefix="/docs#"
-  use-path-in-nav-bar="true"
+  use-path-in-nav-bar="false"
   render-style="focused"
   sort-endpoints-by="path"
-  show-info="true"
+  show-info="false"
+  font-size="largest"
   schema-description-expanded="true"
+  show-method-in-nav-bar="as-colored-block"
   allow-server-selection="false"
   allow-spec-url-load="false"
   allow-spec-file-load="false"
+  allow-authentication="false"
   allow-try="true"
+  schema-style="table"
 >
+  <div id="selector-div">
+    <label for="selector">Choose Documentation:</label>
+    <br>
+    <select id="selector" [(ngModel)]="selectedDoc" (change)="onSelectChange()">
+      <option *ngFor="let url of urls" [value]="url.value">{{ url.label }}</option>
+    </select>
+  </div>
 </rapi-doc>

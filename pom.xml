@@ -10,11 +10,11 @@
     </parent>
     <groupId>dk.northtech</groupId>
     <artifactId>dassco-asset-service</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.3-SNAPSHOT</version>
     <name>dassco-asset-service</name>
     <description>dassco-asset-service</description>
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <testcontainers.version>1.19.1</testcontainers.version>
         <jdbi.version>3.37.1</jdbi.version>
     </properties>
@@ -64,9 +64,8 @@
         <dependency>
             <groupId>io.swagger.codegen.v3</groupId>
             <artifactId>swagger-codegen-maven-plugin</artifactId>
-            <version>3.0.36</version>
+            <version>3.0.50</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -146,6 +145,11 @@
             <artifactId>guava</artifactId>
             <version>32.1.3-jre</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.logging.log4j</groupId>-->
+<!--            <artifactId>log4j-to-slf4j</artifactId>-->
+<!--            <version>2.16.0</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <profiles>
@@ -294,7 +298,7 @@
                 <version>2.2.7</version>
                 <configuration>
                     <outputFileName>openapi</outputFileName>
-                    <outputPath>${project.basedir}/src/main/resources</outputPath>
+                    <outputPath>${project.basedir}/target/classes</outputPath>
                     <outputFormat>JSONANDYAML</outputFormat>
                     <resourcePackages>
                         <package>dk.northtech.dasscoassetservice.webapi</package>

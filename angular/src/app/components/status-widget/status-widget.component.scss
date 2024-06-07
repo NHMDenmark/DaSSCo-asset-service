@@ -3,25 +3,28 @@
 .container {
   width: fit-content;
   display: flex;
-  //margin: 1rem;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  font-size: 1.1rem;
+  gap: 1rem;
+  font-size: 0.8rem;
   font-family: geomatrix-medium;
   color: $secondaryColor;
 
-  .status-container {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    //background-color: #E5EEF5;
-    border-radius: 1rem;
-    width: fit-content;
+  .caps-td {
+    text-transform: uppercase;
+  }
+
+  //.status-container {
+  //  display: flex;
+  //  flex-direction: row;
+  //  gap: 1rem;
+  //  border-radius: 1rem;
+  //  width: fit-content;
 
     .footer-row {
       font-family: Arial;
       font-style: italic;
     }
-  }
+  //}
 
 }

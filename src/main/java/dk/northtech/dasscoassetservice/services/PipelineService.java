@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
 import jakarta.inject.Inject;
+import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,12 +33,18 @@ public class PipelineService {
             throw new IllegalArgumentException("A pipeline with name ["+pipeline1.name()+"] already exists within institution ["+pipeline1.institution()+"]");
 
         }
+        if (Strings.isNullOrEmpty(pipeline.name())){
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+
         pipelineRepository.persistPipeline(pipeline);
         return pipeline;
-
     }
 
     public List<Pipeline> listPipelines(Institution institution) {
+        if (institutionService.getIfExists(institution.name()).isEmpty()){
+            throw new IllegalArgumentException("Institute does not exist");
+        }
         return pipelineRepository.listPipelines(institution);
     }
 

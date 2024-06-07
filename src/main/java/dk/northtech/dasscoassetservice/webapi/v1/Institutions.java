@@ -5,10 +5,12 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InstitutionService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -22,6 +24,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
 @Path("/v1/institutions")
+@Tag(name = "Institutions", description = "Endpoints related to institutions")
 @SecurityRequirement(name = "dassco-idp")
 public class Institutions {
     private InstitutionService institutionService;
@@ -31,11 +34,10 @@ public class Institutions {
         this.institutionService = institutionService;
     }
 
-
     @GET
+    @Operation(summary = "Get Institution List", description = "Returns a list of institutions.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiOperation(value = "List all institutions")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Institution> getInstitutes() {
@@ -44,9 +46,11 @@ public class Institutions {
 
     @GET
     @Path("/{institutionName}")
+    @Operation(summary = "Get Institution", description = "Returns an institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
+    @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Institution getInstitutes(@PathParam("institutionName") String institutionName) {
         Optional<Institution> instOpt = institutionService.getIfExists(institutionName);
@@ -54,9 +58,9 @@ public class Institutions {
     }
 
     @POST
+    @Operation(summary = "Create Institution", description = "Registers a new institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @ApiOperation(value = "Register a new institution")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
