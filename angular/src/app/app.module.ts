@@ -29,6 +29,9 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
+import { QueriesComponent } from './components/queries/queries.component';
+import {MatCardModule} from "@angular/material/card";
+import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
 
 @NgModule({
   declarations: [
@@ -42,30 +45,33 @@ import {MatTableModule} from "@angular/material/table";
     ChartComponent,
     GraphDataComponent,
     ExportChartComponent,
-    StatusWidgetComponent
+    StatusWidgetComponent,
+    QueriesComponent,
+    QueryBuilderComponent
   ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        AuthConfigModule,
-        MatToolbarModule,
-        MatIconModule,
-        MatButtonModule,
-        MatInputModule,
-        FormsModule,
-        BrowserAnimationsModule,
-        MatOptionModule,
-        MatSelectModule,
-        ReactiveFormsModule,
-        MatButtonToggleModule,
-        MatDatepickerModule,
-        MatNativeDateModule,
-        MatMomentDateModule,
-        MatTooltipModule,
-        MatSnackBarModule,
-        MatDividerModule,
-        MatTableModule
-    ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    AuthConfigModule,
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatInputModule,
+    FormsModule,
+    BrowserAnimationsModule,
+    MatOptionModule,
+    MatSelectModule,
+    ReactiveFormsModule,
+    MatButtonToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatMomentDateModule,
+    MatTooltipModule,
+    MatSnackBarModule,
+    MatDividerModule,
+    MatTableModule,
+    MatCardModule
+  ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],
