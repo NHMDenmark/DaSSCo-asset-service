@@ -1,1 +1,37 @@
-<p>bulk-update works!</p>
+<form class="bulk-update-form">
+  <mat-form-field class="example-chip-list" appearance="fill">
+    <mat-label>Tags</mat-label>
+    <mat-chip-list #chipList aria-label="Tag Name and Description creator">
+      <mat-chip *ngFor="let pair of tags" (removed)="remove(pair)">
+        {{pair.key}}
+        <button matChipRemove>
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </mat-chip>
+        <input #tagInput placeholder="Tag"
+               name="tagInput"
+               [matChipInputFor]="chipList"
+               [(ngModel)]="newTag"
+               matInput>
+        <input placeholder="Description"
+               name="descriptionInput"
+               [(ngModel)]="newDescription"
+               (keyup.enter)="add()"
+               matInput>
+        <button mat-icon-button (click)="add()">
+          <mat-icon>add</mat-icon>
+        </button>
+    </mat-chip-list>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Status</mat-label>
+    <mat-select>
+      <mat-option *ngFor="let status of statusList" [value]="status">
+        {{status}}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button (click)="showJson()">Show</button>
+</form>
