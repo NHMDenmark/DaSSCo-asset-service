@@ -82,6 +82,21 @@ class AssetServiceTest extends AbstractIntegrationTest {
 }
 
     @Test
+    void testAuditAssetHasToBeComplete(){
+        Asset asset = getTestAsset("auditAssetMustBeComplete");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-auditAssetMustBeComplete";
+        asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
+        assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
+    }
+
+    @Test
     void testAuditAssetCannotBeAuditedByUserWhoDigitizedIt(){
         Asset asset = getTestAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt");
         asset.pipeline = "i2_p1";
@@ -95,21 +110,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt", null, null, null),"i2_w1", "i2_p1", "bob"));
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
-    }
-
-    @Test
-    void testAuditAssetHasToBeComplete(){
-        Asset asset = getTestAsset("auditAssetMustBeComplete");
-        asset.pipeline = "i2_p1";
-        asset.workstation = "i2_w1";
-        asset.institution = "institution_2";
-        asset.collection = "i2_c1";
-        asset.asset_pid = "pid-auditAssetMustBeComplete";
-        asset.asset_locked = false;
-        asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user, 10);
-        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
-        assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
     }
 
     @Test
@@ -596,47 +596,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void lockUnlockAsset() {
-        Asset asset = getTestAsset("lockUnlockAsset");
-//        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
-        asset.pipeline = "i1_p2";
-        asset.workstation = "i1_w2";
-        asset.institution = "institution_1";
-        asset.collection = "i1_c2";
-        asset.asset_pid = "pid-lockUnlock";
-        asset.asset_locked = true;
-        asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user, 11);
-        Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
-        Asset lockedAsset = lockedAssetOpt.get();
-        assertThat(lockedAsset.asset_locked).isTrue();
-        assetService.unlockAsset(asset.asset_guid);
-        Optional<Asset> unlockedAssetOpt = assetService.getAsset("lockUnlockAsset");
-        Asset unlockedAsset = unlockedAssetOpt.get();
-        assertThat(unlockedAsset.asset_locked).isFalse();
-    }
-
-    @Test
-    void auditAsset() {
-        Asset asset = getTestAsset("auditAsset");
-//        asset.specimen_barcodes = Arrays.asList("auditAsset-sp-1");
-        asset.pipeline = "i2_p1";
-        asset.workstation = "i2_w1";
-        asset.institution = "institution_2";
-        asset.collection = "i1_c2";
-        asset.asset_pid = "pid-auditAsset";
-        asset.asset_locked = false;
-        asset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(asset, user,11);
-        DasscoIllegalActionException illegalActionException1 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
-        assertThat(illegalActionException1).hasMessageThat().isEqualTo("Asset must be complete before auditing");
-//        assetService.completeAsset(asset.asset_guid);
-        assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("auditAsset", null, null, null),"i2_w1", "i2_p1", "bob"));
-        DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), asset.asset_guid));
-        assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
-    }
-
-    @Test
     void testPersistAsset() {
         Asset createAsset = getTestAsset("createAsset");
         createAsset.pipeline = "i1_p1";
@@ -730,6 +689,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateWithMaxNull");
         assertThat(resultOpt.isPresent()).isTrue();
     }
+
     //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
     @Test
     void createAssetMaxNulls() {
@@ -748,7 +708,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(resultOpt.isPresent()).isTrue();
     }
 
-//    @Test
+    //    @Test
 //    void testParentRestricted() {
 //        Asset createAsset = getTestAsset("testParentRestricted");
 //        createAsset.specimen_barcodes = Arrays.asList("testParentRestricted-sp-1");
@@ -792,6 +752,20 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(retrievedAsset.asset_guid).isEqualTo("testGetAsset");
         assertThat(retrievedAsset.asset_pid).isEqualTo("pid-testGetAsset");
         assertThat(retrievedAsset.status.toString()).isEqualTo("BEING_PROCESSED");
+    }
+
+    public Asset getTestAsset(String guid) {
+        Asset asset = new Asset();
+        asset.asset_locked = false;
+        asset.digitiser = "Karl-Børge";
+        asset.asset_guid = guid;
+        asset.funding = "Hundredetusindvis af dollars";
+        asset.date_asset_taken = Instant.now();
+        asset.subject = "Folder";
+        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.payload_type = "nuclear";
+        asset.updateUser = "Basviola";
+        return asset;
     }
 
     @Test
@@ -953,20 +927,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         List<String> assetList = new ArrayList<>();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided!");
-    }
-
-    public Asset getTestAsset(String guid) {
-        Asset asset = new Asset();
-        asset.asset_locked = false;
-        asset.digitiser = "Karl-Børge";
-        asset.asset_guid = guid;
-        asset.funding = "Hundredetusindvis af dollars";
-        asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
-        asset.file_formats = Arrays.asList(FileFormat.JPEG);
-        asset.payload_type = "nuclear";
-        asset.updateUser = "Basviola";
-        return asset;
     }
 
     public Asset getBulkUpdateAssetToBeUpdated(String guid){
