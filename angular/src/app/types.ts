@@ -57,7 +57,7 @@ export interface Asset {
   asset_guid: string | undefined;
   status: AssetStatus | undefined;
   multi_specimen: boolean | undefined;
-  specimens: any[] | undefined;
+  specimens: Specimen[] | undefined;
   funding: string | undefined;
   subject: string | undefined;
   payload_type: string | undefined;
@@ -78,12 +78,28 @@ export interface Asset {
   httpInfo: string | undefined;
   internal_status: string | undefined;
   updateUser: string | undefined;
-  events: any[] | undefined;
+  events: Event[] | undefined;
   digitiser: string | undefined;
   workstation: string | undefined;
   pipeline: string | undefined;
   error_message: string | undefined;
   error_timestamp: Moment | undefined;
+}
+
+export interface Specimen {
+  institution: string | undefined;
+  collection: string | undefined;
+  barcode: string | undefined;
+  specimen_pid: string | undefined;
+  preparation_type: string | undefined;
+}
+
+export interface Event {
+  user: string | undefined;
+  timeStamp: Moment | undefined;
+  event: string | undefined;
+  pipeline: string | undefined;
+  workstation: string | undefined;
 }
 
 export enum AssetStatus {

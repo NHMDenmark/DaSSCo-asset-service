@@ -113,6 +113,10 @@ public class QueriesService {
                 whereMap.put("workstation", joinFields(query.wheres, "w"));
             }
             if (query.select.equalsIgnoreCase("Event")) { // w
+                boolean eventTypeSet = query.wheres.stream().anyMatch(w -> w.property.equalsIgnoreCase("name") || w.property.equalsIgnoreCase("event"));
+                if (!eventTypeSet) { // otherwise it'll search for all events including the update ones even if they're just searching for a range in the date...
+                    query.wheres.add(new QueryField("and", "=", "event", "CREATE_ASSET_METADATA"));
+                }
                 whereMap.put("event", joinFields(query.wheres, "e"));
             }
             if (query.select.equalsIgnoreCase("Pipeline")) { // p
