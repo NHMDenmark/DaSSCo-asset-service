@@ -51,7 +51,7 @@ public class Pipelines {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Pipeline createInstitution(Pipeline in, @PathParam("institutionName") String institutionName) {
-        return pipelineService.persistPipeline(new Pipeline(in.name(), institutionName));
+    public Pipeline createPipeline(Pipeline in, @PathParam("institutionName") String institutionName) {
+        return pipelineService.persistPipeline(in, institutionName);
     }
 }

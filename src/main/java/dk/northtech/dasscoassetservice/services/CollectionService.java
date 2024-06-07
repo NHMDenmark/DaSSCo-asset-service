@@ -8,6 +8,7 @@ import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -22,8 +23,16 @@ public class CollectionService {
         this.collectionRepository = collectionRepository;
     }
 
-    public Collection persistCollection(Collection collection) {
-        Optional<Institution> ifExists = institutionService.getIfExists(collection.institution());
+    public Collection persistCollection(Collection collection, String institutionName) {
+        if (Objects.isNull(collection)){
+            throw new IllegalArgumentException("POST method requires a body");
+        }
+
+        if (Strings.isNullOrEmpty(collection.name())){
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+
+        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institute doesnt exist");
         } else {
@@ -32,12 +41,12 @@ public class CollectionService {
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
         }
-        if (Strings.isNullOrEmpty(collection.name())){
-            throw new IllegalArgumentException("Name cannot be null or empty");
-        }
-        collectionRepository.persistCollection(collection);
-        return collection;
 
+        Collection col = new Collection(collection.name(), institutionName);
+
+        collectionRepository.persistCollection(col);
+
+        return collection;
     }
 
     public List<Collection> listCollections(Institution institution) {
