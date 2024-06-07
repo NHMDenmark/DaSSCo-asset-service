@@ -136,7 +136,8 @@ public class QueriesService {
         finalQuery = substitutor.replace(assetSql);
         if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
 
-        logger.info("Getting assets from query:\n{}", finalQuery);
+//        logger.info("Getting assets from query:\n{}", finalQuery);
+        logger.info("Getting assets from query.");
         List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
         return assets;
     }
