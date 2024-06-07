@@ -2,20 +2,13 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Query;
 import dk.northtech.dasscoassetservice.domain.QueryField;
-import dk.northtech.dasscoassetservice.services.AbstractIntegrationTest;
 import dk.northtech.dasscoassetservice.services.QueriesService;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import static com.google.common.truth.Truth.assertThat;
 
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,8 +22,9 @@ class QueriesRepositoryTest {
 
     @Test
     public void getNodeProperties() {
-//        Map<String, List<String>> nodes = queriesRepository.getNodeProperties();
-//        System.out.println(nodes);
+        Map<String, List<String>> nodes = queriesService.getNodeProperties();
+        System.out.println(nodes);
+        assertThat(nodes).isNotEmpty();
     }
 
     @Test
@@ -61,14 +55,9 @@ class QueriesRepositoryTest {
         queries.add(query3);
         queries.add(query4);
         // 1709640316 - 1720181116
-
-//        System.out.println(Instant.now().toEpochMilli());
-
         this.queriesService.unwrapQuery(queries, 200);
     }
 
     // todo make test that pushes new asset or smth to the database and then use the query thing to get it out again.
-
-
 
 }

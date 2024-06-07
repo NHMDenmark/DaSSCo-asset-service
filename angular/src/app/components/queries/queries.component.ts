@@ -40,7 +40,7 @@ export class QueriesComponent implements OnInit {
     console.log(this.queryBuilderEle)
     if (this.queryBuilderEle) {
       const newComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent);
-      console.log(this.nodes)
+      // console.log(this.nodes)
       newComponent.instance.nodes = this.nodes ? this.nodes : new Map;
       newComponent.instance.saveQueryEvent.subscribe(queryFields => this.saveQuery(queryFields));
       newComponent.instance.removeComponentEvent.subscribe(() => newComponent.destroy());
@@ -48,14 +48,15 @@ export class QueriesComponent implements OnInit {
   }
 
   saveQuery(savedQuery: Query) {
-    console.log(savedQuery)
+    // console.log(savedQuery)
     this.queries.push(savedQuery)
   }
 
   save() {
-    console.log(this.limit)
+    console.log('saving queries', this.queries)
+    // console.log(this.limit)
     this.queriesService.getNodesFromQuery(this.queries, this.limit).subscribe(result => {
-      console.log(result)
+      // console.log(result)
       if (result) {
         this.dataSource.data = result;
       }
