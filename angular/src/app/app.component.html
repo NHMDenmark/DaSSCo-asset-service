@@ -15,6 +15,10 @@
                 [ngStyle]="active==='docs' ? {'color': 'rgba(20, 48, 82, 0.9)'} : {}">
           Docs
         </button>
+        <button mat-button (click)="navigateToSite('queries')"
+                [ngStyle]="active==='docs' ? {'color': 'rgba(20, 48, 82, 0.9)'} : {}">
+          Queries
+        </button>
       </div>
       <button mat-icon-button aria-label="icon-button with user icon" (click)="navigateToSite('user')">
         <mat-icon class="user-icon">account_circle</mat-icon>

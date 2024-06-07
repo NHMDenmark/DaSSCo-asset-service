@@ -24,6 +24,12 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testCreateInstitutionNoBody(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(null));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("POST request requires a body");
+    }
+
+    @Test
     void testCreateInstitution() {
         institutionService.createInstitution(new Institution("Teztitution"));
         List<Institution> institutions = institutionService.listInstitutions();

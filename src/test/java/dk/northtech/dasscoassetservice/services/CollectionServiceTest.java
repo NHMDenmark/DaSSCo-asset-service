@@ -17,7 +17,7 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     private CollectionService collectionService;
     @Test
     void testPersistCollection() {
-        collectionService.persistCollection(new Collection("Testology", "institution_1"));
+        collectionService.persistCollection(new Collection("Testology", "institution_1"), "institution_1");
         Optional<Collection> testology = collectionService.findCollection("Testology");
         assertThat(testology.isPresent()).isTrue();
         Collection resutl = testology.get();
@@ -26,10 +26,10 @@ class CollectionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testPersistCollectionAlreadyExists() {
-        collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1"));
+        collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1"), "institution_1");
         Institution institution1 = new Institution("institution_1");
         List<Collection> before = collectionService.listCollections(institution1);
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1"), "institution_1"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection already exists in this institute");
         List<Collection> after = collectionService.listCollections(institution1);
         assertThat(before.size()).isEqualTo(after.size());
@@ -38,14 +38,20 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistCollectionInstitutionDoesntExist() {
         Collection collection = new Collection("persistCollectionAlreadyExists", "DOESNT_EXIST");
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(collection));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(collection, "DOESNT_EXIST"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
     }
 
     @Test
     void testPersistCollectionNameIsNull(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("", "institution_1")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("", "institution_1"), "institution_1"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
+    }
+
+    @Test
+    void testPersistCollectionCorrectInstitutionNoCollection(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(null, "institution_1"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("POST method requires a body");
     }
 
     @Test
