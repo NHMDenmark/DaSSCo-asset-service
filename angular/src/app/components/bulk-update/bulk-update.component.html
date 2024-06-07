@@ -1,5 +1,5 @@
 <form class="bulk-update-form">
-  <mat-form-field class="example-chip-list" appearance="fill">
+  <mat-form-field appearance="fill">
     <mat-label>Tags</mat-label>
     <mat-chip-list #chipList aria-label="Tag Name and Description creator">
       <mat-chip *ngFor="let pair of tags" (removed)="remove(pair)">
@@ -26,12 +26,29 @@
 
   <mat-form-field appearance="fill">
     <mat-label>Status</mat-label>
-    <mat-select>
-      <mat-option *ngFor="let status of statusList" [value]="status">
+    <mat-select name="status" [(ngModel)]="status">
+      <mat-option *ngFor="let status of statusList" [value]="status" >
         {{status}}
       </mat-option>
     </mat-select>
   </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Asset Locked</mat-label>
+    <mat-select name="asset_locked" [(ngModel)]="assetLocked">
+      <mat-option [value]="false">False</mat-option>
+      <mat-option [value]="true">True</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Subject</mat-label>
+    <input matInput placeholder="Ex. Folder" value="" [(ngModel)]="subject" name="subject">
+  </mat-form-field>
+
+  <section>
+    <mat-checkbox>USER</mat-checkbox>
+  </section>
 
   <button (click)="showJson()">Show</button>
 </form>

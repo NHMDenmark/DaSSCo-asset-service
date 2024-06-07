@@ -21,6 +21,17 @@ export class BulkUpdateComponent implements OnInit {
   statusList = ["WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION"];
   status: string = "";
 
+  // ASSET_LOCKED:
+  assetLocked: boolean = false;
+
+  // SUBJECT:
+  subject: string = "";
+
+  // RESTRICTED_ASSET
+  roles: string[] = ["USER", "ADMIN", "SERVICE_USER", "DEVELOPER"]
+  roleList: string[] = [];
+  selectedRole: string = "";
+
   @ViewChild('tagInput') tagInput!: ElementRef<HTMLInputElement>
 
   add(): void {
@@ -33,12 +44,24 @@ export class BulkUpdateComponent implements OnInit {
     }
   }
 
+  addRole(): void {
+    this.roleList.push(this.selectedRole);
+  }
+
   remove(pair: { key: string, value: string }): void {
     const index = this.tags.indexOf(pair);
     if (index >= 0) {
       this.tags.splice(index, 1);
     }
   }
+
+  removeRole(role: string): void {
+    const index = this.roleList.indexOf(role);
+    if (index >= 0) {
+      this.tags.splice(index, 1);
+    }
+  }
+
 
   showJson(){
     const tagsObject: {[key : string]: string} = {};
@@ -47,7 +70,13 @@ export class BulkUpdateComponent implements OnInit {
       tagsObject[pair.key] = pair.value;
     })
 
-    const json = JSON.stringify({ tags: tagsObject }, null, 2)
+    const json = JSON.stringify({
+      status: this.status,
+      tags: tagsObject,
+      asset_locked: this.assetLocked,
+      subject: this.subject,
+      restricted_asset: this.roleList
+    }, null, 2)
     console.log(json);
   }
 
