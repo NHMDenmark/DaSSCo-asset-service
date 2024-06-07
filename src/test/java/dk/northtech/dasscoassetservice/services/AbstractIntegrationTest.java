@@ -2,7 +2,6 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
-import dk.northtech.dasscoassetservice.repositories.QueriesRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
@@ -39,7 +38,7 @@ public class AbstractIntegrationTest {
     AssetService assetService;
     @Inject FileProxyClient fileProxyClient;
     @Inject PublicationService publicationService;
-    QueriesRepository queriesRepository;
+    @Inject QueriesService queriesService;
 
     @Inject
     void setAssetService(AssetService assetService) {
