@@ -1,5 +1,9 @@
 @import 'src/style/base';
 
+rapi-doc {
+  font-family: graphik-regular;
+}
+
 rapi-doc::part(section-navbar-search) {
   margin-top: 1rem;
   padding: .8rem;

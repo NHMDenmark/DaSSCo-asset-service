@@ -1,0 +1,98 @@
+<div class="container">
+  <ng-template #queryBuilderContainer></ng-template>
+  <div *ngIf="(nodes$ | async)" class="container">
+    <button mat-mini-fab (click)="addWhere()"><mat-icon>add</mat-icon></button>
+    <button mat-raised-button (click)="save()">Save</button>
+    <mat-form-field appearance="fill">
+      <mat-label>Limit</mat-label>
+      <input matInput placeholder="200" [(ngModel)]="limit">
+    </mat-form-field>
+  </div>
+  <div>
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+      <ng-container matColumnDef="asset_guid">
+        <th mat-header-cell *matHeaderCellDef> asset_guid </th>
+        <td mat-cell *matCellDef="let element"> {{element.asset_guid}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef> status </th>
+        <td mat-cell *matCellDef="let element"> {{element.status}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="multi_specimen">
+        <th mat-header-cell *matHeaderCellDef> multi_specimen </th>
+        <td mat-cell *matCellDef="let element"> {{element.multi_specimen}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="funding">
+        <th mat-header-cell *matHeaderCellDef> funding </th>
+        <td mat-cell *matCellDef="let element"> {{element.funding}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef> subject </th>
+        <td mat-cell *matCellDef="let element"> {{element.subject}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="file_formats">
+        <th mat-header-cell *matHeaderCellDef> file_formats </th>
+        <td mat-cell *matCellDef="let element"> {{element.file_formats}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="asset_taken_date">
+        <th mat-header-cell *matHeaderCellDef> asset_taken_date </th>
+        <td mat-cell *matCellDef="let element"> {{element.asset_taken_date}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="internal_status">
+        <th mat-header-cell *matHeaderCellDef> internal_status </th>
+        <td mat-cell *matCellDef="let element"> {{element.internal_status}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="tags">
+        <th mat-header-cell *matHeaderCellDef> tags </th>
+        <td mat-cell *matCellDef="let element"> {{element.tags}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="specimens">
+        <th mat-header-cell *matHeaderCellDef> specimens </th>
+        <td mat-cell *matCellDef="let element"> {{element.specimens}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="institution_name">
+        <th mat-header-cell *matHeaderCellDef> institution </th>
+        <td mat-cell *matCellDef="let element"> {{element.institution}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="collection_name">
+        <th mat-header-cell *matHeaderCellDef> collection </th>
+        <td mat-cell *matCellDef="let element"> {{element.collection}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="pipeline_name">
+        <th mat-header-cell *matHeaderCellDef> pipeline </th>
+        <td mat-cell *matCellDef="let element"> {{element.pipeline}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="workstation_name">
+        <th mat-header-cell *matHeaderCellDef> workstation </th>
+        <td mat-cell *matCellDef="let element"> {{element.workstation}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="creation_date">
+        <th mat-header-cell *matHeaderCellDef> event_date </th>
+        <td mat-cell *matCellDef="let element"> {{element.created_date | date}}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="user_name">
+        <th mat-header-cell *matHeaderCellDef> digitiser </th>
+        <td mat-cell *matCellDef="let element"> {{element.digitiser}} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+</div>

@@ -28,7 +28,6 @@ public class CollectionRepository {
         this.jdbi = jdbi;
     }
 
-
     public void persistCollection(Collection collection) {
         String sql =
                 """
