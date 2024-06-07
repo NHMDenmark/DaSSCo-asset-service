@@ -158,6 +158,19 @@ public class Assetupdates {
         return this.assetService.updateAsset(asset);
     }
 
+    @PUT
+    @Path("/bulkUpdate")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void bulkUpdate(Asset asset,
+                           @QueryParam("assets") List<String> assetGuids){
+        // Pass an asset (the fields to be updated) and a list of assets to be updated.
+        // Return type?
+        // Roles Allowed?
+        this.assetService.bulkUpdate(assetGuids, asset);
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
