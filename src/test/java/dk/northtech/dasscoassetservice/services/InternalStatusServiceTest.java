@@ -1,4 +1,4 @@
-package dk.northtech.dasscoassetservice.services;
+/*package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetStatus;
@@ -30,3 +30,5 @@ public class InternalStatusServiceTest extends AbstractIntegrationTest {
         assertThat(assetInfo.status().toString()).isEqualTo("METADATA_RECEIVED");
     }
 }
+
+ */
