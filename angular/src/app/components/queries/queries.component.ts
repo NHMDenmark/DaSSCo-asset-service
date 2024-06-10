@@ -42,8 +42,15 @@ export class QueriesComponent implements OnInit {
       const newComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
       newComponent.instance.nodes = this.nodes ? this.nodes : new Map;
       newComponent.instance.saveQueryEvent.subscribe(queryFields => this.saveQuery(queryFields, this.queryBuilderEle!.indexOf(newComponent.hostView)));
-      newComponent.instance.removeComponentEvent.subscribe(() => newComponent.destroy());
+      newComponent.instance.removeComponentEvent.subscribe(() => {
+        this.removeQueryComponent(this.queryBuilderEle!.indexOf(newComponent.hostView));
+        newComponent.destroy();
+      });
     }
+  }
+
+  removeQueryComponent(index: number) {
+    this.queries.delete(index);
   }
 
   saveQuery(savedQuery: Query, index: number) {
