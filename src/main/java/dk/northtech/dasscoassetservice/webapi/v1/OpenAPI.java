@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 
+import dk.northtech.dasscoassetservice.assets.FrontendProperties;
 import dk.northtech.dasscoassetservice.configuration.AuthConfiguration;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -62,11 +63,14 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/")
 public class OpenAPI {
     private final AuthConfiguration authConfiguration;
+    private final FrontendProperties frontendProperties;
 
     @Inject
-    public OpenAPI(AuthConfiguration authConfiguration) {
+    public OpenAPI(AuthConfiguration authConfiguration, FrontendProperties frontendProperties) {
         this.authConfiguration = authConfiguration;
+        this.frontendProperties = frontendProperties;
     }
+
 
     @GET
     @Hidden
@@ -110,7 +114,7 @@ public class OpenAPI {
 
             s = authServerUrlPattern.matcher(s).replaceAll(this.authConfiguration.serverUrl());
             s = clientIdPattern.matcher(s).replaceAll(this.authConfiguration.clientName());
-            s = apiServerUrlPattern.matcher(s).replaceAll("http://localhost:8084/api");
+            s = apiServerUrlPattern.matcher(s).replaceAll(this.frontendProperties.rootUrl + "/api");
         }
         return s;
     }
