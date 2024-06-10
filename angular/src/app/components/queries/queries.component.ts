@@ -34,7 +34,7 @@ export class QueriesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.addWhere()); // just adding the initial where
+    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.addWhere()); // just adding the initial where. yet to find better way...
   }
 
   addWhere() {
