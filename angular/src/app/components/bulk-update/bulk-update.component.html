@@ -1,54 +1,144 @@
 <form class="bulk-update-form">
-  <mat-form-field appearance="fill">
-    <mat-label>Tags</mat-label>
-    <mat-chip-list #chipList aria-label="Tag Name and Description creator">
-      <mat-chip *ngFor="let pair of tags" (removed)="remove(pair)">
-        {{pair.key}}
-        <button matChipRemove>
-          <mat-icon>cancel</mat-icon>
-        </button>
-      </mat-chip>
-        <input #tagInput placeholder="Tag"
-               name="tagInput"
-               [matChipInputFor]="chipList"
-               [(ngModel)]="newTag"
-               matInput>
-        <input placeholder="Description"
-               name="descriptionInput"
-               [(ngModel)]="newDescription"
-               (keyup.enter)="add()"
-               matInput>
-        <button mat-icon-button (click)="add()">
-          <mat-icon>add</mat-icon>
-        </button>
-    </mat-chip-list>
-  </mat-form-field>
-
-  <mat-form-field appearance="fill">
-    <mat-label>Status</mat-label>
-    <mat-select name="status" [(ngModel)]="status">
-      <mat-option *ngFor="let status of statusList" [value]="status" >
-        {{status}}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field appearance="fill">
-    <mat-label>Asset Locked</mat-label>
-    <mat-select name="asset_locked" [(ngModel)]="assetLocked">
-      <mat-option [value]="false">False</mat-option>
-      <mat-option [value]="true">True</mat-option>
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field appearance="fill">
-    <mat-label>Subject</mat-label>
-    <input matInput placeholder="Ex. Folder" value="" [(ngModel)]="subject" name="subject">
-  </mat-form-field>
-
-  <section>
-    <mat-checkbox>USER</mat-checkbox>
-  </section>
-
-  <button (click)="showJson()">Show</button>
+  <mat-accordion>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Tags</mat-panel-title>
+      </mat-expansion-panel-header>
+      <div style="width: 100%">
+        <mat-form-field appearance="fill" style="width: 100%">
+          <mat-chip-list aria-label="Tag Name and Description creator">
+            <mat-chip *ngFor="let pair of tags" (removed)="remove(pair)">
+              {{ pair.key }}
+              <button matChipRemove>
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          </mat-chip-list>
+            <input #tagInput placeholder="Tag"
+                   name="tagInput"
+                   [(ngModel)]="newTag"
+                   >
+            <input placeholder="Description"
+                   name="descriptionInput"
+                   [(ngModel)]="newDescription"
+                   (keydown.enter)="add($event)"
+                   >
+            <button mat-icon-button (click)="add($event)">
+              <mat-icon>add</mat-icon>
+            </button>
+        </mat-form-field>
+      </div>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Specimens</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Specimen</mat-label>
+        <mat-chip-list #specimenList aria-label="Specimen inputs: Barcode, Pid and Preparation Type">
+          <mat-chip *ngFor="let specimen of specimens" (removed)="removeSpecimen(specimen)">
+            {{ specimen.barcode }}
+            <button matChipRemove>
+              <mat-icon>cancel</mat-icon>
+            </button>
+          </mat-chip>
+          <input #barcodeInput placeholder="Barcode"
+                 name="barcodeInput"
+                 [matChipInputFor]="specimenList"
+                 [(ngModel)]="newBarcode"
+                 matInput>
+          <input placeholder="Specimen Pid"
+                 name="specimenPidInput"
+                 [(ngModel)]="newSpecimenPid"
+                 matInput>
+          <input placeholder="Preparation Type"
+                 name="prepTypeInput"
+                 [(ngModel)]="newPrepType"
+                 (keydown.enter)="addSpecimen($event)"
+                 matInput>
+          <button mat-icon-button (click)="addSpecimen($event)">
+            <mat-icon>add</mat-icon>
+          </button>
+        </mat-chip-list>
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Status</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Status</mat-label>
+        <mat-select name="status" [(ngModel)]="status">
+          <mat-option *ngFor="let status of statusList" [value]="status">
+            {{ status }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Asset Locked</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Asset Locked</mat-label>
+        <mat-select name="asset_locked" [(ngModel)]="assetLocked">
+          <mat-option [value]="false">False</mat-option>
+          <mat-option [value]="true">True</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Subject</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Subject</mat-label>
+        <input matInput placeholder="Ex. Folder" value="" [(ngModel)]="subject" name="subject">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Restricted Asset</mat-panel-title>
+      </mat-expansion-panel-header>
+      <div *ngFor="let role of roles">
+        <mat-checkbox (change)="modifyRoleList($event, role)">{{ role }}</mat-checkbox>
+      </div>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Funding</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Funding</mat-label>
+        <input matInput placeholder="Ex. 500.000kr" value="" [(ngModel)]="funding" name="funding">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Formats</mat-panel-title>
+      </mat-expansion-panel-header>
+      <div *ngFor="let format of formats">
+        <mat-checkbox (change)="modifyFileFormatList($event, format)">{{ format }}</mat-checkbox>
+      </div>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Payload Type</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Payload Type</mat-label>
+        <input matInput placeholder="Ex. CT Scan" value="" [(ngModel)]="payloadType" name="payload_type">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Parent Guid</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Parent Guid</mat-label>
+        <input matInput placeholder="Ex. TEST_PARENT" value="" [(ngModel)]="parentGuid" name="parent_guid">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <button (click)="showJson()">Show</button>
+  </mat-accordion>
 </form>

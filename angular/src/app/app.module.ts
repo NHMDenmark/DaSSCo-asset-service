@@ -31,6 +31,8 @@ import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
 import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
 import {MatChipsModule} from "@angular/material/chips";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatExpansionModule} from "@angular/material/expansion";
 
 @NgModule({
   declarations: [
@@ -47,29 +49,31 @@ import {MatChipsModule} from "@angular/material/chips";
     ExportChartComponent,
     StatusWidgetComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    AuthConfigModule,
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
-    MatInputModule,
-    FormsModule,
-    BrowserAnimationsModule,
-    MatOptionModule,
-    MatSelectModule,
-    ReactiveFormsModule,
-    MatButtonToggleModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatMomentDateModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    MatDividerModule,
-    MatTableModule,
-    MatChipsModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        AuthConfigModule,
+        MatToolbarModule,
+        MatIconModule,
+        MatButtonModule,
+        MatInputModule,
+        FormsModule,
+        BrowserAnimationsModule,
+        MatOptionModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        MatButtonToggleModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
+        MatMomentDateModule,
+        MatTooltipModule,
+        MatSnackBarModule,
+        MatDividerModule,
+        MatTableModule,
+        MatChipsModule,
+        MatCheckboxModule,
+        MatExpansionModule
+    ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],
