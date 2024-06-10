@@ -59,7 +59,7 @@ export class QueriesComponent implements OnInit {
 
   save() {
     const queries = Array.from(this.queries.values()).map(val => val);
-    console.log('saving queries', queries)
+    // console.log('saving queries', queries)
     this.queriesService.getNodesFromQuery(queries, this.limit).subscribe(result => {
       if (result) {
         this.dataSource.data = result;
