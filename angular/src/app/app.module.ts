@@ -33,6 +33,9 @@ import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.componen
 import {MatChipsModule} from "@angular/material/chips";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {MatExpansionModule} from "@angular/material/expansion";
+import { QueriesComponent } from './components/queries/queries.component';
+import {MatCardModule} from "@angular/material/card";
+import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
 
 @NgModule({
   declarations: [
@@ -47,33 +50,36 @@ import {MatExpansionModule} from "@angular/material/expansion";
     ChartComponent,
     GraphDataComponent,
     ExportChartComponent,
-    StatusWidgetComponent
+    StatusWidgetComponent,
+    QueriesComponent,
+    QueryBuilderComponent
   ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        AuthConfigModule,
-        MatToolbarModule,
-        MatIconModule,
-        MatButtonModule,
-        MatInputModule,
-        FormsModule,
-        BrowserAnimationsModule,
-        MatOptionModule,
-        MatSelectModule,
-        ReactiveFormsModule,
-        MatButtonToggleModule,
-        MatDatepickerModule,
-        MatNativeDateModule,
-        MatMomentDateModule,
-        MatTooltipModule,
-        MatSnackBarModule,
-        MatDividerModule,
-        MatTableModule,
-        MatChipsModule,
-        MatCheckboxModule,
-        MatExpansionModule
-    ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    AuthConfigModule,
+    MatToolbarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatInputModule,
+    FormsModule,
+    BrowserAnimationsModule,
+    MatOptionModule,
+    MatSelectModule,
+    ReactiveFormsModule,
+    MatButtonToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatMomentDateModule,
+    MatTooltipModule,
+    MatSnackBarModule,
+    MatDividerModule,
+    MatTableModule,
+    MatCardModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatExpansionModule
+  ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
   ],

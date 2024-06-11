@@ -1,0 +1,123 @@
+<div class="container">
+  <mat-card>
+    <mat-card-content>
+      <mat-form-field appearance="outline">
+        <mat-label>Choose Node Type</mat-label>
+        <mat-select (selectionChange)="chooseNode($event.value)" [(ngModel)]="chosenNode">
+          <mat-option *ngFor="let node of nodes | keyvalue" [value]="node.key">
+            {{node.key}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+        <form [formGroup]="queryForm">
+          <div formArrayName="wheres">
+            <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i" class="form-div">
+              <mat-form-field appearance="outline" class="small-input">
+                <input matInput type="text" formControlName="queryType" [disabled]="true" [readonly]="true">
+              </mat-form-field>
+
+              <div *ngIf="(chosenNodeProperties$ | async) as properties">
+                <mat-form-field appearance="outline">
+                  <mat-label>Choose Property</mat-label>
+                  <mat-select formControlName="property" (selectionChange)="updateOperators(i)">
+                    <mat-option *ngFor="let node of properties || []" [value]="node">
+                      {{node}}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Operator</mat-label>
+                <mat-select formControlName="operator">
+                  <mat-option *ngFor="let operator of child.get('operators')?.value" [value]="operator">
+                    {{operator}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <div *ngIf="child.get('property')?.value!.includes('date') || child.get('property')?.value!.includes('timestamp'); else input">
+                <div *ngIf="child.get('operator')?.value!.includes('RANGE'); else oneDate">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Enter a date range</mat-label>
+                    <mat-date-range-input [rangePicker]="picker">
+                      <input matStartDate formControlName="dateStart" placeholder="Start date">
+                      <input matEndDate formControlName="dateEnd" placeholder="End date">
+                    </mat-date-range-input>
+                    <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-date-range-picker #picker></mat-date-range-picker>
+                  </mat-form-field>
+                </div>
+
+                <ng-template #oneDate>
+                  <mat-form-field appearance="outline" class="example-form-field">
+                    <mat-label>Choose a date</mat-label>
+                    <input matInput [matDatepicker]="datepicker" formControlName="date">
+                    <mat-hint>MM/DD/YYYY</mat-hint>
+                    <mat-datepicker-toggle matSuffix [for]="datepicker"></mat-datepicker-toggle>
+                    <mat-datepicker #datepicker>
+                    </mat-datepicker>
+                  </mat-form-field>
+                </ng-template>
+            </div>
+
+              <ng-template #input>
+                <div *ngIf="chosenNode == 'Event'; else defaultInput">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Event</mat-label>
+                    <mat-select formControlName="value">
+                      <mat-option value="CREATE_ASSET_METADATA">Asset Created</mat-option>
+                      <mat-option value="UPDATE_ASSET_METADATA">Asset Updated</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <ng-template #defaultInput>
+                  <div *ngIf="chosenNode == 'Asset' && child.get('property')?.value!.includes('status'); else defaultValueInput">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Status</mat-label>
+                      <mat-select formControlName="value">
+                        <mat-option value="WORKING_COPY">WORKING_COPY</mat-option>
+                        <mat-option value="ARCHIVE">ARCHIVE</mat-option>
+                        <mat-option value="BEING_PROCESSED">BEING_PROCESSED</mat-option>
+                        <mat-option value="PROCESSING_HALTED">PROCESSING_HALTED</mat-option>
+                        <mat-option value="ISSUE_WITH_MEDIA">ISSUE_WITH_MEDIA</mat-option>
+                        <mat-option value="ISSUE_WITH_METADATA">ISSUE_WITH_METADATA</mat-option>
+                        <mat-option value="FOR_DELETION">FOR_DELETION</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <ng-template #defaultValueInput>
+                    <mat-form-field class="example-form-field" appearance="outline">
+                      <mat-label>Value</mat-label>
+                      <input matInput type="text" formControlName="value">
+                    </mat-form-field>
+                  </ng-template>
+                </ng-template>
+              </ng-template>
+              <button mat-icon-button (click)="removeWhere(i)" color="primary"><mat-icon>delete</mat-icon></button>
+            </div>
+          </div>
+        </form>
+
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-raised-button (click)="addWhere('and')"
+              matTooltip="Add AND argument"
+              [matTooltipPosition]="'below'">And</button>
+      <button mat-raised-button (click)="addWhere('or')"
+              matTooltip="Add OR argument"
+              [matTooltipPosition]="'below'">Or</button>
+      <button mat-mini-fab (click)="removeComponent()"
+              matTooltip="Delete whole clause for Node"
+              [matTooltipPosition]="'below'"><mat-icon>delete_forever</mat-icon></button>
+      <button mat-mini-fab (click)="save()"
+              matTooltip="Save where clause"
+              [matTooltipPosition]="'below'"
+              color="warn"
+              [disabled]="saved"><mat-icon>save</mat-icon></button>
+    </mat-card-actions>
+  </mat-card>
+</div>

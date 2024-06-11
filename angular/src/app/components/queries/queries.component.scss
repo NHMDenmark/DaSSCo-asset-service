@@ -1,0 +1,31 @@
+.container {
+  padding: 1rem;
+
+  .input-container {
+    margin-top: 1rem;
+
+    button {
+      margin-right: 1rem;
+    }
+  }
+
+  table {
+    width: 100%;
+
+    .small-width {
+      width: 5rem;
+    }
+
+    th {
+      text-align: left;
+    }
+
+    tr.data-rows:hover {
+      background: whitesmoke;
+    }
+
+    td {
+      word-break: break-word;
+    }
+  }
+}
