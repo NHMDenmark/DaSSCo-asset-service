@@ -160,13 +160,13 @@ public class Assetupdates {
 
     @PUT
     @Path("/bulkUpdate")
+    @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void bulkUpdate(Asset asset,
                            @QueryParam("assets") List<String> assetGuids){
-        // Pass an asset (the fields to be updated) and a list of assets to be updated.
-        // Return type?
+        // Return type? = List of Asset metadata: The information about the changed assets. Frontend will just get a LIST of Asset Guids.
         // Roles Allowed?
         this.assetService.bulkUpdate(assetGuids, asset);
     }

@@ -1,4 +1,5 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {BulkUpdateService} from "../../services/bulk-update.service";
 
 @Component({
   selector: 'dassco-bulk-update',
@@ -7,7 +8,7 @@ import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 })
 export class BulkUpdateComponent implements OnInit {
 
-  constructor() { }
+  constructor(private bulkUpdateService: BulkUpdateService) { }
 
   ngOnInit(): void {
   }
@@ -76,7 +77,6 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   add(event: any): void {
-    console.log('here')
     event.preventDefault();
     this.submitted = true;
     if (this.newTag && this.newDescription) {
@@ -115,7 +115,9 @@ export class BulkUpdateComponent implements OnInit {
     }
   }
 
-  showJson(){
+  updateAssets(){
+    // Creation of the JSON Body:
+
     const tagsObject: {[key : string]: string} = {};
 
     this.tags.forEach(pair => {
@@ -134,7 +136,9 @@ export class BulkUpdateComponent implements OnInit {
       payload_type: this.payloadType,
       parent_guid: this.parentGuid
     }, null, 2)
+
     console.log(json);
+    this.bulkUpdateService.updateAssets(json).subscribe(response => console.log(response))
   }
 
 }

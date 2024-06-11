@@ -203,7 +203,10 @@ public class AssetService {
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset){
         // TODO: Don't forget corner cases!!!!!!
-        // TODO: Remove specimens and insert the new ones. How?
+
+        if (updatedAsset == null){
+            throw new IllegalArgumentException("Empty body, please specify fields to update");
+        }
 
         // UpdateUser must be present:
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){

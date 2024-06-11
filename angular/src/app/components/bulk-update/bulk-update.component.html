@@ -1,5 +1,5 @@
 <form class="bulk-update-form">
-  <mat-accordion>
+  <mat-accordion [multi]="true">
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Tags</mat-panel-title>
@@ -129,6 +129,6 @@
         <input matInput placeholder="Ex. TEST_PARENT" value="" [(ngModel)]="parentGuid" name="parent_guid">
       </mat-form-field>
     </mat-expansion-panel>
-    <button (click)="showJson()">Show</button>
+    <button (click)="updateAssets()">Update Assets</button>
   </mat-accordion>
 </form>
