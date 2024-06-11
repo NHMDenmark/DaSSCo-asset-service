@@ -4,63 +4,53 @@
       <mat-expansion-panel-header>
         <mat-panel-title>Tags</mat-panel-title>
       </mat-expansion-panel-header>
+      <div class="tag-container">
+        <div class="tag" *ngFor="let item of tags">
+          {{item.key}}
+          <button mat-icon-button color="warn" (click)="remove(item)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
       <div style="width: 100%">
-        <mat-form-field appearance="fill" style="width: 100%">
-          <mat-chip-list aria-label="Tag Name and Description creator">
-            <mat-chip *ngFor="let pair of tags" (removed)="remove(pair)">
-              {{ pair.key }}
-              <button matChipRemove>
-                <mat-icon>cancel</mat-icon>
-              </button>
-            </mat-chip>
-          </mat-chip-list>
-            <input #tagInput placeholder="Tag"
-                   name="tagInput"
-                   [(ngModel)]="newTag"
-                   >
-            <input placeholder="Description"
-                   name="descriptionInput"
-                   [(ngModel)]="newDescription"
-                   (keydown.enter)="add($event)"
-                   >
-            <button mat-icon-button (click)="add($event)">
-              <mat-icon>add</mat-icon>
-            </button>
+        <mat-form-field appearance="fill">
+          <mat-label>Tag</mat-label>
+          <input matInput #tagInput placeholder="Tag" [(ngModel)]="newTag" name="tag" (keydown.enter)="add($event)">
         </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Description</mat-label>
+          <input matInput placeholder="Description" [(ngModel)]="newDescription" name="description"(keydown.enter)="add($event)">
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="add($event)" [disabled]="!newTag || !newDescription">Add</button>
       </div>
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>
         <mat-panel-title>Specimens</mat-panel-title>
       </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Specimen</mat-label>
-        <mat-chip-list #specimenList aria-label="Specimen inputs: Barcode, Pid and Preparation Type">
-          <mat-chip *ngFor="let specimen of specimens" (removed)="removeSpecimen(specimen)">
-            {{ specimen.barcode }}
-            <button matChipRemove>
-              <mat-icon>cancel</mat-icon>
-            </button>
-          </mat-chip>
-          <input #barcodeInput placeholder="Barcode"
-                 name="barcodeInput"
-                 [matChipInputFor]="specimenList"
-                 [(ngModel)]="newBarcode"
-                 matInput>
-          <input placeholder="Specimen Pid"
-                 name="specimenPidInput"
-                 [(ngModel)]="newSpecimenPid"
-                 matInput>
-          <input placeholder="Preparation Type"
-                 name="prepTypeInput"
-                 [(ngModel)]="newPrepType"
-                 (keydown.enter)="addSpecimen($event)"
-                 matInput>
-          <button mat-icon-button (click)="addSpecimen($event)">
-            <mat-icon>add</mat-icon>
+      <div class="specimen-container">
+        <div class="specimen" *ngFor="let item of specimens">
+          {{item.barcode}}
+          <button mat-icon-button color="warn" (click)="removeSpecimen(item)">
+            <mat-icon>close</mat-icon>
           </button>
-        </mat-chip-list>
-      </mat-form-field>
+        </div>
+      </div>
+      <div style="width: 100%">
+        <mat-form-field appearance="fill">
+          <mat-label>Barcode</mat-label>
+          <input matInput #barcodeInput placeholder="Barcode" [(ngModel)]="newBarcode" name="barcode" (keydown.enter)="addSpecimen($event)">
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Specimen Pid</mat-label>
+          <input matInput placeholder="Specimen Pid" [(ngModel)]="newSpecimenPid" name="specimen-pid" (keydown.enter)="addSpecimen($event)">
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Preparation Type</mat-label>
+          <input matInput placeholder="Preparation Type" [(ngModel)]="newPrepType" name="preparation-type" (keydown.enter)="addSpecimen($event)">
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="addSpecimen($event)" [disabled]="!newBarcode || !newSpecimenPid || !newPrepType">Add</button>
+      </div>
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>

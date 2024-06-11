@@ -16,12 +16,15 @@ export class BulkUpdateComponent implements OnInit {
   tags: { key: string, value: string }[] = [];
   newTag: string = '';
   newDescription: string = '';
+  submitted: boolean = false;
+  @ViewChild('tagInput') tagInput!: ElementRef;
 
   // SPECIMEN:
   specimens: { barcode: string, specimen_pid: string, preparation_type: string}[] = [];
   newBarcode: string = '';
   newSpecimenPid: string = "";
   newPrepType: string = "";
+  @ViewChild('barcodeInput') barcodeInput!: ElementRef<HTMLInputElement>
 
   // ASSET STATUS:
   statusList = ["WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION"];
@@ -50,9 +53,6 @@ export class BulkUpdateComponent implements OnInit {
   // PARENT_GUID
   parentGuid: string = "";
 
-  @ViewChild('tagInput') tagInput!: ElementRef<HTMLInputElement>
-  @ViewChild('barcodeInput') barcodeInput!: ElementRef<HTMLInputElement>
-
   modifyFileFormatList(event: any, format: string){
     if (event.checked){
       this.formatList.push(format);
@@ -76,11 +76,14 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   add(event: any): void {
+    console.log('here')
     event.preventDefault();
-    if (this.newTag.trim()) {
+    this.submitted = true;
+    if (this.newTag && this.newDescription) {
       this.tags.push({ key: this.newTag.trim(), value: this.newDescription.trim() });
       this.newTag = '';
       this.newDescription = '';
+      this.submitted = false;
 
       this.tagInput.nativeElement.focus();
     }
