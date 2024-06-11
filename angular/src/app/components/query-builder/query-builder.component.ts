@@ -83,7 +83,7 @@ export class QueryBuilderComponent implements OnInit {
       }
 
       const newQueryField = {
-        type: where.get('property')?.value == 'creation_date' && where.get('queryType')?.value == 'Asset' ? 'Event' :where.get('queryType')?.value,
+        type: where.get('queryType')?.value,
         operator: where.get('operator')?.value,
         property: where.get('property')?.value,
         value: value
