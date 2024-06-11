@@ -92,7 +92,7 @@ export class QueryBuilderComponent implements OnInit {
     })
 
     this.saved = true;
-    this.saveQueryEvent.emit({select: this.chosenNode, wheres: whereList});
+    this.saveQueryEvent.emit({select: this.chosenNode, where: whereList});
   }
 
   removeComponent() {

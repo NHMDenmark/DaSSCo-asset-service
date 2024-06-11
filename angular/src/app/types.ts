@@ -42,7 +42,7 @@ export const defaultView = 1; // Weekly fluctuation.
 
 export interface Query {
   select: string | undefined;
-  wheres: QueryField[];
+  where: QueryField[];
 }
 
 export interface QueryField {

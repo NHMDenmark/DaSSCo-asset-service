@@ -103,33 +103,33 @@ public class QueriesService {
 
         for (Query query : queries) {
             if (query.select.equalsIgnoreCase("Asset")) { // a
-                String assetString = joinFields(query.wheres, "a");
+                String assetString = joinFields(query.where, "a");
                 whereMap.put("asset", assetString);
             }
             if (query.select.equalsIgnoreCase("Institution")) { // i
-                whereMap.put("institution", joinFields(query.wheres, "i"));
+                whereMap.put("institution", joinFields(query.where, "i"));
             }
             if (query.select.equalsIgnoreCase("Workstation")) { // w
-                whereMap.put("workstation", joinFields(query.wheres, "w"));
+                whereMap.put("workstation", joinFields(query.where, "w"));
             }
             if (query.select.equalsIgnoreCase("Event")) { // w
-                boolean eventTypeSet = query.wheres.stream().anyMatch(w -> w.property.equalsIgnoreCase("name") || w.property.equalsIgnoreCase("event"));
+                boolean eventTypeSet = query.where.stream().anyMatch(w -> w.property.equalsIgnoreCase("name") || w.property.equalsIgnoreCase("event"));
                 if (!eventTypeSet) { // otherwise it'll search for all events including the update ones even if they're just searching for a range in the date...
-                    query.wheres.add(new QueryField("and", "=", "event", "CREATE_ASSET_METADATA"));
+                    query.where.add(new QueryField("and", "=", "event", "CREATE_ASSET_METADATA"));
                 }
-                whereMap.put("event", joinFields(query.wheres, "e"));
+                whereMap.put("event", joinFields(query.where, "e"));
             }
             if (query.select.equalsIgnoreCase("Pipeline")) { // p
-                whereMap.put("pipeline", joinFields(query.wheres, "p"));
+                whereMap.put("pipeline", joinFields(query.where, "p"));
             }
             if (query.select.equalsIgnoreCase("User")) { // u
-                whereMap.put("user", joinFields(query.wheres, "u"));
+                whereMap.put("user", joinFields(query.where, "u"));
             }
             if (query.select.equalsIgnoreCase("Collection"))  { // c
-                whereMap.put("collection", joinFields(query.wheres, "c"));
+                whereMap.put("collection", joinFields(query.where, "c"));
             }
             if (query.select.equalsIgnoreCase("Specimen")) { // s
-                whereMap.put("specimen", joinFields(query.wheres, "s"));
+                whereMap.put("specimen", joinFields(query.where, "s"));
             }
         }
         StringSubstitutor substitutor = new StringSubstitutor(whereMap);
