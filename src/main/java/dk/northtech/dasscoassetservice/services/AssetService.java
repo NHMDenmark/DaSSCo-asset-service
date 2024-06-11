@@ -205,16 +205,20 @@ public class AssetService {
         // TODO: Don't forget corner cases!!!!!!
         // TODO: Remove specimens and insert the new ones. How?
 
+        // UpdateUser must be present:
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
+            throw new IllegalArgumentException("Update user must be provided!");
+        }
+
+        if (assetList.isEmpty()){
+            throw new IllegalArgumentException("Assets to update cannot be empty.");
+        }
+
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
 
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
-        }
-
-        // UpdateUser must be present:
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
-            throw new IllegalArgumentException("Update user must be provided!");
         }
 
         // Validate the Update fields:

@@ -34,7 +34,7 @@ export class QueriesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.addWhere()); // just adding the initial where
+    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.addWhere()); // just adding the initial where. yet to find better way...
   }
 
   addWhere() {
@@ -42,8 +42,15 @@ export class QueriesComponent implements OnInit {
       const newComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
       newComponent.instance.nodes = this.nodes ? this.nodes : new Map;
       newComponent.instance.saveQueryEvent.subscribe(queryFields => this.saveQuery(queryFields, this.queryBuilderEle!.indexOf(newComponent.hostView)));
-      newComponent.instance.removeComponentEvent.subscribe(() => newComponent.destroy());
+      newComponent.instance.removeComponentEvent.subscribe(() => {
+        this.removeQueryComponent(this.queryBuilderEle!.indexOf(newComponent.hostView));
+        newComponent.destroy();
+      });
     }
+  }
+
+  removeQueryComponent(index: number) {
+    this.queries.delete(index);
   }
 
   saveQuery(savedQuery: Query, index: number) {
@@ -52,7 +59,7 @@ export class QueriesComponent implements OnInit {
 
   save() {
     const queries = Array.from(this.queries.values()).map(val => val);
-    console.log('saving queries', queries)
+    // console.log('saving queries', queries)
     this.queriesService.getNodesFromQuery(queries, this.limit).subscribe(result => {
       if (result) {
         this.dataSource.data = result;
