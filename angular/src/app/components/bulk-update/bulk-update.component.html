@@ -59,6 +59,7 @@
       <mat-form-field appearance="fill">
         <mat-label>Status</mat-label>
         <mat-select name="status" [(ngModel)]="status">
+          <mat-option [value]="''"></mat-option>
           <mat-option *ngFor="let status of statusList" [value]="status">
             {{ status }}
           </mat-option>
@@ -72,6 +73,7 @@
       <mat-form-field appearance="fill">
         <mat-label>Asset Locked</mat-label>
         <mat-select name="asset_locked" [(ngModel)]="assetLocked">
+          <mat-option [value]="''"></mat-option>
           <mat-option [value]="false">False</mat-option>
           <mat-option [value]="true">True</mat-option>
         </mat-select>

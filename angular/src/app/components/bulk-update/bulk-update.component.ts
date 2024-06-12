@@ -32,7 +32,7 @@ export class BulkUpdateComponent implements OnInit {
   status: string = "";
 
   // ASSET_LOCKED:
-  assetLocked: boolean = false;
+  assetLocked: string = "";
 
   // SUBJECT:
   subject: string = "";
@@ -117,28 +117,51 @@ export class BulkUpdateComponent implements OnInit {
 
   updateAssets(){
     // Creation of the JSON Body:
-
-    const tagsObject: {[key : string]: string} = {};
-
-    this.tags.forEach(pair => {
-      tagsObject[pair.key] = pair.value;
-    })
-
-    const json = JSON.stringify({
-      status: this.status,
-      tags: tagsObject,
-      specimens: this.specimens,
-      asset_locked: this.assetLocked,
-      subject: this.subject,
-      restricted_asset: this.roleList,
-      funding: this.funding,
-      file_formats: this.formatList,
-      payload_type: this.payloadType,
-      parent_guid: this.parentGuid
-    }, null, 2)
+    const json = this.createJson();
 
     console.log(json);
+
     this.bulkUpdateService.updateAssets(json).subscribe(response => console.log(response))
+  }
+
+  createJson(){
+
+    const jsonObject: {[key: string]: any } = {};
+
+    if (!isEmpty(this.tags)){
+      const tagsObject: {[key : string]: string} = {};
+
+      this.tags.forEach(pair => {
+        tagsObject[pair.key] = pair.value;
+      })
+
+      jsonObject['tags'] = tagsObject;
+    }
+
+    if (!isEmpty(this.status)) jsonObject['status'] = this.status;
+    if (!isEmpty(this.specimens)) jsonObject['specimens'] = this.specimens;
+    if (!isEmpty(this.assetLocked)) jsonObject['asset_locked'] = this.assetLocked;
+    if (!isEmpty(this.subject)) jsonObject['subject'] = this.subject;
+    if (!isEmpty(this.roleList)) jsonObject['restricted_access'] = this.roleList;
+    if (!isEmpty(this.funding)) jsonObject['funding'] = this.funding;
+    if (!isEmpty(this.formatList)) jsonObject['file_formats'] = this.formatList;
+    if (!isEmpty(this.payloadType)) jsonObject['payload_type'] = this.payloadType;
+    if (!isEmpty(this.parentGuid)) jsonObject['parent_guid'] = this.parentGuid;
+
+    // TODO: FIND A WAY TO GET THIS FROM THE LOGGED IN USER OR THE LIST OF ASSETS TO BE UPDATED
+    // TODO: THIS IS MOCK-UP DATA:
+    jsonObject['institution'] = "test-institution";
+    jsonObject['collection'] = 'test-collection';
+    jsonObject['pipeline'] = "ti-p1";
+    jsonObject['workstation'] = "ti-ws-01";
+
+    return jsonObject;
+
+    function isEmpty(value: any): boolean {
+      return (
+        value === '' || (Array.isArray(value) && value !== null && Object.keys(value).length === 0)
+      );
+    }
   }
 
 }
