@@ -100,7 +100,7 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens){
+    default List<Asset> bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens, List<String> assetList){
         boilerplate();
         // Update asset metadata:
         bulkUpdateAssets(sql, builder);
@@ -116,6 +116,9 @@ public interface AssetRepository extends SqlObject {
             // Detach and persist the specimens (individual calls).
             createSpecimenRepository().persistSpecimens(asset, specimenList);
         }
+
+        // Return the List of Assets:
+        return this.readMultipleAssetsInternal(assetList);
     }
 
     @Transaction

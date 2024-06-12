@@ -1,5 +1,8 @@
 import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {BulkUpdateService} from "../../services/bulk-update.service";
+import {MatSnackBar, MatSnackBarDismiss} from "@angular/material/snack-bar";
+import {HttpErrorResponse, HttpResponse} from "@angular/common/http";
+import {Observable} from "rxjs";
 
 @Component({
   selector: 'dassco-bulk-update',
@@ -8,7 +11,8 @@ import {BulkUpdateService} from "../../services/bulk-update.service";
 })
 export class BulkUpdateComponent implements OnInit {
 
-  constructor(private bulkUpdateService: BulkUpdateService) { }
+  constructor(private bulkUpdateService: BulkUpdateService,
+              private _snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
   }
@@ -32,6 +36,9 @@ export class BulkUpdateComponent implements OnInit {
   status: string = "";
 
   // ASSET_LOCKED:
+  // TODO: ASSET_LOCKED is FALSE by default.
+  // TODO: Find a way to set it automatically to true if all the Assets passed from the SEARCH QUERY have asset_locked true.
+  // TODO: Or raise a warning somewhere.
   assetLocked: string = "";
 
   // SUBJECT:
@@ -121,7 +128,21 @@ export class BulkUpdateComponent implements OnInit {
 
     console.log(json);
 
-    this.bulkUpdateService.updateAssets(json).subscribe(response => console.log(response))
+    this.bulkUpdateService.updateAssets(json).subscribe({
+      next: (response: HttpResponse<any>) => {
+        const assets: any[] = response.body;
+        const assetGuid: string[] = assets.map(asset => asset.asset_guid);
+        this.showSuccessSnackBar(`Assets have been updated: ${assetGuid.join(", ")}`)
+          .subscribe(() => {
+            window.location.reload();
+          })
+      },
+      error: (error: HttpErrorResponse) => {
+        this._snackBar.open("Cannot Bulk Update Assets: " + error.error.errorMessage, "Close");
+      }
+    });
+
+    this._snackBar.open("Message Received", "Undo");
   }
 
   createJson(){
@@ -162,6 +183,11 @@ export class BulkUpdateComponent implements OnInit {
         value === '' || (Array.isArray(value) && value !== null && Object.keys(value).length === 0)
       );
     }
+  }
+
+  showSuccessSnackBar(message: string): Observable<MatSnackBarDismiss>{
+    const snackBarRef = this._snackBar.open(message, "Close")
+    return snackBarRef.afterDismissed();
   }
 
 }

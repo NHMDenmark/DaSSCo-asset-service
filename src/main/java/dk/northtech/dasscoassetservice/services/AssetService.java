@@ -201,7 +201,7 @@ public class AssetService {
         return existing;
     }
 
-    public void bulkUpdate(List<String> assetList, Asset updatedAsset){
+    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset){
         // TODO: Don't forget corner cases!!!!!!
 
         if (updatedAsset == null){
@@ -268,8 +268,7 @@ public class AssetService {
             assetAndSpecimens.put(assetToUpdate, specimensToDetach);
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
-
+        return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens, assetList);
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){

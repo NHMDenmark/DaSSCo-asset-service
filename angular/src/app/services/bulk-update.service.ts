@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 //import {OidcSecurityService} from "angular-auth-oidc-client";
-import {HttpClient} from "@angular/common/http";
-import {catchError, Observable, of, switchMap} from "rxjs";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
+import {catchError, Observable, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 
 @Injectable({
@@ -9,7 +9,7 @@ import {OidcSecurityService} from "angular-auth-oidc-client";
 })
 export class BulkUpdateService {
   // TODO: GET ASSETS FROM THE FRONTEND! THIS IS JUST MOCK DATA!
-  baseUrl = "/api/v1/assetmetadata/bulkUpdate?assets=test-1&assets=test-2"
+  baseUrl = "/api/v1/assetmetadata/bulkUpdate?assets=test-1-1&assets=test-1-2"
 
   constructor(public oidcSecurityService: OidcSecurityService,
               private http: HttpClient) { }
@@ -29,19 +29,19 @@ export class BulkUpdateService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.put(`${this.baseUrl}`, updatedFieldsWithUsername, {headers: {'Authorization': 'Bearer ' + token}})
+          return this.http.put(`${this.baseUrl}`, updatedFieldsWithUsername, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
             .pipe(
-              catchError(this.handleError(`put ${this.baseUrl}`, undefined))
+              catchError(this.handleError(`put ${this.baseUrl}`))
             )
         })
       )
   }
 
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
+  private handleError<T>(operation = 'operation') {
+    return (error: HttpErrorResponse): Observable<T> => {
       console.error(error);
       console.error(operation + ' - ' + JSON.stringify(error));
-      return of(result as T);
+      return throwError(() => error);
     };
   }
 
