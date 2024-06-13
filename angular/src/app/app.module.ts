@@ -32,6 +32,8 @@ import {MatTableModule} from "@angular/material/table";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
+import {MatListModule} from "@angular/material/list";
 
 @NgModule({
   declarations: [
@@ -47,7 +49,8 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     ExportChartComponent,
     StatusWidgetComponent,
     QueriesComponent,
-    QueryBuilderComponent
+    QueryBuilderComponent,
+    DetailedViewComponent
   ],
   imports: [
     BrowserModule,
@@ -70,7 +73,8 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     MatSnackBarModule,
     MatDividerModule,
     MatTableModule,
-    MatCardModule
+    MatCardModule,
+    MatListModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
