@@ -20,3 +20,16 @@
   * _connect URL:_ database
   * _port:_ 5432
   * _dbname, user & pass_: dassco_file_proxy
+* For seeing the entire schema with all the relations, the query that can be used is:
+`SELECT * FROM cypher('citation_graph', $$
+  MATCH (a)
+  OPTIONAL MATCH (a)-[e]->(b)
+  RETURN a, e, b
+  $$) as (a agtype, e agtype, b agtype);`
+
+
+## application-local.properties file:
+* On the root folder (together with the Docker compose files) an application-local.properties file can be added. 
+* If the file is added, it has to be pointed to in the application.properties file by adding `spring.config.import=optional:file:./application-local.properties`
+* As the name indicates, the application-local.properties file is where all the configurations exclusive to running the project locally should go, as to not mess with the existing configurations for the project.
+* For example, for adding test data to the database (useful locally, problematic when deploying) one can add: `spring.liquibase.contexts=default, development` to the local-application.properties file, and the project will run the liquibase scripts and add the test data.
