@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    image: nhmdenmark/dassco-asset-service:1.3.3
+    image: nhmdenmark/dassco-asset-service:1.3.4
     ports:
       - 8084:8084
     environment:

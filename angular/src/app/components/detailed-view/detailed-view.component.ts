@@ -21,10 +21,20 @@ export class DetailedViewComponent implements OnInit {
       if (response){
         console.log(response)
         this.asset = response;
+        this.specimenBarcodes = this.asset?.specimens?.map(specimen => specimen.barcode).join(', ');
+        this.fileFormats = this.asset?.file_formats?.map(file_format => file_format).join(', ');
+        this.restrictedAccess = this.asset?.restricted_access?.map(type => type).join(", ");
+        this.tags = Object.entries(this.asset?.tags ?? {})
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
       }
     });
   }
 
   asset?: Asset;
-
+  // TODO: For now: Barcodes only
+  specimenBarcodes? : string | undefined;
+  fileFormats? : string | undefined;
+  restrictedAccess? : string | undefined;
+  tags? : string | undefined;
 }
