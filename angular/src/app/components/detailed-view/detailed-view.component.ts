@@ -29,7 +29,7 @@ export class DetailedViewComponent implements OnInit {
             .join(', ');
         this.events = this.asset?.events!.map(event => {
           return `Event: ${event.event}, Timestamp: ${event.timeStamp}`;
-        }).join("\n");
+        }).join(", ");
       }
     });
   }

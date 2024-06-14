@@ -1,0 +1,20 @@
+.asset-metadata {
+  position: absolute;
+  top: 10vh;
+  right: 5vh;
+  width: 50vw;
+  height: 40vh;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.list-item-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  margin-bottom: 1vh;
+  margin-top: 1vh;
+}
