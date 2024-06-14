@@ -79,7 +79,7 @@ public class AssetService {
         return true;
     }
 
-    public boolean deleteAssetMetadata(String assetGuid){
+    public void deleteAssetMetadata(String assetGuid){
         // Check that the asset exists:
         Optional<Asset> optAsset = getAsset(assetGuid);
         if (optAsset.isEmpty()){
@@ -87,8 +87,6 @@ public class AssetService {
         }
 
         jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
-
-        return true;
     }
 
     public boolean unlockAsset(String assetGuid) {
