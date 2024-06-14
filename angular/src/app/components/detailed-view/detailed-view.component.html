@@ -40,7 +40,27 @@
     <mat-divider></mat-divider>
     <mat-list-item>Institution: {{asset.institution}}</mat-list-item>
     <mat-divider></mat-divider>
-    <mat-list-item>Institution: {{asset.institution}}</mat-list-item>
+    <mat-list-item>Parent Guid: {{asset.parent_guid}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Collection: {{asset.collection}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Internal Status: {{asset.internal_status}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Update User: {{asset.updateUser}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Events:
+      {{events}}
+    </mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Digitiser: {{asset.digitiser}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Workstation: {{asset.workstation}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Pipeline: {{asset.pipeline}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Error message: {{asset.error_message}}</mat-list-item>
+    <mat-divider></mat-divider>
+    <mat-list-item>Error timestamp: {{asset.error_timestamp}}</mat-list-item>
     <mat-divider></mat-divider>
   </mat-list>
 </div>

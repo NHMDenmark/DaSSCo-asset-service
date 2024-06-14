@@ -27,6 +27,9 @@ export class DetailedViewComponent implements OnInit {
         this.tags = Object.entries(this.asset?.tags ?? {})
             .map(([key, value]) => `${key}: ${value}`)
             .join(', ');
+        this.events = this.asset?.events!.map(event => {
+          return `Event: ${event.event}, Timestamp: ${event.timeStamp}`;
+        }).join("\n");
       }
     });
   }
@@ -37,4 +40,5 @@ export class DetailedViewComponent implements OnInit {
   fileFormats? : string | undefined;
   restrictedAccess? : string | undefined;
   tags? : string | undefined;
+  events? : string | undefined;
 }
