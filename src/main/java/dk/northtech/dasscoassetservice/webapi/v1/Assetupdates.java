@@ -197,6 +197,9 @@ public class Assetupdates {
 
     @DELETE
     @Path("/{assetGuid}/deleteMetadata")
+    @Operation(summary = "Delete Asset Metadata", description = "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.")
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid){
         this.assetService.deleteAssetMetadata(assetGuid);
     }
