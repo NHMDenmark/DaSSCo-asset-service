@@ -144,6 +144,11 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
   </div>
+
+    <div class="navigation-buttons">
+    <mat-icon fontIcon="arrow_back" class="icon-display" (click)="showPreviousAsset()"></mat-icon>
+    <mat-icon fontIcon="arrow_forward" class="icon-display" (click)="showNextAsset()"></mat-icon>
+    </div>
 </div>
 <div *ngIf="!asset">
   <p>No asset has been found with this asset_guid.</p>

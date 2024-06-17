@@ -14,10 +14,26 @@
   top: 55vh;
   left: 5vh;
   right: 5vh;
-  height: 40vh;
+  height: 33vh;
   border: 1px solid #ccc;
   padding: 10px;
   overflow-y: auto;
+}
+
+.navigation-buttons {
+  position: absolute;
+  bottom: 5vh;
+  border: 1px solid #ccc;
+  left: 50%;
+  transform: translate(-50%);
+}
+
+.navigation-buttons mat-icon {
+  padding: 10px;
+}
+
+.icon-display {
+  transform: scale(2);
 }
 
 .asset-files-table {
