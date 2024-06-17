@@ -3,7 +3,7 @@ import {Asset} from "../types";
 import {catchError, Observable, of, switchMap} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
-import {AssetService} from "../utility";
+import {AssetService, FileProxy} from "../utility";
 
 @Injectable({
   providedIn: 'root'
@@ -13,17 +13,42 @@ export class DetailedViewService {
   constructor(private oidcSecurityService : OidcSecurityService, private http : HttpClient) { }
 
   private readonly assetUrl = inject(AssetService)
+  private readonly proxyUrl = inject(FileProxy)
 
-  getAssetMetadata(): Observable<Asset | undefined> {
+  getAssetMetadata(assetGuid : string): Observable<Asset | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get<Asset>(`${this.assetUrl}/api/v1/assetmetadata/test-1`, {headers: {'Authorization': 'Bearer ' + token}})
+          return this.http.get<Asset>(`${this.assetUrl}/api/v1/assetmetadata/${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.assetUrl}/api/v1/assetmetadata/test-1`, undefined))
+              catchError(this.handleError(`get ${this.assetUrl}/api/v1/assetmetadata/test-2`, undefined))
             );
         })
       );
+  }
+
+  getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail : string) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
+            .pipe(
+              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/institution_1/i1_c1/test-2/test-2_thumbnail.png`, undefined))
+            )
+        })
+    )
+  }
+
+  getFileList(institution: string, collection: string, assetGuid: string){
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get<string[]>(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/institution_1/i1_c1/test-2`, undefined))
+            )
+        })
+      )
   }
 
   private handleError<T>(operation = 'operation', result?: T) {

@@ -14,7 +14,7 @@ const routes: Routes = [
   {path: 'user', component: UserComponent, canActivate: [AuthenticatedGuard]},
   {path: 'docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'detailed-view', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'detailed-view/:asset_guid', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
   {path: '**', redirectTo: 'statistics', pathMatch: 'full'}
 
 ];
