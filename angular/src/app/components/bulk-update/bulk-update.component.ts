@@ -171,10 +171,10 @@ export class BulkUpdateComponent implements OnInit {
 
     // TODO: FIND A WAY TO GET THIS FROM THE LOGGED IN USER OR THE LIST OF ASSETS TO BE UPDATED
     // TODO: THIS IS MOCK-UP DATA:
-    jsonObject['institution'] = "test-institution";
-    jsonObject['collection'] = 'test-collection';
-    jsonObject['pipeline'] = "ti-p1";
-    jsonObject['workstation'] = "ti-ws-01";
+    jsonObject['institution'] = "institution_1";
+    jsonObject['collection'] = 'i1_c1';
+    jsonObject['pipeline'] = "i1_p1";
+    jsonObject['workstation'] = "i1_w1";
 
     return jsonObject;
 
