@@ -1,15 +1,14 @@
 package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
-import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
-import org.checkerframework.checker.units.qual.A;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
