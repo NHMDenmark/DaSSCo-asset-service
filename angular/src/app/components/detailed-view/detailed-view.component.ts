@@ -14,6 +14,7 @@ export class DetailedViewComponent implements OnInit {
   // Steps: 1. Get Asset Metadata
   // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
   // 3. Get Images. If Thumbnail, show thumbnail.
+  // TODO: CHECK that the User has permission to view the asset.
 
   assetGuid: string = "";
 
