@@ -13,6 +13,7 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
+import org.checkerframework.checker.units.qual.A;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
@@ -582,6 +583,64 @@ public interface AssetRepository extends SqlObject {
             throw new RuntimeException(e);
         }
         return asset;
+    }
+
+    @Transaction
+    default void deleteAsset(String assetGuid){
+        boilerplate();
+        // Deletes Asset and removes connections to Specimens and Events.
+        // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
+        internal_deleteAsset(assetGuid);
+    }
+
+    default void internal_deleteAsset(String assetGuid){
+        // Deletes Asset
+        String sqlAsset = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (a:Asset {name: $asset_guid})
+                    DETACH DELETE a
+                $$
+                , #params) as (a agtype);
+                """;
+        // Deletes orphaned Specimens:
+        String sqlSpecimen = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (s:Specimen)
+                    WHERE NOT EXISTS((s)-[:USED_BY]-())
+                    DETACH DELETE s
+                $$
+                ) as (s agtype);
+                """;
+        // Deletes orphaned Events:
+        String sqlEvent = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (e:Event)
+                    WHERE NOT EXISTS((e)-[:CHANGED_BY]-())
+                    DETACH DELETE e
+                $$
+                ) as (e agtype);
+                """;
+
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("asset_guid", assetGuid);
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sqlAsset)
+                        .bind("params", agtype)
+                        .execute();
+                handle.createUpdate(sqlSpecimen)
+                        .execute();
+                handle.createUpdate(sqlEvent)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     @Transaction

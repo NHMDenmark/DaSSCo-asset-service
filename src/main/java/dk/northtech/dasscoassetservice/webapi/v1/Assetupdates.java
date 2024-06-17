@@ -194,4 +194,10 @@ public class Assetupdates {
     public void deleteAsset(@PathParam("assetGuid") String assetGuid , @Context SecurityContext securityContext) {
         this.assetService.deleteAsset(assetGuid, UserMapper.from(securityContext));
     }
+
+    @DELETE
+    @Path("/{assetGuid}/deleteMetadata")
+    public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid){
+        this.assetService.deleteAssetMetadata(assetGuid);
+    }
 }

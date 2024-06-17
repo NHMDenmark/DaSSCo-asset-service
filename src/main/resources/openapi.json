@@ -136,7 +136,6 @@
     },
     "/v1/assetmetadata/{assetGuid}/assetreceived" : {
       "post" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "assetreceived",
         "requestBody" : {
           "content" : {
@@ -174,7 +173,6 @@
     },
     "/v1/assetmetadata/{assetGuid}/audit" : {
       "post" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "auditAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -218,45 +216,8 @@
         } ]
       }
     },
-    "/v1/assetmetadata/bulkUpdate" : {
-      "put" : {
-        "tags" : [ "Asset Metadata" ],
-        "operationId" : "bulkUpdate",
-        "parameters" : [ {
-          "name" : "assets",
-          "in" : "query",
-          "schema" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Asset"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/assetmetadata/{assetGuid}/complete" : {
       "post" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "completeAsset",
         "requestBody" : {
           "content" : {
@@ -285,7 +246,6 @@
     },
     "/v1/assetmetadata" : {
       "post" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "createAsset",
         "parameters" : [ {
           "name" : "allocation_mb",
@@ -331,7 +291,6 @@
     },
     "/v1/assetmetadata/{assetGuid}" : {
       "get" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "getAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -366,7 +325,6 @@
         } ]
       },
       "put" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "updateAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -410,7 +368,6 @@
         } ]
       },
       "delete" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "deleteAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -445,9 +402,32 @@
         } ]
       }
     },
+    "/v1/assetmetadata/{assetGuid}/deleteMetadata" : {
+      "delete" : {
+        "operationId" : "deleteAssetMetadata",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "*/*" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetmetadata/{assetGuid}/events" : {
       "get" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "getEvents",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -484,7 +464,6 @@
     },
     "/v1/assetmetadata/{assetGuid}/setstatus" : {
       "put" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "setErrorStatus",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -533,7 +512,6 @@
     },
     "/v1/assetmetadata/{assetGuid}/unlock" : {
       "put" : {
-        "tags" : [ "Asset Metadata" ],
         "operationId" : "unlockAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -1755,7 +1733,7 @@
           },
           "event" : {
             "type" : "string",
-            "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "BULK_UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED" ]
+            "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED", "BULK_UPDATE_ASSET_METADATA" ]
           },
           "pipeline" : {
             "type" : "string"

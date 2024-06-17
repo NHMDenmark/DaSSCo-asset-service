@@ -82,6 +82,16 @@ public class AssetService {
         return true;
     }
 
+    public void deleteAssetMetadata(String assetGuid){
+        // Check that the asset exists:
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()){
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+
+        jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
+    }
+
     public boolean unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(optAsset.isEmpty()) {
