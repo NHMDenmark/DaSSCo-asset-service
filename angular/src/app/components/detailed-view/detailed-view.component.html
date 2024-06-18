@@ -146,8 +146,18 @@
   </div>
 
     <div class="navigation-buttons">
-    <mat-icon fontIcon="arrow_back" class="icon-display" (click)="showPreviousAsset()"></mat-icon>
-    <mat-icon fontIcon="arrow_forward" class="icon-display" (click)="showNextAsset()"></mat-icon>
+    <mat-icon fontIcon="arrow_back"
+              class="icon-display"
+              (click)="showPreviousAsset()"
+              [class.disabled]="isPreviousDisabled()"
+              [ngClass]="{'disabled': isPreviousDisabled()}"
+              [attr.disabled]="isPreviousDisabled() ? true : null"></mat-icon>
+    <mat-icon fontIcon="arrow_forward"
+              class="icon-display"
+              (click)="showNextAsset()"
+              [class.disabled]="isNextDisabled()"
+              [ngClass]="{'disabled': isNextDisabled()}"
+              [attr.disabled]="isNextDisabled() ? true : null"></mat-icon>
     </div>
 </div>
 <div *ngIf="!asset">

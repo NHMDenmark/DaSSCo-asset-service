@@ -23,17 +23,27 @@
 .navigation-buttons {
   position: absolute;
   bottom: 5vh;
-  border: 1px solid #ccc;
   left: 50%;
   transform: translate(-50%);
-}
-
-.navigation-buttons mat-icon {
-  padding: 10px;
+  display: flex;
+  justify-content: space-around;
+  width: 5vw;
 }
 
 .icon-display {
   transform: scale(2);
+  transition: transform 0.3s, color 0.3s;
+  color: black;
+}
+
+.icon-display:hover {
+  color: #A8D6DC;
+  transform: scale(2) translate(3px, -3px);
+}
+
+.icon-display.disabled {
+  color: grey;
+  pointer-events: none;
 }
 
 .asset-files-table {

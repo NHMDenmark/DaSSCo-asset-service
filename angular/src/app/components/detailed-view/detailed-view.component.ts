@@ -11,11 +11,12 @@ import {ActivatedRoute, Params} from "@angular/router";
 })
 export class DetailedViewComponent implements OnInit {
 
-  // From the Query, we will get an Asset[] (Hardcoded for now).
   // Steps: 1. Get Asset Metadata
   // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
   // 3. Get Images. If Thumbnail, show thumbnail.
   // TODO: CHECK that the User has permission to view the asset.
+  // TODO: Connection with Query page. The Query should pass the Asset[] from the search (in order!) so we can move back and forth between the assets.
+  // The URL remains the same (on the first asset clicked) so on Back Button press we go back to the query list.
 
   assetGuid: string = "";
   currentIndex : number = -1;
@@ -94,11 +95,19 @@ export class DetailedViewComponent implements OnInit {
     }
   }
 
+  isNextDisabled(): boolean {
+    return this.currentIndex === this.assetList.length - 1;
+  }
+
   showPreviousAsset(): void {
     if (this.currentIndex > 0) {
       this.currentIndex--;
       this.assetGuid = this.assetList[this.currentIndex];
       this.fetchData(this.assetGuid);
     }
+  }
+
+  isPreviousDisabled(): boolean {
+    return this.currentIndex === 0;
   }
 }
