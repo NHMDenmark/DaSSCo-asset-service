@@ -1,165 +1,174 @@
-<div *ngIf="asset">
+<div *ngIf="dataLoaded; else loading">
 
-  <div class="asset-thumbnail">
-    <ng-container *ngIf="thumbnailUrl">
-      <img [src]="thumbnailUrl" alt="Thumbnail">
-    </ng-container>
-    <ng-container *ngIf="!thumbnailUrl">
-      No thumbnail found.
-    </ng-container>
-  </div>
+  <div *ngIf="asset">
 
-  <div class="asset-metadata">
-    <mat-list>
-      <div class="list-item-container">
-        <mat-list-item class="item">Asset Guid: {{ asset.asset_guid }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Asset Pid: {{ asset.asset_pid }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Status: {{ asset.status }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Multi-Specimen: {{ asset.multi_specimen }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Specimens: {{ specimenBarcodes }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Funding: {{ asset.funding }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Subject: {{ asset.subject }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Payload Type: {{ asset.payload_type }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">File Formats: {{ fileFormats }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Asset Locked: {{ asset.asset_locked }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Restricted Access: {{ restrictedAccess }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Tags: {{ tags }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Audited: {{ asset.audited }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Created Date: {{ asset.created_date }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Date Metadata Updated: {{ asset.date_metadata_updated }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Date Asset Taken: {{ asset.date_asset_taken }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Date Asset Deleted: {{ asset.date_asset_deleted }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Date Asset Finalised: {{ asset.date_asset_finalised }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Date Metadata Taken: {{ asset.date_metadata_taken }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Institution: {{ asset.institution }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Parent Guid: {{ asset.parent_guid }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Collection: {{ asset.collection }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Internal Status: {{ asset.internal_status }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Update User: {{ asset.updateUser }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Events: {{ events }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Digitiser: {{ asset.digitiser }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Workstation: {{ asset.workstation }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Pipeline: {{ asset.pipeline }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Error message: {{ asset.error_message }}</mat-list-item>
-      </div>
-      <mat-divider></mat-divider>
-      <div class="list-item-container">
-        <mat-list-item class="item">Error timestamp: {{ asset.error_timestamp }}
-        </mat-list-item>
-      </div>
-    </mat-list>
-  </div>
-
-  <div *ngIf="assetFiles" class="asset-files">
-    <table mat-table [dataSource]="assetFiles" class="asset-files-table">
-      <ng-container matColumnDef="Files">
-        <th mat-header-cell *matHeaderCellDef>Files</th>
-        <td mat-cell *matCellDef="let file">{{ file }}</td>
+    <div class="asset-thumbnail">
+      <ng-container *ngIf="thumbnailUrl">
+        <img [src]="thumbnailUrl" alt="Thumbnail">
       </ng-container>
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-  </div>
+      <ng-container *ngIf="!thumbnailUrl">
+        No thumbnail found.
+      </ng-container>
+    </div>
+
+    <div class="asset-metadata">
+      <mat-list>
+        <div class="list-item-container">
+          <mat-list-item class="item">Asset Guid: {{ asset.asset_guid }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Asset Pid: {{ asset.asset_pid }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Status: {{ asset.status }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Multi-Specimen: {{ asset.multi_specimen }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Specimens: {{ specimenBarcodes }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Funding: {{ asset.funding }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Subject: {{ asset.subject }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Payload Type: {{ asset.payload_type }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">File Formats: {{ fileFormats }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Asset Locked: {{ asset.asset_locked }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Restricted Access: {{ restrictedAccess }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Tags: {{ tags }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Audited: {{ asset.audited }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Created Date: {{ asset.created_date }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Date Metadata Updated: {{ asset.date_metadata_updated }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Date Asset Taken: {{ asset.date_asset_taken }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Date Asset Deleted: {{ asset.date_asset_deleted }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Date Asset Finalised: {{ asset.date_asset_finalised }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Date Metadata Taken: {{ asset.date_metadata_taken }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Institution: {{ asset.institution }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Parent Guid: {{ asset.parent_guid }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Collection: {{ asset.collection }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Internal Status: {{ asset.internal_status }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Update User: {{ asset.updateUser }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Events: {{ events }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Digitiser: {{ asset.digitiser }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Workstation: {{ asset.workstation }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Pipeline: {{ asset.pipeline }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Error message: {{ asset.error_message }}</mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item class="item">Error timestamp: {{ asset.error_timestamp }}
+          </mat-list-item>
+        </div>
+      </mat-list>
+    </div>
+
+    <div *ngIf="assetFiles" class="asset-files">
+      <table mat-table [dataSource]="assetFiles" class="asset-files-table">
+        <ng-container matColumnDef="Files">
+          <th mat-header-cell *matHeaderCellDef>Files</th>
+          <td mat-cell *matCellDef="let file">{{ file }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
 
     <div class="navigation-buttons">
-    <mat-icon fontIcon="arrow_back"
-              class="icon-display"
-              (click)="showPreviousAsset()"
-              [class.disabled]="isPreviousDisabled()"
-              [ngClass]="{'disabled': isPreviousDisabled()}"
-              [attr.disabled]="isPreviousDisabled() ? true : null"></mat-icon>
-    <mat-icon fontIcon="arrow_forward"
-              class="icon-display"
-              (click)="showNextAsset()"
-              [class.disabled]="isNextDisabled()"
-              [ngClass]="{'disabled': isNextDisabled()}"
-              [attr.disabled]="isNextDisabled() ? true : null"></mat-icon>
+      <mat-icon fontIcon="arrow_back"
+                class="icon-display"
+                (click)="showPreviousAsset()"
+                [class.disabled]="isPreviousDisabled()"
+                [ngClass]="{'disabled': isPreviousDisabled()}"
+                [attr.disabled]="isPreviousDisabled() ? true : null"></mat-icon>
+      <mat-icon fontIcon="arrow_forward"
+                class="icon-display"
+                (click)="showNextAsset()"
+                [class.disabled]="isNextDisabled()"
+                [ngClass]="{'disabled': isNextDisabled()}"
+                [attr.disabled]="isNextDisabled() ? true : null"></mat-icon>
     </div>
+  </div>
+  <div *ngIf="!asset">
+    <p>No asset has been found with this asset_guid.</p>
+  </div>
 </div>
-<div *ngIf="!asset">
-  <p>No asset has been found with this asset_guid.</p>
-</div>
+
+<ng-template #loading>
+  <div class="loading-spinner">
+    Loading...
+  </div>
+</ng-template>
