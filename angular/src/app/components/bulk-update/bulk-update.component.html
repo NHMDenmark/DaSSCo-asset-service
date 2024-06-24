@@ -19,37 +19,9 @@
         </mat-form-field>
         <mat-form-field appearance="fill">
           <mat-label>Description</mat-label>
-          <input matInput placeholder="Description" [(ngModel)]="newDescription" name="description"(keydown.enter)="add($event)">
+          <input matInput placeholder="Description" [(ngModel)]="newDescription" name="description" (keydown.enter)="add($event)">
         </mat-form-field>
         <button mat-raised-button color="primary" (click)="add($event)" [disabled]="!newTag || !newDescription">Add</button>
-      </div>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Specimens</mat-panel-title>
-      </mat-expansion-panel-header>
-      <div class="specimen-container">
-        <div class="specimen" *ngFor="let item of specimens">
-          {{item.barcode}}
-          <button mat-icon-button color="warn" (click)="removeSpecimen(item)">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-      </div>
-      <div style="width: 100%">
-        <mat-form-field appearance="fill">
-          <mat-label>Barcode</mat-label>
-          <input matInput #barcodeInput placeholder="Barcode" [(ngModel)]="newBarcode" name="barcode" (keydown.enter)="addSpecimen($event)">
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Specimen Pid</mat-label>
-          <input matInput placeholder="Specimen Pid" [(ngModel)]="newSpecimenPid" name="specimen-pid" (keydown.enter)="addSpecimen($event)">
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Preparation Type</mat-label>
-          <input matInput placeholder="Preparation Type" [(ngModel)]="newPrepType" name="preparation-type" (keydown.enter)="addSpecimen($event)">
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="addSpecimen($event)" [disabled]="!newBarcode || !newSpecimenPid || !newPrepType">Add</button>
       </div>
     </mat-expansion-panel>
     <mat-expansion-panel>
@@ -90,28 +62,12 @@
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>
-        <mat-panel-title>Restricted Asset</mat-panel-title>
-      </mat-expansion-panel-header>
-      <div *ngFor="let role of roles">
-        <mat-checkbox (change)="modifyRoleList($event, role)">{{ role }}</mat-checkbox>
-      </div>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
         <mat-panel-title>Funding</mat-panel-title>
       </mat-expansion-panel-header>
       <mat-form-field appearance="fill">
         <mat-label>Funding</mat-label>
         <input matInput placeholder="Ex. 500.000kr" value="" [(ngModel)]="funding" name="funding">
       </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Formats</mat-panel-title>
-      </mat-expansion-panel-header>
-      <div *ngFor="let format of formats">
-        <mat-checkbox (change)="modifyFileFormatList($event, format)">{{ format }}</mat-checkbox>
-      </div>
     </mat-expansion-panel>
     <mat-expansion-panel>
       <mat-expansion-panel-header>
@@ -129,6 +85,15 @@
       <mat-form-field appearance="fill">
         <mat-label>Parent Guid</mat-label>
         <input matInput placeholder="Ex. TEST_PARENT" value="" [(ngModel)]="parentGuid" name="parent_guid">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Digitiser</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Digitiser</mat-label>
+        <input matInput placeholder="Ex. Niels Nielsen" value="" [(ngModel)]="digitiser" name="digitiser">
       </mat-form-field>
     </mat-expansion-panel>
     <br>

@@ -212,12 +212,12 @@ public class AssetService {
 
     public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset){
         /* Bulk-Updatable fields:
-            Status
-            Funding
-            Subject ️
-            Payload_Type
-            Asset_Locked (Only for locking, not unlocking) ️
             Tags (Added, not replaced).
+            Status
+            Asset_Locked (Only for locking, not unlocking)
+            Subject ️
+            Funding
+            Payload_Type
             Parent_Guid
             Digitiser
             Institution?
