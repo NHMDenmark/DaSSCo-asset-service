@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.domain;
 
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import dk.northtech.dasscoassetservice.webapi.domain.SambaInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -34,7 +33,7 @@ public class Asset {
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "true")
     public boolean asset_locked;
     @Schema(description = "List of possible roles for users", example = "[\"ADMIN\"]")
-    public List<Role> restricted_access = new ArrayList<>();
+    public List<InternalRole> restricted_access = new ArrayList<>();
 
     @Schema(description = "A dictionary of dynamic properties")
     public Map<String, String> tags = new HashMap<>();

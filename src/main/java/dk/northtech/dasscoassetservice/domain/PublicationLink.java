@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 
 @Schema(description = "URL to external publisher sites to which the asset is published")
-public record PublicationLink(
+public record PublicationLink (
         @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
         String asset_guid,
         @Schema(description = "The URL for the publisher site")

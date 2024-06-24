@@ -1,19 +1,10 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.bouncycastle.tsp.TSPUtil;
-import org.junit.jupiter.api.TestClassOrder;
 
-import javax.validation.constraints.Min;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,8 +13,6 @@ import java.util.Optional;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
@@ -479,7 +468,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.pipeline = "i1_p2";
         asset.status = AssetStatus.ISSUE_WITH_METADATA;
         asset.subject = "new sub";
-        asset.restricted_access = Arrays.asList(Role.ADMIN);
+        asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
         asset.funding = "Funding secured";
         asset.file_formats = Arrays.asList(FileFormat.RAW);
         asset.payload_type = "Conventional";
@@ -495,7 +484,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.workstation).isEqualTo("i1_w1");
         assertThat(result.status).isEqualTo(AssetStatus.ISSUE_WITH_METADATA);
         assertThat(result.subject).isEqualTo("new sub");
-        assertThat(result.restricted_access.get(0)).isEqualTo(Role.ADMIN);
+        assertThat(result.restricted_access.get(0)).isEqualTo(InternalRole.ADMIN);
         assertThat(result.funding).isEqualTo("Funding secured");
         assertThat(result.file_formats.size()).isEqualTo(1);
         assertThat(result.file_formats.get(0)).isEqualTo(FileFormat.RAW);
@@ -863,9 +852,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedSecondAsset.asset_locked).isTrue();
         // Restricted access changed:
         assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
-        assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(InternalRole.DEVELOPER);
         assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
-        assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(InternalRole.DEVELOPER);
         // Tags changed:
         assertThat(updatedFirstAsset.tags.size()).isEqualTo(1);
         assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
@@ -966,8 +955,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.payload_type = "payload-not-edited";
         asset.file_formats.add(FileFormat.CR3);
         asset.file_formats.add(FileFormat.RAF);
-        asset.restricted_access.add(Role.USER);
-        asset.restricted_access.add(Role.ADMIN);
+        asset.restricted_access.add(InternalRole.USER);
+        asset.restricted_access.add(InternalRole.ADMIN);
         asset.tags.put("Tag 1", "Value 1");
         asset.tags.put("Tag 2", "Value 2");
         asset.date_asset_finalised = Instant.now().minus(1, ChronoUnit.DAYS);
@@ -995,7 +984,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         specimenList.add(specimen);
         updatedAsset.specimens = specimenList;
         updatedAsset.asset_locked = true;
-        updatedAsset.restricted_access.add(Role.DEVELOPER);
+        updatedAsset.restricted_access.add(InternalRole.DEVELOPER);
         updatedAsset.tags.put("Tag 3", "Value 3");
         updatedAsset.date_asset_finalised = Instant.now();
         return updatedAsset;
