@@ -210,9 +210,12 @@ public class AssetService {
         return existing;
     }
 
-    public void bulkUpdate(List<String> assetList, Asset updatedAsset){
+    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset){
         // TODO: Don't forget corner cases!!!!!!
-        // TODO: Remove specimens and insert the new ones. How?
+
+        if (updatedAsset == null){
+            throw new IllegalArgumentException("Empty body, please specify fields to update");
+        }
 
         // UpdateUser must be present:
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
@@ -231,7 +234,9 @@ public class AssetService {
         }
 
         // Validate the Update fields:
-        validateAsset(updatedAsset);
+        for (Asset asset : assets){
+            validateBulkUpdateAssets(updatedAsset, asset);
+        }
 
         // Parent_guid does not exist:
         if (updatedAsset.parent_guid != null){
@@ -272,8 +277,7 @@ public class AssetService {
             assetAndSpecimens.put(assetToUpdate, specimensToDetach);
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
-
+        return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens, assetList);
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
@@ -412,7 +416,7 @@ public class AssetService {
                                 a.digitiser = $digitiser,
                     """;
         }
-        // AFTER PIPELINE IS NEW: DELETE IF IT DOES NOT WORK.
+
         sql = sql + """
                             a.collection = $collection_name,
                             a.workstation = $workstation_name,
@@ -433,6 +437,36 @@ public class AssetService {
         }
         if(a.status == null) {
             throw new IllegalArgumentException("Status cannot be null");
+        }
+    }
+
+    void validateBulkUpdateAssets(Asset newData, Asset existingAsset){
+        Optional<Institution> ifExists = institutionService.getIfExists(newData.institution);
+        if(ifExists.isEmpty()){
+            throw new IllegalArgumentException("Institution doesnt exist");
+        }
+        Optional<Collection> collectionOpt = collectionService.findCollection(newData.collection);
+        if(collectionOpt.isEmpty()) {
+            throw new IllegalArgumentException("Collection doesnt exist");
+        }
+        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(newData.pipeline, newData.institution);
+        if(pipelineOpt.isEmpty()) {
+            throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
+        }
+        // CHECK TO MAKE SURE THAT THE BULK-UPDATE IS NOT TRYING TO SET THE ASSET_PARENT TO ANY EXISTING ASSET_GUID (asset cannot be its own parent!).
+        if (newData.parent_guid != null){
+            if(existingAsset.asset_guid.equals(newData.parent_guid)) {
+                throw new IllegalArgumentException("Asset cannot be its own parent");
+            }
+        }
+
+        Optional<Workstation> workstationOpt = workstationService.findWorkstation(newData.workstation);
+        if(workstationOpt.isEmpty()){
+            throw new IllegalArgumentException("Workstation does not exist");
+        }
+        Workstation workstation = workstationOpt.get();
+        if(workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)){
+            throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
     }
 

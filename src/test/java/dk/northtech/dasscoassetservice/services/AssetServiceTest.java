@@ -875,6 +875,16 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testBulkUpdateNoBody(){
+        List<String> assetList = new ArrayList<String>();
+        assetList.add("bulk-asset-no-body");
+        assetList.add("bulk-asset-no-body-2");
+        Asset updatedAsset = null;
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body, please specify fields to update");
+    }
+
+    @Test
     void testBulkUpdateOneAssetNotFound(){
         // Create three different assets
         Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
