@@ -20,8 +20,12 @@
           </mat-date-range-input>
           <mat-hint>DD-MM-YYYY – DD-MM-YYYY</mat-hint>
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-date-range-picker #picker color="primary"></mat-date-range-picker>
-
+          <mat-date-range-picker #picker color="primary">
+            <mat-date-range-picker-actions>
+              <button mat-button matDateRangePickerCancel>Cancel</button>
+              <button mat-raised-button color="primary" matDateRangePickerApply>Apply</button>
+            </mat-date-range-picker-actions>
+          </mat-date-range-picker>
           <mat-error *ngIf="timeFrameForm.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
           <mat-error *ngIf="timeFrameForm.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error>
         </mat-form-field>
