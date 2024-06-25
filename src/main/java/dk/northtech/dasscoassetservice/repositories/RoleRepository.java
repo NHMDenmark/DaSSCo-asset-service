@@ -102,7 +102,6 @@ default void boilerplate() {
                 """);
         Agtype agtype = AgtypeFactory.create(builder.build());
         String query = sb.toString();
-        System.out.println(query);
         withHandle(h -> {
         h.createUpdate(query)
                 .bind("params", agtype)

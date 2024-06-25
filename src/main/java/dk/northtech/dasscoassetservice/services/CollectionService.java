@@ -72,4 +72,12 @@ public class CollectionService {
             return repository.findCollection(collectionName);
         });
     }
+
+    public void updateCollection(Collection collection) {
+        jdbi.withHandle(h -> {
+            RoleRepository roleRepository = h.attach(RoleRepository.class);
+            roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
+            return h;
+        });
+    }
 }

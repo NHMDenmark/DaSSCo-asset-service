@@ -30,11 +30,24 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistCollectionWithRoles() {
         collectionService.persistCollection(new Collection("test-collection-roles", "institution_1", Arrays.asList(new Role("test-role"))), "institution_1");
-        Optional<Collection> testology = collectionService.findCollection("test-collection-roles");
-        assertThat(testology.isPresent()).isTrue();
-        Collection resutl = testology.get();
+        collectionService.persistCollection(new Collection("test-collection-no-roles", "institution_1",new ArrayList<>()), "institution_1");
+        Optional<Collection> result1opt = collectionService.findCollection("test-collection-roles");
+        assertThat(result1opt.isPresent()).isTrue();
+        Collection resutl = result1opt.get();
         assertThat(resutl.name()).isEqualTo("test-collection-roles");
         assertThat(resutl.roleRestrictions()).hasSize(1);
+        Collection collection = new Collection(resutl.name(), resutl.institution(), Arrays.asList(new Role("test-role-1"), new Role("test-role-2")));
+        collectionService.updateCollection(collection);
+        Optional<Collection> result2opt = collectionService.findCollection("test-collection-roles");
+        Collection result2 = result2opt.orElseThrow(()->new RuntimeException("Failed"));
+        assertThat(result2.roleRestrictions()).hasSize(2);
+
+        //Verify that roles are only added to targeted Collection
+        Optional<Collection> result3opt = collectionService.findCollection("test-collection-no-roles");
+        Collection result3 = result3opt.orElseThrow(()->new RuntimeException("Failed"));
+        assertThat(result3.roleRestrictions()).hasSize(0);
+
+
     }
 
     @Test
