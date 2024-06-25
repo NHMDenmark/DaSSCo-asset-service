@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Role;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,11 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
         assertThat(result.isPresent()).isTrue();
         Institution institution = result.get();
         assertThat(institution.roleRestriction()).hasSize(2);
+        Institution institution1 = new Institution(institution.name(), new ArrayList<>());
+        institutionService.updateInstitution(institution1);
+        Optional<Institution> resultOpt = institutionService.getIfExists("teztitution_rolez");
+        Institution resultLast = resultOpt.orElseThrow(RuntimeException::new);
+        assertThat(resultLast.roleRestriction()).isEmpty();
     }
 
     @Test
