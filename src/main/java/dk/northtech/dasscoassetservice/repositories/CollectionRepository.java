@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.repositories.helpers.CollectionMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
@@ -9,6 +10,8 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.springframework.stereotype.Repository;
 
@@ -17,18 +20,18 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public class CollectionRepository {
-    private Jdbi jdbi;
-    private DataSource dataSource;
+public interface CollectionRepository extends SqlObject {
+//    private Jdbi jdbi;
+//    private DataSource dataSource;
 
-    @Inject
-    public CollectionRepository(Jdbi jdbi, DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbi = jdbi;
-    }
+//    @Inject
+//    public CollectionRepository(Jdbi jdbi, DataSource dataSource) {
+//        this.dataSource = dataSource;
+//        this.jdbi = jdbi;
+//    }
 
-    public void persistCollection(Collection collection) {
+    @Transaction
+    default void persistCollection(Collection collection) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
@@ -43,7 +46,7 @@ public class CollectionRepository {
 
 
         try {
-            jdbi.withHandle(handle -> {
+            withHandle(handle -> {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
@@ -53,7 +56,9 @@ public class CollectionRepository {
                 handle.createUpdate(sql)
                         .bind("params", agtype)
                         .execute();
-                handle.close();
+                RoleRepository roleRepository = handle.attach(RoleRepository.class);
+                roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION, collection.name(), collection.roleRestrictions());
+
                 return handle;
             });
         } catch (Exception e) {
@@ -61,21 +66,24 @@ public class CollectionRepository {
         }
     }
 
-    public List<Collection> listCollections(Institution institution) {
+    default List<Collection> listCollections(Institution institution) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
                              MATCH (c:Collection)-[USED_BY]-(i:Institution)
                              WHERE i.name = $institution_name
+                             OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
                              RETURN c.name
+                             , i.name
+                             , collect(r)
                            $$
                          , #params
-                        ) as (collection_name agtype);""";
+                        ) as (collection_name agtype, institution_name agtype, roles agtype);""";
 
 
         try {
-            return jdbi.withHandle(handle -> {
+            return withHandle(handle -> {
                 // We have to register the type
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
@@ -85,31 +93,28 @@ public class CollectionRepository {
                 Agtype agtype = AgtypeFactory.create(name);
                 handle.execute(DBConstants.AGE_BOILERPLATE);
                 return handle.createQuery(sql).bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            Agtype collection_name = rs.getObject("collection_name", Agtype.class);
-                            return new Collection(collection_name.getString(), institution.name());
-                        }).list();
+                        .map(new CollectionMapper()).list();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Optional<Collection> findCollection(String collectionName) {
+    default Optional<Collection> findCollection(String collectionName) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
-                             MATCH (c:Collection)
-                             WHERE c.name = $collection_name
-                             RETURN c.name
+                             MATCH (c:Collection{name: $collection_name})-[USED_BY]-(i:Institution)
+                             OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
+                             RETURN c.name, i.name, collect(r)
                            $$
                          , #params
-                        ) as (collection_name agtype);""";
+                        ) as (collection_name agtype, institution_name agtype, roles agtype);""";
 
 
         try {
-            return jdbi.withHandle(handle -> {
+            return withHandle(handle -> {
                 // We have to register the type
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
@@ -118,10 +123,7 @@ public class CollectionRepository {
                 Agtype agtype = AgtypeFactory.create(name);
                 handle.execute(DBConstants.AGE_BOILERPLATE);
                 return handle.createQuery(sql).bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            Agtype collection_name = rs.getObject("collection_name", Agtype.class);
-                            return new Collection(collection_name.getString(), null);
-                        }).findOne();
+                        .map(new CollectionMapper()).findOne();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
