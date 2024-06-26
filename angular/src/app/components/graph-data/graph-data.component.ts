@@ -14,6 +14,7 @@ import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/mater
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {HttpStatusCode} from "@angular/common/http";
 import {ActivatedRoute, Router} from "@angular/router";
+import {Location} from "@angular/common";
 
 @Component({
   selector: 'dassco-graph-data',
@@ -45,6 +46,7 @@ export class GraphDataComponent {
   startDate : moment.Moment = moment().subtract(7, 'days');
   endDate : moment.Moment = moment();
   statValueParam : String | null = "0"
+  selectedStat : number = 0;
 
   currentViewSubscription: Subscription | undefined; // we subscribe to the weekly/monthly/yearly data observable, and need to unsub when we change to avoid multiple subs at a time
 
@@ -58,13 +60,15 @@ export class GraphDataComponent {
     );
 
   constructor(public specimenGraphService: SpecimenGraphService
-              , private snackBar: MatSnackBar, private route : ActivatedRoute, private router : Router) {
+              , private snackBar: MatSnackBar, private route : ActivatedRoute, private router : Router, private location : Location) {
 
     this.route.paramMap.subscribe(params => {
 
       const startDateParam = params.get('startDate');
       const endDateParam = params.get('endDate');
       this.statValueParam = params.get('statValue');
+      this.selectedStat = Number(this.statValueParam);
+      this.statForm.setValue(this.selectedStat);
 
       const isStartDateValid = startDateParam && moment(startDateParam, 'DD-MM-YYYY', true).isValid();
       const isEndDateValid = endDateParam && moment(endDateParam, 'DD-MM-YYYY', true).isValid();
@@ -245,6 +249,11 @@ export class GraphDataComponent {
           this.openSnackBar("An error occurred and cache was not refreshed", "OK")
         }
       })
+  }
+
+  refreshPage(){
+    this.location.go(this.location.path());
+    window.location.reload();
   }
 
   openSnackBar(message: string, action: string) {
