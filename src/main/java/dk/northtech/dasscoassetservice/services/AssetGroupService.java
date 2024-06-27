@@ -76,7 +76,7 @@ public class AssetGroupService {
         jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
     }
 
-    public List<Asset> updateAssetGroup(String groupName, List<String> assetList){
+    public AssetGroup updateAssetGroup(String groupName, List<String> assetList){
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isEmpty()) {
             throw new IllegalArgumentException("Asset group does not exist!");

@@ -11,6 +11,7 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.checkerframework.checker.units.qual.A;
+import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
@@ -67,9 +68,11 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default List<Asset> updateAssetGroup(String assetGroup, List<String> assetList){
+    default AssetGroup updateAssetGroup(String assetGroup, List<String> assetList){
         boilerplate();
-        return updateAssetGroupInternal(assetGroup, assetList);
+        updateAssetGroupInternal(assetGroup, assetList);
+        Optional<AssetGroup> optionalAssetGroup =  readAssetGroupInternal(assetGroup);
+        return optionalAssetGroup.orElseGet(AssetGroup::new);
     }
 
     default void createAssetGroupInternal(AssetGroup assetGroup){
@@ -200,7 +203,7 @@ public interface AssetGroupRepository extends SqlObject {
 
     }
 
-    default List<Asset> updateAssetGroupInternal(String groupName, List<String> assetList){
+    default void updateAssetGroupInternal(String groupName, List<String> assetList){
 
         String assetListAsString = assetList.stream()
                 .map(asset -> "'" + asset + "'")
@@ -243,13 +246,10 @@ public interface AssetGroupRepository extends SqlObject {
                 handle.createUpdate(attachEdgeSql)
                         .bind("params", agtype)
                         .execute();
-                // Return Asset List:
-                // TODO
                 return handle;
             });
         } catch (Exception e){
             throw new RuntimeException(e);
         }
-        return new ArrayList<>();
     }
 }
