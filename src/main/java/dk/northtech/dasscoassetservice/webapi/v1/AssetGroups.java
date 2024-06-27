@@ -73,4 +73,14 @@ public class AssetGroups {
     public void deleteAssetGroup(@PathParam("groupName") String groupName){
         this.assetGroupService.deleteAssetGroup(groupName);
     }
+
+    @PUT
+    @Path("/updategroup/{groupName}")
+    @Operation(summary = "Update Asset Group", description = "Updates the assets in an asset group.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<Asset> updateAssetGroup(@PathParam("groupName") String groupName, List<String> assetList){
+        return this.assetGroupService.updateAssetGroup(groupName, assetList);
+    }
 }
