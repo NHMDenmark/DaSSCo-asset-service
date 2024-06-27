@@ -22,26 +22,29 @@ public class AssetGroupService {
     }
 
     public void createAssetGroup(AssetGroup assetGroup){
-        // Logic here.
-        // Corner cases.
-        // Look for assets to see they all exist.
-        /*
+
+        // Check fields:
+        if (assetGroup.group_name == null || assetGroup.group_name.isEmpty()){
+            throw new IllegalArgumentException("Asset group needs a name!");
+        }
+
+        if (assetGroup.assets == null || assetGroup.assets.isEmpty()){
+            throw new IllegalArgumentException("Asset group needs assets!");
+        }
+
+        // Lowercase the asset group name for case-insensitivity:
+        assetGroup.group_name = assetGroup.group_name.toLowerCase();
+
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
         if (assets.size() != assetGroup.assets.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-         */
-
         // Check if the group name already exists
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
         if (assetGroupOptional.isPresent()){
-            // Complain.
-            AssetGroup found = assetGroupOptional.get();
-            System.out.println(found.group_name);
-            System.out.println(found.assets);
+            throw new IllegalArgumentException("Asset group already exists!");
         }
-
 
         // Then:
         jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup);

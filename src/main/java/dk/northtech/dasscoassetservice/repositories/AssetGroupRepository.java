@@ -120,12 +120,10 @@ public interface AssetGroupRepository extends SqlObject {
                     .map((rs, ctx) -> {
 
                         AssetGroup assetGroup = new AssetGroup();
-                        assetGroup.group_name = ((Agtype) rs.getObject("group_name")).getString();
-                        System.out.println(rs.getObject("asset_guids"));
-
-
-                        //assetGroup.assets = ((Agtype) rs.getObject("asset_guids")).toString();
-
+                        Agtype groupName = rs.getObject("group_name", Agtype.class);
+                        assetGroup.group_name = groupName.getString();
+                        Agtype assets = rs.getObject("asset_guids", Agtype.class);
+                        assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         return assetGroup;
                     }).findOne();
         });
