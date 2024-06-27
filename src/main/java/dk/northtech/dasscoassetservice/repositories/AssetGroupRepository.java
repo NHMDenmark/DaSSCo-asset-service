@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
+import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.services.AssetGroupService;
 import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
@@ -51,6 +52,12 @@ public interface AssetGroupRepository extends SqlObject {
     default Optional<AssetGroup> readAssetGroup(String assetGroupName){
         boilerplate();
         return readAssetGroupInternal(assetGroupName);
+    }
+
+    @Transaction
+    default List<AssetGroup> readListAssetGroup(){
+        boilerplate();
+        return readListAssetGroupInternal();
     }
 
     default void createAssetGroupInternal(AssetGroup assetGroup){
@@ -125,7 +132,31 @@ public interface AssetGroupRepository extends SqlObject {
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         return assetGroup;
+
                     }).findOne();
         });
+    }
+
+    default List<AssetGroup> readListAssetGroupInternal(){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                   , $$
+                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
+                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids
+                   $$
+                ) as (group_name agtype, asset_guids agtype);     
+                """;
+
+        return withHandle(handle -> handle.createQuery(sql)
+                .map((rs, ctx) -> {
+                    AssetGroup assetGroup = new AssetGroup();
+                    Agtype groupName = rs.getObject("group_name", Agtype.class);
+                    assetGroup.group_name = groupName.getString();
+                    Agtype assets = rs.getObject("asset_guids", Agtype.class);
+                    assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                    return assetGroup;
+                })
+                .list());
     }
 }

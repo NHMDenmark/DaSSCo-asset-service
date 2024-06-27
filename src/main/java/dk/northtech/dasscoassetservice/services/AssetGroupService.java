@@ -38,8 +38,13 @@ public class AssetGroupService {
 
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
         if (assets.size() != assetGroup.assets.size()){
+            if (assets.size() < assetGroup.assets.size()){
+                throw new IllegalArgumentException("An error ocurred. There might be a repeated asset");
+            }
             throw new IllegalArgumentException("One or more assets were not found!");
         }
+
+
 
         // Check if the group name already exists
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
@@ -59,5 +64,9 @@ public class AssetGroupService {
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
+    }
+
+    public List<AssetGroup> readListAssetGroup(){
+        return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup();
     }
 }

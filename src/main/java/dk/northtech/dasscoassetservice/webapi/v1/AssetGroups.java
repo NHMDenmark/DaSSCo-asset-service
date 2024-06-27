@@ -55,4 +55,13 @@ public class AssetGroups {
     public List<Asset> getAssetGroup(@PathParam("groupName") String groupName){
         return this.assetGroupService.readAssetGroup(groupName);
     }
+
+    @GET
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "List Asset Groups", description = "Takes a Group Name and returns the asset metadata of assets in that group")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<AssetGroup> getListAssetGroup(){
+        return this.assetGroupService.readListAssetGroup();
+    }
 }
