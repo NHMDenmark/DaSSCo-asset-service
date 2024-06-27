@@ -60,6 +60,12 @@ public interface AssetGroupRepository extends SqlObject {
         return readListAssetGroupInternal();
     }
 
+    @Transaction
+    default void deleteAssetGroup(String groupName){
+        boilerplate();
+        deleteAssetGroupInternal(groupName);
+    }
+
     default void createAssetGroupInternal(AssetGroup assetGroup){
 
         String assetListAsString = assetGroup.assets.stream()
@@ -158,5 +164,33 @@ public interface AssetGroupRepository extends SqlObject {
                     return assetGroup;
                 })
                 .list());
+    }
+
+    default void deleteAssetGroupInternal(String groupName){
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                   , $$
+                       MATCH (ag:Asset_Group{name:$group_name})
+                       DETACH DELETE ag
+                   $$
+                , #params) as (ag agtype);
+                """;
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
     }
 }

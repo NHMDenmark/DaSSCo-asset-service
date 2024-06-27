@@ -47,7 +47,7 @@ public class AssetGroups {
     }
 
     @GET
-    @Path("/{groupName}")
+    @Path("/getgroup/{groupName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Get Asset Group", description = "Takes a Group Name and returns the asset metadata of assets in that group")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
@@ -63,5 +63,14 @@ public class AssetGroups {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetGroup> getListAssetGroup(){
         return this.assetGroupService.readListAssetGroup();
+    }
+
+    @DELETE
+    @Path("/deletegroup/{groupName}")
+    @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, takes the group name.")
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void deleteAssetGroup(@PathParam("groupName") String groupName){
+        this.assetGroupService.deleteAssetGroup(groupName);
     }
 }

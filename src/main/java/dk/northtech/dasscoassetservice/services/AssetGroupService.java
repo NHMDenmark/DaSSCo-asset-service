@@ -44,8 +44,6 @@ public class AssetGroupService {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-
-
         // Check if the group name already exists
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
         if (assetGroupOptional.isPresent()){
@@ -57,6 +55,7 @@ public class AssetGroupService {
     }
 
     public List<Asset> readAssetGroup(String groupName){
+
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
@@ -68,5 +67,15 @@ public class AssetGroupService {
 
     public List<AssetGroup> readListAssetGroup(){
         return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup();
+    }
+
+    public void deleteAssetGroup(String groupName){
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()){
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
     }
 }
