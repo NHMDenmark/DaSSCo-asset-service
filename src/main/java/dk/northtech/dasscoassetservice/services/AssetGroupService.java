@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
@@ -48,5 +49,15 @@ public class AssetGroupService {
 
         // Then:
         jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup);
+    }
+
+    public List<Asset> readAssetGroup(String groupName){
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isPresent()){
+            AssetGroup assetGroup = assetGroupOptional.get();
+            return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
+        } else {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
     }
 }
