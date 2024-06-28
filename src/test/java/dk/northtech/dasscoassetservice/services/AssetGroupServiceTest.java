@@ -2,12 +2,14 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -107,6 +109,10 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assetGroupService.createAssetGroup(assetGroup);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group already exists!");
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name);
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
+        assertThat(assetGroupList.size()).isEqualTo(0);
     }
 
     @Test
@@ -136,9 +142,70 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assetGroupService.createAssetGroup(assetGroup);
         List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name);
         assertThat(assets.size()).isEqualTo(3);
-        // Assert that the assets are the three that we have.
-        // Then update and check that the one we removed is not there but the other two are.
-        // Etc.
+        List<String> assetsReceived = assets.stream()
+                .map(asset -> asset.asset_guid)
+                .toList();
+        assertThat(assetsReceived).containsExactlyElementsIn(assetGroup.assets);
+
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add(secondAsset.asset_guid);
+        assetGroup.assets.add(thirdAsset.asset_guid);
+
+        assetGroupService.updateAssetGroup(assetGroup.group_name, assetGroup.assets);
+        assets = assetGroupService.readAssetGroup(assetGroup.group_name);
+        assertThat(assets.size()).isEqualTo(2);
+        assetsReceived = assets.stream()
+                .map(asset -> asset.asset_guid)
+                .toList();
+        assertThat(assetsReceived).containsExactlyElementsIn(assetGroup.assets);
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name);
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
+        assertThat(assetGroupList.size()).isEqualTo(0);
+    }
+
+    @Test
+    void testUpdateGroupDoesNotExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.updateAssetGroup("asset-group-non-existent", new ArrayList<>()));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
+
+    @Test
+    void testUpdateGroupDoesNotHaveAssets(){
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "update-group-no-assets";
+        Asset asset = this.getTestAsset("update-group-no-assets-1");
+        assetService.persistAsset(asset, user, 1);
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add(asset.asset_guid);
+        assetGroupService.createAssetGroup(assetGroup);
+        assetGroup.assets = new ArrayList<>();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.updateAssetGroup(assetGroup.group_name, assetGroup.assets));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset Group has to have assets!");
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name);
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
+        assertThat(assetGroupList.size()).isEqualTo(0);
+    }
+
+    @Test
+    void testUpdateGroupNoAssetFound(){
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "update-group-invalid-asset";
+        Asset asset = this.getTestAsset("update-group-invalid-asset-1");
+        assetService.persistAsset(asset, user, 1);
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add(asset.asset_guid);
+        assetGroupService.createAssetGroup(assetGroup);
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("this-does-not-exist");
+
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.updateAssetGroup(assetGroup.group_name, assetGroup.assets));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name);
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
+        assertThat(assetGroupList.size()).isEqualTo(0);
     }
 
     public Asset getTestAsset(String guid) {

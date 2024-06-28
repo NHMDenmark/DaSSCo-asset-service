@@ -82,6 +82,10 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
 
+        if(assetList.isEmpty()){
+            throw new IllegalArgumentException("Asset Group has to have assets!");
+        }
+
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
