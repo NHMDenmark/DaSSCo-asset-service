@@ -147,19 +147,22 @@
       </table>
     </div>
 
-    <div class="navigation-buttons">
+    <div class="icons">
       <mat-icon fontIcon="arrow_back"
                 class="icon-display"
                 (click)="showPreviousAsset()"
                 [class.disabled]="isPreviousDisabled()"
                 [ngClass]="{'disabled': isPreviousDisabled()}"
-                [attr.disabled]="isPreviousDisabled() ? true : null"></mat-icon>
+                [attr.disabled]="isPreviousDisabled() ? true : null"
+                title="Previous Asset"></mat-icon>
+      <mat-icon fontIcon="download" class="icon-display" (click)="exportCsv()" title="Download CSV"></mat-icon>
       <mat-icon fontIcon="arrow_forward"
                 class="icon-display"
                 (click)="showNextAsset()"
                 [class.disabled]="isNextDisabled()"
                 [ngClass]="{'disabled': isNextDisabled()}"
-                [attr.disabled]="isNextDisabled() ? true : null"></mat-icon>
+                [attr.disabled]="isNextDisabled() ? true : null"
+                title="Next Asset"></mat-icon>
     </div>
   </div>
   <div *ngIf="!asset">

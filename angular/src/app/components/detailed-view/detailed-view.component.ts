@@ -34,7 +34,7 @@ export class DetailedViewComponent implements OnInit {
     })
   }
 
-  asset?: Asset;
+  asset!: Asset;
   // TODO: For now: Barcodes only
   specimenBarcodes? : string | undefined;
   fileFormats? : string | undefined;
@@ -58,6 +58,7 @@ export class DetailedViewComponent implements OnInit {
     this.detailedViewService.getAssetMetadata(assetGuid).subscribe((response) => {
       if (response){
         this.asset = response;
+        this.convertToCsv();
         this.specimenBarcodes = this.asset?.specimens?.map(specimen => specimen.barcode).join(', ');
         this.fileFormats = this.asset?.file_formats?.map(file_format => file_format).join(', ');
         this.restrictedAccess = this.asset?.restricted_access?.map(type => type).join(", ");
@@ -112,4 +113,55 @@ export class DetailedViewComponent implements OnInit {
   isPreviousDisabled(): boolean {
     return this.currentIndex === 0;
   }
+
+  convertToCsv() {
+    const separatorLine = 'sep=,\r\n';
+    const headerRow = Object.keys(this.asset).join(",") + '\r\n';
+    const dataRow = Object.values(this.asset).map(value => {
+      if (value === null || value === undefined){
+        return "null";
+      }
+      if (Array.isArray(value)){
+        if (value.length !== 0){
+          const formattedArray = value.map(item => JSON.stringify(item).replace(/"/g, '""')).join(', ');
+          console.log(formattedArray)
+          return `"${formattedArray}"`;
+        } else {
+          return "[]"
+        }
+      } else if (value instanceof Date) {
+        return value.toISOString();
+      } else if (value instanceof Object) {
+        if (Object.entries(value).length !== 0){
+          return Object.entries(value).map(([key, val]) => {
+            return `${key}: ${val}`;
+          })
+        } else {
+            return "{}"
+        }
+      } else {
+        return value.toString();
+      }
+    }).join(',') + "\r\n";
+    console.log(dataRow)
+    return separatorLine + headerRow + dataRow;
+  }
+
+  exportCsv(){
+    const csv = this.convertToCsv();
+    const blob = new Blob([csv], { type: "text/csv; charset=utf-8" })
+    const fileName = `${this.asset.asset_guid}.csv`;
+
+    const link = document.createElement("a");
+    if (link.download !== undefined){
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
 }
