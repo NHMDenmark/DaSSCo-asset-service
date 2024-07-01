@@ -3,29 +3,39 @@
 .container {
   display: flex;
 
-  .node-or {
+  .node-and {
     display: flex;
     flex-direction: column;
   }
 
-    mat-form-field {
-      margin-right: .5rem;
-    }
-
-    .form-div {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      align-items: start;
-      justify-content: center;
-
-      .small-input {
-        width: 3rem;
-      }
-
-      .save-btn:disabled {
-        background-color: $primaryColor;
-        color: white;
-      }
+  .form-container {
+    display: flex;
+    flex-direction: column;
+    .and-btn {
+      //width: fit-content;
+      //min-width: fit-content;
+      //padding: 0;
     }
   }
+
+  mat-form-field {
+    margin-right: .5rem;
+  }
+
+  .form-div {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    justify-content: center;
+
+    .small-input {
+      width: 3rem;
+    }
+
+    .save-btn:disabled {
+      background-color: $primaryColor;
+      color: white;
+    }
+  }
+}

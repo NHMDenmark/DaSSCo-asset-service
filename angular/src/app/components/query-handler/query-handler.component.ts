@@ -49,8 +49,6 @@ export class QueryHandlerComponent implements OnInit {
   saveQuery(savedQuery: QueryView, index: number) {
     this.queries.set(index, savedQuery); // map to avoid duplicates if a value is updated
 
-    console.log(this.queries)
-
     this.saveQueryEvent.emit(Array.from(this.queries.values()).map(val => val));
   }
 

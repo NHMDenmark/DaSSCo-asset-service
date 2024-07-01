@@ -23,8 +23,8 @@ class QueriesServiceTest extends AbstractIntegrationTest {
     public void unwrapQuery() {
         institutionService.createInstitution(new Institution("NNAD"));
         institutionService.createInstitution(new Institution("FNOOP"));
-        pipelineService.persistPipeline(new Pipeline("queryPipeline", "NNAD"));
-        pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"));
+        pipelineService.persistPipeline(new Pipeline("queryPipeline", "NNAD"), "NNAD");
+        pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
 
         Asset asset = getTestAsset("asset_nnad_to_fnoop");
         asset.pipeline = "queryPipeline";

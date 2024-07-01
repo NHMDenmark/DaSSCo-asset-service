@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from "../../services/queries.service";
-import {filter, map, Observable, take} from "rxjs";
+import {filter, iif, map, Observable, of, take} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
 import {Asset, QueryV2, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
@@ -17,19 +17,36 @@ export class QueriesComponent implements OnInit {
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
-
-  nodes: Map<string, string[]> | undefined;
+  // nodes: Map<string, string[]> | undefined;
   queries: Map<number, QueryView[]> = new Map;
 
-  nodes$: Observable<Map<string, string[]> | undefined>
+  propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
     .pipe(
       filter(isNotUndefined),
       map(nodes => {
-        this.nodes = new Map(Object.entries(nodes));
+        localStorage.setItem('nodeProperties', JSON.stringify(Object.entries(nodes)));
         return new Map(Object.entries(nodes));
       })
     )
+
+  propertiesCached$
+    = of (localStorage.getItem('nodeProperties')).pipe(
+    map(properties => {
+      if (properties != null) {
+        return new Map<string, string[]>(JSON.parse(properties));
+      }
+      return undefined;
+    })
+  )
+
+  nodes$: Observable<Map<string, string[]> | undefined>
+  = iif(() => {
+      return localStorage.getItem('nodeProperties') == null;
+    },
+    this.propertiesCall$, // if it's null
+    this.propertiesCached$ // if it's not null
+  );
 
   constructor(private queriesService: QueriesService
   ) { }
@@ -41,7 +58,7 @@ export class QueriesComponent implements OnInit {
   newSelect() {
     if (this.queryHandlerEle) {
       const newComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
-      newComponent.instance.nodes = this.nodes ? this.nodes : new Map;
+      newComponent.instance.nodes = localStorage.getItem('nodeProperties') != null ? new Map(JSON.parse(localStorage.getItem('nodeProperties')!)) : new Map()
       newComponent.instance.first = this.queryHandlerEle.length <= 1;
       newComponent.instance.saveQueryEvent.subscribe(queries => this.saveQuery(queries, this.queryHandlerEle!.indexOf(newComponent.hostView)));
       newComponent.instance.removeComponentEvent.subscribe(() => {
@@ -57,7 +74,6 @@ export class QueriesComponent implements OnInit {
 
   saveQuery(queries: QueryView[], index: number) {
     this.queries.set(index, queries);
-    console.log(this.queries)
   }
 
   save() {
@@ -66,7 +82,6 @@ export class QueriesComponent implements OnInit {
 
     this.queries.forEach((val, key) => {
       const nodeMap = new Map<string, QueryWhere[]>;
-      console.log(key)
       val.forEach(where => {
         if (nodeMap.has(where.node)) {
           // add to the list
@@ -85,8 +100,6 @@ export class QueriesComponent implements OnInit {
     })
     // console.log(fullMap)
     console.log(queryResponses)
-
-    console.log(this.queries);
     // const queries = Array.from(this.queries.values()).map(val => val);
     // console.log(queries)
 

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
 import {BehaviorSubject} from "rxjs";
@@ -9,7 +9,7 @@ import {Moment} from "moment-timezone";
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss']
 })
-export class QueryBuilderComponent implements OnInit {
+export class QueryBuilderComponent {
   operators_string = [
     '=',
     'STARTS WITH',
@@ -25,14 +25,15 @@ export class QueryBuilderComponent implements OnInit {
     'IN'
   ]
   operators: string[] = [];
-  chosenNodePropertySubject = new BehaviorSubject<{node: string, property: string} | undefined>(undefined);
+  chosenNodePropertySubject = new BehaviorSubject<{ node: string, property: string } | undefined>(undefined);
   chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
+  isDate = false;
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();
 
-  nodeControl = new FormControl({} as {node: string, property: string});
+  nodeControl = new FormControl({} as { node: string, property: string });
 
   queryForm = this.fb.group({
     wheres: this.fb.array([
@@ -41,8 +42,7 @@ export class QueryBuilderComponent implements OnInit {
         value: new FormControl(null, Validators.required),
         date: new FormControl<Date | null>(null),
         dateStart: new FormControl<Date | null>(null),
-        dateEnd: new FormControl<Date | null>(null),
-        isDate: new FormControl<boolean>(false),
+        dateEnd: new FormControl<Date | null>(null)
       })
     ])
   });
@@ -52,23 +52,20 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   constructor(private fb: FormBuilder) {
-    // this.queryForm.get('wheres')?.valueChanges.subscribe(() => {
-    //   console.log(this.queryForm)
-    //   // if (this.saved) {
-    //   //   this.saved = false;
-    //   // }
-    // });
-
     this.nodeControl.valueChanges.subscribe((nodeChoice) => {
-      console.log(nodeChoice)
       if (nodeChoice) {
+        if (!this.wheres.pristine) {
+          if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
+            this.wheres.clear();
+            this.addWhere();
+          } else {
+            this.wheres.reset();
+          }
+        }
         this.chosenNodePropertySubject.next(nodeChoice);
         this.updateOperators(nodeChoice.property);
       }
     })
-  }
-
-  ngOnInit(): void {
   }
 
   save(childIdx: number) {
@@ -77,7 +74,9 @@ export class QueryBuilderComponent implements OnInit {
 
     this.wheres.controls.forEach(where => {
       let value;
-      if (where.get('property')?.value.includes('date') || where.get('property')?.value.includes('timestamp')) {
+
+      console.log(where.get('isDate')?.value)
+      if (this.isDate) {
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
           const dateEnd = <Moment>where.get('dateEnd')?.value;
@@ -90,8 +89,6 @@ export class QueryBuilderComponent implements OnInit {
         value = where.get('value')?.value;
       }
 
-      console.log(this.nodeControl)
-
       const newQueryField = {
         operator: where.get('operator')?.value,
         value: value
@@ -100,10 +97,9 @@ export class QueryBuilderComponent implements OnInit {
       console.log(where)
     })
 
-    console.log(innerList);
-
     this.wheres.at(childIdx).markAsUntouched();
-    this.saveQueryEvent.emit({node: node ? node : '',
+    this.saveQueryEvent.emit({
+      node: node ? node : '',
       property: this.nodeControl.value ? this.nodeControl.value.property : '',
       fields: innerList
     });
@@ -114,30 +110,31 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   updateOperators(property: string) {
-    // const propertyValue = this.wheres.at(index).get('property')?.value;
     this.operators = this.operators_string;  // Default operators list
-    // this.wheres.at(index).get('isDate')?.setValue(false);
     if (property.includes('date') || property.includes('timestamp')) {
+      this.isDate = true;
       this.operators = this.operators_date;
     } else if (property.includes('file_formats')) {
+      this.isDate = false;
       this.operators = this.operators_list;
     }
   }
 
   addWhere() {
     this.wheres.push(this.fb.group({
-      // queryType: new FormControl(type, Validators.required),
-      // property: new FormControl('', Validators.required),
       operator: new FormControl(null, Validators.required),
       value: new FormControl(null, Validators.required),
       date: new FormControl<Date | null>(null),
       dateStart: new FormControl<Date | null>(null),
-      dateEnd: new FormControl<Date | null>(null),
-      isDate: new FormControl<boolean>(false),
+      dateEnd: new FormControl<Date | null>(null)
     }));
   }
 
-  removeWhere(index: number) {
-    this.wheres.removeAt(index);
+  removeWhere(index: number): void {
+    if (index == 0 && this.wheres.length <= 1) {
+      this.wheres.at(index).reset();
+    } else {
+      this.wheres.removeAt(index);
+    }
   }
 }

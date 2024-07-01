@@ -93,7 +93,7 @@ public class QueriesService {
 
     public Map<String, List<String>> getNodeProperties() {
         Map<String, List<String>> properties = jdbi.onDemand(QueriesRepository.class).getNodeProperties();
-        properties.get("Asset").addAll(Arrays.asList("created_date", "updated_date", "audited_date"));
+        properties.get("Asset").addAll(Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp"));
         properties.get("Asset").remove("restricted_access");
         return properties;
     }

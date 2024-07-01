@@ -1,9 +1,10 @@
 <div class="container">
-    <button mat-mini-fab (click)="removeComponent()"
+    <button mat-icon-button (click)="removeComponent()"
+            color="primary"
             matTooltip="Delete whole clause for Node"
             [matTooltipPosition]="'below'"><mat-icon>delete_forever</mat-icon></button>
 
-  <div class="node-or">
+  <div class="node-and">
     <mat-form-field appearance="outline">
       <mat-label>Choose Property</mat-label>
       <mat-select [formControl]="nodeControl">
@@ -17,12 +18,9 @@
         </mat-optgroup>
       </mat-select>
     </mat-form-field>
-
-    <button mat-raised-button (click)="addWhere()"
-          matTooltip="Add AND argument"
-          [matTooltipPosition]="'below'">And</button>
   </div>
 
+  <div class="form-container">
     <form [formGroup]="queryForm">
       <div formArrayName="wheres">
         <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
@@ -36,7 +34,7 @@
                 </mat-select>
               </mat-form-field>
 
-            <div *ngIf="chosenNode.property.includes('date') || chosenNode.property.includes('timestamp'); else input">
+            <div *ngIf="isDate; else input">
               <div *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('RANGE'); else oneDate">
                 <mat-form-field appearance="outline">
                   <mat-label>Enter a date range</mat-label>
@@ -108,4 +106,11 @@
         </div>
       </div>
     </form>
+
+    <button mat-icon-button *ngIf="(chosenNodeProperty$ | async)" (click)="addWhere()"
+            color="primary"
+            class="and-btn"
+            matTooltip="Add AND argument"
+            [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
+  </div>
 </div>
