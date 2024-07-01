@@ -58,7 +58,7 @@ public class AssetGroups {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List Asset Groups", description = "Takes a Group Name and returns the asset metadata of assets in that group")
+    @Operation(summary = "List Asset Groups", description = "Returns a list of the existing Asset Groups")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetGroup> getListAssetGroup(){
@@ -68,6 +68,7 @@ public class AssetGroups {
     @DELETE
     @Path("/deletegroup/{groupName}")
     @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, takes the group name.")
+    @Produces(APPLICATION_JSON)
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteAssetGroup(@PathParam("groupName") String groupName){
@@ -78,6 +79,7 @@ public class AssetGroups {
     @Path("/updategroup/{groupName}")
     @Operation(summary = "Update Asset Group", description = "Updates the assets in an asset group.")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public AssetGroup updateAssetGroup(@PathParam("groupName") String groupName, List<String> assetList){

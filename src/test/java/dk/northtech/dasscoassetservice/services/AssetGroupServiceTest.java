@@ -54,6 +54,13 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     }
 
     @Test
+    void testCreateAssetGroupNoBody(){
+        AssetGroup assetGroup = null;
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body!");
+    }
+
+    @Test
     void testCreateAssetGroupNoName(){
         AssetGroup assetGroup = new AssetGroup();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup));
@@ -168,6 +175,14 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     void testUpdateGroupDoesNotExist(){
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.updateAssetGroup("asset-group-non-existent", new ArrayList<>()));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
+
+    @Test
+    void testUpdateAssetGroupNoBody(){
+        String groupName = "test-group";
+        List<String> assets = null;
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.updateAssetGroup(groupName, assets));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body!");
     }
 
     @Test

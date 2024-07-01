@@ -24,6 +24,10 @@ public class AssetGroupService {
 
     public void createAssetGroup(AssetGroup assetGroup){
 
+        if(assetGroup == null){
+            throw new IllegalArgumentException("Empty body!");
+        }
+
         // Check fields:
         if (assetGroup.group_name == null || assetGroup.group_name.isEmpty()){
             throw new IllegalArgumentException("Asset group needs a name!");
@@ -77,6 +81,11 @@ public class AssetGroupService {
     }
 
     public AssetGroup updateAssetGroup(String groupName, List<String> assetList){
+
+        if (assetList == null){
+            throw new IllegalArgumentException("Empty body!");
+        }
+
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isEmpty()) {
             throw new IllegalArgumentException("Asset group does not exist!");
