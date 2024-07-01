@@ -1,0 +1,21 @@
+<div class="container">
+  <div *ngIf="!first">
+    <p>or</p>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      <ng-template #queryBuilderContainer></ng-template>
+      <!--  <div *ngIf="(nodes$ | async) as nodes" class="input-container">-->
+      <button mat-mini-fab (click)="addWhere()"
+              matTooltip="New property"
+              [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
+      <!--  </div>-->
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-mini-fab (click)="removeComponent()"
+              matTooltip="Remove all"
+              [matTooltipPosition]="'below'">Remove</button>
+    </mat-card-actions>
+  </mat-card>
+</div>

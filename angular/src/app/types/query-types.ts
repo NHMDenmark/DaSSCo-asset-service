@@ -1,45 +1,5 @@
 import {Moment} from "moment-timezone";
 
-export interface GraphStatsV2 {
-  institutes: Map<string, number>;
-  pipelines: Map<string, number>;
-  workstations: Map<string, number>;
-}
-
-export interface Institute {
-  id: number;
-  label: string;
-  name: string;
-  ocrText: string;
-  taxonName?: string;
-  geographicRegion?: string;
-}
-
-export interface InternalStatusDataSource {
-  status: 'COMPLETED' | 'PENDING' | 'FAILED';
-  no: number;
-}
-
-export enum ViewV2 {
-  WEEK = 1,
-  MONTH = 2,
-  YEAR = 3,
-  EXPONENTIAL = 4
-}
-
-export enum StatValue {
-  INSTITUTE,
-  PIPELINE,
-  WORKSTATION
-}
-
-export enum ChartDataTypes {
-  INCREMENTAL = 'incremental',
-  EXPONENTIAL = 'exponential'
-}
-
-export const defaultView = 1; // Weekly fluctuation.
-
 export interface Query {
   select: string | undefined;
   where: QueryField[];
@@ -51,6 +11,37 @@ export interface QueryField {
   property: string;
   value: string;
 }
+
+// v2
+
+export interface QueryV2 {
+  select: string | undefined;
+  where: QueryWhere[];
+}
+
+export interface QueryWhere {
+  property: string;
+  fields: QueryInner[];
+}
+
+export interface QueryInner {
+  operator: string;
+  value: string;
+}
+
+export interface QueryResponse {
+  id: number;
+  query: QueryV2[];
+}
+
+export interface QueryView {
+  node: string;
+  property: string;
+  fields: QueryInner[];
+}
+
+
+// end v2
 
 export interface Asset {
   asset_pid: string | undefined;
@@ -117,14 +108,3 @@ export enum WorkstationStatus {
   OUT_OF_SERVICE
 }
 
-export const CUSTOM_DATE_FORMAT = {
-  parse: {
-    dateInput: 'DD-MM-YYYY'
-  },
-  display: {
-    dateInput: 'DD-MM-YYYY',
-    monthYearLabel: 'MMM YYYY',
-    dateA11yLabel: 'DD-MM-YYYY',
-    monthYearA11yLabel: 'MMM YYYY'
-  }
-};

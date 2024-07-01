@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
-import {Asset, Query} from "../types";
+import {Asset, QueryResponse} from "../types/query-types";
 
 @Injectable({
   providedIn: 'root'
@@ -24,11 +24,13 @@ export class QueriesService {
         })
       );
 
-  getNodesFromQuery(query: Query[], limit: number): Observable<Asset[] | undefined> {
+  getNodesFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, query, {headers: {'Authorization': 'Bearer ' + token}})
+          console.log(queries)
+          console.log(JSON.stringify(queries))
+          return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
               catchError(this.handleError(`get ${this.baseUrl}/${limit}`, undefined))
             );

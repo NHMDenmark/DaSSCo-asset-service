@@ -17,6 +17,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,14 @@ public class Queries {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getNodeProperties(Query[] queries, @PathParam("limit") int limit) {
+    public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit) {
+        System.out.println(queries);
+//        queries.forEach((val, key) -> {
+//            System.out.println(val);
+//            System.out.println(key);
+//        });
+        System.out.println(Arrays.asList(queries));
+//        return new ArrayList<>();
         return this.queriesService.unwrapQuery(Arrays.asList(queries), limit);
     }
 }

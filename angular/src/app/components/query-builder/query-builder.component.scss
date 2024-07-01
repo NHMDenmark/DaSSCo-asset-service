@@ -1,39 +1,31 @@
+@import 'src/style/base';
+
 .container {
   display: flex;
-  flex-direction: column;
 
-  mat-card {
-    margin-bottom: 1rem;
-    width: 80%;
+  .node-or {
+    display: flex;
+    flex-direction: column;
+  }
 
-    mat-card-content {
-      display: flex;
-      width: 100%;
-      margin-bottom: 0;
-
-      mat-form-field {
-        margin-right: .5rem;
-      }
-
-      .form-div {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-
-        .small-input {
-          width: 3rem;
-        }
-      }
+    mat-form-field {
+      margin-right: .5rem;
     }
 
-    mat-card-actions {
-      margin-left: 0;
-      margin-bottom: 0;
+    .form-div {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: start;
+      justify-content: center;
 
-      button {
-        margin-right: .5rem;
+      .small-input {
+        width: 3rem;
+      }
+
+      .save-btn:disabled {
+        background-color: $primaryColor;
+        color: white;
       }
     }
   }
-}
