@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from "../../services/queries.service";
-import {filter, iif, map, Observable, of, take} from "rxjs";
+import {filter, iif, map, Observable, of} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
 import {Asset, QueryV2, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
@@ -17,8 +17,8 @@ export class QueriesComponent implements OnInit {
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
-  // nodes: Map<string, string[]> | undefined;
   queries: Map<number, QueryView[]> = new Map;
+  cachedQueries: Map<number, Map<number, string>> = new Map;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -52,7 +52,14 @@ export class QueriesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.newSelect()); // just adding the initial where. yet to find better way...
+    const forms = Object.keys(localStorage).filter(key => key.includes('forms-'));
+    console.log(forms.length)
+    if (forms.length > 0) {
+      forms.forEach(() => this.newSelect())
+    } else {
+      this.newSelect();
+    }
+    // this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.newSelect()); // just adding the initial where. yet to find better way...
   }
 
   newSelect() {
@@ -60,9 +67,16 @@ export class QueriesComponent implements OnInit {
       const newComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
       newComponent.instance.nodes = localStorage.getItem('nodeProperties') != null ? new Map(JSON.parse(localStorage.getItem('nodeProperties')!)) : new Map()
       newComponent.instance.first = this.queryHandlerEle.length <= 1;
-      newComponent.instance.saveQueryEvent.subscribe(queries => this.saveQuery(queries, this.queryHandlerEle!.indexOf(newComponent.hostView)));
+      newComponent.instance.idx = this.queryHandlerEle!.indexOf(newComponent.hostView);
+      newComponent.instance.saveQueryEvent.subscribe(queries => {
+        this.saveQuery(queries, this.queryHandlerEle!.indexOf(newComponent.hostView));
+        this.cachedQueries.set(this.queryHandlerEle!.indexOf(newComponent.hostView), newComponent.instance.formMap);
+        localStorage.setItem('views', JSON.stringify(Array.from(this.cachedQueries.entries())));
+      });
       newComponent.instance.removeComponentEvent.subscribe(() => {
         this.removeQueryComponent(this.queryHandlerEle!.indexOf(newComponent.hostView));
+        this.cachedQueries.delete(this.queryHandlerEle!.indexOf(newComponent.hostView));
+        localStorage.setItem('views', JSON.stringify(Array.from(this.cachedQueries.entries())));
         newComponent.destroy();
       });
     }
@@ -74,6 +88,7 @@ export class QueriesComponent implements OnInit {
 
   saveQuery(queries: QueryView[], index: number) {
     this.queries.set(index, queries);
+    console.log(this.queries)
   }
 
   save() {

@@ -40,6 +40,11 @@ export interface QueryView {
   fields: QueryInner[];
 }
 
+export interface NodeProperty {
+  node: string;
+  property: string;
+}
+
 
 // end v2
 

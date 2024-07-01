@@ -4,24 +4,24 @@
             matTooltip="Delete whole clause for Node"
             [matTooltipPosition]="'below'"><mat-icon>delete_forever</mat-icon></button>
 
-  <div class="node-and">
-    <mat-form-field appearance="outline">
-      <mat-label>Choose Property</mat-label>
-      <mat-select [formControl]="nodeControl">
-        <mat-select-trigger>
-          {{nodeControl.value?.node}} -> {{nodeControl.value?.property}}
-        </mat-select-trigger>
-        <mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
-          <mat-option *ngFor="let property of n.value" [value]="{node: n.key, property: property}">
-            {{property}}
-          </mat-option>
-        </mat-optgroup>
-      </mat-select>
-    </mat-form-field>
-  </div>
-
   <div class="form-container">
     <form [formGroup]="queryForm">
+      <div class="node-and">
+        <mat-form-field appearance="outline">
+          <mat-label>Choose Property</mat-label>
+          <mat-select formControlName="node" [compareWith]="compareNodeProperty">
+            <mat-select-trigger>
+              {{queryForm.controls.node.value?.node}} -> {{queryForm.controls.node.value?.property}}
+            </mat-select-trigger>
+            <mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
+              <mat-option *ngFor="let property of n.value" [value]="{node: n.key, property: property}">
+                {{property}}
+              </mat-option>
+            </mat-optgroup>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
       <div formArrayName="wheres">
         <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
           <div *ngIf="(chosenNodeProperty$ | async) as chosenNode" class="form-div">

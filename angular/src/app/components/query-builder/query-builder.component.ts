@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {QueryInner, QueryView} from "../../types/query-types";
+import {NodeProperty, QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
 import {BehaviorSubject} from "rxjs";
 import {Moment} from "moment-timezone";
@@ -25,17 +25,40 @@ export class QueryBuilderComponent {
     'IN'
   ]
   operators: string[] = [];
-  chosenNodePropertySubject = new BehaviorSubject<{ node: string, property: string } | undefined>(undefined);
+  chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
   chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
   isDate = false;
+
+  @Input()
+  set jsonForm(json: string | undefined) {
+    if (json) {
+      console.log(json)
+      console.log(JSON.parse(json))
+      const wheres = JSON.parse(json).wheres;
+      // this.queryForm.patchValue(JSON.parse(json));
+      this.queryForm.controls.node.patchValue(JSON.parse(json).node);
+      this.wheres.clear();
+      wheres.forEach((where: any) => {
+        console.log(where)
+        this.wheres.push(this.fb.group(where));
+        // console.log(where)
+        // console.log(JSON.parse(where))
+        // this.wheres.push(where)
+      })
+
+      // this.queryForm.patchValue({node: JSON.parse(json).node, wheres: JSON.parse(json).wheres});
+      // this.wheres.patchValue(JSON.parse(json).wheres)
+      // console.log(JSON.parse(json).wheres)
+      // this.queryForm.patchValue(JSON.parse(json));
+    }
+  }
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();
 
-  nodeControl = new FormControl({} as { node: string, property: string });
-
   queryForm = this.fb.group({
+    node: new FormControl<NodeProperty | null>(null),
     wheres: this.fb.array([
       this.fb.group({
         operator: new FormControl(null, Validators.required),
@@ -51,31 +74,34 @@ export class QueryBuilderComponent {
     return this.queryForm.get('wheres') as FormArray;
   }
 
+  get chosenNode() {
+    return this.queryForm.get('node') as FormControl;
+  }
+
   constructor(private fb: FormBuilder) {
-    this.nodeControl.valueChanges.subscribe((nodeChoice) => {
-      if (nodeChoice) {
+    this.chosenNode.valueChanges.subscribe(choice => {
+      if (choice) {
         if (!this.wheres.pristine) {
           if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
             this.wheres.clear();
+            console.log('hudshfjkdshkj')
             this.addWhere();
           } else {
             this.wheres.reset();
           }
         }
-        this.chosenNodePropertySubject.next(nodeChoice);
-        this.updateOperators(nodeChoice.property);
+        this.chosenNodePropertySubject.next(choice);
+        this.updateOperators(choice.property);
       }
     })
   }
 
-  save(childIdx: number) {
+  save(childIdx: number | undefined) {
     let innerList: QueryInner[] = [];
-    let node = this.nodeControl.value?.node;
 
     this.wheres.controls.forEach(where => {
       let value;
 
-      console.log(where.get('isDate')?.value)
       if (this.isDate) {
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
@@ -94,13 +120,14 @@ export class QueryBuilderComponent {
         value: value
       } as QueryInner;
       innerList.push(newQueryField);
-      console.log(where)
     })
 
-    this.wheres.at(childIdx).markAsUntouched();
+    if (childIdx != undefined) this.wheres.at(childIdx).markAsUntouched();
+    localStorage.setItem('form', JSON.stringify(this.queryForm.value));
+
     this.saveQueryEvent.emit({
-      node: node ? node : '',
-      property: this.nodeControl.value ? this.nodeControl.value.property : '',
+      node: this.chosenNode.value.node,
+      property: this.chosenNode.value.property,
       fields: innerList
     });
   }
@@ -136,5 +163,10 @@ export class QueryBuilderComponent {
     } else {
       this.wheres.removeAt(index);
     }
+    this.save(undefined);
+  }
+
+  compareNodeProperty(o1: any, o2: any): boolean {
+    return !!(o1 && o2 && o1.node == o2.node && o1.property == o2.property);
   }
 }
