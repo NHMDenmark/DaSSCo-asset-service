@@ -21,6 +21,7 @@ export class DetailedViewComponent implements OnInit {
 
   assetGuid: string = "";
   currentIndex : number = -1;
+  // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
   assetList: string[] = ['test-1', 'test-2', 'test-3']
   dataLoaded: boolean = false;
 

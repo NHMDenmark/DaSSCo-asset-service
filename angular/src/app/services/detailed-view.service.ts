@@ -21,7 +21,7 @@ export class DetailedViewService {
         switchMap((token) => {
           return this.http.get<Asset>(`${this.assetUrl}/api/v1/assetmetadata/${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.assetUrl}/api/v1/assetmetadata/test-2`, undefined))
+              catchError(this.handleError(`get ${this.assetUrl}/api/v1/assetmetadata/${assetGuid}`, undefined))
             );
         })
       );
@@ -33,7 +33,7 @@ export class DetailedViewService {
         switchMap((token) => {
           return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
             .pipe(
-              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/institution_1/i1_c1/test-2/test-2_thumbnail.png`, undefined))
+              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${thumbnail}`, undefined))
             )
         })
     )
@@ -45,7 +45,7 @@ export class DetailedViewService {
         switchMap((token) => {
           return this.http.get<string[]>(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/institution_1/i1_c1/test-2`, undefined))
+              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}`, undefined))
             )
         })
       )
