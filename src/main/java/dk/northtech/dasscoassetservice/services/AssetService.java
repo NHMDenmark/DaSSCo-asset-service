@@ -1,20 +1,20 @@
 package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
+import org.apache.age.jdbc.base.type.AgtypeListBuilder;
+import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,6 +79,16 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
         return true;
+    }
+
+    public void deleteAssetMetadata(String assetGuid){
+        // Check that the asset exists:
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()){
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+
+        jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
     }
 
     public boolean unlockAsset(String assetGuid) {
@@ -198,6 +208,220 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
         return existing;
+    }
+
+    public void bulkUpdate(List<String> assetList, Asset updatedAsset){
+        // TODO: Don't forget corner cases!!!!!!
+        // TODO: Remove specimens and insert the new ones. How?
+
+        // UpdateUser must be present:
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
+            throw new IllegalArgumentException("Update user must be provided!");
+        }
+
+        if (assetList.isEmpty()){
+            throw new IllegalArgumentException("Assets to update cannot be empty.");
+        }
+
+        // Check if all the assets exist:
+        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+
+        if (assets.size() != assetList.size()){
+            throw new IllegalArgumentException("One or more assets were not found!");
+        }
+
+        // Validate the Update fields:
+        validateAsset(updatedAsset);
+
+        // Parent_guid does not exist:
+        if (updatedAsset.parent_guid != null){
+            Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
+            if (!optParent.isPresent()){
+                throw new IllegalArgumentException("asset_parent does not exist!");
+            }
+        }
+
+        // Do not allow unlocking:
+        if (!updatedAsset.asset_locked){
+            for (Asset asset : assets) {
+                if (asset.asset_locked){
+                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+                }
+            }
+        }
+
+        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
+        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
+
+        // Create the new BULK_UPDATE_ASSET_METADATA event:
+        Event event = new Event();
+        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
+        event.user = updatedAsset.updateUser;
+        event.workstation = updatedAsset.workstation;
+        event.pipeline = updatedAsset.pipeline;
+        event.timeStamp = Instant.now();
+
+
+        // Detaching specimens:
+        Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
+
+        assets.forEach(assetToUpdate -> {
+            Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+            List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+            assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
+            assetAndSpecimens.put(assetToUpdate, specimensToDetach);
+        });
+
+        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
+
+    }
+
+    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+
+        if (!updatedFields.file_formats.isEmpty()){
+            AgtypeListBuilder fileFormats = new AgtypeListBuilder();
+            updatedFields.file_formats.forEach(x -> fileFormats.add(x.name()));
+            builder.add("file_formats", fileFormats.build());
+        }
+
+        if (!updatedFields.tags.isEmpty()){
+            AgtypeMapBuilder tags = new AgtypeMapBuilder();
+            updatedFields.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+            builder.add("tags", tags.build());
+        }
+
+        if (!updatedFields.restricted_access.isEmpty()){
+            AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+            updatedFields.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+            builder.add("restricted_access", restrictedAcces.build());
+        }
+
+        if (updatedFields.status != null){
+            builder.add("status", updatedFields.status.name());
+        }
+
+        if (updatedFields.funding != null){
+            builder.add("funding", updatedFields.funding);
+        }
+
+        if (updatedFields.subject != null){
+            builder.add("subject", updatedFields.subject);
+        }
+
+        if (updatedFields.payload_type != null){
+            builder.add("payload_type", updatedFields.payload_type);
+        }
+
+        if (updatedFields.parent_guid != null){
+            builder.add("parent_id", updatedFields.parent_guid);
+        }
+
+        if (updatedFields.asset_locked) {
+            builder.add("asset_locked", true);
+        }
+        if (updatedFields.date_asset_finalised != null) {
+            builder.add("date_asset_finalised", updatedFields.date_asset_finalised.toEpochMilli());
+        }
+        if (updatedFields.digitiser != null) {
+            builder.add("digitiser", updatedFields.digitiser);
+        }
+
+        builder
+                .add("user", updatedFields.updateUser)
+                .add("collection_name", updatedFields.collection)
+                .add("workstation_name", updatedFields.workstation)
+                .add("pipeline_name", updatedFields.pipeline);
+
+        return builder;
+    }
+
+    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
+
+        String assetListAsString = assetList.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (c:Collection {name: $collection_name})
+                            MATCH (w:Workstation {name: $workstation_name})
+                            MATCH (p:Pipeline {name: $pipeline_name})
+                            MATCH (a:Asset)
+                            WHERE a.asset_guid IN [%s]
+                            OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
+                            DELETE co
+                            
+                            SET
+                """;
+
+        if (updatedFields.funding != null){
+            sql = sql + """
+                                a.funding = $funding,
+                    """;
+        }
+        if (updatedFields.subject != null){
+            sql = sql + """
+                                a.subject = $subject,
+                    """;
+        }
+        if (updatedFields.payload_type != null){
+            sql = sql + """
+                                a.payload_type = $payload_type,
+                    """;
+        }
+        if (!updatedFields.tags.isEmpty()){
+            sql = sql + """
+                                a.tags = $tags,
+                    """;
+        }
+        if (updatedFields.status != null){
+            sql = sql + """
+                                a.status = $status,
+                    """;
+        }
+        if (!updatedFields.file_formats.isEmpty()){
+            sql = sql + """
+                                a.file_formats = $file_formats,
+                    """;
+        }
+        if (!updatedFields.restricted_access.isEmpty()){
+            sql = sql + """
+                                a.restricted_access = $restricted_access,
+                    """;
+        }
+        if (updatedFields.date_asset_finalised != null){
+            sql = sql + """
+                                a.date_asset_finalised = $date_asset_finalised,
+                    """;
+        }
+        if (updatedFields.parent_guid != null){
+            sql = sql + """
+                                a.parent_id = $parent_id,
+                    """;
+        }
+        // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
+        if (updatedFields.asset_locked){
+            sql = sql + """
+                                a.asset_locked = $asset_locked,
+                    """;
+        }
+        if (updatedFields.digitiser != null){
+            sql = sql + """
+                                a.digitiser = $digitiser,
+                    """;
+        }
+        // AFTER PIPELINE IS NEW: DELETE IF IT DOES NOT WORK.
+        sql = sql + """
+                            a.collection = $collection_name,
+                            a.workstation = $workstation_name,
+                            a.pipeline = $pipeline_name
+                        $$
+                        , #params) as (a agtype);
+                """;
+
+        return sql.formatted(assetListAsString);
     }
 
     void validateAssetFields(Asset a) {

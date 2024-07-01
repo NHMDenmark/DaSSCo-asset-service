@@ -1,6 +1,7 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {Subject, takeUntil} from "rxjs";
+import {AssetService, FileProxy} from "../../utility";
 
 @Component({
   selector: 'dassco-docs',
@@ -9,10 +10,12 @@ import {Subject, takeUntil} from "rxjs";
 })
 export class DocsComponent implements OnInit, OnDestroy {
   #componentDestroyed!: Subject<unknown>;
+  private readonly proxyUrl = inject(FileProxy);
+  private readonly assetUrl = inject(AssetService);
   selectedDoc : string;
   urls : { label: string, value: string }[] = [
-    { label: "dassco-asset-service", value: "/api/openapi.json" },
-    { label: "dassco-file-proxy", value: "http://localhost:8080/file_proxy/api/openapi.json"}
+    { label: "dassco-asset-service", value: this.assetUrl + "/api/openapi.json" },
+    { label: "dassco-file-proxy", value: this.proxyUrl + "/file_proxy/api/openapi.json"}
   ]
   constructor(private oidcSecurityService: OidcSecurityService) {
     this.selectedDoc = this.urls[0].value;

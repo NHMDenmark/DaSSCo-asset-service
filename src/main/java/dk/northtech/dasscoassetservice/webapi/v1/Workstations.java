@@ -51,7 +51,7 @@ public class Workstations {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Workstation.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Workstation createWorkstation(@PathParam("institutionName") String institutionName, Workstation in) {
-        return this.workstationService.createWorkStation(institutionName, new Workstation(in.name(), in.status(), institutionName));
+        return this.workstationService.createWorkStation(institutionName, in);
     }
 
     @PUT
@@ -64,6 +64,6 @@ public class Workstations {
     @ApiResponse(responseCode = "204", description = "No Content. The Update was successfull")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void updateWorkstation(@PathParam("institutionName") String institutionName, Workstation in) {
-        this.workstationService.updateWorkstation(new Workstation(in.name(),in.status(),institutionName));
+        this.workstationService.updateWorkstation(in, institutionName);
     }
 }

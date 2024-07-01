@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 //@Repository
@@ -69,6 +70,8 @@ public interface AssetRepository extends SqlObject {
         for (Event event : events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
+            } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null){
+                asset1.date_metadata_updated = event.timeStamp;
             } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
                 asset1.date_metadata_updated = event.timeStamp;
             } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
@@ -82,12 +85,37 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
+    default List<Asset> readMultipleAssets(List<String> assets){
+        boilerplate();
+        return readMultipleAssetsInternal(assets);
+    }
+
+    @Transaction
     default Asset updateAsset(Asset asset, List<Specimen> specimenToDetach) {
         boilerplate();
         update_asset_internal(asset);
         connectParentChild(asset.parent_guid, asset.asset_guid);
         createSpecimenRepository().persistSpecimens(asset, specimenToDetach);
         return asset;
+    }
+
+    @Transaction
+    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens){
+        boilerplate();
+        // Update asset metadata:
+        bulkUpdateAssets(sql, builder);
+        // Add Event to every asset:
+        // TODO: This is a solution for the bulk update, but it takes individual calls.
+        for (Map.Entry<Asset, List<Specimen>> entry : assetAndSpecimens.entrySet()) {
+            Asset asset = entry.getKey();
+            List<Specimen> specimenList = entry.getValue();
+            // Set event (individual calls)
+            setEvent(updatedAsset.updateUser, event, asset);
+            // Connect parent and child (individual calls)
+            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
+            // Detach and persist the specimens (individual calls).
+            createSpecimenRepository().persistSpecimens(asset, specimenList);
+        }
     }
 
     @Transaction
@@ -185,6 +213,87 @@ public interface AssetRepository extends SqlObject {
                     .map(new AssetMapper())
                     .findOne();
         });
+    }
+
+
+    default List<Asset> readMultipleAssetsInternal(List<String> assets){
+        String assetListAsString = assets.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                    , $$
+                         MATCH (a:Asset)
+                         WHERE a.asset_guid IN [%s]
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                         MATCH (e:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(a)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e)
+                         MATCH (p:Pipeline)<-[:USED]-(e)
+                         MATCH (w:Workstation)<-[:USED]-(e)
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a)
+                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         RETURN a.asset_guid
+                         , a.asset_pid
+                         , a.status
+                         , a.multi_specimen
+                         , a.funding
+                         , a.subject
+                         , a.payload_type
+                         , a.file_formats
+                         , a.asset_taken_date
+                         , a.internal_status
+                         , a.asset_locked
+                         , pa.asset_guid
+                         , a.restricted_access
+                         , a.tags
+                         , a.error_message
+                         , a.error_timestamp
+                         , collect(s)
+                         , i.name
+                         , c.name
+                         , p.name
+                         , w.name
+                         , e.timestamp
+                         , a.date_asset_finalised
+                         , u.name
+                         , a.date_metadata_taken
+                         , a.date_asset_taken
+                      $$
+                    )
+                    as (asset_guid agtype
+                    , asset_pid agtype
+                    , status agtype
+                    , multi_specimen agtype
+                    , funding agtype
+                    , subject agtype
+                    , payload_type agtype
+                    , file_formats agtype
+                    , asset_taken_date agtype
+                    , internal_status agtype
+                    , asset_locked agtype
+                    , parent_guid agtype
+                    , restricted_access agtype
+                    , tags agtype
+                    , error_message agtype
+                    , error_timestamp agtype
+                    , specimens agtype
+                    , institution_name agtype
+                    , collection_name agtype
+                    , pipeline_name agtype
+                    , workstation_name agtype
+                    , creation_date agtype
+                    , date_asset_finalised agtype
+                    , user_name agtype
+                    , date_metadata_taken agtype
+                    , date_asset_taken agtype);
+                  """.formatted(assetListAsString);
+
+        return withHandle(handle -> handle.createQuery(sql)
+                .map(new AssetMapper())
+                .list());
     }
 
 
@@ -473,6 +582,79 @@ public interface AssetRepository extends SqlObject {
             throw new RuntimeException(e);
         }
         return asset;
+    }
+
+    @Transaction
+    default void deleteAsset(String assetGuid){
+        boilerplate();
+        // Deletes Asset and removes connections to Specimens and Events.
+        // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
+        internal_deleteAsset(assetGuid);
+    }
+
+    default void internal_deleteAsset(String assetGuid){
+        // Deletes Asset
+        String sqlAsset = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (a:Asset {name: $asset_guid})
+                    DETACH DELETE a
+                $$
+                , #params) as (a agtype);
+                """;
+        // Deletes orphaned Specimens:
+        String sqlSpecimen = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (s:Specimen)
+                    WHERE NOT EXISTS((s)-[:USED_BY]-())
+                    DETACH DELETE s
+                $$
+                ) as (s agtype);
+                """;
+        // Deletes orphaned Events:
+        String sqlEvent = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                , $$
+                    MATCH (e:Event)
+                    WHERE NOT EXISTS((e)-[:CHANGED_BY]-())
+                    DETACH DELETE e
+                $$
+                ) as (e agtype);
+                """;
+
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("asset_guid", assetGuid);
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sqlAsset)
+                        .bind("params", agtype)
+                        .execute();
+                handle.createUpdate(sqlSpecimen)
+                        .execute();
+                handle.createUpdate(sqlEvent)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transaction
+    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder){
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Transaction

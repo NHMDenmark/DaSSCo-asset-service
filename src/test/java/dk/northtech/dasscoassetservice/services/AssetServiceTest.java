@@ -7,10 +7,13 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.bouncycastle.tsp.TSPUtil;
 import org.junit.jupiter.api.TestClassOrder;
 
 import javax.validation.constraints.Min;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,7 +79,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testAuditAssetAssetMustExist(){
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.auditAsset(new Audit("Karl-Børge"), "non-existent-asset"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
-    }
+}
 
     @Test
     void testAuditAssetHasToBeComplete(){
@@ -442,6 +445,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         createAsset = assetService.persistAsset(createAsset, user, 11);
+
         createAsset.updateUser = "Uffe Updater";
         createAsset.asset_locked = true;
         assetService.updateAsset(createAsset);
@@ -449,6 +453,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset finalCreateAsset = createAsset;
         DasscoIllegalActionException illegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(finalCreateAsset));
         assertThat(illegalActionException.getMessage()).isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+
     }
 
     @Test
@@ -500,7 +505,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.specimens).hasSize(1);
 
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
-        Specimen specimen = result.specimens.get(0);
+         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
     }
@@ -684,6 +689,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateWithMaxNull");
         assertThat(resultOpt.isPresent()).isTrue();
     }
+
     //We have had some troubles with reading null values from the database this test should give error if any of the nullable fields cause null pointers
     @Test
     void createAssetMaxNulls() {
@@ -702,7 +708,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(resultOpt.isPresent()).isTrue();
     }
 
-//    @Test
+    //    @Test
 //    void testParentRestricted() {
 //        Asset createAsset = getTestAsset("testParentRestricted");
 //        createAsset.specimen_barcodes = Arrays.asList("testParentRestricted-sp-1");
@@ -748,6 +754,29 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(retrievedAsset.status.toString()).isEqualTo("BEING_PROCESSED");
     }
 
+    @Test
+    void testDeleteAssetMetadata(){
+        Asset asset = getTestAsset("test-delete-asset-metadata");
+        asset.asset_pid = "test-delete-asset-metadata-pid";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        assetService.persistAsset(asset, user, 1);
+        assetService.deleteAssetMetadata(asset.asset_guid);
+        Optional<Asset> optionalAsset = assetService.getAsset(asset.asset_guid);
+        assertThat(optionalAsset.isPresent()).isFalse();
+        List<Event> assetEvents = assetService.getEvents(asset.asset_guid);
+        assertThat(assetEvents.size()).isEqualTo(0);
+    }
+
+    @Test
+    void testDeleteAssetMetadataNonExistentAsset(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAssetMetadata("non-existent-asset"));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
@@ -760,5 +789,215 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         return asset;
+    }
+
+    @Test
+    void testBulkUpdate(){
+        // Create three different assets
+        Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-1");
+        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-2");
+
+        assetService.persistAsset(firstAsset, user, 1);
+        assetService.persistAsset(secondAsset, user, 1);
+
+        Asset updatedAsset = getBulkUpdateAsset();
+
+        Optional<Asset> optionalFirstAsset = assetService.getAsset("bulk-asset-1");
+        Optional<Asset> optionalSecondAsset = assetService.getAsset("bulk-asset-2");
+        assertThat(optionalFirstAsset.isPresent()).isTrue();
+        assertThat(optionalSecondAsset.isPresent()).isTrue();
+        Asset persistedFirstAsset = optionalFirstAsset.get();
+        Asset persistedSecondAsset = optionalSecondAsset.get();
+
+        assertThat(persistedFirstAsset.events.size()).isEqualTo(1);
+        assertThat(persistedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+        assertThat(persistedSecondAsset.events.size()).isEqualTo(1);
+        assertThat(persistedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+
+        // Create list of assets to be updated:
+        List<String> assetList = new ArrayList<>();
+        assetList.add("bulk-asset-1");
+        assetList.add("bulk-asset-2");
+        // Update assets with the new asset information:
+        assetService.bulkUpdate(assetList, updatedAsset);
+
+        Optional<Asset> optionalUpdatedFirstAsset = assetService.getAsset("bulk-asset-1");
+        Optional<Asset> optionalUpdatedSecondAsset = assetService.getAsset("bulk-asset-2");
+
+        assertThat(optionalUpdatedFirstAsset.isPresent()).isTrue();
+        assertThat(optionalUpdatedSecondAsset.isPresent()).isTrue();
+
+        Asset updatedFirstAsset = optionalUpdatedFirstAsset.get();
+        Asset updatedSecondAsset = optionalUpdatedSecondAsset.get();
+
+        // Finally, the assertions:
+        // Status changed:
+        assertThat(updatedFirstAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
+        assertThat(updatedSecondAsset.status).isEqualTo(AssetStatus.BEING_PROCESSED);
+        // Events changed (only one event for BULK_UPDATE_ASSET_METADATA):
+        assertThat(updatedFirstAsset.events.size()).isEqualTo(2);
+        assertThat(updatedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        assertThat(updatedSecondAsset.events.size()).isEqualTo(2);
+        assertThat(updatedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        // Specimens changed:
+        assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
+        // Funding changed:
+        assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        // Subject changed:
+        assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
+        assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
+        // Payload type changed:
+        assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
+        assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
+        // File formats changed:
+        assertThat(updatedFirstAsset.file_formats.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
+        assertThat(updatedSecondAsset.file_formats.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
+        // Asset locked changed:
+        assertThat(updatedFirstAsset.asset_locked).isTrue();
+        assertThat(updatedSecondAsset.asset_locked).isTrue();
+        // Restricted access changed:
+        assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
+        assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(Role.DEVELOPER);
+        // Tags changed:
+        assertThat(updatedFirstAsset.tags.size()).isEqualTo(1);
+        assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
+        // Date asset finalised changed:
+        assertThat(updatedFirstAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
+        assertThat(updatedSecondAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
+    }
+
+    @Test
+    void testBulkUpdateOneAssetNotFound(){
+        // Create three different assets
+        Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
+        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
+
+        assetService.persistAsset(firstAsset, user, 1);
+
+        Asset updatedAsset = getBulkUpdateAsset();
+
+        // Create list of assets to be updated:
+        List<String> assetList = new ArrayList<String>();
+        assetList.add("bulk-asset-exists");
+        assetList.add("bulk-asset-does-not");
+        // Update assets with the new asset information:
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
+    }
+
+    @Test
+    void testBulkUpdateNoAssetParent(){
+
+        Asset toBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent");
+        Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent-2");
+        assetService.persistAsset(toBeUpdated, user, 1);
+        assetService.persistAsset(secondToBeUpdated, user, 1);
+
+        Asset updatedAsset = getBulkUpdateAsset();
+        updatedAsset.parent_guid = "this-does-not-exist";
+
+        List<String> listOfAssets = Arrays.asList("bulk-update-no-parent", "bulk-update-no-parent-2");
+
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(listOfAssets, updatedAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_parent does not exist!");
+
+        Optional<Asset> optNotUpdated = assetService.getAsset("bulk-update-no-parent-2");
+        assertThat(optNotUpdated.isPresent()).isTrue();
+        Asset notUpdated = optNotUpdated.get();
+        // Using funding or subject or payload_type is the easiest way to check if an asset was updated or not.
+        assertThat(notUpdated.funding).isEqualTo("funding has depleted");
+    }
+
+    @Test
+    void testBulkUpdateNoUnlockAllowed(){
+
+        Asset firstToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed");
+        Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed-2");
+        secondToBeUpdated.asset_locked = true;
+        assetService.persistAsset(firstToBeUpdated, user, 1);
+        assetService.persistAsset(secondToBeUpdated, user, 1);
+
+        Asset updatedAsset = getBulkUpdateAsset();
+        updatedAsset.asset_locked = false;
+
+        List<String> assetList = Arrays.asList("bulk-update-no-unlocking-allowed", "bulk-update-no-unlocking-allowed-2");
+
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+
+        Optional<Asset> optAsset = assetService.getAsset("bulk-update-no-unlocking-allowed");
+        assertThat(optAsset.isPresent()).isTrue();
+        Asset found = optAsset.get();
+        assertThat(found.asset_locked).isFalse();
+        Optional<Asset> optAsset2 = assetService.getAsset("bulk-update-no-unlocking-allowed-2");
+        assertThat(optAsset2.isPresent()).isTrue();
+        Asset found2 = optAsset2.get();
+        assertThat(found2.asset_locked).isTrue();
+    }
+
+    @Test
+    void testBulkUpdateNoUpdateUser(){
+
+        Asset asset = new Asset();
+        List<String> assetList = new ArrayList<>();
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, asset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided!");
+    }
+
+    public Asset getBulkUpdateAssetToBeUpdated(String guid){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-" + guid;
+        asset.asset_guid = guid;
+        asset.status = AssetStatus.WORKING_COPY;
+        asset.funding = "funding has depleted";
+        asset.subject = "subject-non-edited";
+        asset.payload_type = "payload-not-edited";
+        asset.file_formats.add(FileFormat.CR3);
+        asset.file_formats.add(FileFormat.RAF);
+        asset.restricted_access.add(Role.USER);
+        asset.restricted_access.add(Role.ADMIN);
+        asset.tags.put("Tag 1", "Value 1");
+        asset.tags.put("Tag 2", "Value 2");
+        asset.date_asset_finalised = Instant.now().minus(1, ChronoUnit.DAYS);
+        asset.digitiser = "test-user";
+        asset.updateUser = "update-user";
+
+        Specimen firstSpecimen = new Specimen("barcode-specimen-1", "pid-specimen-1", "image");
+        Specimen secondSpecimen = new Specimen("barcode-specimen-2", "pid-specimen-2", "image");
+        List<Specimen> specimenList = Arrays.asList(firstSpecimen, secondSpecimen);
+
+        asset.specimens = specimenList;
+
+        return asset;
+    }
+
+    public Asset getBulkUpdateAsset(){
+        Asset updatedAsset = getTestAsset("updatedAsset");
+        updatedAsset.institution = "institution_2";
+        updatedAsset.pipeline = "i2_p1";
+        updatedAsset.workstation = "i2_w1";
+        updatedAsset.collection = "i2_c1";
+        updatedAsset.status = AssetStatus.BEING_PROCESSED;
+        Specimen specimen = new Specimen("BULK_UPDATE_TEST", "pid-BULK_UPDATE_TEST", "text");
+        List<Specimen> specimenList = new ArrayList<>();
+        specimenList.add(specimen);
+        updatedAsset.specimens = specimenList;
+        updatedAsset.asset_locked = true;
+        updatedAsset.restricted_access.add(Role.DEVELOPER);
+        updatedAsset.tags.put("Tag 3", "Value 3");
+        updatedAsset.date_asset_finalised = Instant.now();
+        return updatedAsset;
     }
 }

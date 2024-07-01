@@ -158,6 +158,20 @@ public class Assetupdates {
         return this.assetService.updateAsset(asset);
     }
 
+    @PUT
+    @Path("/bulkUpdate")
+    @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void bulkUpdate(Asset asset,
+                           @QueryParam("assets") List<String> assetGuids){
+        // Pass an asset (the fields to be updated) and a list of assets to be updated.
+        // Return type?
+        // Roles Allowed?
+        this.assetService.bulkUpdate(assetGuids, asset);
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
@@ -179,5 +193,14 @@ public class Assetupdates {
     @Path("/{assetGuid}")
     public void deleteAsset(@PathParam("assetGuid") String assetGuid , @Context SecurityContext securityContext) {
         this.assetService.deleteAsset(assetGuid, UserMapper.from(securityContext));
+    }
+
+    @DELETE
+    @Path("/{assetGuid}/deleteMetadata")
+    @Operation(summary = "Delete Asset Metadata", description = "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.")
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid){
+        this.assetService.deleteAssetMetadata(assetGuid);
     }
 }
