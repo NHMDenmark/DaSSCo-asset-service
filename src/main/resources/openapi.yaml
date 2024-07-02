@@ -244,22 +244,6 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/assetmetadata/{assetGuid}/deleteMetadata:
-    delete:
-      operationId: deleteAssetMetadata
-      parameters:
-      - name: assetGuid
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            '*/*': {}
-      security:
-      - dassco-idp: []
   /v1/assetmetadata/{assetGuid}/events:
     get:
       operationId: getEvents
@@ -1165,7 +1149,6 @@ components:
           - DELETE_ASSET_METADATA
           - METADATA_TAKEN
           - ASSET_FINALISED
-          - BULK_UPDATE_ASSET_METADATA
         pipeline:
           type: string
         workstation:
