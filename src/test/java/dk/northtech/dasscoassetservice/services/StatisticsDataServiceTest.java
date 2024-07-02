@@ -128,7 +128,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Map<GraphType, Map<String, GraphData>> beforeData = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
         Integer instSumBefore = beforeData.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
 
-        Asset createAssetNew = getTestAsset("new-year-total-asset", "institution_2", "i2_p1", 7);
+        Asset createAssetNew = getTestAsset("new-year-total-asset", "institution_2", "i2_p1", 7, "i2_c1");
         assetService.persistAsset(createAssetNew, user,11);
         Map<GraphType, Map<String, GraphData>> dataAfter = this.statisticsDataService.getCachedGraphData(GraphView.YEAR);
         Integer instSumAfter = dataAfter.get(incremental).get(currentDate).getInstitutes().values().stream().reduce(0, Integer::sum);
@@ -142,10 +142,10 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     // the id is to keep the specimens unique, otherwise we'll get errors in the amount when persisting the assets
     public Asset getTestAsset(String guid, String instituteName, int id) {
-        return getTestAsset(guid,instituteName, "i1_p1", id);
+        return getTestAsset(guid,instituteName, "i1_p1", id, "i1_c1");
     }
 
-    public Asset getTestAsset(String guid, String instituteName, String pipelineName, int id) {
+    public Asset getTestAsset(String guid, String instituteName, String pipelineName, int id, String collectionName) {
         Asset asset = new Asset();
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
@@ -162,7 +162,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.tags.put("Tag1", "value1");
         asset.tags.put("Tag2", "value2");
         asset.institution = instituteName;
-        asset.collection = "i1_c1";
+        asset.collection = collectionName;
         asset.asset_pid = "pid-createAsset";
         asset.status = AssetStatus.BEING_PROCESSED;
         return asset;

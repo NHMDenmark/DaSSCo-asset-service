@@ -28,7 +28,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.pipeline = "i2_p1";
         asset.workstation = "i2_w1";
         asset.institution = "institution_2";
-        asset.collection = "i1_c2";
+        asset.collection = "i2_c1";
         asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;
@@ -216,7 +216,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
         asset.institution = "institution_2";
-        asset.collection = "i1_c1";
+        asset.collection = "i2_c1";
         asset.asset_pid = "pid-assetEvents";
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user, 10);
@@ -293,7 +293,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
         asset.institution = "institution_2";
-        asset.collection = "i1_c1";
+        asset.collection = "i2_c1";
         asset.asset_pid = "pid-completeUploadAssetIsLocked";
         asset.status = AssetStatus.BEING_PROCESSED;
         asset.asset_locked = true;

@@ -30,6 +30,7 @@ public class AbstractIntegrationTest {
             .withEnv("POSTGRES_PASSWORD", "dassco_file_proxy");
 
     @Inject InstitutionService institutionService;
+    @Inject CollectionService collectionService;
     @Inject PipelineService pipelineService;
     @Inject StatisticsDataService statisticsDataService;
     @Inject

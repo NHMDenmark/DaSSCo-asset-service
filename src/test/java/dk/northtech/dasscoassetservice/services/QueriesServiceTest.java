@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import org.junit.jupiter.api.Test;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -22,12 +23,12 @@ class QueriesServiceTest extends AbstractIntegrationTest {
     public void unwrapQuery() {
         institutionService.createInstitution(new Institution("NNAD"));
         pipelineService.persistPipeline(new Pipeline("queryPipeline", "NNAD"), "NNAD");
-
+        collectionService.persistCollection(new Collection("n_c1", "NNAD", new ArrayList<>()));
         Asset asset = getTestAsset("auditAssetQueries");
         asset.pipeline = "queryPipeline";
         asset.workstation = "i2_w1";
         asset.institution = "NNAD";
-        asset.collection = "i1_c2";
+        asset.collection = "n_c1";
         asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
         asset.status = AssetStatus.BEING_PROCESSED;

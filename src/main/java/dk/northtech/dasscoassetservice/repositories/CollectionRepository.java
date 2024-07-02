@@ -57,7 +57,7 @@ public interface CollectionRepository extends SqlObject {
                         .bind("params", agtype)
                         .execute();
                 RoleRepository roleRepository = handle.attach(RoleRepository.class);
-                roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION, collection.name(), collection.roleRestrictions());
+                roleRepository.setRoleRestrictionCollection(collection, new Institution(collection.institution()), collection.roleRestrictions());
 
                 return handle;
             });
@@ -100,12 +100,12 @@ public interface CollectionRepository extends SqlObject {
         }
     }
 
-    default Optional<Collection> findCollection(String collectionName) {
+    default Optional<Collection> findCollection(String collectionName, String institutionName) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
-                             MATCH (c:Collection{name: $collection_name})-[USED_BY]-(i:Institution)
+                             MATCH (c:Collection{name: $collection_name})-[USED_BY]-(i:Institution{name: $institution_name})
                              OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
                              RETURN c.name, i.name, collect(r)
                            $$
@@ -119,7 +119,9 @@ public interface CollectionRepository extends SqlObject {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
-                AgtypeMap name = new AgtypeMapBuilder().add("collection_name", collectionName).build();
+                AgtypeMap name = new AgtypeMapBuilder()
+                        .add("collection_name", collectionName)
+                        .add("institution_name", institutionName).build();
                 Agtype agtype = AgtypeFactory.create(name);
                 handle.execute(DBConstants.AGE_BOILERPLATE);
                 return handle.createQuery(sql).bind("params", agtype)

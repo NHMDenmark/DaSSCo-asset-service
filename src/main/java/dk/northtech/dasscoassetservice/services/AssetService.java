@@ -441,7 +441,7 @@ public class AssetService {
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institution doesnt exist");
         }
-        Optional<Collection> collectionOpt = collectionService.findCollection(asset.collection);
+        Optional<Collection> collectionOpt = collectionService.findCollection(asset.collection, asset.institution);
         if(collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }

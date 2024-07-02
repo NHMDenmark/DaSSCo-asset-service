@@ -60,7 +60,7 @@ public class Collections {
     public Collection createInstitution(
             @PathParam("institutionName") String institutionName
             , Collection collection) {
-        return this.collectionService.persistCollection(collection, institutionName);
+        return this.collectionService.persistCollection(collection);
     }
 
     // Hidden until implemented

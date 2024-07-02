@@ -26,7 +26,7 @@ public class CollectionService {
         this.jdbi = jdbi;
     }
 
-    public Collection persistCollection(Collection collection, String institutionName) {
+    public Collection persistCollection(Collection collection) {
         if (Objects.isNull(collection)) {
             throw new IllegalArgumentException("POST method requires a body");
         }
@@ -35,7 +35,7 @@ public class CollectionService {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
 
-        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
+        Optional<Institution> ifExists = institutionService.getIfExists(collection.institution());
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institute doesnt exist");
         }
@@ -47,7 +47,7 @@ public class CollectionService {
             }
 
 
-            Collection col = new Collection(collection.name(), institutionName, collection.roleRestrictions());
+            Collection col = new Collection(collection.name(), collection.institution(), collection.roleRestrictions());
             co.persistCollection(col);
             return h;
         });
@@ -66,18 +66,19 @@ public class CollectionService {
         });
     }
 
-    public Optional<Collection> findCollection(String collectionName) {
+    public Optional<Collection> findCollection(String collectionName, String institutionName) {
         return jdbi.withHandle(handle -> {
             CollectionRepository repository = handle.attach(CollectionRepository.class);
-            return repository.findCollection(collectionName);
+            return repository.findCollection(collectionName, institutionName);
         });
     }
 
-    public void updateCollection(Collection collection) {
+    public Collection updateCollection(Collection collection) {
         jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
             return h;
         });
+        return collection;
     }
 }
