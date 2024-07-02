@@ -131,4 +131,33 @@ public interface CollectionRepository extends SqlObject {
             throw new RuntimeException(e);
         }
     }
+
+    default List<Collection> readAll(){
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                         , $$
+                             MATCH (c:Collection)-[USED_BY]-(i:Institution)
+                             OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
+                             RETURN c.name
+                             , i.name
+                             , collect(r)
+                           $$
+                        ) as (collection_name agtype, institution_name agtype, roles agtype);""";
+
+
+        try {
+            return withHandle(handle -> {
+                // We have to register the type
+                Connection connection = handle.getConnection();
+                PgConnection pgConn = connection.unwrap(PgConnection.class);
+                pgConn.addDataType("agtype", Agtype.class);
+                handle.execute(DBConstants.AGE_BOILERPLATE);
+                return handle.createQuery(sql)
+                        .map(new CollectionMapper()).list();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    };
 }

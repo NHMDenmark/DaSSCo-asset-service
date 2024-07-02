@@ -127,8 +127,7 @@ public interface RoleRepository extends SqlObject {
                  $$
                     , #params) as (a agtype);
                 """);
-        String query = sb1.toString();
-        System.out.println(query);
+        String removeRolesQuery = sb1.toString();
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
         AgtypeMap agtypeMap = builder
                 .add("collection_name", collection.name())
@@ -136,7 +135,7 @@ public interface RoleRepository extends SqlObject {
                 .build();
         Agtype agtype = AgtypeFactory.create(agtypeMap);
         withHandle(h -> {
-            h.createUpdate(query)
+            h.createUpdate(removeRolesQuery)
                     .bind("params", agtype)
                     .execute();
             return h;
@@ -165,10 +164,9 @@ public interface RoleRepository extends SqlObject {
                     , #params) as (a agtype);
                 """);
         Agtype agtype1 = AgtypeFactory.create(builder2.build());
-        String query2 = sb.toString();
-        System.out.printf(query2);
+        String updateRolesQuery = sb.toString();
         withHandle(h -> {
-            h.createUpdate(query2)
+            h.createUpdate(updateRolesQuery)
                     .bind("params", agtype1)
                     .execute();
             return h;

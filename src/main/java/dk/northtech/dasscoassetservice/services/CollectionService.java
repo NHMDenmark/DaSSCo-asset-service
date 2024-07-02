@@ -66,6 +66,12 @@ public class CollectionService {
         });
     }
 
+    public List<Collection> getAll() {
+        return jdbi.withHandle(handle -> {
+            CollectionRepository attach = handle.attach(CollectionRepository.class);
+            return attach.readAll();
+        });
+    }
     public Optional<Collection> findCollection(String collectionName, String institutionName) {
         return jdbi.withHandle(handle -> {
             CollectionRepository repository = handle.attach(CollectionRepository.class);

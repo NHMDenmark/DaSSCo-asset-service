@@ -101,6 +101,12 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testReadAll(){
+        List<Collection> all = collectionService.getAll();
+        assertThat(all.size()).isGreaterThan(0);
+    }
+
+    @Test
     void testFindCollectionDoesntExist(){
         Optional<Collection> optCollection = collectionService.findCollection("does-not-exist","institution_1");
         assertThat(optCollection.isPresent()).isFalse();
