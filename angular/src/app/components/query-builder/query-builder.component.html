@@ -5,8 +5,7 @@
             [matTooltipPosition]="'below'"><mat-icon>delete_forever</mat-icon></button>
 
   <div class="form-container">
-    <form [formGroup]="queryForm">
-      <div class="node-and">
+    <form [formGroup]="queryForm" class="query-form-div">
         <mat-form-field appearance="outline">
           <mat-label>Choose Property</mat-label>
           <mat-select formControlName="node" [compareWith]="compareNodeProperty">
@@ -20,11 +19,13 @@
             </mat-optgroup>
           </mat-select>
         </mat-form-field>
-      </div>
 
-      <div formArrayName="wheres">
-        <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
-          <div *ngIf="(chosenNodeProperty$ | async) as chosenNode" class="form-div">
+        <div formArrayName="wheres">
+          <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
+            <div *ngIf="(chosenNodeProperty$ | async) as chosenNode" class="form-div">
+              <div *ngIf="i > 0">
+                <p style="margin-right: .5rem;">OR</p>
+              </div>
               <mat-form-field appearance="outline">
                 <mat-label>Operator</mat-label>
                 <mat-select formControlName="operator">
@@ -61,37 +62,25 @@
             </div>
 
             <ng-template #input>
-              <div *ngIf="chosenNode.node == 'Event'; else defaultInput">
+              <div *ngIf="chosenNode.node == 'Asset' && chosenNode.property.includes('status'); else defaultValueInput">
                 <mat-form-field appearance="outline">
-                  <mat-label>Event</mat-label>
+                  <mat-label>Status</mat-label>
                   <mat-select formControlName="value">
-                    <mat-option value="CREATE_ASSET_METADATA">Asset Created</mat-option>
-                    <mat-option value="UPDATE_ASSET_METADATA">Asset Updated</mat-option>
+                    <mat-option value="WORKING_COPY">WORKING_COPY</mat-option>
+                    <mat-option value="ARCHIVE">ARCHIVE</mat-option>
+                    <mat-option value="BEING_PROCESSED">BEING_PROCESSED</mat-option>
+                    <mat-option value="PROCESSING_HALTED">PROCESSING_HALTED</mat-option>
+                    <mat-option value="ISSUE_WITH_MEDIA">ISSUE_WITH_MEDIA</mat-option>
+                    <mat-option value="ISSUE_WITH_METADATA">ISSUE_WITH_METADATA</mat-option>
+                    <mat-option value="FOR_DELETION">FOR_DELETION</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>
-
-              <ng-template #defaultInput>
-                <div *ngIf="chosenNode.node == 'Asset' && chosenNode.property.includes('status'); else defaultValueInput">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Status</mat-label>
-                    <mat-select formControlName="value">
-                      <mat-option value="WORKING_COPY">WORKING_COPY</mat-option>
-                      <mat-option value="ARCHIVE">ARCHIVE</mat-option>
-                      <mat-option value="BEING_PROCESSED">BEING_PROCESSED</mat-option>
-                      <mat-option value="PROCESSING_HALTED">PROCESSING_HALTED</mat-option>
-                      <mat-option value="ISSUE_WITH_MEDIA">ISSUE_WITH_MEDIA</mat-option>
-                      <mat-option value="ISSUE_WITH_METADATA">ISSUE_WITH_METADATA</mat-option>
-                      <mat-option value="FOR_DELETION">FOR_DELETION</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                </div>
-                <ng-template #defaultValueInput>
-                  <mat-form-field class="example-form-field" appearance="outline">
-                    <mat-label>Value</mat-label>
-                    <input matInput type="text" formControlName="value">
-                  </mat-form-field>
-                </ng-template>
+              <ng-template #defaultValueInput>
+                <mat-form-field class="example-form-field" appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input matInput type="text" formControlName="value">
+                </mat-form-field>
               </ng-template>
             </ng-template>
             <button mat-icon-button (click)="removeWhere(i)" color="primary"><mat-icon>delete</mat-icon></button>
@@ -104,13 +93,14 @@
             [disabled]="!child.touched"><mat-icon>check</mat-icon></button>
           </div>
         </div>
+
+        <div class="and-btn-div">
+          <button mat-icon-button *ngIf="(chosenNodeProperty$ | async)" (click)="addWhere()"
+                  color="primary"
+                  matTooltip="Add OR argument"
+                  [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
+        </div>
       </div>
     </form>
-
-    <button mat-icon-button *ngIf="(chosenNodeProperty$ | async)" (click)="addWhere()"
-            color="primary"
-            class="and-btn"
-            matTooltip="Add AND argument"
-            [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
   </div>
 </div>

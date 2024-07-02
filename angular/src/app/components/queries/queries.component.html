@@ -1,7 +1,8 @@
 <div class="container">
+  <button (click)="clearcache()">cache</button>
   <ng-template #queryHandlerContainer></ng-template>
 
-  <div *ngIf="(nodes$ | async) as nodes" class="input-container">
+  <div class="input-container">
     <button mat-mini-fab (click)="newSelect()"
             matTooltip="New where clause"
             [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>

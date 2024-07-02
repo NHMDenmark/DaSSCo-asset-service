@@ -1,10 +1,11 @@
 import {Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from "../../services/queries.service";
-import {filter, iif, map, Observable, of} from "rxjs";
+import {filter, iif, map, Observable, of, take} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
 import {Asset, QueryV2, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
 import {QueryHandlerComponent} from "../query-handler/query-handler.component";
+import {QueryCacheService} from "../../services/query-cache.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -18,65 +19,56 @@ export class QueriesComponent implements OnInit {
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<number, QueryView[]> = new Map;
-  cachedQueries: Map<number, Map<number, string>> = new Map;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
     .pipe(
       filter(isNotUndefined),
       map(nodes => {
-        localStorage.setItem('nodeProperties', JSON.stringify(Object.entries(nodes)));
+        this.queryCacheService.setNodeProperties(nodes);
+        console.log('from service', new Map(Object.entries(nodes)))
         return new Map(Object.entries(nodes));
       })
     )
 
   propertiesCached$
-    = of (localStorage.getItem('nodeProperties')).pipe(
-    map(properties => {
-      if (properties != null) {
-        return new Map<string, string[]>(JSON.parse(properties));
-      }
-      return undefined;
-    })
+    = of (this.queryCacheService.getNodeProperties()).pipe(
+    map(properties => properties)
   )
 
   nodes$: Observable<Map<string, string[]> | undefined>
   = iif(() => {
-      return localStorage.getItem('nodeProperties') == null;
+      return this.queryCacheService.getNodeProperties().size == 0;
     },
-    this.propertiesCall$, // if it's null
-    this.propertiesCached$ // if it's not null
+    this.propertiesCall$, // if it's empty
+    this.propertiesCached$ // if it's not empty
   );
 
   constructor(private queriesService: QueriesService
+              , private queryCacheService: QueryCacheService
   ) { }
 
   ngOnInit(): void {
-    const forms = Object.keys(localStorage).filter(key => key.includes('forms-'));
-    console.log(forms.length)
-    if (forms.length > 0) {
-      forms.forEach(() => this.newSelect())
-    } else {
-      this.newSelect();
-    }
-    // this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.newSelect()); // just adding the initial where. yet to find better way...
+    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(_nodes => {
+      const forms = this.queryCacheService.getFormKeys();
+      if (forms.length > 0) {
+        forms.forEach(() => this.newSelect())
+        const cachedQueries = this.queryCacheService.getQueriesData();
+        this.queries = cachedQueries ? cachedQueries : new Map();
+      } else {
+        this.newSelect();
+      }
+    })
   }
 
   newSelect() {
     if (this.queryHandlerEle) {
       const newComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
-      newComponent.instance.nodes = localStorage.getItem('nodeProperties') != null ? new Map(JSON.parse(localStorage.getItem('nodeProperties')!)) : new Map()
-      newComponent.instance.first = this.queryHandlerEle.length <= 1;
+      newComponent.instance.nodes = this.queryCacheService.getNodeProperties();
       newComponent.instance.idx = this.queryHandlerEle!.indexOf(newComponent.hostView);
-      newComponent.instance.saveQueryEvent.subscribe(queries => {
-        this.saveQuery(queries, this.queryHandlerEle!.indexOf(newComponent.hostView));
-        this.cachedQueries.set(this.queryHandlerEle!.indexOf(newComponent.hostView), newComponent.instance.formMap);
-        localStorage.setItem('views', JSON.stringify(Array.from(this.cachedQueries.entries())));
-      });
+      newComponent.instance.saveQueryEvent.subscribe(queries => this.saveQuery(queries, this.queryHandlerEle!.indexOf(newComponent.hostView)));
       newComponent.instance.removeComponentEvent.subscribe(() => {
         this.removeQueryComponent(this.queryHandlerEle!.indexOf(newComponent.hostView));
-        this.cachedQueries.delete(this.queryHandlerEle!.indexOf(newComponent.hostView));
-        localStorage.setItem('views', JSON.stringify(Array.from(this.cachedQueries.entries())));
         newComponent.destroy();
       });
     }
@@ -84,22 +76,22 @@ export class QueriesComponent implements OnInit {
 
   removeQueryComponent(index: number) {
     this.queries.delete(index);
+    this.queryCacheService.setQueriesData(this.queries);
   }
 
   saveQuery(queries: QueryView[], index: number) {
     this.queries.set(index, queries);
-    console.log(this.queries)
+    console.log('caching', JSON.stringify(Array.from(this.queries.entries())))
+    this.queryCacheService.setQueriesData(this.queries);
   }
 
   save() {
-    // const fullMap = new Map<number, QueryV2[]>;
     const queryResponses: QueryResponse[] = [];
 
     this.queries.forEach((val, key) => {
       const nodeMap = new Map<string, QueryWhere[]>;
       val.forEach(where => {
         if (nodeMap.has(where.node)) {
-          // add to the list
           nodeMap.get(where.node)!.push({property: where.property, fields: where.fields});
         } else {
           nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
@@ -109,26 +101,24 @@ export class QueriesComponent implements OnInit {
         return {select: value[0], where: value[1]} as QueryV2;
       })
 
-      const test: QueryResponse = {id: key, query: qv2s};
-      queryResponses.push(test);
-      // fullMap.set(key, qv2s);
+      const response: QueryResponse = {id: key, query: qv2s};
+      queryResponses.push(response);
     })
-    // console.log(fullMap)
-    console.log(queryResponses)
-    // const queries = Array.from(this.queries.values()).map(val => val);
-    // console.log(queries)
 
     console.log('saving queries', queryResponses)
     this.queriesService.getNodesFromQuery(queryResponses, this.limit).subscribe(result => {
-      if (result) {
-        this.dataSource.data = result;
-      }
+      if (result) this.dataSource.data = result;
     })
   }
 
   clearAll() {
     this.queryHandlerEle?.clear();
     this.queries.clear();
+    this.queryCacheService.clearData(true, true);
     this.newSelect();
+  }
+
+  clearcache() { // temp
+    localStorage.clear();
   }
 }

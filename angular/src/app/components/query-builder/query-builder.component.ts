@@ -32,24 +32,12 @@ export class QueryBuilderComponent {
   @Input()
   set jsonForm(json: string | undefined) {
     if (json) {
-      console.log(json)
-      console.log(JSON.parse(json))
       const wheres = JSON.parse(json).wheres;
-      // this.queryForm.patchValue(JSON.parse(json));
       this.queryForm.controls.node.patchValue(JSON.parse(json).node);
       this.wheres.clear();
       wheres.forEach((where: any) => {
-        console.log(where)
         this.wheres.push(this.fb.group(where));
-        // console.log(where)
-        // console.log(JSON.parse(where))
-        // this.wheres.push(where)
       })
-
-      // this.queryForm.patchValue({node: JSON.parse(json).node, wheres: JSON.parse(json).wheres});
-      // this.wheres.patchValue(JSON.parse(json).wheres)
-      // console.log(JSON.parse(json).wheres)
-      // this.queryForm.patchValue(JSON.parse(json));
     }
   }
 
@@ -84,7 +72,6 @@ export class QueryBuilderComponent {
         if (!this.wheres.pristine) {
           if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
             this.wheres.clear();
-            console.log('hudshfjkdshkj')
             this.addWhere();
           } else {
             this.wheres.reset();
@@ -99,7 +86,10 @@ export class QueryBuilderComponent {
   save(childIdx: number | undefined) {
     let innerList: QueryInner[] = [];
 
+    console.log(this.chosenNode)
+
     this.wheres.controls.forEach(where => {
+      console.log(where)
       let value;
 
       if (this.isDate) {
@@ -122,8 +112,10 @@ export class QueryBuilderComponent {
       innerList.push(newQueryField);
     })
 
-    if (childIdx != undefined) this.wheres.at(childIdx).markAsUntouched();
-    localStorage.setItem('form', JSON.stringify(this.queryForm.value));
+    if (childIdx != undefined) {
+      this.wheres.at(childIdx).markAsUntouched();
+    }
+    console.log(innerList)
 
     this.saveQueryEvent.emit({
       node: this.chosenNode.value.node,

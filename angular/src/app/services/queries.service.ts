@@ -28,8 +28,6 @@ export class QueriesService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          console.log(queries)
-          console.log(JSON.stringify(queries))
           return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
               catchError(this.handleError(`get ${this.baseUrl}/${limit}`, undefined))
