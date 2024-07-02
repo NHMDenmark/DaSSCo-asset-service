@@ -58,7 +58,6 @@ export class DetailedViewComponent implements OnInit {
     this.detailedViewService.getAssetMetadata(assetGuid).subscribe((response) => {
       if (response){
         this.asset = response;
-        this.convertToCsv();
         this.specimenBarcodes = this.asset?.specimens?.map(specimen => specimen.barcode).join(', ');
         this.fileFormats = this.asset?.file_formats?.map(file_format => file_format).join(', ');
         this.restrictedAccess = this.asset?.restricted_access?.map(type => type).join(", ");
@@ -114,6 +113,7 @@ export class DetailedViewComponent implements OnInit {
     return this.currentIndex === 0;
   }
 
+
   convertToCsv() {
     const separatorLine = 'sep=,\r\n';
     const headerRow = Object.keys(this.asset).join(",") + '\r\n';
@@ -143,25 +143,15 @@ export class DetailedViewComponent implements OnInit {
         return value.toString();
       }
     }).join(',') + "\r\n";
-    console.log(dataRow)
     return separatorLine + headerRow + dataRow;
   }
 
-  exportCsv(){
-    const csv = this.convertToCsv();
-    const blob = new Blob([csv], { type: "text/csv; charset=utf-8" })
-    const fileName = `${this.asset.asset_guid}.csv`;
 
-    const link = document.createElement("a");
-    if (link.download !== undefined){
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', fileName);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  exportCsv(){
+    // TODO: Call getcsvfile endpoint.
+    // TODO: Add little buttons next to the files so people can download the files individually.
+    // TODO: Add button for downloading "complete asset". This will require a call for first saving the csv file (if it does not exist yet).
+    this.detailedViewService.postAsset(this.convertToCsv()).subscribe();
   }
 
 }

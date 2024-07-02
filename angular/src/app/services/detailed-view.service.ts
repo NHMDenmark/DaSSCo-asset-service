@@ -27,6 +27,19 @@ export class DetailedViewService {
       );
   }
 
+  postAsset(asset: string) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile`, asset, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile`, asset))
+          );
+        })
+      );
+  }
+
+
   getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail : string) {
     return this.oidcSecurityService.getAccessToken()
       .pipe(

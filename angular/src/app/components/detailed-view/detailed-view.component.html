@@ -155,7 +155,10 @@
                 [ngClass]="{'disabled': isPreviousDisabled()}"
                 [attr.disabled]="isPreviousDisabled() ? true : null"
                 title="Previous Asset"></mat-icon>
+      <!--
       <mat-icon fontIcon="download" class="icon-display" (click)="exportCsv()" title="Download CSV"></mat-icon>
+      -->
+      <button (click)="exportCsv()">What</button>
       <mat-icon fontIcon="arrow_forward"
                 class="icon-display"
                 (click)="showNextAsset()"
