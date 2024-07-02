@@ -20,6 +20,10 @@ On this meeting we mostly focused on part 1.
 - Specify can't show asset "derivatives", so an "asset derivative" in the ARS is just a new attachment in Specify
 - *We don't create "collection objects" in Specify, we only add "attachments" to existing "collections objects"* @Bhupjit can you verify this? 
 
+### Architecture
+- Bhupjit suggested that we should use a queue for this integration, so we're currently designing the architecture with that in mind. 
+- We won't be able to change the code in Specify, so we have to build an adapter that can transfer&translate the "Assets" from ARS to "Attachments" in Specify. This will also be use in part 2 going from Specify to ARS.  
+
 ### Requirements
 As part 1 of the ARS to Specify integration, we will look at:
 - When new assets are created by the digitisation process and added to the ARS, we want to sync the Asset metadata to Specify.
@@ -32,10 +36,10 @@ As part 1 of the ARS to Specify integration, we will look at:
   - This will also give external publishers access to the asset files
   - As for now there's no RBAC on this endpoint, it has been moved to part 3
 - Our serving endpoint should be able to serve the thumbnail, if it exists.
-  - The thumbnails are created by a post processing pipeline, created by the main DaSSCo Dev Team.
+  - The thumbnails are created by a post-processing pipeline, created by the main DaSSCo Dev Team.
   - If it doesn't exist we will return the original on the "thumbnail request"
 
-As we agreed on the meeting, Christoffer will create the tasks as Stories on the GitHub Project and notify Bhupjit afterwards.
+As we agreed on the meeting, Christoffer will create the tasks as Stories on the GitHub Project and notify Bhupjit afterward.
 
 ## WP2B: Specify transfer to ARS (part 2 of 3)
 This will be discussed further at a later date, but essentially WP2B will contain the Sync from Specify to ARS. So when an "Attachment" is added in the Specify UI, it will also be added in the ARS.
@@ -48,7 +52,7 @@ This will be discussed further at a later date, but essentially WP2B will contai
 
 
 ## WP2C: RBAC on FileProxy "File Serving" (part 3 of 3)
-This will be discussed further at a later date, but essentially WP2C will wetup Role Based Access to Asset files on FileProxy. So it's possible to setup restrictions for who can see which asset files.
+This will be discussed further at a later date, but essentially WP2C will set up Role Based Access to Asset files on FileProxy. So it's possible to setup restrictions for who can see which asset files.
 
 ### Requirements (The original requirements, subject to change):
 - Be able to provide an alternative way to serve higher-res sets to users of the system and external users. For example, when publishing data to external publishers like GBIF through Specify, a given asset can be set to be not public. In that case, the system should not publish that asset for that specimen record. We still want to sign-post that we have this aYachment and publish its metadata but not the asset itself externally. An authenticated user should be able to download that hi-res image from Specify directly but external or anonymous users should be restricted to having to request access to that image from relevant staff.
