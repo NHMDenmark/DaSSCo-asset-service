@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public interface QueriesRepository extends SqlObject {
 
@@ -40,6 +41,7 @@ public interface QueriesRepository extends SqlObject {
             """
                 SELECT * FROM ag_catalog.cypher('dassco', $$
                 MATCH (n)
+                WHERE NOT 'Event' IN labels(n)
                 WITH labels(n) AS lbl, keys(n) AS keys, size(keys(n)) AS key_count
                 UNWIND lbl AS label
                 WITH label, keys, key_count
@@ -56,8 +58,8 @@ public interface QueriesRepository extends SqlObject {
                 .mapTo(NodeProperty.class)
                 .collect(Collector.of(HashMap::new, (accum, item) -> {
                     item.properties = item.properties.replaceAll("[\\[\\]\"]", "");
-                    String[] propList = item.properties.split(",");
-                    accum.put(item.label.replace("\"", ""), Arrays.asList(propList));
+                    List<String> propList = Arrays.stream(item.properties.split(",")).map(String::trim).collect(Collectors.toList());
+                    accum.put(item.label.replace("\"", ""), propList);
                 }, (l, r) -> {
                     l.putAll(r);
                     return l;

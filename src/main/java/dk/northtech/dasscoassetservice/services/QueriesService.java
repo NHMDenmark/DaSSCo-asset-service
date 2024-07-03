@@ -93,71 +93,105 @@ public class QueriesService {
 
     public Map<String, List<String>> getNodeProperties() {
         Map<String, List<String>> properties = jdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        properties.get("Asset").addAll(Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp"));
+        properties.get("Asset").remove("restricted_access");
         return properties;
     }
 
-    public List<Asset> unwrapQuery(List<Query> queries, int limit) {
-        String finalQuery;
-        Map<String, String> whereMap = new HashMap<>();
-        whereMap.put("limit", Integer.toString(limit));
+    public List<Asset> unwrapQuery(List<QueriesReceived> queries, int limit) {
+        List<Asset> allAssets = new ArrayList<>();
 
-        for (Query query : queries) {
-            if (query.select.equalsIgnoreCase("Asset")) { // a
-                String assetString = joinFields(query.wheres, "a");
-                whereMap.put("asset", assetString);
-            }
-            if (query.select.equalsIgnoreCase("Institution")) { // i
-                whereMap.put("institution", joinFields(query.wheres, "i"));
-            }
-            if (query.select.equalsIgnoreCase("Workstation")) { // w
-                whereMap.put("workstation", joinFields(query.wheres, "w"));
-            }
-            if (query.select.equalsIgnoreCase("Event")) { // w
-                boolean eventTypeSet = query.wheres.stream().anyMatch(w -> w.property.equalsIgnoreCase("name") || w.property.equalsIgnoreCase("event"));
-                if (!eventTypeSet) { // otherwise it'll search for all events including the update ones even if they're just searching for a range in the date...
-                    query.wheres.add(new QueryField("and", "=", "event", "CREATE_ASSET_METADATA"));
+        for (QueriesReceived received : queries) {
+            String finalQuery;
+            Map<String, String> whereMap = new HashMap<>();
+            whereMap.put("limit", Integer.toString(limit));
+
+            for (Query query: received.query) {
+                if (query.select.equalsIgnoreCase("Asset")) { // a
+                    String eventTimestamps = checkForEventTimestamps(query.where); // cos event timestamps are set as if it belongs to the asset
+                    if (!StringUtils.isBlank(eventTimestamps)) {
+                        whereMap.put("event", "\nWHERE " + eventTimestamps);
+                    }
+                    String where = joinFields(query.where, "a");
+                    if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
                 }
-                whereMap.put("event", joinFields(query.wheres, "e"));
+                if (query.select.equalsIgnoreCase("Institution")) { // i
+                    String where = joinFields(query.where, "i");
+                    if (!StringUtils.isBlank(where)) whereMap.put("institution", "\nWHERE (" + where + ")");
+                }
+                if (query.select.equalsIgnoreCase("Workstation")) { // w
+                    String where = joinFields(query.where, "w");
+                    if (!StringUtils.isBlank(where)) whereMap.put("workstation", "\nWHERE (" + where + ")");
+                }
+                if (query.select.equalsIgnoreCase("Pipeline")) { // p
+                    String where = joinFields(query.where, "p");
+                    if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
+                }
+                if (query.select.equalsIgnoreCase("User")) { // u
+                    String where = joinFields(query.where, "u");
+                    if (!StringUtils.isBlank(where)) whereMap.put("user", "\nWHERE (" + where + ")");
+                }
+                if (query.select.equalsIgnoreCase("Collection"))  { // c
+                    String where = joinFields(query.where, "c");
+                    if (!StringUtils.isBlank(where)) whereMap.put("collection", "\nWHERE (" + where + ")");
+                }
+                if (query.select.equalsIgnoreCase("Specimen")) { // s
+                    String where = joinFields(query.where, "s");
+                    if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
+                }
             }
-            if (query.select.equalsIgnoreCase("Pipeline")) { // p
-                whereMap.put("pipeline", joinFields(query.wheres, "p"));
-            }
-            if (query.select.equalsIgnoreCase("User")) { // u
-                whereMap.put("user", joinFields(query.wheres, "u"));
-            }
-            if (query.select.equalsIgnoreCase("Collection"))  { // c
-                whereMap.put("collection", joinFields(query.wheres, "c"));
-            }
-            if (query.select.equalsIgnoreCase("Specimen")) { // s
-                whereMap.put("specimen", joinFields(query.wheres, "s"));
-            }
-        }
-        StringSubstitutor substitutor = new StringSubstitutor(whereMap);
-        finalQuery = substitutor.replace(assetSql);
-        if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
 
-//        logger.info("Getting assets from query:\n{}", finalQuery);
-        logger.info("Getting assets from query.");
-        List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
-        return assets;
+            StringSubstitutor substitutor = new StringSubstitutor(whereMap);
+            finalQuery = substitutor.replace(assetSql);
+            if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
+
+            logger.info("Getting assets from query.");
+            System.out.println(finalQuery);
+            List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
+            allAssets.addAll(assets);
+        }
+        return allAssets;
     }
 
-    public String joinFields(List<QueryField> wheres, String match) {
-        StringJoiner andJoiner = new StringJoiner(" and ");
+    public String joinFields(List<QueryWhere> wheres, String match) {
         StringJoiner orJoiner = new StringJoiner(" or ");
 
-        for (QueryField queryField : wheres) {
-            if (queryField.type.equalsIgnoreCase("and")) {
-                andJoiner.add(queryField.toBasicQueryString(match));
-            }
-            if (queryField.type.equalsIgnoreCase("or")) {
-                orJoiner.add(queryField.toBasicQueryString(match));
+        for (QueryWhere where : wheres) {
+            String property = where.property;
+            for (QueryInner inner : where.fields) {
+                orJoiner.add(inner.toBasicQueryString(match, property, inner.dataType));
             }
         }
-        String where = andJoiner.toString();
-        if (!StringUtils.isBlank(orJoiner.toString())) {
-            where = StringUtils.join(andJoiner, " or ", orJoiner);
+        return orJoiner.toString();
+    }
+
+    public String checkForEventTimestamps(List<QueryWhere> wheres) {
+        StringJoiner orJoiner = new StringJoiner(" or ");
+        List<QueryWhere> toRemove = new ArrayList<>();
+
+        for (QueryWhere where : wheres) {
+            if (where.property.equalsIgnoreCase("created_timestamp")) {
+                orJoiner.add("(e.event = \"" + DasscoEvent.CREATE_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
+                toRemove.add(where);
+            }
+            if (where.property.equalsIgnoreCase("updated_timestamp")) {
+                orJoiner.add("(e.event = \"" + DasscoEvent.UPDATE_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
+                toRemove.add(where);
+            }
+            if (where.property.equalsIgnoreCase("audited_timestamp")) {
+                orJoiner.add("(e.event = \"" + DasscoEvent.AUDIT_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
+                toRemove.add(where);
+            }
         }
-        return "\nWHERE (" + where + ")";
+        if (!toRemove.isEmpty()) wheres.removeAll(toRemove);
+        return orJoiner.toString();
+    }
+
+    public String getInnerQueries(List<QueryInner> inners, String match, String property) {
+        StringJoiner orJoiner = new StringJoiner(" or ");
+        for (QueryInner inner : inners) {
+            orJoiner.add(inner.toBasicQueryString(match, property, inner.dataType));
+        }
+        return orJoiner.toString();
     }
 }

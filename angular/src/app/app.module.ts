@@ -32,6 +32,7 @@ import {MatTableModule} from "@angular/material/table";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
 
 @NgModule({
   declarations: [
@@ -47,7 +48,8 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     ExportChartComponent,
     StatusWidgetComponent,
     QueriesComponent,
-    QueryBuilderComponent
+    QueryBuilderComponent,
+    QueryHandlerComponent
   ],
   imports: [
     BrowserModule,

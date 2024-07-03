@@ -1,7 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Query, QueryField} from "../../types";
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {NodeProperty, QueryDataType, QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
-import {BehaviorSubject} from "rxjs";
 import {Moment} from "moment-timezone";
 
 @Component({
@@ -9,7 +8,7 @@ import {Moment} from "moment-timezone";
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss']
 })
-export class QueryBuilderComponent implements OnInit {
+export class QueryBuilderComponent {
   operators_string = [
     '=',
     'STARTS WITH',
@@ -24,27 +23,24 @@ export class QueryBuilderComponent implements OnInit {
   operators_list = [ // file_formats in Asset is currently the only list
     'IN'
   ]
+  operators: string[] = [];
+  // chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
+  // chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
+  isDate = false;
 
-  chosenNodePropertiesSubject = new BehaviorSubject<string[]>([]);
-  public chosenNodeProperties$ = this.chosenNodePropertiesSubject.asObservable();
-  chosenNode: string | undefined;
-  saved: boolean = false;
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
-  @Output() saveQueryEvent = new EventEmitter<Query>();
+  @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();
 
   queryForm = this.fb.group({
+    node: new FormControl<NodeProperty | null>(null),
     wheres: this.fb.array([
       this.fb.group({
-        queryType: new FormControl('and', Validators.required),
-        property: new FormControl('', Validators.required),
-        operator: new FormControl('', Validators.required),
-        value: new FormControl('', Validators.required),
+        operator: new FormControl(null, Validators.required),
+        value: new FormControl(null, Validators.required),
         date: new FormControl<Date | null>(null),
         dateStart: new FormControl<Date | null>(null),
-        dateEnd: new FormControl<Date | null>(null),
-        operators: new FormControl(this.operators_string),
-        isDate: new FormControl<boolean>(false),
+        dateEnd: new FormControl<Date | null>(null)
       })
     ])
   });
@@ -53,23 +49,35 @@ export class QueryBuilderComponent implements OnInit {
     return this.queryForm.get('wheres') as FormArray;
   }
 
+  get chosenNode() {
+    return this.queryForm.get('node') as FormControl;
+  }
+
   constructor(private fb: FormBuilder) {
-    this.queryForm.get('wheres')?.valueChanges.subscribe(() => {
-      if (this.saved) {
-        this.saved = false;
+    this.chosenNode.valueChanges.subscribe(choice => {
+      if (choice) {
+        if (!this.wheres.pristine) {
+          if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
+            this.wheres.clear();
+            this.addWhere();
+          } else {
+            this.wheres.reset();
+          }
+        }
+        // this.chosenNodePropertySubject.next(choice);
+        this.updateOperators(choice.property);
       }
-    });
+    })
   }
 
-  ngOnInit(): void {
-  }
-
-  save() {
-    let whereList: QueryField[] = [];
+  save(childIdx: number | undefined) {
+    let innerList: QueryInner[] = [];
 
     this.wheres.controls.forEach(where => {
       let value;
-      if (where.get('isDate')?.value) {
+      let dataType = QueryDataType.STRING;
+      if (this.isDate) {
+        dataType = QueryDataType.DATE;
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
           const dateEnd = <Moment>where.get('dateEnd')?.value;
@@ -83,57 +91,56 @@ export class QueryBuilderComponent implements OnInit {
       }
 
       const newQueryField = {
-        type: where.get('queryType')?.value,
         operator: where.get('operator')?.value,
-        property: where.get('property')?.value,
-        value: value
-      } as QueryField;
-      whereList.push(newQueryField);
+        value: value,
+        dataType: dataType
+      } as QueryInner;
+      innerList.push(newQueryField);
     })
+    if (childIdx != undefined) this.wheres.at(childIdx).markAsUntouched();
 
-    this.saved = true;
-    this.saveQueryEvent.emit({select: this.chosenNode, wheres: whereList});
+    this.saveQueryEvent.emit({
+      node: this.chosenNode.value.node,
+      property: this.chosenNode.value.property,
+      fields: innerList
+    });
   }
 
   removeComponent() {
     this.removeComponentEvent.emit();
   }
 
-  chooseNode(choice: string) {
-    if (this.nodes.has(choice)) {
-      this.chosenNodePropertiesSubject.next(this.nodes.get(choice)!);
+  updateOperators(property: string) {
+    this.operators = this.operators_string;  // Default operators list
+    if (property.includes('date') || property.includes('timestamp')) {
+      this.isDate = true;
+      this.operators = this.operators_date;
+    } else if (property.includes('file_formats')) {
+      this.isDate = false;
+      this.operators = this.operators_list;
     }
   }
 
-  updateOperators(index: number) {
-    const propertyValue = this.wheres.at(index).get('property')?.value;
-    let newOperators = this.operators_string;  // Default operators list
-    this.wheres.at(index).get('isDate')?.setValue(false);
-
-    if (propertyValue.includes('date') || propertyValue.includes('timestamp')) {
-      this.wheres.at(index).get('isDate')?.setValue(true);
-      newOperators = this.operators_date;
-    } else if (propertyValue.includes('file_formats')) {
-      newOperators = this.operators_list;
-    }
-    this.wheres.at(index).get('operators')?.setValue(newOperators);
-  }
-
-  addWhere(type: string) {
+  addWhere() {
     this.wheres.push(this.fb.group({
-      queryType: new FormControl(type, Validators.required),
-      property: new FormControl('', Validators.required),
-      operator: new FormControl('', Validators.required),
-      value: new FormControl(''),
+      operator: new FormControl(null, Validators.required),
+      value: new FormControl(null, Validators.required),
       date: new FormControl<Date | null>(null),
       dateStart: new FormControl<Date | null>(null),
-      dateEnd: new FormControl<Date | null>(null),
-      operators: new FormControl(this.operators_string),
-      isDate: new FormControl<boolean>(false),
+      dateEnd: new FormControl<Date | null>(null)
     }));
   }
 
-  removeWhere(index: number) {
-    this.wheres.removeAt(index);
+  removeWhere(index: number): void {
+    if (index == 0 && this.wheres.length <= 1) {
+      this.wheres.at(index).reset();
+    } else {
+      this.wheres.removeAt(index);
+    }
+    this.save(undefined);
+  }
+
+  compareNodeProperty(o1: any, o2: any): boolean {
+    return !!(o1 && o2 && o1.node == o2.node && o1.property == o2.property);
   }
 }
