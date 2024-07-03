@@ -1,13 +1,16 @@
 import { Injectable } from '@angular/core';
-import {QueryView} from "../types/query-types";
+import {Asset, QueryView} from "../types/query-types";
 
 @Injectable({
   providedIn: 'root'
 })
 export class QueryCacheService {
-  private readonly queries: string = 'queries'; // just to avoid errors for accidental typos
+  // just to avoid errors for accidental typos
+  private readonly queriesResults: string = 'queries-results';
+  private readonly queriesMap: string = 'queries-map';
   private readonly query: string = 'query-';
-  private readonly nodeProperties: string = 'nodeProperties';
+  private readonly nodeProperties: string = 'node-properties';
+  private readonly limit: string = 'limit';
 
   constructor() { }
 
@@ -27,20 +30,71 @@ export class QueryCacheService {
     localStorage.removeItem(this.nodeProperties);
   }
 
-  getQueriesData(): Map<number, QueryView[]> {
-    const queries = localStorage.getItem(this.queries);
+  setQueriesResults(queries: Asset[]) {
+    localStorage.setItem(this.queriesResults, JSON.stringify(queries));
+  }
+
+  getQueriesResults(): Asset[] {
+    const results = localStorage.getItem(this.queriesResults);
+    if (results != null) return JSON.parse(results);
+    return [];
+  }
+
+  clearQueriesResults() {
+    localStorage.removeItem(this.queriesResults);
+  }
+
+  patchQueriesMapValue(index: number, queryView: QueryView[]) {
+    const existing = localStorage.getItem(this.queriesMap);
+    if (existing) {
+      const queries = new Map<number, QueryView[]>(JSON.parse(existing));
+      if (queries.has(index)) {
+        const existingQueries = queries.get(index);
+        if (existingQueries) {
+          existingQueries.concat(queryView);
+        } else {
+          queries.set(index, queryView);
+        }
+      }
+      this.setQueriesMap(queries);
+    } else {
+      this.setQueriesMap(new Map([[index, queryView]])); // nothing has been saved yet.
+    }
+  }
+
+  setQueriesMapValue(index: number, queryView: QueryView[]) {
+    const existing = localStorage.getItem(this.queriesMap);
+    if (existing) {
+      const queries = new Map<number, QueryView[]>(JSON.parse(existing));
+      queries.set(index, queryView);
+      this.setQueriesMap(queries);
+    }
+    return undefined;
+  }
+
+  getQueriesMapValue(index: number): QueryView[] | undefined {
+    const existing = localStorage.getItem(this.queriesMap);
+    if (existing) {
+      const queries = new Map<number, QueryView[]>(JSON.parse(existing));
+      if (queries.has(index)) return queries.get(index);
+    }
+    return undefined;
+  }
+
+  setQueriesMap(queries: Map<number, QueryView[]>) {
+    localStorage.setItem(this.queriesMap, JSON.stringify(Array.from(queries.entries())));
+  }
+
+  getQueriesMap(): Map<number, QueryView[]> {
+    const queries = localStorage.getItem(this.queriesMap);
     if (queries != null) {
       return new Map(JSON.parse(queries));
     }
     return new Map();
   }
 
-  setQueriesData(queries: Map<number, QueryView[]>) {
-    localStorage.setItem(this.queries, JSON.stringify(Array.from(queries.entries())));
-  }
-
-  clearQueriesData() {
-    localStorage.removeItem(this.queries);
+  clearQueriesMap() {
+    localStorage.removeItem(this.queriesMap);
   }
 
   getQueryForms(handlerIdx: number | undefined): Map<string, string> {
@@ -51,7 +105,7 @@ export class QueryCacheService {
     return new Map();
   }
 
-  setQueryForms(handlerIdx: number | undefined, queryMap: Map<number, string>) {
+  setQueryForms(handlerIdx: number | undefined, queryMap: Map<number, string>) { // {0, query form as JSON}
     localStorage.setItem(this.query + handlerIdx, JSON.stringify(Array.from(queryMap.entries())));
   }
 
@@ -59,17 +113,34 @@ export class QueryCacheService {
     localStorage.removeItem(this.query + handlerIdx);
   }
 
-  clearData(clearForms: boolean, clearQueries: boolean) {
+  setLimit(limit: number) {
+    localStorage.setItem(this.limit, limit.toString());
+  }
+
+  getLimit(): number | undefined {
+    const limit = localStorage.getItem(this.limit);
+    if (limit) return parseInt(limit);
+    return undefined;
+  }
+
+  removeLimit() {
+    localStorage.removeItem(this.limit);
+  }
+
+  clearData(clearForms: boolean, clearQueries: boolean, clearQueryResult: boolean) {
     if (clearForms) {
       const forms = Object.keys(localStorage).filter(key => key.includes(this.query));
       forms.forEach(form => localStorage.removeItem(form));
     }
     if (clearQueries) {
-      this.clearQueriesData();
+      this.clearQueriesMap();
+    }
+    if (clearQueryResult) {
+      this.clearQueriesResults();
     }
   }
 
-  getFormKeys(): string[] {
+  getCachedQueryKeys(): string[] {
     return Object.keys(localStorage).filter(key => key.includes(this.query));
   }
 }

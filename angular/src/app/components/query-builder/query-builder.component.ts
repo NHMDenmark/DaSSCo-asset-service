@@ -1,7 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {NodeProperty, QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
-import {BehaviorSubject} from "rxjs";
 import {Moment} from "moment-timezone";
 
 @Component({
@@ -25,8 +24,8 @@ export class QueryBuilderComponent {
     'IN'
   ]
   operators: string[] = [];
-  chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
-  chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
+  // chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
+  // chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
   isDate = false;
 
   @Input()
@@ -77,7 +76,7 @@ export class QueryBuilderComponent {
             this.wheres.reset();
           }
         }
-        this.chosenNodePropertySubject.next(choice);
+        // this.chosenNodePropertySubject.next(choice);
         this.updateOperators(choice.property);
       }
     })
@@ -86,12 +85,10 @@ export class QueryBuilderComponent {
   save(childIdx: number | undefined) {
     let innerList: QueryInner[] = [];
 
-    console.log(this.chosenNode)
+    console.log(this.chosenNode.value)
 
     this.wheres.controls.forEach(where => {
-      console.log(where)
       let value;
-
       if (this.isDate) {
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
@@ -111,11 +108,7 @@ export class QueryBuilderComponent {
       } as QueryInner;
       innerList.push(newQueryField);
     })
-
-    if (childIdx != undefined) {
-      this.wheres.at(childIdx).markAsUntouched();
-    }
-    console.log(innerList)
+    if (childIdx != undefined) this.wheres.at(childIdx).markAsUntouched();
 
     this.saveQueryEvent.emit({
       node: this.chosenNode.value.node,

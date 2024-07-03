@@ -10,13 +10,13 @@
             matTooltip="Search for assets"
             [matTooltipPosition]="'below'"><mat-icon>search</mat-icon></button>
     <button mat-raised-button (click)="clearAll()">Clear ALL</button>
-<!--    <mat-form-field appearance="outline">-->
-<!--      <mat-label>Limit</mat-label>-->
-<!--      <input matInput placeholder="200" [(ngModel)]="limit">-->
-<!--    </mat-form-field>-->
+    <mat-form-field appearance="outline">
+      <mat-label>Limit</mat-label>
+      <input matInput placeholder="200" [(ngModel)]="limit">
+    </mat-form-field>
   </div>
 
-  <div *ngIf="dataSource.data.length > 0">
+  <div *ngIf="dataSource.data.length > 0" class="table">
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
       <ng-container matColumnDef="asset_guid">

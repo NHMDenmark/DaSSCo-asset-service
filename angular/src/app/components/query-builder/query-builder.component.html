@@ -22,7 +22,7 @@
 
         <div formArrayName="wheres">
           <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
-            <div *ngIf="(chosenNodeProperty$ | async) as chosenNode" class="form-div">
+            <div class="form-div">
               <div *ngIf="i > 0">
                 <p style="margin-right: .5rem;">OR</p>
               </div>
@@ -62,7 +62,7 @@
             </div>
 
             <ng-template #input>
-              <div *ngIf="chosenNode.node == 'Asset' && chosenNode.property.includes('status'); else defaultValueInput">
+              <div *ngIf="chosenNode.value && chosenNode.value.node == 'Asset' && chosenNode.value.property.includes('status'); else defaultValueInput">
                 <mat-form-field appearance="outline">
                   <mat-label>Status</mat-label>
                   <mat-select formControlName="value">
@@ -95,7 +95,7 @@
         </div>
 
         <div class="and-btn-div">
-          <button mat-icon-button *ngIf="(chosenNodeProperty$ | async)" (click)="addWhere()"
+          <button mat-icon-button (click)="addWhere()"
                   color="primary"
                   matTooltip="Add OR argument"
                   [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>

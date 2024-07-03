@@ -2,20 +2,6 @@ import {Moment} from "moment-timezone";
 
 export interface Query {
   select: string | undefined;
-  where: QueryField[];
-}
-
-export interface QueryField {
-  type: 'and' | 'or';
-  operator: string;
-  property: string;
-  value: string;
-}
-
-// v2
-
-export interface QueryV2 {
-  select: string | undefined;
   where: QueryWhere[];
 }
 
@@ -29,24 +15,21 @@ export interface QueryInner {
   value: string;
 }
 
-export interface QueryResponse {
+export interface QueryResponse { // response from the backend (maps are a HASSLE to work with in this case, so..)
   id: number;
-  query: QueryV2[];
+  query: Query[];
 }
 
-export interface QueryView {
+export interface QueryView { // collects the individual queries to keep them sorted until they're to be sent to the backend
   node: string;
   property: string;
   fields: QueryInner[];
 }
 
-export interface NodeProperty {
+export interface NodeProperty { // I don't like this, it feels redundant, but it was the most "obvious" way to get it to work for now
   node: string;
   property: string;
 }
-
-
-// end v2
 
 export interface Asset {
   asset_pid: string | undefined;

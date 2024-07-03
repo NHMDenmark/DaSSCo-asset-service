@@ -35,43 +35,48 @@ export class QueryHandlerComponent implements OnInit {
 
   addWhere(form: string | undefined) {
     if (this.queryBuilderEle) {
-      const newComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
-      const eleIdx = this.queryBuilderEle!.indexOf(newComponent.hostView);
-      newComponent.instance.nodes = this.nodeMap;
+      const builderComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
+      const eleIdx = this.queryBuilderEle!.indexOf(builderComponent.hostView);
+      builderComponent.instance.nodes = this.nodeMap;
       if (form) { // this is dumb but the only reasonable way i found to "save" the cached forms. (for now)
-        this.cacheQuery(eleIdx, form);
+        console.log(form)
+        // this.cacheQuery(eleIdx, form);
+        this.formMap.set(eleIdx, form);
       }
-      newComponent.instance.jsonForm = form;
-      newComponent.instance.saveQueryEvent.subscribe(where => {
+      builderComponent.instance.jsonForm = form;
+      builderComponent.instance.saveQueryEvent.subscribe(where => {
         this.saveQuery(where, eleIdx);
-        this.cacheQuery(eleIdx, JSON.stringify(newComponent.instance.queryForm.value));
+        this.cacheForms(eleIdx, JSON.stringify(builderComponent.instance.queryForm.value));
       });
-      newComponent.instance.removeComponentEvent.subscribe(() => {
-        console.log(eleIdx)
-        this.removeQueryComponent(eleIdx);
+      builderComponent.instance.removeComponentEvent.subscribe(() => {
+        this.removeQueryForm(eleIdx);
         this.formMap.delete(eleIdx);
         this.queryCacheService.setQueryForms(this.idx, this.formMap);
-        newComponent.destroy();
+        builderComponent.destroy();
       });
     }
   }
 
-  cacheQuery(eleIdx: number, jsonForm: string) {
-    this.formMap.set(eleIdx, jsonForm);
-    this.queryCacheService.setQueryForms(this.idx, this.formMap);
-  }
-
-  removeQueryComponent(index: number) {
-    this.queries.delete(index);
-  }
-
   saveQuery(savedQuery: QueryView, index: number) {
-    this.queries.set(index, savedQuery); // map to avoid duplicates if a value is updated
+    // console.log('HANDLER HERE', savedQuery)
+    // console.log('HANDLER HERE', index)
+    this.queries.set(index, savedQuery); // map to avoid duplicates if a value is updated. FROM BUILDER
+    console.log(this.queries)
     this.saveQueryEvent.emit(Array.from(this.queries.values()).map(val => val));
   }
 
+  cacheForms(eleIdx: number, jsonForm: string) {
+    this.formMap.set(eleIdx, jsonForm);
+    console.log('HANDLER CACHING', this.idx)
+    console.log('HANDLER CACHING', this.formMap)
+    this.queryCacheService.setQueryForms(this.idx, this.formMap);
+  }
+
+  removeQueryForm(index: number) {
+    this.queries.delete(index);
+  }
+
   removeComponent() {
-    console.log(this.idx)
     this.queryCacheService.removeQueryForm(this.idx);
     this.removeComponentEvent.emit();
   }
