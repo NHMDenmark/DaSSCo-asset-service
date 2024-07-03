@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {NodeProperty, QueryInner, QueryView} from "../../types/query-types";
+import {NodeProperty, QueryDataType, QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
 import {Moment} from "moment-timezone";
 
@@ -27,18 +27,6 @@ export class QueryBuilderComponent {
   // chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
   // chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
   isDate = false;
-
-  @Input()
-  set jsonForm(json: string | undefined) {
-    if (json) {
-      const wheres = JSON.parse(json).wheres;
-      this.queryForm.controls.node.patchValue(JSON.parse(json).node);
-      this.wheres.clear();
-      wheres.forEach((where: any) => {
-        this.wheres.push(this.fb.group(where));
-      })
-    }
-  }
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
@@ -85,11 +73,11 @@ export class QueryBuilderComponent {
   save(childIdx: number | undefined) {
     let innerList: QueryInner[] = [];
 
-    console.log(this.chosenNode.value)
-
     this.wheres.controls.forEach(where => {
       let value;
+      let dataType = QueryDataType.STRING;
       if (this.isDate) {
+        dataType = QueryDataType.DATE;
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
           const dateEnd = <Moment>where.get('dateEnd')?.value;
@@ -104,7 +92,8 @@ export class QueryBuilderComponent {
 
       const newQueryField = {
         operator: where.get('operator')?.value,
-        value: value
+        value: value,
+        dataType: dataType
       } as QueryInner;
       innerList.push(newQueryField);
     })

@@ -106,7 +106,7 @@ public class QueriesService {
             Map<String, String> whereMap = new HashMap<>();
             whereMap.put("limit", Integer.toString(limit));
 
-            for (QueryV2 query: received.query) {
+            for (Query query: received.query) {
                 if (query.select.equalsIgnoreCase("Asset")) { // a
                     String eventTimestamps = checkForEventTimestamps(query.where); // cos event timestamps are set as if it belongs to the asset
                     if (!StringUtils.isBlank(eventTimestamps)) {
@@ -159,11 +159,10 @@ public class QueriesService {
         for (QueryWhere where : wheres) {
             String property = where.property;
             for (QueryInner inner : where.fields) {
-                orJoiner.add(inner.toBasicQueryString(match, property));
+                orJoiner.add(inner.toBasicQueryString(match, property, inner.dataType));
             }
         }
-        String where = orJoiner.toString();
-        return where;
+        return orJoiner.toString();
     }
 
     public String checkForEventTimestamps(List<QueryWhere> wheres) {
@@ -191,7 +190,7 @@ public class QueriesService {
     public String getInnerQueries(List<QueryInner> inners, String match, String property) {
         StringJoiner orJoiner = new StringJoiner(" or ");
         for (QueryInner inner : inners) {
-            orJoiner.add(inner.toBasicQueryString(match, property));
+            orJoiner.add(inner.toBasicQueryString(match, property, inner.dataType));
         }
         return orJoiner.toString();
     }

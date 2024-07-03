@@ -13,6 +13,15 @@ export interface QueryWhere {
 export interface QueryInner {
   operator: string;
   value: string;
+  dataType: QueryDataType;
+}
+
+export enum QueryDataType {
+  DATE = 'DATE'
+  , NUMBER = 'NUMBER'
+  , ENUM = 'ENUM'
+  , STRING = 'STRING'
+  , LIST = 'LIST'
 }
 
 export interface QueryResponse { // response from the backend (maps are a HASSLE to work with in this case, so..)

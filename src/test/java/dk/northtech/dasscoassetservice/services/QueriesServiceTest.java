@@ -57,39 +57,37 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         secondAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(secondAsset, user, 11);
 
-        System.out.println("new");
-        System.out.println(secondAsset.created_date);
         long yesterday = Instant.now().minus(1, ChronoUnit.DAYS).toEpochMilli();
         long tomorrow = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();
 
         List<QueriesReceived> queries = new LinkedList<QueriesReceived>(Arrays.asList(
-            new QueriesReceived(0, new LinkedList<QueryV2>(Arrays.asList(
-                new QueryV2("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+            new QueriesReceived(0, new LinkedList<Query>(Arrays.asList(
+                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
                     new QueryWhere("asset_guid", Arrays.asList(
-                            new QueryInner("CONTAINS", "fnoop")
+                            new QueryInner("CONTAINS", "fnoop", QueryDataType.STRING)
                     )),
                     new QueryWhere("updated_timestamp", Arrays.asList(
-                            new QueryInner("RANGE", yesterday + "#" + tomorrow)
+                            new QueryInner("RANGE", yesterday + "#" + tomorrow, QueryDataType.DATE)
                     )),
                     new QueryWhere("created_timestamp", Arrays.asList(
-                            new QueryInner("RANGE", yesterday + "#" + tomorrow)
+                            new QueryInner("RANGE", yesterday + "#" + tomorrow, QueryDataType.DATE)
                     ))
                 ))),
-                new QueryV2("Institution", new LinkedList<QueryWhere>(Arrays.asList(
+                new Query("Institution", new LinkedList<QueryWhere>(Arrays.asList(
                     new QueryWhere("name", Arrays.asList(
-                            new QueryInner("CONTAINS", "FN")
+                            new QueryInner("CONTAINS", "FN", QueryDataType.STRING)
                     ))
                 ))),
-                new QueryV2("Pipeline", new LinkedList<QueryWhere>(Arrays.asList(
+                new Query("Pipeline", new LinkedList<QueryWhere>(Arrays.asList(
                     new QueryWhere("name", Arrays.asList(
-                            new QueryInner("ENDS WITH", "ine")
+                            new QueryInner("ENDS WITH", "ine", QueryDataType.STRING)
                     ))
                 )))
             ))),
-            new QueriesReceived(1, new LinkedList<QueryV2>(Arrays.asList(
-                new QueryV2("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+            new QueriesReceived(1, new LinkedList<Query>(Arrays.asList(
+                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
                     new QueryWhere("asset_guid", Arrays.asList(
-                            new QueryInner("CONTAINS", "fnoop")
+                            new QueryInner("CONTAINS", "fnoop", QueryDataType.STRING)
                     ))
 //                    new QueryWhere("asset_guid", Arrays.asList(
 //                        new QueryInner("=", "ASSEt_NnaD")

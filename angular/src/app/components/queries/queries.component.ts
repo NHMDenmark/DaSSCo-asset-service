@@ -5,7 +5,6 @@ import {isNotUndefined} from "@northtech/ginnungagap";
 import {Asset, Query, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
 import {QueryHandlerComponent} from "../query-handler/query-handler.component";
-import {QueryCacheService} from "../../services/query-cache.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -17,78 +16,65 @@ export class QueriesComponent implements OnInit {
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
-  limit: number = this.queryCacheService.getLimit() ? this.queryCacheService.getLimit()! : 200;
+  limit: number = 200;
   queries: Map<number, QueryView[]> = new Map;
+  nodes: Map<string, string[]> = new Map();
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
     .pipe(
       filter(isNotUndefined),
       map(nodes => {
-        this.queryCacheService.setNodeProperties(nodes);
+        localStorage.setItem('node-properties', JSON.stringify(nodes));
+        this.nodes = nodes;
         return new Map(Object.entries(nodes));
       })
     )
 
   propertiesCached$
-    = of (this.queryCacheService.getNodeProperties()).pipe(
-    map(properties => properties)
+    = of (localStorage.getItem('node-properties')).pipe(
+    map(properties => {
+      if (properties) {
+        const propertiesMap = new Map<string, string[]>(JSON.parse(properties));
+        this.nodes = propertiesMap;
+        return propertiesMap;
+      }
+      return new Map();
+    })
   )
 
   nodes$: Observable<Map<string, string[]> | undefined>
   = iif(() => { // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
-      return this.queryCacheService.getNodeProperties().size == 0;
+      return localStorage.getItem('node-properties') == null;
     },
     this.propertiesCall$, // if it's empty
     this.propertiesCached$ // if it's not empty
   );
 
   constructor(private queriesService: QueriesService
-              , private queryCacheService: QueryCacheService
   ) { }
 
   ngOnInit(): void {
-    // getting things setup once the nodes have loaded.
     this.nodes$.pipe(filter(isNotUndefined),take(1))
-      .subscribe(_nodes => {
-        const forms = this.queryCacheService.getCachedQueryKeys();
-        if (forms.length > 0) { // there's data cached
-          forms.forEach(() => this.newSelect())
-          console.log('cached map', this.queryCacheService.getQueriesMap())
-          this.queries = this.queryCacheService.getQueriesMap();
-          this.dataSource.data = this.queryCacheService.getQueriesResults();
-        } else {
-          this.newSelect();
-          }
-      })
+      .subscribe(_nodes => this.newSelect())
   }
 
   newSelect() {
     if (this.queryHandlerEle) {
       const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
-      handlerComponent.instance.nodes = this.queryCacheService.getNodeProperties();
+      handlerComponent.instance.nodes = this.nodes;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
-      handlerComponent.instance.saveQueryEvent.subscribe(queries => this.saveQuery(queries, childIdx));
+      handlerComponent.instance.saveQueryEvent.subscribe(queries => this.queries.set(childIdx, queries));
       handlerComponent.instance.removeComponentEvent.subscribe(() => {
-        this.removeQueryComponent(childIdx);
+        this.queries.delete(childIdx);
         handlerComponent.destroy();
       });
     }
   }
 
-  removeQueryComponent(index: number) {
-    this.queries.delete(index);
-    this.queryCacheService.setQueriesMap(this.queries);
-  }
-
   saveQuery(queries: QueryView[], index: number) {
-    console.log('from handler', queries)
-    console.log('from handler', index)
     this.queries.set(index, queries);
-    console.log('caching', JSON.stringify(Array.from(this.queries.entries())))
-    this.queryCacheService.patchQueriesMapValue(index, queries);
-    // this.queryCacheService.setQueriesMap(this.queries);
   }
 
   save() {
@@ -100,16 +86,11 @@ export class QueriesComponent implements OnInit {
       const nodeMap = new Map<string, QueryWhere[]>;
       val.forEach(where => {
         if (nodeMap.has(where.node)) {
-          console.log('map has node ', where.node)
           nodeMap.get(where.node)!.push({property: where.property, fields: where.fields});
-          console.log(nodeMap)
         } else {
-          console.log('map does not have node, ', where.node)
           nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
-          console.log(nodeMap)
         }
       })
-      console.log('nodemap', nodeMap)
       const qv2s = Array.from(nodeMap).map((value) => {
         return {select: value[0], where: value[1]} as Query;
       })
@@ -121,8 +102,6 @@ export class QueriesComponent implements OnInit {
     console.log('saving queries', queryResponses)
     this.queriesService.getNodesFromQuery(queryResponses, this.limit).subscribe(result => {
       if (result) {
-        this.queryCacheService.setLimit(this.limit);
-        this.queryCacheService.setQueriesResults(result);
         this.dataSource.data = result;
       }
     })
@@ -131,11 +110,10 @@ export class QueriesComponent implements OnInit {
   clearAll() {
     this.queryHandlerEle?.clear();
     this.queries.clear();
-    this.queryCacheService.clearData(true, true, true);
     this.newSelect();
   }
 
-  clearcache() { // temp
-    localStorage.clear();
-  }
+  // clearcache() { // temp
+  //   localStorage.clear();
+  // }
 }
