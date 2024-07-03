@@ -81,8 +81,6 @@ export class QueriesComponent implements OnInit {
     const queryResponses: QueryResponse[] = [];
 
     this.queries.forEach((val, key) => {
-      console.log(val)
-      console.log(key)
       const nodeMap = new Map<string, QueryWhere[]>;
       val.forEach(where => {
         if (nodeMap.has(where.node)) {
@@ -99,7 +97,6 @@ export class QueriesComponent implements OnInit {
       queryResponses.push(response);
     })
 
-    console.log('saving queries', queryResponses)
     this.queriesService.getNodesFromQuery(queryResponses, this.limit).subscribe(result => {
       if (result) {
         this.dataSource.data = result;
