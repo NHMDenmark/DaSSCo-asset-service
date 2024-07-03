@@ -3,6 +3,7 @@ import {DetailedViewService} from "../../services/detailed-view.service";
 import {Asset} from "../../types";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {ActivatedRoute, Params} from "@angular/router";
+import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -25,7 +26,7 @@ export class DetailedViewComponent implements OnInit {
   assetList: string[] = ['test-1', 'test-2', 'test-3']
   dataLoaded: boolean = false;
 
-  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute) { }
+  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute, private _snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
@@ -146,9 +147,7 @@ export class DetailedViewComponent implements OnInit {
   }
 
 
-  exportCsv(){
-    // TODO: Add little buttons next to the files so people can download the files individually.
-    // TODO: Add button for downloading "complete asset". This will require a call for first saving the csv file (if it does not exist yet).
+  downloadCsv(){
     this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
       .subscribe({
         next: (response) => {
@@ -169,11 +168,54 @@ export class DetailedViewComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.log(error.status);
-          console.log(error.error);
+          this.openSnackBar(error.error, "Close");
         }
       });
-  }
+    }
 
-  // TODO: Create snackbar for error in downloading files!
+    downloadZip(){
+      this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+        .subscribe({
+          next: (response) => {
+            if (response.status === 200){
+              this.detailedViewService.postZip(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                .subscribe({
+                  next: (response) => {
+                    if (response.status === 200){
+                      this.detailedViewService.getFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                        .subscribe({
+                          next: (data) => {
+                            const url = window.URL.createObjectURL(data);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = this.asset.asset_guid + ".zip";
+
+                            document.body.appendChild(link);
+                            link.click();
+
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          },
+                          error: (error) => {
+                            this.openSnackBar(error.error, "Close")
+                          }
+                        })
+                    }
+                  },
+                  error: (error) => {
+                    this.openSnackBar(error.error, "Close")
+                  }
+                })
+            }
+          },
+          error: (error) => {
+            // TODO: Check this error
+            console.log(error.error);
+          }
+        })
+    }
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action);
+  }
 }

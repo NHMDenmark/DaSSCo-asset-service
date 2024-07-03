@@ -41,6 +41,20 @@ export class DetailedViewService {
       );
   }
 
+  postZip(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createZipFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+            .pipe(
+              catchError((error: any) => {
+                return throwError(() => error);
+              })
+            );
+        })
+      );
+  }
+
   getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) : Observable<Blob> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
