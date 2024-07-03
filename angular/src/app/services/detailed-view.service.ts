@@ -1,6 +1,6 @@
 import {inject, Injectable} from '@angular/core';
 import {Asset} from "../types";
-import {catchError, Observable, of, switchMap} from "rxjs";
+import {catchError, Observable, of, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {AssetService, FileProxy} from "../utility";
@@ -27,16 +27,30 @@ export class DetailedViewService {
       );
   }
 
-  postAsset(asset: string) {
+  postAsset(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile`, asset, {headers: {'Authorization': 'Bearer ' + token}})
+          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
             .pipe(
-              catchError(this.handleError(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile`, asset))
+              catchError((error: any) => {
+                return throwError(() => error);
+              })
           );
         })
       );
+  }
+
+  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, undefined))
+            )
+        })
+      )
   }
 
 

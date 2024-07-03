@@ -124,7 +124,6 @@ export class DetailedViewComponent implements OnInit {
       if (Array.isArray(value)){
         if (value.length !== 0){
           const formattedArray = value.map(item => JSON.stringify(item).replace(/"/g, '""')).join(', ');
-          console.log(formattedArray)
           return `"${formattedArray}"`;
         } else {
           return "[]"
@@ -148,10 +147,22 @@ export class DetailedViewComponent implements OnInit {
 
 
   exportCsv(){
-    // TODO: Call getcsvfile endpoint.
     // TODO: Add little buttons next to the files so people can download the files individually.
     // TODO: Add button for downloading "complete asset". This will require a call for first saving the csv file (if it does not exist yet).
-    this.detailedViewService.postAsset(this.convertToCsv()).subscribe();
+    this.detailedViewService.postAsset(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+      .subscribe({
+        next: (response) => {
+          if (response.status === 200){
+            this.detailedViewService.getFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+              .subscribe()
+          }
+        },
+        error: (error) => {
+          console.log(error.status);
+          console.log(error.error);
+        }
+      });
   }
 
+  // TODO: Create snackbar for error in downloading files!
 }
