@@ -27,7 +27,7 @@ export class DetailedViewService {
       );
   }
 
-  postAsset(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+  postCsv(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
@@ -41,14 +41,15 @@ export class DetailedViewService {
       );
   }
 
-  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) {
+  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) : Observable<Blob> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}})
+          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
-              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, undefined))
-            )
+              catchError((error: any) => {
+                console.error('Error downloading file:', error);
+                return throwError(() => error)}))
         })
       )
   }

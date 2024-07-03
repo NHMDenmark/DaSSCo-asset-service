@@ -149,12 +149,23 @@ export class DetailedViewComponent implements OnInit {
   exportCsv(){
     // TODO: Add little buttons next to the files so people can download the files individually.
     // TODO: Add button for downloading "complete asset". This will require a call for first saving the csv file (if it does not exist yet).
-    this.detailedViewService.postAsset(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+    this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
       .subscribe({
         next: (response) => {
           if (response.status === 200){
             this.detailedViewService.getFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
-              .subscribe()
+              .subscribe((data) => {
+                const url = window.URL.createObjectURL(data);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = this.asset.asset_guid + ".csv";
+
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+              })
           }
         },
         error: (error) => {
