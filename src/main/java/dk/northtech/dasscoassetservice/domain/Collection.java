@@ -3,6 +3,8 @@ package dk.northtech.dasscoassetservice.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public record Collection(
         @Schema(description = "The collection name within the institution that holds the specimen", example = "test-collection")
@@ -11,5 +13,8 @@ public record Collection(
         String institution,
         @Schema(description = "If this list contains roles then users attempting to read assets in this collection will need one of the listed roles")
         List<Role> roleRestrictions) {
-
+    public Set<String> getRolesAsSet() {
+        return roleRestrictions.stream().map(Role::name)
+                .collect(Collectors.toSet());
+    }
 }

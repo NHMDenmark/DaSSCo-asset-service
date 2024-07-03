@@ -1,5 +1,8 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.InstitutionRepository;
 import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
@@ -25,7 +28,14 @@ public class InstitutionService {
         this.jdbi = jdbi;
 
     }
-
+    LoadingCache<String, Institution> cache = Caffeine.newBuilder()
+            .build(x -> {
+                return jdbi.withHandle(h -> {
+                    InstitutionRepository attach = h.attach(InstitutionRepository.class);
+                    Optional<Institution> institution = attach.findInstitution(x);
+                    return institution.orElse(null);
+                });
+            });
 
     public Institution createInstitution(Institution institution) {
 
@@ -49,15 +59,11 @@ public class InstitutionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestriction());
             return h;
         });
+        this.cache.put(institution.name(),institution);
         return institution;
     }
 
     public List<Institution> listInstitutions() {
-//        if(Strings.isNullOrEmpty(institution.name())) {
-//            throw new IllegalArgumentException("Name is cannot be null or empty");
-//        } else if (!institution.name().matches(name_regex)){
-//            throw new IllegalArgumentException("Name must be alphanumeric");
-//        }
         return jdbi.withHandle(h -> {
             InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
             return institutionRepository.listInstitutions();
@@ -65,11 +71,14 @@ public class InstitutionService {
     }
 
     public Optional<Institution> getIfExists(String institutionName) {
-        return jdbi.withHandle(h -> {
-            InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
-            return institutionRepository.findInstitution(institutionName);
-        });
+        Institution institution = this.cache.get(institutionName);
+        if(institution == null) {
+            return Optional.empty();
+        } else  {
+            return Optional.of(institution);
+        }
     }
+
 
     public Institution updateInstitution(Institution institution) {
         jdbi.withHandle(h -> {
@@ -82,6 +91,7 @@ public class InstitutionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
             return h;
         });
+        cache.put(institution.name(),institution);
         return institution;
     }
 }
