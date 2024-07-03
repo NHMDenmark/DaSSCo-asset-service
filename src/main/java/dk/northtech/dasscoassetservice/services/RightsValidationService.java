@@ -25,7 +25,13 @@ public class RightsValidationService {
         this.jdbi = jdbi;
     }
 
+    public boolean checkReadRights(User user, String institutionName, String collectionName) {
+        return checkRights(user, institutionName,collectionName, false);
+    }
 
+    public boolean checkWriteRights(User user, String institutionName, String collectionName) {
+        return checkRights(user, institutionName,collectionName, true);
+    }
     public boolean checkRights(User user, String institutionName, String collectionName, boolean write) {
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
@@ -42,6 +48,7 @@ public class RightsValidationService {
 
         if (!collection.roleRestrictions().isEmpty()) {
             for (Role r : collection.roleRestrictions()) {
+                System.out.println((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name());
                 if(allUserRoles.contains((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name())){
                     return true;
                 }
@@ -70,7 +77,6 @@ public class RightsValidationService {
         Set<String> allRoles = new HashSet<>();
         for (String r : roles) {
             if (r.startsWith(WRITE_ROLE_PREFIX)) {
-                System.out.println(READ_ROLE_PREFIX + r.substring(WRITE_ROLE_PREFIX.length()));
                 allRoles.add(READ_ROLE_PREFIX + r.substring(WRITE_ROLE_PREFIX.length()));
             }
             allRoles.add(r);

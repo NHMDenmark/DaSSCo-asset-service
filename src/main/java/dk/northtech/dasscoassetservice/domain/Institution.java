@@ -8,7 +8,7 @@ import java.util.List;
 public record Institution(
         @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
         String name
-        , @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
+        , @Schema(description = "The roles you need to access assets within this institution", example = "[NHMD_USER]")
         List<Role> roleRestriction) {
 
 

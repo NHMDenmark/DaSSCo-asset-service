@@ -22,7 +22,11 @@ public class InstitutionMapper implements RowMapper<Institution> {
         Agtype name = rs.getObject("name", Agtype.class);
         Agtype specimens = rs.getObject("roles", Agtype.class);
         List<Role> roles =  specimens.getList().stream()
-                .map(x -> new Role(((AgtypeMap) x).getString("name"))).collect(Collectors.toList());
+                .map(x ->mapRole((AgtypeMap) x)).collect(Collectors.toList());
         return new Institution(name.getString(), roles);
+    }
+    Role mapRole(AgtypeMap agtype) {
+        AgtypeMap properties = agtype.getMap("properties");
+        return new Role(properties.getString("name"));
     }
 }
