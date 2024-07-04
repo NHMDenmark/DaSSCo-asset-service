@@ -64,6 +64,31 @@ class RightsValidationServiceTest extends AbstractIntegrationTest {
         assertThat(rightsValidationService.checkWriteRights(getUser("WRITE_testCheckReadRightsCollection"), institution.name(), collection.name())).isTrue();
     }
 
+
+    @Test
+    public void testCheckReadRightsValidationOrdering() {
+        Institution institution = new Institution("inst_testCheckReadRightsValidationOrdering", Arrays.asList(new Role("testCheckReadRightsValidationOrdering"), new Role("testCheckReadRightsValidationOrdering_2")));
+        institutionService.createInstitution(institution);
+        Collection collection = new Collection("col_testCheckReadRightsValidationOrdering", institution.name(),Arrays.asList( new Role("testCheckReadRightsValidationOrdering_2")) );
+        collectionService.persistCollection(collection);
+
+        assertThat(rightsValidationService.checkReadRights(getUser("READ_testCheckReadRightsValidationOrdering"), institution.name(), collection.name())).isFalse();
+        //user does not have write right
+        assertThat(rightsValidationService.checkWriteRights(getUser("WRITE_testCheckReadRightsValidationOrdering_2"), institution.name(), collection.name())).isTrue();
+    }
+
+    @Test
+    public void testCheckRightsNoRoles() {
+        Institution institution = new Institution("inst_testCheckReadRightsValidationOrdering", new ArrayList<>());
+        institutionService.createInstitution(institution);
+        Collection collection = new Collection("col_testCheckReadRightsValidationOrdering", institution.name(),new ArrayList<>() );
+        collectionService.persistCollection(collection);
+
+        assertThat(rightsValidationService.checkReadRights(getUser("irrelevant"), institution.name(), collection.name())).isTrue();
+        //user does not have write right
+        assertThat(rightsValidationService.checkWriteRights(getUser("whatever"), institution.name(), collection.name())).isTrue();
+    }
+
     public User getUser(String... roles) {
         User user = new User();
         user.roles = new HashSet<>(Arrays.asList(roles));
