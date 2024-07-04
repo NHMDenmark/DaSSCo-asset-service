@@ -33,6 +33,10 @@ import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
 import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
+import { SavedSearchesComponent } from './components/saved-searches/saved-searches.component';
+import {MatExpansionModule} from "@angular/material/expansion";
+import {MatDialogModule} from "@angular/material/dialog";
+import { SavedSearchesDialogComponent } from './components/saved-searches/dialog/saved-searches-dialog/saved-searches-dialog.component';
 
 @NgModule({
   declarations: [
@@ -49,7 +53,9 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     StatusWidgetComponent,
     QueriesComponent,
     QueryBuilderComponent,
-    QueryHandlerComponent
+    QueryHandlerComponent,
+    SavedSearchesComponent,
+    SavedSearchesDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -72,7 +78,9 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     MatSnackBarModule,
     MatDividerModule,
     MatTableModule,
-    MatCardModule
+    MatCardModule,
+    MatExpansionModule,
+    MatDialogModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

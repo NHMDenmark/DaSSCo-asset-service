@@ -2,9 +2,14 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.NodeProperty;
+import dk.northtech.dasscoassetservice.domain.SavedQuery;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
+import dk.northtech.dasscoassetservice.repositories.helpers.SavedQueryMapper;
 import org.apache.age.jdbc.base.Agtype;
+import org.apache.age.jdbc.base.AgtypeFactory;
+import org.apache.age.jdbc.base.type.AgtypeMap;
+import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.postgresql.jdbc.PgConnection;
@@ -75,4 +80,82 @@ public interface QueriesRepository extends SqlObject {
                     .list();
         });
     }
+
+    default List<String> saveQuery(SavedQuery savedQuery, String username) {
+        boilerplate();
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                        MATCH (u:User {name: $username})
+                        MERGE (q:Query {name: $title, query: $query})
+                        MERGE (u)<-[:SAVED_BY]-(q)
+                        RETURN q.title
+                    $$
+                    , #params)
+                    as (query_title agtype);
+                """;
+
+        return withHandle(handle -> {
+            AgtypeMap params = new AgtypeMapBuilder()
+                    .add("username", username)
+                    .add("title", savedQuery.title)
+                    .add("query", savedQuery.query).build();
+            Agtype agtype = AgtypeFactory.create(params);
+            return handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .mapTo(String.class)
+                    .list();
+        });
+    }
+
+    default List<SavedQuery> getSavedQueries(String username) {
+        boilerplate();
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                   , $$
+                         MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query)
+                         return q.title, q.query
+                     $$
+                   , #params) as (title agtype, query agtype);
+                """;
+
+        return withHandle(handle -> {
+            AgtypeMap params = new AgtypeMapBuilder()
+                    .add("username", username).build();
+            Agtype agtype = AgtypeFactory.create(params);
+            return handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .map(new SavedQueryMapper())
+                    .list();
+        });
+    }
+
+    default SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
+        boilerplate();
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                   , $$
+                       MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query {title: $prevTitle})
+                       SET q.title = $newTitle
+                       SET q.query = $newQuery
+                       return q.title, q.query
+                     $$
+                   , #params) as (title agtype, query agtype);
+                """;
+
+        return withHandle(handle -> {
+            AgtypeMap params = new AgtypeMapBuilder()
+                    .add("username", username)
+                    .add("prevTitle", prevTitle)
+                    .add("newTitle", newQuery.title)
+                    .add("newQuery", newQuery.query).build();
+            Agtype agtype = AgtypeFactory.create(params);
+            return handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .map(new SavedQueryMapper())
+                    .one();
+        });
+    }
+
+
 }
