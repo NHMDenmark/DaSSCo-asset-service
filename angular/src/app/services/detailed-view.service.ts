@@ -62,8 +62,21 @@ export class DetailedViewService {
           return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
-                console.error('Error downloading file:', error);
                 return throwError(() => error)}))
+        })
+      )
+  }
+
+  deleteFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.delete(`${this.proxyUrl}/file_proxy/api/assetfiles/deleteLocalFiles/${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+            .pipe(
+              catchError((error) => {
+                return throwError(() => error)
+              })
+            )
         })
       )
   }

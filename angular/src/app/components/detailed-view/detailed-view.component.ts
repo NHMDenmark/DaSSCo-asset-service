@@ -19,6 +19,7 @@ export class DetailedViewComponent implements OnInit {
   // TODO: Connection with Query page. The Query should pass the Asset[] from the search (in order!) so we can move back and forth between the assets.
   // The URL remains the same (on the first asset clicked) so on Back Button press we go back to the query list.
   // For this view to be seen you need to either have assets test-1, test-2 and test-3 in the DB or change the assetList for Assets you have.
+  // TODO: Files are now grabbed from the local machine. This is problematic, as an asset could be complete, therefore no local instance of the file would exist. We need to create an endpoint, get the API to call ERDA directly and get the file we want (for the thumbnail we can just get it directly, for the zip download we need to download it, zip it, send it, delete it).
 
   assetGuid: string = "";
   currentIndex : number = -1;
@@ -153,18 +154,33 @@ export class DetailedViewComponent implements OnInit {
         next: (response) => {
           if (response.status === 200){
             this.detailedViewService.getFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
-              .subscribe((data) => {
-                const url = window.URL.createObjectURL(data);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = this.asset.asset_guid + ".csv";
+              .subscribe(
+                {
+                  next: (data) => {
+                    const url = window.URL.createObjectURL(data);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = this.asset.asset_guid + ".csv";
 
-                document.body.appendChild(link);
-                link.click();
+                    document.body.appendChild(link);
+                    link.click();
 
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-              })
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                      .subscribe({
+                        next: () => {
+                        },
+                        error: () => {
+                          this.openSnackBar("There's been an error deleting the CSV file", "Close")
+                        }
+                      })
+                  },
+                  error: () => {
+                    this.openSnackBar("There has been an error downloading the CSV file.", "Close");
+                  }
+                })
           }
         },
         error: (error) => {
@@ -195,9 +211,25 @@ export class DetailedViewComponent implements OnInit {
 
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
+
+                            this.detailedViewService.deleteFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                              .subscribe({
+                                next: () => {
+                                  this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                                    .subscribe({
+                                      next: () => {
+                                      }, error: () => {
+                                        this.openSnackBar("There has been an error deleting the CSV file", "Close");
+                                      }
+                                    })
+                                },
+                                error: () => {
+                                  this.openSnackBar("There has been an error deleting the ZIP file", "Close");
+                                }
+                              })
                           },
-                          error: (error) => {
-                            this.openSnackBar(error.error, "Close")
+                          error: () => {
+                            this.openSnackBar("There was an error retrieving the file", "Close")
                           }
                         })
                     }
@@ -209,8 +241,7 @@ export class DetailedViewComponent implements OnInit {
             }
           },
           error: (error) => {
-            // TODO: Check this error
-            console.log(error.error);
+            this.openSnackBar(error.error, "Close")
           }
         })
     }
