@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class CollectionServiceTest extends AbstractIntegrationTest {
 
@@ -25,6 +26,22 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         assertThat(testology.isPresent()).isTrue();
         Collection resutl = testology.get();
         assertThat(resutl.name()).isEqualTo("Testology");
+    }
+
+    @Test
+    void testSameNameDiffInstitutions() {
+        institutionService.createInstitution(new Institution("testSameNameDiffInstitutions_1", new ArrayList<>()));
+        institutionService.createInstitution(new Institution("testSameNameDiffInstitutions_2", new ArrayList<>()));
+        collectionService.persistCollection(new Collection("c_testSameNameDiffInstitutions", "testSameNameDiffInstitutions_1", Arrays.asList(new Role("role_1"))));
+        collectionService.persistCollection(new Collection("c_testSameNameDiffInstitutions", "testSameNameDiffInstitutions_2", Arrays.asList(new Role("role_2"))));
+        Optional<Collection> resultOpt = collectionService.findCollectionInternal("c_testSameNameDiffInstitutions","testSameNameDiffInstitutions_1");
+        Collection collection = resultOpt.get();
+        assertThat(collection.roleRestrictions()).hasSize(1);
+        assertThat(collection.roleRestrictions().get(0).name()).isEqualTo("role_1");
+        Optional<Collection> resultOpt2 = collectionService.findCollectionInternal("c_testSameNameDiffInstitutions","testSameNameDiffInstitutions_2");
+        Collection collection2 = resultOpt2.get();
+        assertThat(collection2.roleRestrictions()).hasSize(1);
+        assertThat(collection2.roleRestrictions().get(0).name()).isEqualTo("role_2");
     }
 
     @Test

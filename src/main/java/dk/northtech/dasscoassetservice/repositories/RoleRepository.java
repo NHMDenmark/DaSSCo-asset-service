@@ -165,6 +165,7 @@ public interface RoleRepository extends SqlObject {
                 """);
         Agtype agtype1 = AgtypeFactory.create(builder2.build());
         String updateRolesQuery = sb.toString();
+        System.out.println(updateRolesQuery.toString());
         withHandle(h -> {
             h.createUpdate(updateRolesQuery)
                     .bind("params", agtype1)

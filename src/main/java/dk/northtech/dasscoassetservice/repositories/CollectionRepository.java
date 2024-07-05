@@ -37,7 +37,7 @@ public interface CollectionRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MERGE (i:Institution {name: $institution_name})
-                            MERGE (c:Collection {name: $collection_name})
+                            CREATE (c:Collection {name: $collection_name})
                             MERGE (i)<-[:USED_BY]-(c)
                             RETURN i.name, c.name
                         $$
