@@ -120,7 +120,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         List<SavedQuery> savedQueriesAfter = this.queriesService.getSavedQueries(user.username);
 
         assertThat(savedQueries.size()).isLessThan(savedQueriesAfter.size());
-        assertThat(saved.name).isEqualTo("\"" + savedQuery.name + "\"");
+        assertThat(saved.name).isEqualTo(savedQuery.name);
     }
 
     @Test
