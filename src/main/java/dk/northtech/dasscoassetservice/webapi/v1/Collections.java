@@ -72,6 +72,19 @@ public class Collections {
         return this.collectionService.persistCollection(collection);
     }
 
+    @PUT
+    @Path("/{collectionName}")
+    @Operation(summary = "Update Institution", description = "Updates the institution.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
+    @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Collection updateInstitution(Collection collection
+            , @PathParam("institutionName") String institutionName
+            , @PathParam("collectionName") String collectionName) {
+        return collectionService.updateCollection(collection);
+    }
     // Hidden until implemented
     @Hidden
     @DELETE

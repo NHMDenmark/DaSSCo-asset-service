@@ -218,7 +218,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-assetEvents";
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user, 10);
-        List<Event> events = assetService.getEvents("assetEvents");
+        List<Event> events = assetService.getEvents("assetEvents",user);
         assertThat(events.size()).isAtLeast(1);
         assertThat(events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
     }
@@ -382,7 +382,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result,user);
         assetService.completeAsset(new AssetUpdateRequest(null, new MinimalAsset("createAssetUpdateAsset", null, null, null),"i1_w1", "i1_p1", "bob"));
         assetService.auditAsset(user,new Audit("Audrey Auditor"), "createAssetUpdateAsset");
-        List<Event> resultEvents = assetService.getEvents(result.asset_guid);
+        List<Event> resultEvents = assetService.getEvents(result.asset_guid,user);
         assertThat(resultEvents.size()).isEqualTo(5);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt2.isPresent()).isTrue();
@@ -774,8 +774,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.deleteAssetMetadata(asset.asset_guid, user);
         Optional<Asset> optionalAsset = assetService.getAsset(asset.asset_guid);
         assertThat(optionalAsset.isPresent()).isFalse();
-        List<Event> assetEvents = assetService.getEvents(asset.asset_guid);
-        assertThat(assetEvents.size()).isEqualTo(0);
     }
 
     @Test

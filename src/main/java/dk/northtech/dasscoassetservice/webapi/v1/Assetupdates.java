@@ -114,11 +114,11 @@ public class Assetupdates {
     @Path("{assetGuid}/events")
     @Operation(summary = "Get Asset Events", description = "Shows the events associated with an asset.")
     @Produces(MediaType.APPLICATION_JSON)
-   // @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Event.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Event> getEvents(@PathParam("assetGuid") String assetGuid) {
-        return this.assetService.getEvents(assetGuid);
+    public List<Event> getEvents(@PathParam("assetGuid") String assetGuid
+         , @Context SecurityContext securityContext) {
+        return this.assetService.getEvents(assetGuid,UserMapper.from(securityContext));
     }//check Rights
 
     @POST
