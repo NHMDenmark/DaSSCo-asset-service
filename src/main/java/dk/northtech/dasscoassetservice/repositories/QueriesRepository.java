@@ -157,5 +157,30 @@ public interface QueriesRepository extends SqlObject {
         });
     }
 
+    default String deleteSavedQuery(String name, String username) {
+        boilerplate();
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco'
+                   , $$
+                        MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query {name: $name})
+                        WITH q, q.name AS query_name
+                        DETACH DELETE q
+                        RETURN query_name
+                     $$
+                   , #params) as (query_name agtype);
+                """;
+
+        return withHandle(handle -> {
+            AgtypeMap params = new AgtypeMapBuilder()
+                    .add("username", username)
+                    .add("name", name).build();
+            Agtype agtype = AgtypeFactory.create(params);
+            return handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .mapTo(String.class)
+                    .one();
+        });
+    }
+
 
 }

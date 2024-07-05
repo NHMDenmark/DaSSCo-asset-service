@@ -2,7 +2,8 @@ import {Component, Inject, OnInit} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {QueriesService} from "../../../services/queries.service";
 import {QueryView, SavedQuery} from "../../../types/query-types";
-import {map} from "rxjs";
+import {BehaviorSubject, filter, map} from "rxjs";
+import {isNotUndefined} from "@northtech/ginnungagap";
 
 @Component({
   selector: 'dassco-saved-searches-dialog',
@@ -10,18 +11,23 @@ import {map} from "rxjs";
   styleUrls: ['./saved-searches-dialog.component.scss']
 })
 export class SavedSearchesDialogComponent implements OnInit {
+  deleteQuerySubject = new BehaviorSubject<string | undefined>(undefined);
+  deleteQuery$ = this.deleteQuerySubject.asObservable();
+  savedQueries: SavedQuery[] = [];
+
   savedQueries$
     = this.queriesService.savedQueries$
     .pipe(
+      filter(isNotUndefined),
       map(saved => {
-        console.log(saved)
+        this.savedQueries = saved;
         return saved;
       })
     )
 
   constructor(
     public dialogRef: MatDialogRef<SavedSearchesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: string,
+    @Inject(MAT_DIALOG_DATA) public data: {title: string, queryMap: Map<string, QueryView[]>},
     private queriesService: QueriesService
   ) {}
 
@@ -32,10 +38,13 @@ export class SavedSearchesDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
+  deleteSavedSearch(query: SavedQuery) {
+    this.savedQueries = this.savedQueries.filter(sq => sq.name != query.name);
+    this.deleteQuerySubject.next(query.name);
+  }
+
   chooseQuery(query: SavedQuery) {
-    console.log(query)
     const queryMap: Map<string, QueryView[]> = new Map(Object.entries(JSON.parse(query.query)));
-    console.log(queryMap)
     this.dialogRef.close({title: query.name, map: queryMap});
   }
 }

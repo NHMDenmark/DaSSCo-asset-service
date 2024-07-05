@@ -72,6 +72,18 @@ export class QueriesService {
       );
   }
 
+  deleteSavedSearch(title: string): Observable<string | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.delete<string>(`${this.baseUrl}/saved/${title}`, {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/${title}`, undefined))
+            );
+        })
+      );
+  }
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);

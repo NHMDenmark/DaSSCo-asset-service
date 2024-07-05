@@ -70,7 +70,6 @@ export class QueriesComponent implements OnInit {
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
-    console.log('select with, ', savedQuery)
     if (this.queryHandlerEle) {
       const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
       handlerComponent.instance.nodes = this.nodes;
@@ -154,7 +153,6 @@ export class QueriesComponent implements OnInit {
         this.queryUpdatedTitle = queryMap.title;
         this.queryHandlerEle?.clear();
         Array.from(queryMap.map.keys()).forEach((key) => {
-          console.log(queryMap.map.get(key))
           this.newSelect(queryMap.map.get(key));
         });
       }
@@ -162,15 +160,11 @@ export class QueriesComponent implements OnInit {
   }
 
   updateSearch() {
-    console.log(this.queryTitle)
-    console.log(this.queryUpdatedTitle)
-    console.log(this.queries)
     if (this.queryUpdatedTitle && this.queryTitle) {
       this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
         .subscribe(updated => {
           this.queryTitle = updated?.name;
           this.queryUpdatedTitle = updated?.name;
-          console.log(updated)
         })
     }
   }

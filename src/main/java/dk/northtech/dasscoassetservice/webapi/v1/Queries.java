@@ -98,4 +98,16 @@ public class Queries {
         User user = UserMapper.from(securityContext);
         return this.queriesService.updateSavedQuery(prevTitle, newQuery, user.username);
     }
+
+    @DELETE
+    @Path("/saved/{title}")
+    @Operation(summary = "Deletes a user's saved query", description = "Deletes the user's query from the title.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public String deleteSavedQuery(@Context SecurityContext securityContext, @PathParam("title") String prevTitle) {
+        User user = UserMapper.from(securityContext);
+        return this.queriesService.deleteSavedQuery(prevTitle, user.username);
+    }
 }

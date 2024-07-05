@@ -1,10 +1,18 @@
 @import 'src/style/base';
 
-ul {
-  font-family: graphik-regular;
-}
+.container {
+  display: flex;
+  flex-direction: column;
 
-li:hover {
-  cursor: pointer;
-  background-color: #dcd6d6;
+  ul {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-family: graphik-regular;
+  }
+
+  li:hover {
+    cursor: pointer;
+    background-color: #dcd6d6;
+  }
 }

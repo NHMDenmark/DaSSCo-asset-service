@@ -151,4 +151,25 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assertThat(savedQueriesAfterUpdate.contains(initialQuery)).isFalse();
         assertThat(savedQueriesAfterUpdate.contains(updatedSavedQuery)).isTrue();
     }
+
+    @Test
+    public void deleteSavedSearch() {
+        String query = "[{\"id\": 0, \"query\": [{ \"select\": \"Asset\", \"where\": [{ \"property\": \"name\", \"fields\": " +
+                "[{ \"operator\": \"CONTAINS\", \"value\": \"7\", \"dataType\": \"STRING\" }, { \"operator\": \"CONTAINS\", " +
+                "\"value\": \"5\", \"dataType\": \"STRING\" }]} ]}, { \"select\": \"Institution\", \"where\": " +
+                "[{ \"property\": \"name\", \"fields\": [{ \"operator\": \"CONTAINS\", \"value\": \"test\", \"dataType\": " +
+                "\"STRING\" }]}]}]}]";
+
+        SavedQuery initialQuery = new SavedQuery("Asset 1", query);
+        this.queriesService.saveQuery(initialQuery, user.username);
+        List<SavedQuery> savedQueriesBeforeUpdate = this.queriesService.getSavedQueries(user.username);
+
+        String deletedQueryName = this.queriesService.deleteSavedQuery("Asset 1", user.username);
+        List<SavedQuery> savedQueriesAfterUpdate = this.queriesService.getSavedQueries(user.username);
+
+        assertThat(deletedQueryName).matches("\"" + "Asset 1" + "\"");
+        assertThat(savedQueriesBeforeUpdate.contains(initialQuery)).isTrue();
+        assertThat(savedQueriesAfterUpdate.size()).isLessThan(savedQueriesBeforeUpdate.size());
+        assertThat(savedQueriesAfterUpdate.contains(initialQuery)).isFalse();
+    }
 }

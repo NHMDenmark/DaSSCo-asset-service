@@ -11,7 +11,7 @@ export class SaveSearchDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<SaveSearchDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: string,) { }
+    @Inject(MAT_DIALOG_DATA) public data: string) { }
 
   ngOnInit(): void {
   }
