@@ -846,11 +846,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
         assertThat(updatedSecondAsset.events.size()).isEqualTo(2);
         assertThat(updatedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
-        // Specimens changed:
-        assertThat(updatedFirstAsset.specimens.size()).isEqualTo(1);
-        assertThat(updatedFirstAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
-        assertThat(updatedSecondAsset.specimens.size()).isEqualTo(1);
-        assertThat(updatedSecondAsset.specimens.get(0).barcode()).isEqualTo("BULK_UPDATE_TEST");
         // Funding changed:
         assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
         assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
@@ -860,25 +855,22 @@ class AssetServiceTest extends AbstractIntegrationTest {
         // Payload type changed:
         assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
         assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
-        // File formats changed:
-        assertThat(updatedFirstAsset.file_formats.size()).isEqualTo(1);
-        assertThat(updatedFirstAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
-        assertThat(updatedSecondAsset.file_formats.size()).isEqualTo(1);
-        assertThat(updatedSecondAsset.file_formats.get(0)).isEqualTo(FileFormat.JPEG);
         // Asset locked changed:
         assertThat(updatedFirstAsset.asset_locked).isTrue();
         assertThat(updatedSecondAsset.asset_locked).isTrue();
-        // Restricted access changed:
-        assertThat(updatedFirstAsset.restricted_access.size()).isEqualTo(1);
-        assertThat(updatedFirstAsset.restricted_access.get(0)).isEqualTo(InternalRole.DEVELOPER);
-        assertThat(updatedSecondAsset.restricted_access.size()).isEqualTo(1);
-        assertThat(updatedSecondAsset.restricted_access.get(0)).isEqualTo(InternalRole.DEVELOPER);
         // Tags changed:
-        assertThat(updatedFirstAsset.tags.size()).isEqualTo(1);
-        assertThat(updatedSecondAsset.tags.size()).isEqualTo(1);
-        // Date asset finalised changed:
-        assertThat(updatedFirstAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
-        assertThat(updatedSecondAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(updatedAsset.date_asset_finalised.truncatedTo(ChronoUnit.MILLIS));
+        assertThat(updatedFirstAsset.tags.size()).isEqualTo(3);
+        assertThat(updatedSecondAsset.tags.size()).isEqualTo(3);
+        }
+
+    @Test
+    void testBulkUpdateNoBody(){
+        List<String> assetList = new ArrayList<String>();
+        assetList.add("bulk-asset-no-body");
+        assetList.add("bulk-asset-no-body-2");
+        Asset updatedAsset = null;
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body, please specify fields to update");
     }
 
     @Test
@@ -971,21 +963,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.funding = "funding has depleted";
         asset.subject = "subject-non-edited";
         asset.payload_type = "payload-not-edited";
-        asset.file_formats.add(FileFormat.CR3);
-        asset.file_formats.add(FileFormat.RAF);
-        asset.restricted_access.add(InternalRole.USER);
-        asset.restricted_access.add(InternalRole.ADMIN);
         asset.tags.put("Tag 1", "Value 1");
         asset.tags.put("Tag 2", "Value 2");
-        asset.date_asset_finalised = Instant.now().minus(1, ChronoUnit.DAYS);
         asset.digitiser = "test-user";
         asset.updateUser = "update-user";
-
-        Specimen firstSpecimen = new Specimen("barcode-specimen-1", "pid-specimen-1", "image");
-        Specimen secondSpecimen = new Specimen("barcode-specimen-2", "pid-specimen-2", "image");
-        List<Specimen> specimenList = Arrays.asList(firstSpecimen, secondSpecimen);
-
-        asset.specimens = specimenList;
 
         return asset;
     }
@@ -997,14 +978,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         updatedAsset.workstation = "i2_w1";
         updatedAsset.collection = "i2_c1";
         updatedAsset.status = AssetStatus.BEING_PROCESSED;
-        Specimen specimen = new Specimen("BULK_UPDATE_TEST", "pid-BULK_UPDATE_TEST", "text");
-        List<Specimen> specimenList = new ArrayList<>();
-        specimenList.add(specimen);
-        updatedAsset.specimens = specimenList;
         updatedAsset.asset_locked = true;
-        updatedAsset.restricted_access.add(InternalRole.DEVELOPER);
         updatedAsset.tags.put("Tag 3", "Value 3");
-        updatedAsset.date_asset_finalised = Instant.now();
         return updatedAsset;
     }
 }

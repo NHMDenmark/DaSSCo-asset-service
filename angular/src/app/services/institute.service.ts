@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
-import {Institute} from "../types";
+import {Institute} from "../types/types";
 
 @Injectable({
   providedIn: 'root'

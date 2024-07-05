@@ -41,6 +41,7 @@ public class AbstractIntegrationTest {
     @Inject FileProxyClient fileProxyClient;
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
+    @Inject AssetGroupService assetGroupService;
 
     User user = new User();
     @Inject
@@ -54,7 +55,7 @@ public class AbstractIntegrationTest {
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
         // These tests assume the dev dataset, so roll that context on:
-        registry.add("spring.liquibase.contexts", () -> "default, development");
+        registry.add("spring.liquibase.contexts", () -> "default, development, test");
         registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_file_proxy");
     }
 }

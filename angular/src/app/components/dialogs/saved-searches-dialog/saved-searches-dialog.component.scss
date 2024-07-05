@@ -1,0 +1,10 @@
+@import 'src/style/base';
+
+ul {
+  font-family: graphik-regular;
+}
+
+li:hover {
+  cursor: pointer;
+  background-color: #dcd6d6;
+}

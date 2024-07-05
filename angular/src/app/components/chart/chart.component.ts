@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import Chart, {ChartDataset, ChartEvent, ChartOptions, LegendElement, LegendItem} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types';
+import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types/types';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {isNotUndefined} from '@northtech/ginnungagap';
 
@@ -154,7 +154,7 @@ export class ChartComponent {
             pinch: {
               enabled: true
             },
-            mode: 'xy'
+            mode: 'x'
           }
         }
       },

@@ -100,22 +100,25 @@ public interface AssetRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, Map<Asset, List<Specimen>> assetAndSpecimens){
+    default List<Asset> bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, List<Asset> assets, List<String> assetList){
         boilerplate();
         // Update asset metadata:
         bulkUpdateAssets(sql, builder);
         // Add Event to every asset:
         // TODO: This is a solution for the bulk update, but it takes individual calls.
-        for (Map.Entry<Asset, List<Specimen>> entry : assetAndSpecimens.entrySet()) {
-            Asset asset = entry.getKey();
-            List<Specimen> specimenList = entry.getValue();
+        for (Asset asset : assets) {
             // Set event (individual calls)
             setEvent(updatedAsset.updateUser, event, asset);
             // Connect parent and child (individual calls)
             connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
-            // Detach and persist the specimens (individual calls).
-            createSpecimenRepository().persistSpecimens(asset, specimenList);
+            // Modify tags
+            if (!updatedAsset.tags.isEmpty()){
+                setTags(asset);
+            }
         }
+
+        // Return the List of Assets:
+        return this.readMultipleAssetsInternal(assetList);
     }
 
     @Transaction
@@ -653,6 +656,37 @@ public interface AssetRepository extends SqlObject {
                 return handle;
             });
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transaction
+    default void setTags(Asset asset){
+        String sql =
+                """
+                        SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                            MATCH (a:Asset {name: $asset_guid})
+                            
+                            SET a.tags = $tags
+                        $$
+                        , #params) as (a agtype);
+                        """;
+
+        try {
+            withHandle(handle -> {
+                AgtypeMapBuilder tags = new AgtypeMapBuilder();
+                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+                AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                        .add("asset_guid", asset.asset_guid)
+                        .add("tags", tags.build());
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
             throw new RuntimeException(e);
         }
     }

@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -159,19 +160,21 @@ public class Assetupdates {
         return this.assetService.updateAsset(asset, UserMapper.from(securityContext));
     }
 
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @PUT
     @Path("/bulkUpdate")
     @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void bulkUpdate(Asset asset
+    public List<Asset>  bulkUpdate(Asset asset
             , @QueryParam("assets") List<String> assetGuids
             , @Context SecurityContext securityContext){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
         // Return type?
         // Roles Allowed?
-        this.assetService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
+        return this.assetService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
     }
 
     @GET
@@ -200,6 +203,7 @@ public class Assetupdates {
     @DELETE
     @Path("/{assetGuid}/deleteMetadata")
     @Operation(summary = "Delete Asset Metadata", description = "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.")
+    @Produces(APPLICATION_JSON)
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid

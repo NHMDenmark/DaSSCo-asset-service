@@ -29,15 +29,26 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
+import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
+import {MatChipsModule} from "@angular/material/chips";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatExpansionModule} from "@angular/material/expansion";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
+import {MatListModule} from "@angular/material/list";
+import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
+import {MatDialogModule} from "@angular/material/dialog";
+import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
+import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     UserComponent,
     DocsComponent,
+    BulkUpdateComponent,
     StatisticsComponent,
     AssetsComponent,
     GraphComponent,
@@ -47,7 +58,11 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     ExportChartComponent,
     StatusWidgetComponent,
     QueriesComponent,
-    QueryBuilderComponent
+    QueryBuilderComponent,
+    QueryHandlerComponent,
+    SavedSearchesDialogComponent,
+    SaveSearchDialogComponent,
+    DetailedViewComponent
   ],
   imports: [
     BrowserModule,
@@ -70,7 +85,14 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     MatSnackBarModule,
     MatDividerModule,
     MatTableModule,
-    MatCardModule
+    MatCardModule,
+    MatExpansionModule,
+    MatDialogModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatExpansionModule,
+    MatCardModule,
+    MatListModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

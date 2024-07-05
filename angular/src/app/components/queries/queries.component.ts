@@ -1,10 +1,16 @@
 import {Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from "../../services/queries.service";
-import {filter, map, Observable, take} from "rxjs";
+import {filter, iif, map, Observable, of, take} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
-import {QueryBuilderComponent} from "../query-builder/query-builder.component";
-import {Asset, Query} from "../../types";
+import {Asset, Query, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
+import {QueryHandlerComponent} from "../query-handler/query-handler.component";
+import {
+  SavedSearchesDialogComponent
+} from "../dialogs/saved-searches-dialog/saved-searches-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
+import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'dassco-queries',
@@ -12,58 +18,164 @@ import {MatTableDataSource} from "@angular/material/table";
   styleUrls: ['./queries.component.scss']
 })
 export class QueriesComponent implements OnInit {
-  @ViewChild('queryBuilderContainer', { read: ViewContainerRef, static: true }) queryBuilderEle: ViewContainerRef | undefined;
+  @ViewChild('queryHandlerContainer', { read: ViewContainerRef, static: true }) queryHandlerEle: ViewContainerRef | undefined;
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
-  nodes: Map<string, string[]> | undefined;
-  queries: Map<number, Query> = new Map;
+  queries: Map<number, QueryView[]> = new Map;
+  nodes: Map<string, string[]> = new Map();
+  queryTitle: string | undefined;
+  queryUpdatedTitle: string | undefined;
 
-  nodes$: Observable<Map<string, string[]> | undefined>
+  propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
     .pipe(
       filter(isNotUndefined),
       map(nodes => {
-        this.nodes = new Map(Object.entries(nodes));
+        localStorage.setItem('node-properties', JSON.stringify(nodes));
+        this.nodes = nodes;
         return new Map(Object.entries(nodes));
       })
     )
 
+  propertiesCached$
+    = of (localStorage.getItem('node-properties')).pipe(
+    map(properties => {
+      if (properties) {
+        const propertiesMap = new Map<string, string[]>(JSON.parse(properties));
+        this.nodes = propertiesMap;
+        return propertiesMap;
+      }
+      return new Map();
+    })
+  )
+
+  nodes$: Observable<Map<string, string[]> | undefined>
+  = iif(() => { // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
+      return localStorage.getItem('node-properties') == null;
+    },
+    this.propertiesCall$, // if it's empty
+    this.propertiesCached$ // if it's not empty
+  );
+
   constructor(private queriesService: QueriesService
+              , public dialog: MatDialog
+              , private _snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
-    this.nodes$.pipe(filter(isNotUndefined),take(1)).subscribe(() => this.addWhere()); // just adding the initial where. yet to find better way...
+    this.nodes$.pipe(filter(isNotUndefined),take(1))
+      .subscribe(_nodes => this.newSelect(undefined))
   }
 
-  addWhere() {
-    if (this.queryBuilderEle) {
-      const newComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
-      newComponent.instance.nodes = this.nodes ? this.nodes : new Map;
-      newComponent.instance.saveQueryEvent.subscribe(queryFields => this.saveQuery(queryFields, this.queryBuilderEle!.indexOf(newComponent.hostView)));
-      newComponent.instance.removeComponentEvent.subscribe(() => {
-        this.removeQueryComponent(this.queryBuilderEle!.indexOf(newComponent.hostView));
-        newComponent.destroy();
+  newSelect(savedQuery: QueryView[] | undefined) {
+    console.log('select with, ', savedQuery)
+    if (this.queryHandlerEle) {
+      const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
+      handlerComponent.instance.nodes = this.nodes;
+      handlerComponent.instance.savedQuery = savedQuery;
+      const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
+      handlerComponent.instance.idx = childIdx;
+      handlerComponent.instance.saveQueryEvent.subscribe(queries => this.queries.set(childIdx, queries));
+      handlerComponent.instance.removeComponentEvent.subscribe(() => {
+        this.queries.delete(childIdx);
+        handlerComponent.destroy();
       });
     }
   }
 
-  removeQueryComponent(index: number) {
-    this.queries.delete(index);
-  }
-
-  saveQuery(savedQuery: Query, index: number) {
-    this.queries.set(index, savedQuery); // map to avoid duplicates if a value is updated
+  saveQuery(queries: QueryView[], index: number) {
+    this.queries.set(index, queries);
   }
 
   save() {
-    const queries = Array.from(this.queries.values()).map(val => val);
-    // console.log('saving queries', queries)
-    this.queriesService.getNodesFromQuery(queries, this.limit).subscribe(result => {
+    const queryResponses: QueryResponse[] = [];
+
+    this.queries.forEach((val, key) => {
+      const nodeMap = new Map<string, QueryWhere[]>;
+      val.forEach(where => {
+        if (nodeMap.has(where.node)) {
+          nodeMap.get(where.node)!.push({property: where.property, fields: where.fields});
+        } else {
+          nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
+        }
+      })
+      const qv2s = Array.from(nodeMap).map((value) => {
+        return {select: value[0], where: value[1]} as Query;
+      })
+
+      const response: QueryResponse = {id: key, query: qv2s};
+      queryResponses.push(response);
+    })
+
+    this.queriesService.getNodesFromQuery(queryResponses, this.limit).subscribe(result => {
       if (result) {
         this.dataSource.data = result;
       }
     })
   }
+
+  clearAll() {
+    this.queryHandlerEle?.clear();
+    this.queries.clear();
+    this.dataSource.data = [];
+    this.queryTitle = undefined;
+    this.newSelect(undefined);
+  }
+
+  saveSearch() {
+    const dialogRef = this.dialog.open(SaveSearchDialogComponent, {
+      width: '250px'
+    });
+
+    dialogRef.afterClosed().subscribe((title: string | undefined) => {
+      if (title) {
+        this.queriesService.saveSearch({name: title, query: JSON.stringify(Object.fromEntries(this.queries))})
+          .subscribe(saved => {
+            if (saved) {
+              this._snackBar.open('The search ' + title + ' has been saved.', 'OK');
+            } else {
+              this._snackBar.open('Error occurred when saving the search. Try again.', 'OK');
+            }
+          })
+      }
+    });
+  }
+
+  savedSearchesDialog(): void {
+    const dialogRef = this.dialog.open(SavedSearchesDialogComponent, {
+      width: '250px'
+    });
+
+    dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
+      if (queryMap) {
+        this.queryTitle = queryMap.title;
+        this.queryUpdatedTitle = queryMap.title;
+        this.queryHandlerEle?.clear();
+        Array.from(queryMap.map.keys()).forEach((key) => {
+          console.log(queryMap.map.get(key))
+          this.newSelect(queryMap.map.get(key));
+        });
+      }
+    });
+  }
+
+  updateSearch() {
+    console.log(this.queryTitle)
+    console.log(this.queryUpdatedTitle)
+    console.log(this.queries)
+    if (this.queryUpdatedTitle && this.queryTitle) {
+      this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
+        .subscribe(updated => {
+          this.queryTitle = updated?.name;
+          this.queryUpdatedTitle = updated?.name;
+          console.log(updated)
+        })
+    }
+  }
+
+  // clearcache() { // temp
+  //   localStorage.clear();
+  // }
 }

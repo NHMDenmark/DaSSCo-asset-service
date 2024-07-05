@@ -227,10 +227,23 @@ public class AssetService {
     }
 
     public void bulkUpdate(List<String> assetList, Asset updatedAsset, User user){
-        // TODO: Don't forget corner cases!!!!!!
-        // TODO: Remove specimens and insert the new ones. How?
+               /* Bulk-Updatable fields:
+            Tags (Added, not replaced).
+            Status
+            Asset_Locked (Only for locking, not unlocking)
+            Subject ️
+            Funding
+            Payload_Type
+            Parent_Guid
+            Digitiser
+            Institution?
+            Collection?
+        */
 
-        // UpdateUser must be present:
+        if (updatedAsset == null){
+            throw new IllegalArgumentException("Empty body, please specify fields to update");
+        }
+
         if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
             throw new IllegalArgumentException("Update user must be provided!");
         }
@@ -248,13 +261,19 @@ public class AssetService {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-        // Validate the Update fields:
-        validateAsset(updatedAsset);
+        // Check that the bulk update will not set the asset to be its own parent:
+        for (Asset asset : assets){
+            if (updatedAsset.parent_guid != null){
+                if(asset.asset_guid.equals(updatedAsset.parent_guid)) {
+                    throw new IllegalArgumentException("Asset cannot be its own parent");
+                }
+            }
+        }
 
         // Parent_guid does not exist:
         if (updatedAsset.parent_guid != null){
             Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
-            if (!optParent.isPresent()){
+            if (optParent.isEmpty()){
                 throw new IllegalArgumentException("asset_parent does not exist!");
             }
         }
@@ -279,41 +298,25 @@ public class AssetService {
         event.pipeline = updatedAsset.pipeline;
         event.timeStamp = Instant.now();
 
-
-        // Detaching specimens:
-        Map<Asset, List<Specimen>> assetAndSpecimens = new HashMap<>();
-
-        assets.forEach(assetToUpdate -> {
-            Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
-            List<Specimen> specimensToDetach = assetToUpdate.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
-            assetToUpdate.specimens = (!updatedAsset.specimens.isEmpty()) ? updatedAsset.specimens : assetToUpdate.specimens;
-            assetAndSpecimens.put(assetToUpdate, specimensToDetach);
+        assets.forEach(asset -> {
+           Map<String, String> existingTags = new HashMap<>(asset.tags);
+           for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()){
+               if (existingTags.containsKey(entry.getKey())) {
+                   if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
+                       existingTags.put(entry.getKey(), entry.getValue());
+                   }
+               } else {
+                   existingTags.put(entry.getKey(), entry.getValue());
+               }
+           }
+           asset.tags = existingTags;
         });
 
-        jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
-
+        return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
-
-        if (!updatedFields.file_formats.isEmpty()){
-            AgtypeListBuilder fileFormats = new AgtypeListBuilder();
-            updatedFields.file_formats.forEach(x -> fileFormats.add(x.name()));
-            builder.add("file_formats", fileFormats.build());
-        }
-
-        if (!updatedFields.tags.isEmpty()){
-            AgtypeMapBuilder tags = new AgtypeMapBuilder();
-            updatedFields.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
-            builder.add("tags", tags.build());
-        }
-
-        if (!updatedFields.restricted_access.isEmpty()){
-            AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-            updatedFields.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-            builder.add("restricted_access", restrictedAcces.build());
-        }
 
         if (updatedFields.status != null){
             builder.add("status", updatedFields.status.name());
@@ -338,17 +341,13 @@ public class AssetService {
         if (updatedFields.asset_locked) {
             builder.add("asset_locked", true);
         }
-        if (updatedFields.date_asset_finalised != null) {
-            builder.add("date_asset_finalised", updatedFields.date_asset_finalised.toEpochMilli());
-        }
+
         if (updatedFields.digitiser != null) {
             builder.add("digitiser", updatedFields.digitiser);
         }
 
-        builder.add("user", updatedFields.updateUser)
-                .add("collection_name", updatedFields.collection)
-                .add("workstation_name", updatedFields.workstation)
-                .add("pipeline_name", updatedFields.pipeline);
+        builder
+                .add("user", updatedFields.updateUser);
 
         return builder;
     }
@@ -362,13 +361,8 @@ public class AssetService {
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (w:Workstation {name: $workstation_name})
-                            MATCH (p:Pipeline {name: $pipeline_name})
                             MATCH (a:Asset)
                             WHERE a.asset_guid IN [%s]
-                            OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
-                            DELETE co
                             
                             SET
                 """;
@@ -388,29 +382,10 @@ public class AssetService {
                                 a.payload_type = $payload_type,
                     """;
         }
-        if (!updatedFields.tags.isEmpty()){
-            sql = sql + """
-                                a.tags = $tags,
-                    """;
-        }
+
         if (updatedFields.status != null){
             sql = sql + """
                                 a.status = $status,
-                    """;
-        }
-        if (!updatedFields.file_formats.isEmpty()){
-            sql = sql + """
-                                a.file_formats = $file_formats,
-                    """;
-        }
-        if (!updatedFields.restricted_access.isEmpty()){
-            sql = sql + """
-                                a.restricted_access = $restricted_access,
-                    """;
-        }
-        if (updatedFields.date_asset_finalised != null){
-            sql = sql + """
-                                a.date_asset_finalised = $date_asset_finalised,
                     """;
         }
         if (updatedFields.parent_guid != null){
@@ -429,11 +404,10 @@ public class AssetService {
                                 a.digitiser = $digitiser,
                     """;
         }
-        // AFTER PIPELINE IS NEW: DELETE IF IT DOES NOT WORK.
+
         sql = sql + """
-                            a.collection = $collection_name,
-                            a.workstation = $workstation_name,
-                            a.pipeline = $pipeline_name
+                        a.workstation = $workstation_name,
+                        a.pipeline = $pipeline_name
                         $$
                         , #params) as (a agtype);
                 """;

@@ -1,39 +1,40 @@
+@import 'src/style/base';
+
 .container {
   display: flex;
-  flex-direction: column;
 
-  mat-card {
-    margin-bottom: 1rem;
-    width: 80%;
+  .form-container {
+    display: flex;
+    flex-direction: column;
 
-    mat-card-content {
+    .query-form-div {
       display: flex;
+      flex-direction: row;
+    }
+
+    .form-div {
       width: 100%;
-      margin-bottom: 0;
+      display: flex;
+      align-items: start;
+      justify-content: center;
 
-      mat-form-field {
-        margin-right: .5rem;
+      .small-input {
+        width: 3rem;
       }
 
-      .form-div {
-        width: 100%;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-
-        .small-input {
-          width: 3rem;
-        }
+      .save-btn:disabled {
+        background-color: $primaryColor;
+        color: white;
       }
     }
 
-    mat-card-actions {
-      margin-left: 0;
-      margin-bottom: 0;
-
-      button {
-        margin-right: .5rem;
-      }
+    .and-btn-div {
+      margin-bottom: 1rem;
+      margin-top: -1rem;
     }
+  }
+
+  mat-form-field {
+    margin-right: .5rem;
   }
 }
