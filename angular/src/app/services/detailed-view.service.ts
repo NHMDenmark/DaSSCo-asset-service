@@ -1,5 +1,5 @@
 import {inject, Injectable} from '@angular/core';
-import {Asset} from "../types";
+import {Asset} from "../types/query-types";
 import {catchError, Observable, of, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
