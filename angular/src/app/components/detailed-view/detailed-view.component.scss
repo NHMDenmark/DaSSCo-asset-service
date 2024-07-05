@@ -20,14 +20,14 @@
   overflow-y: auto;
 }
 
-.navigation-buttons {
+.icons {
   position: absolute;
   bottom: 5vh;
   left: 50%;
   transform: translate(-50%);
   display: flex;
   justify-content: space-around;
-  width: 5vw;
+  width: 30vw;
 }
 
 .icon-display {

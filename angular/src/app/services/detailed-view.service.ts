@@ -1,6 +1,6 @@
 import {inject, Injectable} from '@angular/core';
 import {Asset} from "../types";
-import {catchError, Observable, of, switchMap} from "rxjs";
+import {catchError, Observable, of, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {AssetService, FileProxy} from "../utility";
@@ -26,6 +26,61 @@ export class DetailedViewService {
         })
       );
   }
+
+  postCsv(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
+            .pipe(
+              catchError((error: any) => {
+                return throwError(() => error);
+              })
+          );
+        })
+      );
+  }
+
+  postZip(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createZipFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+            .pipe(
+              catchError((error: any) => {
+                return throwError(() => error);
+              })
+            );
+        })
+      );
+  }
+
+  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) : Observable<Blob> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
+            .pipe(
+              catchError((error: any) => {
+                return throwError(() => error)}))
+        })
+      )
+  }
+
+  deleteFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.delete(`${this.proxyUrl}/file_proxy/api/assetfiles/deleteLocalFiles/${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+            .pipe(
+              catchError((error) => {
+                return throwError(() => error)
+              })
+            )
+        })
+      )
+  }
+
 
   getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail : string) {
     return this.oidcSecurityService.getAccessToken()
