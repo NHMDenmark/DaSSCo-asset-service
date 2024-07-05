@@ -13,6 +13,9 @@
     "name" : "Assets",
     "description" : "Endpoints related to assets."
   }, {
+    "name" : "Asset Groups",
+    "description" : "Endpoints related to Asset Groups"
+  }, {
     "name" : "Asset Metadata",
     "description" : "Endpoints related to asset's metadata"
   }, {
@@ -80,6 +83,203 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/AssetV1"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/createassetgroup" : {
+      "post" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Create Asset Group",
+        "description" : "Takes a Group Name and a List of Assets",
+        "operationId" : "createAssetGroup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssetGroup"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/deletegroup/{groupName}" : {
+      "delete" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Delete Asset Groups",
+        "description" : "Deletes an Asset Group, takes the group name.",
+        "operationId" : "deleteAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/getgroup/{groupName}" : {
+      "get" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Get Asset Group",
+        "description" : "Takes a Group Name and returns the asset metadata of assets in that group",
+        "operationId" : "getAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups" : {
+      "get" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "List Asset Groups",
+        "description" : "Returns a list of the existing Asset Groups",
+        "operationId" : "getListAssetGroup",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/updategroup/{groupName}" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Update Asset Group",
+        "description" : "Updates the assets in an asset group.",
+        "operationId" : "updateAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
                 }
               }
             }
@@ -201,10 +401,25 @@
           }
         },
         "responses" : {
-          "default" : {
-            "description" : "default response",
+          "200" : {
             "content" : {
-              "application/json" : { }
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Asset"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
             }
           }
         },
@@ -1311,65 +1526,23 @@
           }
         }
       },
-      "AssetUpdateRequest" : {
+      "AssetGroup" : {
         "type" : "object",
         "properties" : {
-          "shareName" : {
-            "type" : "string"
+          "group_name" : {
+            "type" : "string",
+            "description" : "Asset Group Name",
+            "example" : "Butterflies"
           },
-          "minimalAsset" : {
-            "$ref" : "#/components/schemas/MinimalAsset"
-          },
-          "workstation" : {
-            "type" : "string",
-            "description" : "The name of the workstation used to do the imaging",
-            "example" : "ti-ws1"
-          },
-          "pipeline" : {
-            "type" : "string",
-            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
-            "example" : "ti-p1"
-          },
-          "digitiser" : {
-            "type" : "string",
-            "description" : "The name of the person who imaged the specimens (creating the assets)",
-            "example" : "THBO"
-          }
-        }
-      },
-      "MinimalAsset" : {
-        "type" : "object",
-        "properties" : {
-          "asset_guid" : {
-            "type" : "string",
-            "description" : "The Global Unique Identifier generated for each asset",
-            "example" : "ti-a01-202305241657"
-          },
-          "parent_guid" : {
-            "type" : "string",
-            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
-            "example" : "ti-a02-202305241657"
-          },
-          "institution" : {
-            "type" : "string",
-            "description" : "The name of the institution which owns and digitised the specimen",
-            "example" : "NNAD"
-          },
-          "collection" : {
-            "type" : "string",
-            "description" : "The collection name within the institution that holds the specimen",
-            "example" : "test-collection"
-          }
-        },
-        "description" : "Asset information consisting only on asset_guid, parent_guid, institution and collection."
-      },
-      "Audit" : {
-        "type" : "object",
-        "properties" : {
-          "user" : {
-            "type" : "string",
-            "description" : "The user doing the audit",
-            "example" : "THBO"
+          "assets" : {
+            "type" : "array",
+            "description" : "List of assets in the group",
+            "example" : [ "Asset_1", "Asset_2" ],
+            "items" : {
+              "type" : "string",
+              "description" : "List of assets in the group",
+              "example" : "[\"Asset_1\",\"Asset_2\"]"
+            }
           }
         }
       },
@@ -1671,6 +1844,68 @@
           }
         },
         "description" : "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen"
+      },
+      "AssetUpdateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "shareName" : {
+            "type" : "string"
+          },
+          "minimalAsset" : {
+            "$ref" : "#/components/schemas/MinimalAsset"
+          },
+          "workstation" : {
+            "type" : "string",
+            "description" : "The name of the workstation used to do the imaging",
+            "example" : "ti-ws1"
+          },
+          "pipeline" : {
+            "type" : "string",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
+            "example" : "ti-p1"
+          },
+          "digitiser" : {
+            "type" : "string",
+            "description" : "The name of the person who imaged the specimens (creating the assets)",
+            "example" : "THBO"
+          }
+        }
+      },
+      "MinimalAsset" : {
+        "type" : "object",
+        "properties" : {
+          "asset_guid" : {
+            "type" : "string",
+            "description" : "The Global Unique Identifier generated for each asset",
+            "example" : "ti-a01-202305241657"
+          },
+          "parent_guid" : {
+            "type" : "string",
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
+            "example" : "ti-a02-202305241657"
+          },
+          "institution" : {
+            "type" : "string",
+            "description" : "The name of the institution which owns and digitised the specimen",
+            "example" : "NNAD"
+          },
+          "collection" : {
+            "type" : "string",
+            "description" : "The collection name within the institution that holds the specimen",
+            "example" : "test-collection"
+          }
+        },
+        "description" : "Asset information consisting only on asset_guid, parent_guid, institution and collection."
+      },
+      "Audit" : {
+        "type" : "object",
+        "properties" : {
+          "user" : {
+            "type" : "string",
+            "description" : "The user doing the audit",
+            "example" : "THBO"
+          }
+        }
       },
       "Collection" : {
         "type" : "object",

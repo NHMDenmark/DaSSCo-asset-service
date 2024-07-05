@@ -1,0 +1,102 @@
+<form class="bulk-update-form">
+  <mat-accordion [multi]="true">
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Tags</mat-panel-title>
+      </mat-expansion-panel-header>
+      <div class="tag-container">
+        <div class="tag" *ngFor="let item of tags">
+          {{item.key}}
+          <button mat-icon-button color="warn" (click)="remove(item)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div style="width: 100%">
+        <mat-form-field appearance="fill">
+          <mat-label>Tag</mat-label>
+          <input matInput #tagInput placeholder="Tag" [(ngModel)]="newTag" name="tag" (keydown.enter)="add($event)">
+        </mat-form-field>
+        <mat-form-field appearance="fill">
+          <mat-label>Description</mat-label>
+          <input matInput placeholder="Description" [(ngModel)]="newDescription" name="description" (keydown.enter)="add($event)">
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="add($event)" [disabled]="!newTag || !newDescription">Add</button>
+      </div>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Status</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Status</mat-label>
+        <mat-select name="status" [(ngModel)]="status">
+          <mat-option [value]="''"></mat-option>
+          <mat-option *ngFor="let status of statusList" [value]="status">
+            {{ status }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Asset Locked</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Asset Locked</mat-label>
+        <mat-select name="asset_locked" [(ngModel)]="assetLocked">
+          <mat-option [value]="''"></mat-option>
+          <mat-option [value]="false">False</mat-option>
+          <mat-option [value]="true">True</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Subject</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Subject</mat-label>
+        <input matInput placeholder="Ex. Folder" value="" [(ngModel)]="subject" name="subject">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Funding</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Funding</mat-label>
+        <input matInput placeholder="Ex. 500.000kr" value="" [(ngModel)]="funding" name="funding">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Payload Type</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Payload Type</mat-label>
+        <input matInput placeholder="Ex. CT Scan" value="" [(ngModel)]="payloadType" name="payload_type">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Parent Guid</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Parent Guid</mat-label>
+        <input matInput placeholder="Ex. TEST_PARENT" value="" [(ngModel)]="parentGuid" name="parent_guid">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <mat-expansion-panel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Digitiser</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-form-field appearance="fill">
+        <mat-label>Digitiser</mat-label>
+        <input matInput placeholder="Ex. Niels Nielsen" value="" [(ngModel)]="digitiser" name="digitiser">
+      </mat-form-field>
+    </mat-expansion-panel>
+    <br>
+    <button (click)="updateAssets()">Update Assets</button>
+  </mat-accordion>
+</form>

@@ -154,7 +154,7 @@ export class ChartComponent {
             pinch: {
               enabled: true
             },
-            mode: 'xy'
+            mode: 'x'
           }
         }
       },

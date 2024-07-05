@@ -29,11 +29,16 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
+import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
+import {MatChipsModule} from "@angular/material/chips";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatExpansionModule} from "@angular/material/expansion";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
+import {MatListModule} from "@angular/material/list";
 import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
-import {MatExpansionModule} from "@angular/material/expansion";
 import {MatDialogModule} from "@angular/material/dialog";
 import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
 import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
@@ -43,6 +48,7 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     AppComponent,
     UserComponent,
     DocsComponent,
+    BulkUpdateComponent,
     StatisticsComponent,
     AssetsComponent,
     GraphComponent,
@@ -55,7 +61,8 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     QueryBuilderComponent,
     QueryHandlerComponent,
     SavedSearchesDialogComponent,
-    SaveSearchDialogComponent
+    SaveSearchDialogComponent,
+    DetailedViewComponent
   ],
   imports: [
     BrowserModule,
@@ -80,7 +87,12 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     MatTableModule,
     MatCardModule,
     MatExpansionModule,
-    MatDialogModule
+    MatDialogModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatExpansionModule,
+    MatCardModule,
+    MatListModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
