@@ -500,7 +500,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void udateAssetNoWritePermission(){
         collectionService.persistCollection(new Collection("updateAssetNoWritePermission_1","institution_2", Arrays.asList(new Role("updateAssetNoWritePermission_1"))));
-        Asset asset = getTestAsset("updateAssetNoUpdateUser");
+        Asset asset = getTestAsset("udateAssetNoWritePermission");
         asset.asset_pid = "pid-updateAssetNoWritePermission";
         asset.workstation = "i2_w1";
         asset.institution = "institution_2";
@@ -869,7 +869,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetList.add("bulk-asset-no-body");
         assetList.add("bulk-asset-no-body-2");
         Asset updatedAsset = null;
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset,user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body, please specify fields to update");
     }
 

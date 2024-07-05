@@ -24,11 +24,12 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         institutionService.createInstitution(new Institution("FNOOP"));
         pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
         collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+        collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
         Asset firstAsset = getTestAsset("asset_fnoop");
         firstAsset.pipeline = "fnoopyline";
         firstAsset.workstation = "i2_w1";
         firstAsset.institution = "FNOOP";
-        firstAsset.collection = "i1_c2";
+        firstAsset.collection = "n_c1";
         firstAsset.asset_pid = "pid-auditAsset";
         firstAsset.asset_locked = false;
         firstAsset.status = AssetStatus.BEING_PROCESSED;
@@ -38,7 +39,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         secondAsset.pipeline = "pl-01";
         secondAsset.workstation = "i2_w1";
         secondAsset.institution = "NNAD";
-        secondAsset.collection = "i1_c2";
+        secondAsset.collection = "i_c1";
         secondAsset.asset_pid = "piddipiddy";
         secondAsset.asset_locked = false;
         secondAsset.status = AssetStatus.BEING_PROCESSED;

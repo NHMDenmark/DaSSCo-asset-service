@@ -226,7 +226,7 @@ public class AssetService {
         return existing;
     }
 
-    public void bulkUpdate(List<String> assetList, Asset updatedAsset, User user){
+    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user){
                /* Bulk-Updatable fields:
             Tags (Added, not replaced).
             Status
