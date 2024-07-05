@@ -71,6 +71,9 @@ public class InstitutionService {
     }
 
     public Optional<Institution> getIfExists(String institutionName) {
+        if(institutionName == null) {
+            return Optional.empty();
+        }
         Institution institution = this.cache.get(institutionName);
         if(institution == null) {
             return Optional.empty();

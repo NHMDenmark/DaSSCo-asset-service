@@ -79,9 +79,9 @@ class RightsValidationServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void testCheckRightsNoRoles() {
-        Institution institution = new Institution("inst_testCheckReadRightsValidationOrdering", new ArrayList<>());
+        Institution institution = new Institution("inst_testCheckRightsNoRoles", new ArrayList<>());
         institutionService.createInstitution(institution);
-        Collection collection = new Collection("col_testCheckReadRightsValidationOrdering", institution.name(),new ArrayList<>() );
+        Collection collection = new Collection("col_testCheckRightsNoRoles", institution.name(),new ArrayList<>() );
         collectionService.persistCollection(collection);
 
         assertThat(rightsValidationService.checkReadRights(getUser("irrelevant"), institution.name(), collection.name())).isTrue();

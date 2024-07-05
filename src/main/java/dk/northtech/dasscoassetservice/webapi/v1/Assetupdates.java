@@ -47,8 +47,9 @@ public class Assetupdates {
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void auditAsset(@PathParam("assetGuid") String assetGuid
-            , Audit audit) {
-        assetService.auditAsset(audit, assetGuid);
+            , Audit audit
+            , @Context SecurityContext securityContext) {
+        assetService.auditAsset(UserMapper.from(securityContext),audit, assetGuid);
     }
 
     @PUT
@@ -112,12 +113,12 @@ public class Assetupdates {
     @Path("{assetGuid}/events")
     @Operation(summary = "Get Asset Events", description = "Shows the events associated with an asset.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
+   // @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Event.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Event> getEvents(@PathParam("assetGuid") String assetGuid) {
         return this.assetService.getEvents(assetGuid);
-    }
+    }//check Rights
 
     @POST
     @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n" +
@@ -149,13 +150,13 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(Asset asset,
-                             @PathParam("assetGuid") String assetGuid) {
+    public Asset updateAsset(Asset asset
+            , @PathParam("assetGuid") String assetGuid
+            , @Context SecurityContext securityContext) {
         asset.asset_guid = assetGuid;
-        return this.assetService.updateAsset(asset);
+        return this.assetService.updateAsset(asset, UserMapper.from(securityContext));
     }
 
     @PUT
@@ -164,18 +165,19 @@ public class Assetupdates {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void bulkUpdate(Asset asset,
-                           @QueryParam("assets") List<String> assetGuids){
+    public void bulkUpdate(Asset asset
+            , @QueryParam("assets") List<String> assetGuids
+            , @Context SecurityContext securityContext){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
         // Return type?
         // Roles Allowed?
-        this.assetService.bulkUpdate(assetGuids, asset);
+        this.assetService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "204", description = "No Content. AssetGuid does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -200,7 +202,8 @@ public class Assetupdates {
     @Operation(summary = "Delete Asset Metadata", description = "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.")
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid){
-        this.assetService.deleteAssetMetadata(assetGuid);
+    public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid
+           , @Context SecurityContext securityContext){
+        this.assetService.deleteAssetMetadata(assetGuid, UserMapper.from(securityContext));
     }
 }

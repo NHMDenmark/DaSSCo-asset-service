@@ -13,8 +13,4 @@ public record Collection(
         String institution,
         @Schema(description = "If this list contains roles then users attempting to read assets in this collection will need one of the listed roles")
         List<Role> roleRestrictions) {
-    public Set<String> getRolesAsSet() {
-        return roleRestrictions.stream().map(Role::name)
-                .collect(Collectors.toSet());
-    }
 }

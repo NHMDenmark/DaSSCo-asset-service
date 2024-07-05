@@ -81,7 +81,7 @@ public interface RoleRepository extends SqlObject {
         //remove all existing restrictions and overwrite with new ones if provided
         boilerplate();
         removeAllRestrictions(object, identifier);
-        if (roles.isEmpty()) {
+        if (roles == null || roles.isEmpty()) {
             return;
         }
         StringBuilder sb = new StringBuilder("""

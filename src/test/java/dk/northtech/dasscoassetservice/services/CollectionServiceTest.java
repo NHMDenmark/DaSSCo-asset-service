@@ -21,7 +21,7 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistCollection() {
         collectionService.persistCollection(new Collection("Testology", "institution_1", new ArrayList<>()));
-        Optional<Collection> testology = collectionService.findCollection("Testology","institution_1");
+        Optional<Collection> testology = collectionService.findCollectionInternal("Testology","institution_1");
         assertThat(testology.isPresent()).isTrue();
         Collection resutl = testology.get();
         assertThat(resutl.name()).isEqualTo("Testology");
@@ -31,19 +31,19 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     void testPersistCollectionWithRoles() {
         collectionService.persistCollection(new Collection("test-collection-roles", "institution_1", Arrays.asList(new Role("test-role"))));
         collectionService.persistCollection(new Collection("test-collection-no-roles", "institution_1",new ArrayList<>()));
-        Optional<Collection> result1opt = collectionService.findCollection("test-collection-roles","institution_1");
+        Optional<Collection> result1opt = collectionService.findCollectionInternal("test-collection-roles","institution_1");
         assertThat(result1opt.isPresent()).isTrue();
         Collection resutl = result1opt.get();
         assertThat(resutl.name()).isEqualTo("test-collection-roles");
         assertThat(resutl.roleRestrictions()).hasSize(1);
         Collection collection = new Collection(resutl.name(), resutl.institution(), Arrays.asList(new Role("test-role-1"), new Role("test-role-2")));
         collectionService.updateCollection(collection);
-        Optional<Collection> result2opt = collectionService.findCollection("test-collection-roles","institution_1");
+        Optional<Collection> result2opt = collectionService.findCollectionInternal("test-collection-roles","institution_1");
         Collection result2 = result2opt.orElseThrow(()->new RuntimeException("Failed"));
         assertThat(result2.roleRestrictions()).hasSize(2);
 
         //Verify that roles are only added to targeted Collection
-        Optional<Collection> result3opt = collectionService.findCollection("test-collection-no-roles","institution_1");
+        Optional<Collection> result3opt = collectionService.findCollectionInternal("test-collection-no-roles","institution_1");
         Collection result3 = result3opt.orElseThrow(()->new RuntimeException("Failed"));
         assertThat(result3.roleRestrictions()).hasSize(0);
 
@@ -54,10 +54,10 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     void testPersistCollectionAlreadyExists() {
         collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1", new ArrayList<>()));
         Institution institution1 = new Institution("institution_1");
-        List<Collection> before = collectionService.listCollections(institution1);
+        List<Collection> before = collectionService.listCollections(institution1,user);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1", new ArrayList<>())));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection already exists in this institute");
-        List<Collection> after = collectionService.listCollections(institution1);
+        List<Collection> after = collectionService.listCollections(institution1,user);
         assertThat(before.size()).isEqualTo(after.size());
     }
 
@@ -82,19 +82,19 @@ class CollectionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testListCollections(){
-        List<Collection> collections = collectionService.listCollections(new Institution("institution_1"));
+        List<Collection> collections = collectionService.listCollections(new Institution("institution_1"),user);
         assertThat(collections.size()).isAtLeast(2);
     }
 
     @Test
     void testListCollectionInstitutionDoesNotExist(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.listCollections(new Institution("non-existent-institution")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.listCollections(new Institution("non-existent-institution"),user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
     }
 
     @Test
     void testFindCollection(){
-        Optional<Collection> optCollection = collectionService.findCollection("i1_c1","institution_1");
+        Optional<Collection> optCollection = collectionService.findCollectionInternal("i1_c1","institution_1");
         assertThat(optCollection.isPresent()).isTrue();
         Collection exists = optCollection.get();
         assertThat(exists.name()).isEqualTo("i1_c1");
@@ -108,7 +108,7 @@ class CollectionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testFindCollectionDoesntExist(){
-        Optional<Collection> optCollection = collectionService.findCollection("does-not-exist","institution_1");
+        Optional<Collection> optCollection = collectionService.findCollectionInternal("does-not-exist","institution_1");
         assertThat(optCollection.isPresent()).isFalse();
     }
 }

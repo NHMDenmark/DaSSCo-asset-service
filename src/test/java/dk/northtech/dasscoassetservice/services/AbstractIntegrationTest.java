@@ -42,6 +42,7 @@ public class AbstractIntegrationTest {
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
 
+    User user = new User();
     @Inject
     void setAssetService(AssetService assetService) {
         AssetService spyAssetService = spy(assetService);

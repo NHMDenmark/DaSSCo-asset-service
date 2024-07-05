@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.InternalStatusTimeFrame;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
+import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -38,12 +39,16 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
     private final InternalStatusService internalStatusService;
+    private final RightsValidationService rightsValidationService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
 
     @Inject
-    public AssetApi(InternalStatusService internalStatusService) {
+    public AssetApi(InternalStatusService internalStatusService, RightsValidationService rightsValidationService) {
         this.internalStatusService = internalStatusService;
+        this.rightsValidationService = rightsValidationService;
     }
+
+
 
     @GET
     @Operation(summary = "Get Assets", description = "Returns a list of assets.")
@@ -80,7 +85,7 @@ public class AssetApi {
     @GET
     @Path("/inprogress")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetStatusInfo> getInternalStatusAmt(@QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {

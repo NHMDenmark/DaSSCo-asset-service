@@ -25,10 +25,18 @@ public class AssetService {
     private final StatisticsDataService statisticsDataService;
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
+    private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService, PipelineService pipelineService) {
+    public AssetService(InstitutionService institutionService
+            , CollectionService collectionService
+            , WorkstationService workstationService
+            , @Lazy FileProxyClient fileProxyClient
+            , Jdbi jdbi
+            , StatisticsDataService statisticsDataService
+            , PipelineService pipelineService
+            , RightsValidationService rightsValidationService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -36,9 +44,10 @@ public class AssetService {
         this.statisticsDataService = statisticsDataService;
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
+        this.rightsValidationService = rightsValidationService;
     }
 
-    public boolean auditAsset(Audit audit, String assetGuid) {
+    public boolean auditAsset(User user, Audit audit, String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
         if(Strings.isNullOrEmpty(audit.user())) {
             throw new IllegalArgumentException("Audit must have a user!");
@@ -47,6 +56,7 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
+        rightsValidationService.checkReadRightsThrowing(user,asset.institution, asset.collection);
         if(!InternalStatus.COMPLETED.equals(asset.internal_status)){
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
@@ -68,12 +78,14 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
+        rightsValidationService.checkReadRights(user, asset.institution,asset.collection);
         if(asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
         if(asset.date_asset_deleted != null) {
             throw new IllegalArgumentException("Asset is already deleted");
         }
+
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
@@ -81,13 +93,14 @@ public class AssetService {
         return true;
     }
 
-    public void deleteAssetMetadata(String assetGuid){
+    public void deleteAssetMetadata(String assetGuid, User user){
         // Check that the asset exists:
         Optional<Asset> optAsset = getAsset(assetGuid);
         if (optAsset.isEmpty()){
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
-
+        Asset asset = optAsset.get();
+        rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
     }
 
@@ -131,8 +144,10 @@ public class AssetService {
         if(optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
+
         //Mark as asset received
         Asset asset = optAsset.get();
+        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         if(asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
@@ -171,7 +186,7 @@ public class AssetService {
         return true;
     }
 
-    public Asset updateAsset(Asset updatedAsset) {
+    public Asset updateAsset(Asset updatedAsset, User user) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
         if(assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
@@ -181,6 +196,7 @@ public class AssetService {
         }
         validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
+        rightsValidationService.checkWriteRightsThrowing(user,existing.institution,existing.collection);
         Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
 
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
@@ -210,7 +226,7 @@ public class AssetService {
         return existing;
     }
 
-    public void bulkUpdate(List<String> assetList, Asset updatedAsset){
+    public void bulkUpdate(List<String> assetList, Asset updatedAsset, User user){
         // TODO: Don't forget corner cases!!!!!!
         // TODO: Remove specimens and insert the new ones. How?
 
@@ -225,7 +241,9 @@ public class AssetService {
 
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
-
+        for(Asset asset: assets) {
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution,asset.collection);
+        }
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -327,8 +345,7 @@ public class AssetService {
             builder.add("digitiser", updatedFields.digitiser);
         }
 
-        builder
-                .add("user", updatedFields.updateUser)
+        builder.add("user", updatedFields.updateUser)
                 .add("collection_name", updatedFields.collection)
                 .add("workstation_name", updatedFields.workstation)
                 .add("pipeline_name", updatedFields.pipeline);
@@ -441,7 +458,7 @@ public class AssetService {
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institution doesnt exist");
         }
-        Optional<Collection> collectionOpt = collectionService.findCollection(asset.collection, asset.institution);
+        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection, asset.institution);
         if(collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
@@ -488,6 +505,7 @@ public class AssetService {
         if (allocation == 0){
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
+        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateAssetFields(asset);
         validateAsset(asset);
 

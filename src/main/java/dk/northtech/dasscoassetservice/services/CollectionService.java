@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.CollectionRepository;
 import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
 import dk.northtech.dasscoassetservice.repositories.RoleRepository;
@@ -20,11 +21,15 @@ public class CollectionService {
 
     private Jdbi jdbi;
 
+    private RightsValidationService rightsValidationService;
+
     @Inject
-    public CollectionService(InstitutionService institutionService, Jdbi jdbi) {
+    public CollectionService(InstitutionService institutionService, Jdbi jdbi, RightsValidationService rightsValidationService) {
         this.institutionService = institutionService;
         this.jdbi = jdbi;
+        this.rightsValidationService = rightsValidationService;
     }
+
 
     public Collection persistCollection(Collection collection) {
         if (Objects.isNull(collection)) {
@@ -45,8 +50,6 @@ public class CollectionService {
             if (co.listCollections(institution).contains(collection)) {
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
-
-
             Collection col = new Collection(collection.name(), collection.institution(), collection.roleRestrictions());
             co.persistCollection(col);
             return h;
@@ -55,11 +58,12 @@ public class CollectionService {
         return collection;
     }
 
-    public List<Collection> listCollections(Institution institution) {
+    public List<Collection> listCollections(Institution institution, User user) {
         Optional<Institution> ifExists = institutionService.getIfExists(institution.name());
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institute doesnt exist");
         }
+        rightsValidationService.checkReadRightsThrowing(user,institution.name());
         return jdbi.withHandle(h -> {
             CollectionRepository repository = h.attach(CollectionRepository.class);
             return repository.listCollections(institution);
@@ -72,7 +76,12 @@ public class CollectionService {
             return attach.readAll();
         });
     }
-    public Optional<Collection> findCollection(String collectionName, String institutionName) {
+    public Optional<Collection> findCollection(User user, String collectionName, String institutionName) {
+        rightsValidationService.checkReadRightsThrowing(user, institutionName,collectionName);
+       return findCollectionInternal(collectionName, institutionName);
+    }
+
+    public Optional<Collection> findCollectionInternal(String collectionName, String institutionName) {
         return jdbi.withHandle(handle -> {
             CollectionRepository repository = handle.attach(CollectionRepository.class);
             return repository.findCollection(collectionName, institutionName);

@@ -4,6 +4,8 @@ import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.CollectionService;
+import dk.northtech.dasscoassetservice.services.RightsValidationService;
+import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -32,22 +34,27 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class Collections {
     private CollectionService collectionService;
+    private RightsValidationService rightsValidationService;
 
     @Inject
-    public Collections(CollectionService collectionService) {
+    public Collections(CollectionService collectionService, RightsValidationService rightsValidationService) {
         this.collectionService = collectionService;
+        this.rightsValidationService = rightsValidationService;
     }
+
+
 
     @GET
     @Operation(summary = "Get Collections", description = "List collections under a given institution.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiOperation(value = "List collections",  notes = "Lists all collections that belongs to given institution")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
             , @Context SecurityContext securityContext) {
-        return this.collectionService.listCollections(new Institution(institutionName));
+        rightsValidationService.checkReadRights(UserMapper.from(securityContext),institutionName);
+        return this.collectionService.listCollections(new Institution(institutionName), UserMapper.from(securityContext));
     }
 
     @POST
@@ -59,7 +66,9 @@ public class Collections {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Collection createInstitution(
             @PathParam("institutionName") String institutionName
-            , Collection collection) {
+            , Collection collection
+            , @Context SecurityContext securityContext) {
+        rightsValidationService.checkWriteRightsThrowing(UserMapper.from(securityContext), institutionName);
         return this.collectionService.persistCollection(collection);
     }
 
