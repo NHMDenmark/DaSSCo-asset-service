@@ -33,10 +33,10 @@ import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
 import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
-import { SavedSearchesComponent } from './components/saved-searches/saved-searches.component';
 import {MatExpansionModule} from "@angular/material/expansion";
 import {MatDialogModule} from "@angular/material/dialog";
-import { SavedSearchesDialogComponent } from './components/saved-searches/dialog/saved-searches-dialog/saved-searches-dialog.component';
+import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
+import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
 
 @NgModule({
   declarations: [
@@ -54,8 +54,8 @@ import { SavedSearchesDialogComponent } from './components/saved-searches/dialog
     QueriesComponent,
     QueryBuilderComponent,
     QueryHandlerComponent,
-    SavedSearchesComponent,
-    SavedSearchesDialogComponent
+    SavedSearchesDialogComponent,
+    SaveSearchDialogComponent
   ],
   imports: [
     BrowserModule,

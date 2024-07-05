@@ -70,7 +70,7 @@ public class Queries {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<String> saveQuery(SavedQuery savedQuery, @Context SecurityContext securityContext) {
+    public SavedQuery saveQuery(SavedQuery savedQuery, @Context SecurityContext securityContext) {
         User user = UserMapper.from(securityContext);
         return this.queriesService.saveQuery(savedQuery, user.username);
     }

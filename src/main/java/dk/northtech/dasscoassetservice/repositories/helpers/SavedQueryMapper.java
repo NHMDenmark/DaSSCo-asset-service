@@ -17,10 +17,21 @@ public class SavedQueryMapper implements RowMapper<SavedQuery> {
     public SavedQuery map(ResultSet rs, StatementContext ctx) throws SQLException {
         SavedQuery savedQuery = new SavedQuery();
 
-        Agtype title = rs.getObject("title", Agtype.class);
-        Agtype query = rs.getObject("query", Agtype.class);
-        savedQuery.query = query.getString();
-        savedQuery.title = title.getString();
+        rs.getObject("query_name");
+        if (!rs.wasNull()) {
+            Agtype name = rs.getObject("query_name", Agtype.class);
+            savedQuery.name = name.getString();
+        } else {
+            savedQuery.name = "null";
+        }
+
+        rs.getObject("query_query");
+        if (!rs.wasNull()) {
+            Agtype query = rs.getObject("query_query", Agtype.class);
+            savedQuery.query = query.getString();
+        } else {
+            savedQuery.query = "null";
+        }
 
         return savedQuery;
     }

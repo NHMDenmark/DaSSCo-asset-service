@@ -90,6 +90,11 @@ export interface Event {
   workstation: string | undefined;
 }
 
+export interface SavedQuery {
+  name: string;
+  query: string;
+}
+
 export enum AssetStatus {
   WORKING_COPY
   , ARCHIVE

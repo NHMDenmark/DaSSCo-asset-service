@@ -81,30 +81,30 @@ public interface QueriesRepository extends SqlObject {
         });
     }
 
-    default List<String> saveQuery(SavedQuery savedQuery, String username) {
+    default SavedQuery saveQuery(SavedQuery savedQuery, String username) {
         boilerplate();
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                   , $$
                         MATCH (u:User {name: $username})
-                        MERGE (q:Query {name: $title, query: $query})
+                        MERGE (q:Query {name: $name, query: $query})
                         MERGE (u)<-[:SAVED_BY]-(q)
-                        RETURN q.title
+                        RETURN q.name, q.query
                     $$
                     , #params)
-                    as (query_title agtype);
+                    as (query_name agtype, query_query agtype);
                 """;
 
         return withHandle(handle -> {
             AgtypeMap params = new AgtypeMapBuilder()
                     .add("username", username)
-                    .add("title", savedQuery.title)
+                    .add("name", savedQuery.name)
                     .add("query", savedQuery.query).build();
             Agtype agtype = AgtypeFactory.create(params);
             return handle.createQuery(sql)
                     .bind("params", agtype)
-                    .mapTo(String.class)
-                    .list();
+                    .map(new SavedQueryMapper())
+                    .one();
         });
     }
 
@@ -114,9 +114,9 @@ public interface QueriesRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher('dassco'
                    , $$
                          MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query)
-                         return q.title, q.query
+                         return q.name, q.query
                      $$
-                   , #params) as (title agtype, query agtype);
+                   , #params) as (query_name agtype, query_query agtype);
                 """;
 
         return withHandle(handle -> {
@@ -130,24 +130,24 @@ public interface QueriesRepository extends SqlObject {
         });
     }
 
-    default SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
+    default SavedQuery updateSavedQuery(String prevName, SavedQuery newQuery, String username) {
         boilerplate();
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                    , $$
-                       MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query {title: $prevTitle})
-                       SET q.title = $newTitle
+                       MATCH (u:User {name: $username})<-[:SAVED_BY]-(q:Query {name: $prevName})
+                       SET q.name = $newName
                        SET q.query = $newQuery
-                       return q.title, q.query
+                       return q.name, q.query
                      $$
-                   , #params) as (title agtype, query agtype);
+                   , #params) as (query_name agtype, query_query agtype);
                 """;
 
         return withHandle(handle -> {
             AgtypeMap params = new AgtypeMapBuilder()
                     .add("username", username)
-                    .add("prevTitle", prevTitle)
-                    .add("newTitle", newQuery.title)
+                    .add("prevName", prevName)
+                    .add("newName", newQuery.name)
                     .add("newQuery", newQuery.query).build();
             Agtype agtype = AgtypeFactory.create(params);
             return handle.createQuery(sql)

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {NodeProperty, QueryDataType, QueryInner, QueryView} from "../../types/query-types";
 import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
 import {Moment} from "moment-timezone";
@@ -8,7 +8,7 @@ import {Moment} from "moment-timezone";
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss']
 })
-export class QueryBuilderComponent {
+export class QueryBuilderComponent implements OnInit {
   operators_string = [
     '=',
     'STARTS WITH',
@@ -24,11 +24,10 @@ export class QueryBuilderComponent {
     'IN'
   ]
   operators: string[] = [];
-  // chosenNodePropertySubject = new BehaviorSubject<NodeProperty | undefined>(undefined);
-  // chosenNodeProperty$ = this.chosenNodePropertySubject.asObservable();
   isDate = false;
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
+  @Input() savedQuery: QueryView | undefined;
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();
 
@@ -53,18 +52,30 @@ export class QueryBuilderComponent {
     return this.queryForm.get('node') as FormControl;
   }
 
+  ngOnInit(): void {
+    if (this.savedQuery) {
+      this.wheres.clear();
+      console.log(this.savedQuery);
+      // Array.from(this.savedQuery.where).forEach(where => {
+        this.chosenNode.setValue({node: this.savedQuery.node, property: this.savedQuery.property});
+        this.savedQuery.fields.forEach(whereField => {
+          this.addWhereData(whereField);
+        })
+      // })
+      this.save(undefined);
+    }
+  }
+
   constructor(private fb: FormBuilder) {
     this.chosenNode.valueChanges.subscribe(choice => {
       if (choice) {
         if (!this.wheres.pristine) {
           if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
             this.wheres.clear();
-            this.addWhere();
           } else {
             this.wheres.reset();
           }
         }
-        // this.chosenNodePropertySubject.next(choice);
         this.updateOperators(choice.property);
       }
     })
@@ -119,6 +130,19 @@ export class QueryBuilderComponent {
       this.isDate = false;
       this.operators = this.operators_list;
     }
+  }
+
+  addWhereData(where: QueryInner) {
+    const isDate = where.dataType == QueryDataType.DATE;
+    const rangedDate = isDate && where.operator.toLowerCase().includes('range');
+
+    this.wheres.push(this.fb.group({
+      operator: new FormControl(where.operator, Validators.required),
+      value: new FormControl(!isDate ? where.value : null, Validators.required),
+      date: new FormControl<Date | null>(isDate && !rangedDate ? new Date(Date.parse(where.value)) : null),
+      dateStart: new FormControl<Date | null>(rangedDate ? new Date(Date.parse(where.value.split('#')[0])) : null),
+      dateEnd: new FormControl<Date | null>(rangedDate ? new Date(Date.parse(where.value.split('#')[1])) : null)
+    }));
   }
 
   addWhere() {

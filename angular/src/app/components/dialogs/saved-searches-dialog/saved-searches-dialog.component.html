@@ -1,0 +1,13 @@
+<div>
+  <h1 mat-dialog-title>Saved searches</h1>
+  <div mat-dialog-content>
+    <div *ngIf="(savedQueries$ | async) let queries">
+      <ul *ngFor="let query of queries">
+        <li (click)="chooseQuery(query)">{{query.name}}</li>
+      </ul>
+    </div>
+  </div>
+  <div mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancel</button>
+  </div>
+</div>

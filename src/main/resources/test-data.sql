@@ -32,7 +32,7 @@ select * from cypher('dassco', $$
 	MERGE (p:Pipeline { name: "pl-01" })
 	MERGE (co:Collection { name: "NNAD Coll" })
 	MERGE (s:Specimen { name: "specimen_1", barcode: "specimen_1" })
-	MERGE (u:User { name: null, user_id: null })
+	MERGE (u:User { name: "test-user", user_id: "test-user" })
 	MERGE (a:Asset { pid: "asdf-12346-3333-100a1", guid: "asset_1", name: "asset_1", tags:{}, status: "WORKING_COPY", funding: "hundredetusindvis af dollars", subject: "folder", file_formats: ["TIF"], payload_type: "ct scan", internal_status: "METADATA_RECEIVED", asset_taken_date: 0, restricted_access: ["USER"] })
 	MERGE (e:Event { name: "CREATE_ASSET", event: "CREATE_ASSET", timestamp: 1683702804000}) -- 10/5-2023
 	MERGE (e)-[:INITIATED_BY]->(u)

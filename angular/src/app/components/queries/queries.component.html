@@ -1,10 +1,23 @@
 <div class="container">
 <!--  <button (click)="clearcache()">cache</button>-->
-  <dassco-saved-searches></dassco-saved-searches>
+  <div class="top-div">
+    <div>
+      <button mat-raised-button class="saved-searches-btn" (click)="saveSearch()">Save Search</button>
+      <button mat-raised-button class="saved-searches-btn" (click)="savedSearchesDialog()">Saved Searches</button>
+    </div>
+    <div *ngIf="queryTitle">
+      <button mat-raised-button class="saved-searches-btn" (click)="updateSearch()">Update Search</button>
+      <mat-form-field appearance="outline">
+        <mat-label>Query Title</mat-label>
+        <input matInput [(ngModel)]="queryUpdatedTitle">
+      </mat-form-field>
+    </div>
+  </div>
+
   <ng-template #queryHandlerContainer></ng-template>
 
   <div class="input-container">
-    <button mat-mini-fab (click)="newSelect()"
+    <button mat-mini-fab (click)="newSelect(undefined)"
             matTooltip="New where clause"
             [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
     <button mat-mini-fab (click)="save()"
