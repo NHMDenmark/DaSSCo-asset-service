@@ -124,7 +124,9 @@ export class QueriesComponent implements OnInit {
   }
 
   saveSearch() {
-    const dialogRef = this.dialog.open(SaveSearchDialogComponent);
+    const dialogRef = this.dialog.open(SaveSearchDialogComponent, {
+      width: '250px'
+    });
 
     dialogRef.afterClosed().subscribe((title: string | undefined) => {
       if (title) {
@@ -142,30 +144,16 @@ export class QueriesComponent implements OnInit {
 
   savedSearchesDialog(): void {
     const dialogRef = this.dialog.open(SavedSearchesDialogComponent, {
-      width: '350px',
+      width: '250px'
     });
 
-    dialogRef.componentInstance.deleteQuery$
-      .pipe(filter(isNotUndefined))
-      .subscribe(queryName => {
-        console.log(queryName)
-        this.queriesService.deleteSavedSearch(queryName)
-          .subscribe(deleted => {
-            if (deleted) {
-              this._snackBar.open('The search has been deleted.', 'OK');
-            } else {
-              this._snackBar.open('Error occurred. Try deleting again.', 'OK');
-            }
-          })
-      })
-
-    dialogRef.afterClosed().subscribe((dialogChoice: {title: string, map: Map<string, QueryView[]>} | undefined) => {
-      if (dialogChoice) {
-        this.queryTitle = dialogChoice.title;
-        this.queryUpdatedTitle = dialogChoice.title;
+    dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
+      if (queryMap) {
+        this.queryTitle = queryMap.title;
+        this.queryUpdatedTitle = queryMap.title;
         this.queryHandlerEle?.clear();
-        Array.from(dialogChoice.map.keys()).forEach((key) => {
-          this.newSelect(dialogChoice.map.get(key));
+        Array.from(queryMap.map.keys()).forEach((key) => {
+          this.newSelect(queryMap.map.get(key));
         });
       }
     });
@@ -177,7 +165,6 @@ export class QueriesComponent implements OnInit {
         .subscribe(updated => {
           this.queryTitle = updated?.name;
           this.queryUpdatedTitle = updated?.name;
-          console.log(updated)
         })
     }
   }

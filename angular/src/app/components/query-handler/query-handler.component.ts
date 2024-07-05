@@ -24,10 +24,8 @@ export class QueryHandlerComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    console.log(this.savedQuery)
     if (this.savedQuery) {
       this.savedQuery.forEach(query => {
-        console.log('in handler', query)
         this.addWhere(query);
       })
     } else {

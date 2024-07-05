@@ -27,7 +27,7 @@ export class SavedSearchesDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<SavedSearchesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: {choice: string, data: {title: string, map: Map<string, QueryView[]>}},
+    @Inject(MAT_DIALOG_DATA) public data: {title: string, queryMap: Map<string, QueryView[]>},
     private queriesService: QueriesService
   ) {}
 
@@ -45,6 +45,6 @@ export class SavedSearchesDialogComponent implements OnInit {
 
   chooseQuery(query: SavedQuery) {
     const queryMap: Map<string, QueryView[]> = new Map(Object.entries(JSON.parse(query.query)));
-    this.dialogRef.close({choice: 'open', data: {title: query.name, map: queryMap}});
+    this.dialogRef.close({title: query.name, map: queryMap});
   }
 }
