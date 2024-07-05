@@ -9,9 +9,31 @@
     "url" : "${apiServerUrl}",
     "variables" : { }
   } ],
+  "tags" : [ {
+    "name" : "Assets",
+    "description" : "Endpoints related to assets."
+  }, {
+    "name" : "Asset Metadata",
+    "description" : "Endpoints related to asset's metadata"
+  }, {
+    "name" : "Collections",
+    "description" : "Endpoints related to collections."
+  }, {
+    "name" : "Institutions",
+    "description" : "Endpoints related to institutions"
+  }, {
+    "name" : "Pipelines",
+    "description" : "Endpoints related to institution pipelines"
+  }, {
+    "name" : "Workstations",
+    "description" : "Endpoints related to institutions workstations"
+  } ],
   "paths" : {
     "/v1/assets/status/{assetGuid}" : {
       "get" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Asset Status",
+        "description" : "Returns the status of an asset.",
         "operationId" : "getAssetStatus",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -24,7 +46,11 @@
         "responses" : {
           "200" : {
             "content" : {
-              "application/json" : { }
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssetStatusInfo"
+                }
+              }
             }
           },
           "400-599" : {
@@ -44,6 +70,9 @@
     },
     "/v1/assets" : {
       "get" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Assets",
+        "description" : "Returns a list of assets.",
         "operationId" : "getAssets",
         "responses" : {
           "200" : {
@@ -70,73 +99,12 @@
         } ]
       }
     },
-    "/v1/assets/inprogress" : {
-      "get" : {
-        "operationId" : "getInternalStatusAmt",
-        "parameters" : [ {
-          "name" : "onlyFailed",
-          "in" : "query",
-          "schema" : {
-            "type" : "boolean",
-            "default" : false
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : { }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets/internalstatus/{timeframe}" : {
-      "get" : {
-        "operationId" : "getInternalStatusAmt_1",
-        "parameters" : [ {
-          "name" : "timeframe",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : { }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/assetmetadata/{assetGuid}/assetreceived" : {
       "post" : {
-        "operationId" : "assetreceived",
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Receive Asset",
+        "description" : "Changes the internal status of an asset to ASSET_RECEIVED. \n\nRequired information is: shareName and a MinimalAsset with asset_guid.",
+        "operationId" : "assetReceived",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -147,14 +115,8 @@
           }
         },
         "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
+          "204" : {
+            "description" : "No Content"
           },
           "400-599" : {
             "content" : {
@@ -173,6 +135,9 @@
     },
     "/v1/assetmetadata/{assetGuid}/audit" : {
       "post" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Audit Asset",
+        "description" : "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (AUDIT_ASSET).\n\nChanges \"audited\" to true.\n\nThe asset should be completed before auditing.\n\nThe asset cannot be audited by the same person that digitized it.",
         "operationId" : "auditAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -192,14 +157,8 @@
           }
         },
         "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
+          "204" : {
+            "description" : "No Content"
           },
           "400-599" : {
             "content" : {
@@ -216,8 +175,49 @@
         } ]
       }
     },
+    "/v1/assetmetadata/bulkUpdate" : {
+      "put" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Bulk Update Assets",
+        "description" : "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.",
+        "operationId" : "bulkUpdate",
+        "parameters" : [ {
+          "name" : "assets",
+          "in" : "query",
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Asset"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetmetadata/{assetGuid}/complete" : {
       "post" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Complete Asset",
+        "description" : "Mark asset as completed.\n\nThe only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA.",
         "operationId" : "completeAsset",
         "requestBody" : {
           "content" : {
@@ -229,6 +229,9 @@
           }
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -246,6 +249,9 @@
     },
     "/v1/assetmetadata" : {
       "post" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Create Asset",
+        "description" : "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\nIf the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\nFor the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status, institution, collection, and digitiser. The Workstation has to be IN_SERVICE.",
         "operationId" : "createAsset",
         "parameters" : [ {
           "name" : "allocation_mb",
@@ -291,6 +297,9 @@
     },
     "/v1/assetmetadata/{assetGuid}" : {
       "get" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Get Asset",
+        "description" : "Get the metadata on an assset",
         "operationId" : "getAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -310,6 +319,9 @@
               }
             }
           },
+          "204" : {
+            "description" : "No Content. AssetGuid does not exist."
+          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -325,6 +337,9 @@
         } ]
       },
       "put" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Update Asset",
+        "description" : "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.",
         "operationId" : "updateAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -336,7 +351,7 @@
         } ],
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Asset"
               }
@@ -368,6 +383,9 @@
         } ]
       },
       "delete" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Delete Asset",
+        "description" : "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).",
         "operationId" : "deleteAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -378,14 +396,41 @@
           }
         } ],
         "responses" : {
-          "200" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "400-599" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
+                  "$ref" : "#/components/schemas/DaSSCoError"
                 }
               }
             }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetmetadata/{assetGuid}/deleteMetadata" : {
+      "delete" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Delete Asset Metadata",
+        "description" : "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.",
+        "operationId" : "deleteAssetMetadata",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
           },
           "400-599" : {
             "content" : {
@@ -404,6 +449,9 @@
     },
     "/v1/assetmetadata/{assetGuid}/events" : {
       "get" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Get Asset Events",
+        "description" : "Shows the events associated with an asset.",
         "operationId" : "getEvents",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -418,7 +466,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
+                  "$ref" : "#/components/schemas/Event"
                 }
               }
             }
@@ -440,6 +488,9 @@
     },
     "/v1/assetmetadata/{assetGuid}/setstatus" : {
       "put" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Set Asset Status",
+        "description" : "Manually updates the status of an asset.\n\nThe available status are: ASSET_RECEIVED, ERDA_FAILED, ERDA_ERROR. Trying to set the status to COMPLETED will not work as there's a dedicated endpoint for that.",
         "operationId" : "setErrorStatus",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -462,14 +513,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
+          "204" : {
+            "description" : "No Content"
           },
           "400-599" : {
             "content" : {
@@ -488,6 +533,9 @@
     },
     "/v1/assetmetadata/{assetGuid}/unlock" : {
       "put" : {
+        "tags" : [ "Asset Metadata" ],
+        "summary" : "Unlock Asset",
+        "description" : "Unlocks an asset.",
         "operationId" : "unlockAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -498,14 +546,8 @@
           }
         } ],
         "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Asset"
-                }
-              }
-            }
+          "204" : {
+            "description" : "No Content"
           },
           "400-599" : {
             "content" : {
@@ -524,6 +566,9 @@
     },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
+        "tags" : [ "Collections" ],
+        "summary" : "Get Collections",
+        "description" : "List collections under a given institution.",
         "operationId" : "getInstitutes",
         "parameters" : [ {
           "name" : "institutionName",
@@ -561,6 +606,9 @@
         } ]
       },
       "post" : {
+        "tags" : [ "Collections" ],
+        "summary" : "Create Collection",
+        "description" : "Creates a new collection under an institution.",
         "operationId" : "createInstitution",
         "parameters" : [ {
           "name" : "institutionName",
@@ -602,27 +650,13 @@
         "security" : [ {
           "dassco-idp" : [ ]
         } ]
-      },
-      "delete" : {
-        "operationId" : "deleteCollection",
-        "responses" : {
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
       }
     },
     "/v1/institutions" : {
       "get" : {
+        "tags" : [ "Institutions" ],
+        "summary" : "Get Institution List",
+        "description" : "Returns a list of institutions.",
         "operationId" : "getInstitutes_1",
         "responses" : {
           "200" : {
@@ -649,6 +683,9 @@
         } ]
       },
       "post" : {
+        "tags" : [ "Institutions" ],
+        "summary" : "Create Institution",
+        "description" : "Registers a new institution.",
         "operationId" : "createInstitution_1",
         "requestBody" : {
           "content" : {
@@ -686,6 +723,9 @@
     },
     "/v1/institutions/{institutionName}" : {
       "get" : {
+        "tags" : [ "Institutions" ],
+        "summary" : "Get Institution",
+        "description" : "Returns an institution.",
         "operationId" : "getInstitutes_2",
         "parameters" : [ {
           "name" : "institutionName",
@@ -705,6 +745,58 @@
               }
             }
           },
+          "204" : {
+            "description" : "No Content. Institution does not exist."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "put" : {
+        "tags" : [ "Institutions" ],
+        "summary" : "Update Institution",
+        "description" : "Updates the institution.",
+        "operationId" : "updateInstitution",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Institution"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Institution"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content. Institution does not exist."
+          },
           "400-599" : {
             "content" : {
               "application/json" : {
@@ -722,6 +814,9 @@
     },
     "/v1/institutions/{institutionName}/pipelines" : {
       "get" : {
+        "tags" : [ "Pipelines" ],
+        "summary" : "List Pipelines",
+        "description" : "List all pipelines belonging to an institution.",
         "operationId" : "getPipelines",
         "parameters" : [ {
           "name" : "institutionName",
@@ -756,7 +851,10 @@
         } ]
       },
       "post" : {
-        "operationId" : "createInstitution_2",
+        "tags" : [ "Pipelines" ],
+        "summary" : "Create Pipeline",
+        "description" : "Register a pipeline to an institution.",
+        "operationId" : "createPipeline",
         "parameters" : [ {
           "name" : "institutionName",
           "in" : "path",
@@ -799,355 +897,11 @@
         } ]
       }
     },
-    "/v1/publishers/{publisherName}" : {
-      "get" : {
-        "operationId" : "list",
-        "parameters" : [ {
-          "name" : "publisherName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Pipeline"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/publishers/{publisherName}/publish" : {
-      "post" : {
-        "operationId" : "publish",
-        "parameters" : [ {
-          "name" : "publisherName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PublicationLink"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Pipeline"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/publishers/{publisherName}/pull" : {
-      "post" : {
-        "operationId" : "pull",
-        "parameters" : [ {
-          "name" : "publisherName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PublicationLink"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Pipeline"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/collections/{collectionName}/specimens" : {
-      "get" : {
-        "operationId" : "getSpecimen",
-        "parameters" : [ {
-          "name" : "collectionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Specimen"
-                  }
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "post" : {
-        "operationId" : "createSpecimen",
-        "parameters" : [ {
-          "name" : "collectionName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Specimen"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Specimen"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      },
-      "delete" : {
-        "operationId" : "deleteSpecimen",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Specimen"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/graphdata/custom" : {
-      "get" : {
-        "operationId" : "getGraphDataCustomTimeframe",
-        "parameters" : [ {
-          "name" : "view",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "start",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "end",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/graphdata/{timeframe}" : {
-      "get" : {
-        "operationId" : "getGraphDataDaily",
-        "parameters" : [ {
-          "name" : "timeframe",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/GraphData"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/graphdata" : {
-      "get" : {
-        "operationId" : "getSpecimenData",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/StatisticsData"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/institutions/{institutionName}/workstations" : {
       "get" : {
+        "tags" : [ "Workstations" ],
+        "summary" : "List Workstations",
+        "description" : "Lists workstations belonging to an institution.",
         "operationId" : "getWorkstations",
         "parameters" : [ {
           "name" : "institutionName",
@@ -1182,6 +936,9 @@
         } ]
       },
       "post" : {
+        "tags" : [ "Workstations" ],
+        "summary" : "Create Workstation",
+        "description" : "Register a workstation in an institution.\n\nWorkstation names must be unique.",
         "operationId" : "createWorkstation",
         "parameters" : [ {
           "name" : "institutionName",
@@ -1227,6 +984,9 @@
     },
     "/v1/institutions/{institutionName}/workstations/{workstationName}" : {
       "put" : {
+        "tags" : [ "Workstations" ],
+        "summary" : "Update Workstation",
+        "description" : "Updates the status on a workstation.\n\nValid statuses: \"IN_SERVICE\", \"OUT_OF_SERVICE\".",
         "operationId" : "updateWorkstation",
         "parameters" : [ {
           "name" : "institutionName",
@@ -1238,7 +998,7 @@
         } ],
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Workstation"
               }
@@ -1246,10 +1006,16 @@
           }
         },
         "responses" : {
-          "default" : {
-            "description" : "default response",
+          "204" : {
+            "description" : "No Content. The Update was successfull"
+          },
+          "400-599" : {
             "content" : {
-              "*/*" : { }
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
             }
           }
         },
@@ -1261,6 +1027,44 @@
   },
   "components" : {
     "schemas" : {
+      "AssetStatusInfo" : {
+        "type" : "object",
+        "properties" : {
+          "asset_guid" : {
+            "type" : "string",
+            "description" : "The Global Unique Identifier generated for each asset",
+            "example" : "ti-a01-202305241657"
+          },
+          "parent_guid" : {
+            "type" : "string",
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
+            "example" : "ti-a02-202305241657"
+          },
+          "error_timestamp" : {
+            "type" : "string",
+            "description" : "Date and time that the error happened",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "An internal status field used to track the status of the upload of related media",
+            "example" : "COMPLETED",
+            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "ERDA_FAILED", "ERDA_ERROR" ]
+          },
+          "error_message" : {
+            "type" : "string",
+            "description" : "If an error happened during digitisation of the asset an error message can be displayed here",
+            "example" : "Failed to upload to ERDA: connection reset"
+          },
+          "share_allocation_mb" : {
+            "type" : "integer",
+            "description" : "Number of MB allocated for the asset",
+            "format" : "int32",
+            "example" : 10
+          }
+        }
+      },
       "DaSSCoError" : {
         "type" : "object",
         "properties" : {
@@ -1285,65 +1089,98 @@
         "type" : "object",
         "properties" : {
           "originalMedia" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "CP0002637_L_selago_Fuji_ICC"
           },
           "originalMediaTaken" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time when the media was taken",
+            "format" : "date-time",
+            "example" : "1970-01-01T00:00:00Z"
           },
           "digitiser" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the person who imaged the specimens (creating the assets)",
+            "example" : "Justin Hungerford"
           },
           "workstationName" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the workstation used to do the imaging",
+            "example" : "ti-ws1"
           },
           "pipelineName" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
+            "example" : "ti-p1"
           },
           "institution" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the institution which owns and digitised the specimen",
+            "example" : "test-institution"
           },
           "collection" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The collection name within the institution that holds the specimen",
+            "example" : "test-collection"
           },
           "dateMediaCreated" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time when the media was created",
+            "format" : "date-time",
+            "example" : "1970-01-01T00:00:00Z"
           },
           "mediaCreatedBy" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Pipeline used for creating the media",
+            "example" : "PIPEHERB0001"
           },
           "dateMediaUpdated" : {
             "type" : "array",
+            "description" : "Date and time when the media was updated",
+            "example" : [ "1970-01-01T00:00:00.000Z" ],
             "items" : {
               "type" : "string",
+              "description" : "Date and time when the media was updated",
               "format" : "date-time"
             }
           },
           "mediaUpdatedBy" : {
             "type" : "array",
+            "description" : "Pipeline used for updating the media",
+            "example" : [ "PIPEHERB0001" ],
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "description" : "Pipeline used for updating the media",
+              "example" : "[\"PIPEHERB0001\"]"
             }
           },
           "dateMediaDeleted" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Date and time when the media was deleted",
+            "example" : "1970-01-01T00:00:00.000Z"
           },
           "mediaDeletedBy" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Pipeline used for deleting the media",
+            "example" : "PIPEHERB0001"
           },
           "dateMetadataCreated" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time when the metadata was created",
+            "format" : "date-time",
+            "example" : "1970-01-01T00:00:00Z"
           },
           "metadataCreatedBy" : {
             "type" : "array",
+            "example" : [ "PIPEHERB0001" ],
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "example" : "[\"PIPEHERB0001\"]"
             }
           },
           "dateMetadataUpdated" : {
             "type" : "array",
+            "example" : [ "1970-01-01T00:00:00.000Z" ],
             "items" : {
               "type" : "string",
               "format" : "date-time"
@@ -1351,22 +1188,29 @@
           },
           "metadataUpdatedBy" : {
             "type" : "array",
+            "example" : [ "PIPEHERB0001" ],
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "example" : "[\"PIPEHERB0001\"]"
             }
           },
           "audited" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Records if the asset has been manually audited",
+            "example" : "yes"
           },
           "auditedBy" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "Chelsea Graham"
           },
           "auditedDate" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "example" : "1970-01-01T00:00:00Z"
           },
           "status" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "archive"
           },
           "storageLocation" : {
             "type" : "string"
@@ -1378,28 +1222,34 @@
             "type" : "string"
           },
           "relatedMedia" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "7e7-1-02-11-21-25-1-01-001-05a8c7-00000000"
           },
           "mutispecimenStatus" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "no"
           },
           "otherMultispecimen" : {
             "type" : "string"
           },
           "barcode" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "CP0002637"
           },
           "specimenPid" : {
             "type" : "string"
           },
           "specifySpecimenId" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "ae1fcf25-7e94-4506-8d64-5c54d69fa900"
           },
           "specifyAttachmentId" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "b33ea887-11ab-43b9-a562-44fdfe32af8e"
           },
           "mediaGuid" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "7e7-1-02-11-21-25-1-01-001-05a8cb-00000000"
           },
           "mediaPid" : {
             "type" : "string"
@@ -1408,10 +1258,13 @@
             "type" : "string"
           },
           "payloadType" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "image"
           },
           "fileFormat" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The format of the asset",
+            "example" : "tif"
           },
           "fileInfo" : {
             "type" : "string"
@@ -1420,10 +1273,12 @@
             "type" : "string"
           },
           "preparationType" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The way that the specimen has been prepared (pinned insect or mounted on a slide)"
           },
           "ocrText" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "FLORA DANICA EXSICCATA Lycopodium selago L. Jyll Silkeborg Vesterskov YII 1904 leg. M. Lorenzen."
           },
           "geographicRegion" : {
             "type" : "string"
@@ -1438,13 +1293,17 @@
             "type" : "string"
           },
           "funding" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "A short description of funding source used to create the asset",
+            "example" : "Hundredetusindvis af dollars"
           },
           "copyrightOwner" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "NHMD"
           },
           "license" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "Attribution 4.0 International (CC BY 4.0)"
           },
           "embargoType" : {
             "type" : "string"
@@ -1454,8 +1313,10 @@
           },
           "equipmentDetails" : {
             "type" : "array",
+            "example" : [ ],
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "example" : "[]"
             }
           },
           "exposureTime" : {
@@ -1474,48 +1335,90 @@
             "type" : "string"
           },
           "originalSpecifyMediaName" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "https://specify-attachments.science.ku.dk/fileget?coll=NHMD+Vascular+Plants&type=O&filename=sp68923230029256349442.att.jpg&downloadname=NHMD-679283.jpg&token=d545c06844d5b1fae60be67316374bce%3A1674817928"
           },
           "mediaSubject" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "specimen"
           },
           "notes" : {
             "type" : "array",
+            "example" : [ ],
             "items" : {
-              "type" : "string"
+              "type" : "string",
+              "example" : "[]"
             }
           },
           "pushAssetToSpecify" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "no"
           },
           "pushMetadataToSpecify" : {
-            "type" : "string"
+            "type" : "string",
+            "example" : "yes"
           }
         }
       },
-      "AssetStatusInfo" : {
+      "AssetUpdateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "shareName" : {
+            "type" : "string"
+          },
+          "minimalAsset" : {
+            "$ref" : "#/components/schemas/MinimalAsset"
+          },
+          "workstation" : {
+            "type" : "string",
+            "description" : "The name of the workstation used to do the imaging",
+            "example" : "ti-ws1"
+          },
+          "pipeline" : {
+            "type" : "string",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
+            "example" : "ti-p1"
+          },
+          "digitiser" : {
+            "type" : "string",
+            "description" : "The name of the person who imaged the specimens (creating the assets)",
+            "example" : "THBO"
+          }
+        }
+      },
+      "MinimalAsset" : {
         "type" : "object",
         "properties" : {
           "asset_guid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The Global Unique Identifier generated for each asset",
+            "example" : "ti-a01-202305241657"
           },
           "parent_guid" : {
-            "type" : "string"
-          },
-          "error_timestamp" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)",
+            "example" : "ti-a02-202305241657"
           },
-          "status" : {
+          "institution" : {
             "type" : "string",
-            "enum" : [ "METADATA_RECEIVED", "ASSET_RECEIVED", "COMPLETED", "ERDA_FAILED", "ERDA_ERROR" ]
+            "description" : "The name of the institution which owns and digitised the specimen",
+            "example" : "NNAD"
           },
-          "error_message" : {
-            "type" : "string"
-          },
-          "share_allocation_mb" : {
-            "type" : "integer",
-            "format" : "int32"
+          "collection" : {
+            "type" : "string",
+            "description" : "The collection name within the institution that holds the specimen",
+            "example" : "test-collection"
+          }
+        },
+        "description" : "Asset information consisting only on asset_guid, parent_guid, institution and collection."
+      },
+      "Audit" : {
+        "type" : "object",
+        "properties" : {
+          "user" : {
+            "type" : "string",
+            "description" : "The user doing the audit",
+            "example" : "THBO"
           }
         }
       },
@@ -1524,29 +1427,28 @@
         "properties" : {
           "asset_pid" : {
             "type" : "string",
-            "description" : "See asset_guid. One possible PID is to construct a URL like pid.dassco.dk/GUID1234555677243. This is then the unique and resolvable identifier that we will use when sharing.",
-            "example" : "asdf-1234-3333-1000"
+            "description" : "Persistent Identifier for the asset",
+            "example" : "asdf-12346-3333-100a21"
           },
           "asset_guid" : {
             "type" : "string",
-            "description" : "This is the unique GUID generated for each asset and is generated before incorporation into the storage system. Parts of the string are defined based on things such as the workstation and institution, the other parts are randomly generated. This is to enable a unique name for each asset. It is mandatory for our funding that we also have persistent identifiers for each asset (ideally resolvable as well). So we imagined an easy way to do this would be to incorporate the guid into a persistent identifier that can be clicked on to resolve (see asset_pid).",
+            "description" : "The Global Unique Identifier generated for each asset",
             "example" : "ti-a01-202305241657"
           },
           "status" : {
             "type" : "string",
-            "description" : "The status of the asset",
+            "description" : "The current status of an asset",
             "example" : "BEING_PROCESSED",
             "enum" : [ "WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION" ]
           },
           "multi_specimen" : {
             "type" : "boolean",
-            "description" : "Basically a multispecimen is a single image (or other type of media) that actually contains multiple specimens in it",
+            "description" : "A single image (or other type of media) that contains multiple specimens in it. One asset is linked to multiple specimens",
             "example" : false
           },
           "specimens" : {
             "type" : "array",
-            "description" : "The barcodes of associated specimens",
-            "example" : "'[\"ti-sp-00012\"']",
+            "description" : "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid",
             "items" : {
               "$ref" : "#/components/schemas/Specimen"
             }
@@ -1563,27 +1465,33 @@
           },
           "payload_type" : {
             "type" : "string",
-            "description" : "image, ct scan, surface scan, document",
+            "description" : "What the asset represents (image, ct scan, surface scan, document)",
             "example" : "ct scan"
           },
           "file_formats" : {
             "type" : "array",
-            "description" : "File format enum, can contain multiple formats",
+            "description" : "The format of the asset",
+            "example" : [ "JPEG" ],
             "items" : {
               "type" : "string",
-              "description" : "File format enum, can contain multiple formats",
+              "description" : "The format of the asset",
+              "example" : "JPEG",
               "enum" : [ "TIF", "JPEG", "RAW", "RAF", "CR3", "DNG", "TXT" ]
             }
           },
           "asset_locked" : {
             "type" : "boolean",
             "description" : "Flags if it is possible to edit / delete the media of this asset",
-            "example" : false
+            "example" : true
           },
           "restricted_access" : {
             "type" : "array",
+            "description" : "List of possible roles for users",
+            "example" : [ "ADMIN" ],
             "items" : {
               "type" : "string",
+              "description" : "Possible roles for the User",
+              "example" : "ADMIN",
               "enum" : [ "USER", "ADMIN", "SERVICE_USER", "DEVELOPER" ]
             }
           },
@@ -1597,56 +1505,57 @@
           },
           "audited" : {
             "type" : "boolean",
-            "description" : "Marking if this asset has been audited at least once",
-            "example" : true
+            "description" : "Records if the asset has been manually audited",
+            "example" : false
           },
           "created_date" : {
             "type" : "string",
-            "description" : "Date the asset metadata was uploaded",
+            "description" : "Date and time the asset metadata was uploaded",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
           "date_metadata_updated" : {
             "type" : "string",
-            "description" : "Date the asset metadata was last updated",
+            "description" : "Date and time the asset metadata was last updated",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
           "date_asset_taken" : {
             "type" : "string",
-            "description" : "Date the asset was taken",
+            "description" : "Date and time when the original raw image was taken",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
           "date_asset_deleted" : {
             "type" : "string",
-            "description" : "Date the asset was marked as deleted in the metadata",
+            "description" : "Date and time the asset was marked as deleted in the metadata",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
           "date_asset_finalised" : {
             "type" : "string",
-            "description" : "Date the asset was pushed to specify",
+            "description" : "Date and time the asset was pushed to Specify",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           },
           "date_metadata_taken" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time of when the original raw image was taken",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "institution" : {
             "type" : "string",
-            "description" : "The institution",
-            "example" : "NNAD"
+            "description" : "The name of the institution which owns and digitised the specimen",
+            "example" : "test-institution"
           },
           "parent_guid" : {
             "type" : "string",
-            "description" : "GUID of the parent asset",
-            "example" : "ti-a02-202305241657"
+            "description" : "Name of the parent media (in most cases, the same as original_parent_name, it can be different if it is a derivative of a derivative)"
           },
           "collection" : {
             "type" : "string",
-            "description" : "Name of the collection the asset belongs to",
+            "description" : "The collection name within the institution that holds the specimen",
             "example" : "test-collection"
           },
           "httpInfo" : {
@@ -1665,33 +1574,34 @@
           },
           "events" : {
             "type" : "array",
+            "description" : "List of the events associated with an asset",
             "items" : {
               "$ref" : "#/components/schemas/Event"
             }
           },
           "digitiser" : {
             "type" : "string",
-            "description" : "Username of the person that digitised the asset,",
+            "description" : "The name of the person who imaged the specimens (creating the assets)",
             "example" : "THBO"
           },
           "workstation" : {
             "type" : "string",
-            "description" : "The name of the workstation that created or updated the asset",
+            "description" : "The name of the workstation used to do the imaging",
             "example" : "ti-ws1"
           },
           "pipeline" : {
             "type" : "string",
-            "description" : "The pipeline that created or updated the asset",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
             "example" : "ti-p1"
           },
           "error_message" : {
             "type" : "string",
             "description" : "If an error happened during digitisation of the asset an error message can be displayed here",
-            "example" : "Failed to upload to ERDA: connectin reset"
+            "example" : "Failed to upload to ERDA: connection reset"
           },
           "error_timestamp" : {
             "type" : "string",
-            "description" : "Tiem that the error happened",
+            "description" : "Date and time that the error happened",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
           }
@@ -1701,54 +1611,81 @@
         "type" : "object",
         "properties" : {
           "user" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Username of the person that initiated the event",
+            "example" : "test-username"
           },
           "timeStamp" : {
             "type" : "string",
-            "format" : "date-time"
+            "description" : "Date and time when the event was initiated",
+            "format" : "date-time",
+            "example" : "2023-05-24T00:00:00Z"
           },
           "event" : {
             "type" : "string",
-            "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED" ]
+            "description" : "What happened to the asset",
+            "example" : "UPDATE_ASSET",
+            "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "BULK_UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED" ]
           },
           "pipeline" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
+            "example" : "ti-p1"
           },
           "workstation" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the workstation used to do the imaging",
+            "example" : "ti-ws1"
           }
-        }
+        },
+        "description" : "List of the events associated with an asset"
       },
       "HttpInfo" : {
         "type" : "object",
         "properties" : {
           "path" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Path to the asset",
+            "example" : "/assetfiles/<institution>/<collection>/<asset_guid>/"
           },
           "hostname" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Name of the host where the asset is uploaded",
+            "example" : "https://storage.test.dassco.dk/file_proxy/api"
           },
           "total_storage_mb" : {
             "type" : "integer",
-            "format" : "int32"
+            "description" : "The total storage of the server where the FileProxy is deployed",
+            "format" : "int32",
+            "example" : 90000
           },
           "cache_storage_mb" : {
             "type" : "integer",
-            "format" : "int32"
+            "description" : "The total amount of storage dedicated for “caching” files for external linking and other use",
+            "format" : "int32",
+            "example" : 20000
           },
           "remaining_storage_mb" : {
             "type" : "integer",
-            "format" : "int32"
+            "description" : "The remaining storage on the server: total - cache - all_allocated = remaining",
+            "format" : "int32",
+            "example" : 70000
           },
           "allocated_storage_mb" : {
             "type" : "integer",
-            "format" : "int32"
+            "description" : "The amount of storage allocated on the server to the new asset",
+            "format" : "int32",
+            "example" : 5000
           },
           "allocation_status_text" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "A detailed error message if an error happens",
+            "example" : "Allocation failed, no more disk space"
           },
           "http_allocation_status" : {
             "type" : "string",
+            "description" : "Status of the allocation",
+            "example" : "SUCCESS",
             "enum" : [ "DISK_FULL", "SUCCESS", "BAD_REQUEST", "UNKNOWN_ERROR", "UPSTREAM_ERROR", "SHARE_NOT_FOUND", "INTERNAL_ERROR" ]
           }
         },
@@ -1758,89 +1695,86 @@
         "type" : "object",
         "properties" : {
           "institution" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The name of the institution which owns and digitised the specimen",
+            "example" : "test-institution"
           },
           "collection" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The collection name within the institution that holds the specimen",
+            "example" : "test-collection"
           },
           "barcode" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The barcodes of associated specimens",
+            "example" : "'[\"ti-sp-00012\"']"
           },
           "specimen_pid" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Persistent Identifier for the specimen"
           },
           "preparation_type" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "The way that the specimen has been prepared (pinned insect or mounted on a slide)",
+            "example" : "slide"
           }
-        }
-      },
-      "AssetUpdateRequest" : {
-        "type" : "object",
-        "properties" : {
-          "shareName" : {
-            "type" : "string"
-          },
-          "minimalAsset" : {
-            "$ref" : "#/components/schemas/MinimalAsset"
-          },
-          "workstation" : {
-            "type" : "string"
-          },
-          "pipeline" : {
-            "type" : "string"
-          },
-          "digitiser" : {
-            "type" : "string"
-          }
-        }
-      },
-      "MinimalAsset" : {
-        "type" : "object",
-        "properties" : {
-          "asset_guid" : {
-            "type" : "string"
-          },
-          "parent_guid" : {
-            "type" : "string"
-          },
-          "institution" : {
-            "type" : "string"
-          },
-          "collection" : {
-            "type" : "string"
-          }
-        }
-      },
-      "Audit" : {
-        "type" : "object",
-        "properties" : {
-          "user" : {
-            "type" : "string"
-          }
-        }
+        },
+        "description" : "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen"
       },
       "Collection" : {
         "type" : "object",
         "properties" : {
           "name" : {
             "type" : "string",
-            "description" : "The name of the collection",
+            "description" : "The collection name within the institution that holds the specimen",
             "example" : "test-collection"
           },
           "institution" : {
             "type" : "string",
-            "description" : "The name of the institution to which the collection belong",
+            "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
+          },
+          "roleRestrictions" : {
+            "type" : "array",
+            "description" : "If this list contains roles then users attempting to read assets in this collection will need one of the listed roles",
+            "items" : {
+              "$ref" : "#/components/schemas/Role"
+            }
+          },
+          "rolesAsSet" : {
+            "uniqueItems" : true,
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
+      },
+      "Role" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "description" : "The roles you need to access assets within this institution",
+        "example" : "[NHMD_USER]"
       },
       "Institution" : {
         "type" : "object",
         "properties" : {
           "name" : {
             "type" : "string",
-            "description" : "The institution name",
+            "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
+          },
+          "roleRestriction" : {
+            "type" : "array",
+            "description" : "The roles you need to access assets within this institution",
+            "example" : "[NHMD_USER]",
+            "items" : {
+              "$ref" : "#/components/schemas/Role"
+            }
           }
         }
       },
@@ -1849,79 +1783,13 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "description" : "The name of the pipeline",
+            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
             "example" : "ti-p1"
           },
           "institution" : {
             "type" : "string",
-            "description" : "The institution that the pipeline belongs to",
+            "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
-          }
-        }
-      },
-      "PublicationLink" : {
-        "type" : "object",
-        "properties" : {
-          "asset_guid" : {
-            "type" : "string"
-          },
-          "link" : {
-            "type" : "string"
-          },
-          "publisher_name" : {
-            "type" : "string"
-          },
-          "timestamp" : {
-            "type" : "string",
-            "format" : "date-time"
-          }
-        }
-      },
-      "GraphData" : {
-        "type" : "object",
-        "properties" : {
-          "institutes" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "integer",
-              "format" : "int32"
-            }
-          },
-          "pipelines" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "integer",
-              "format" : "int32"
-            }
-          },
-          "workstations" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "integer",
-              "format" : "int32"
-            }
-          }
-        }
-      },
-      "StatisticsData" : {
-        "type" : "object",
-        "properties" : {
-          "instituteName" : {
-            "type" : "string"
-          },
-          "pipelineName" : {
-            "type" : "string"
-          },
-          "workstationName" : {
-            "type" : "string"
-          },
-          "createdDate" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "specimens" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -1930,7 +1798,7 @@
         "properties" : {
           "name" : {
             "type" : "string",
-            "description" : "The name of the workstation",
+            "description" : "The name of the workstation used to do the imaging",
             "example" : "ti-ws1"
           },
           "status" : {
@@ -1941,7 +1809,7 @@
           },
           "institution_name" : {
             "type" : "string",
-            "description" : "The institution that where the workstation is located",
+            "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
           }
         }
