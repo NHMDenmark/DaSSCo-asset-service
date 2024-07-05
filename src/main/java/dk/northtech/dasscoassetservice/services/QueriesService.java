@@ -206,4 +206,8 @@ public class QueriesService {
     public SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
         return jdbi.onDemand(QueriesRepository.class).updateSavedQuery(prevTitle, newQuery, username);
     }
+
+    public String deleteSavedQuery(String title, String username) {
+        return jdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
+    }
 }

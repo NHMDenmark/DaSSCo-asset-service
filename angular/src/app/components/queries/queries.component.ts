@@ -70,7 +70,6 @@ export class QueriesComponent implements OnInit {
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
-    console.log('select with, ', savedQuery)
     if (this.queryHandlerEle) {
       const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
       handlerComponent.instance.nodes = this.nodes;
@@ -125,9 +124,7 @@ export class QueriesComponent implements OnInit {
   }
 
   saveSearch() {
-    const dialogRef = this.dialog.open(SaveSearchDialogComponent, {
-      width: '250px'
-    });
+    const dialogRef = this.dialog.open(SaveSearchDialogComponent);
 
     dialogRef.afterClosed().subscribe((title: string | undefined) => {
       if (title) {
@@ -145,26 +142,36 @@ export class QueriesComponent implements OnInit {
 
   savedSearchesDialog(): void {
     const dialogRef = this.dialog.open(SavedSearchesDialogComponent, {
-      width: '250px'
+      width: '350px',
     });
 
-    dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
-      if (queryMap) {
-        this.queryTitle = queryMap.title;
-        this.queryUpdatedTitle = queryMap.title;
+    dialogRef.componentInstance.deleteQuery$
+      .pipe(filter(isNotUndefined))
+      .subscribe(queryName => {
+        console.log(queryName)
+        this.queriesService.deleteSavedSearch(queryName)
+          .subscribe(deleted => {
+            if (deleted) {
+              this._snackBar.open('The search has been deleted.', 'OK');
+            } else {
+              this._snackBar.open('Error occurred. Try deleting again.', 'OK');
+            }
+          })
+      })
+
+    dialogRef.afterClosed().subscribe((dialogChoice: {title: string, map: Map<string, QueryView[]>} | undefined) => {
+      if (dialogChoice) {
+        this.queryTitle = dialogChoice.title;
+        this.queryUpdatedTitle = dialogChoice.title;
         this.queryHandlerEle?.clear();
-        Array.from(queryMap.map.keys()).forEach((key) => {
-          console.log(queryMap.map.get(key))
-          this.newSelect(queryMap.map.get(key));
+        Array.from(dialogChoice.map.keys()).forEach((key) => {
+          this.newSelect(dialogChoice.map.get(key));
         });
       }
     });
   }
 
   updateSearch() {
-    console.log(this.queryTitle)
-    console.log(this.queryUpdatedTitle)
-    console.log(this.queries)
     if (this.queryUpdatedTitle && this.queryTitle) {
       this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
         .subscribe(updated => {
