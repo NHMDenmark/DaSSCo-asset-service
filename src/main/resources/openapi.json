@@ -867,6 +867,64 @@
         } ]
       }
     },
+    "/v1/institutions/{institutionName}/collections/{collectionName}" : {
+      "put" : {
+        "tags" : [ "Collections" ],
+        "summary" : "Update Institution",
+        "description" : "Updates the institution.",
+        "operationId" : "updateInstitution",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "collectionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Collection"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Institution"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content. Institution does not exist."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions" : {
       "get" : {
         "tags" : [ "Institutions" ],
@@ -950,6 +1008,55 @@
             "type" : "string"
           }
         } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Institution"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content. Institution does not exist."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      },
+      "put" : {
+        "tags" : [ "Institutions" ],
+        "summary" : "Update Institution",
+        "description" : "Updates the institution.",
+        "operationId" : "updateInstitution_1",
+        "parameters" : [ {
+          "name" : "institutionName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Institution"
+              }
+            }
+          }
+        },
         "responses" : {
           "200" : {
             "content" : {
@@ -1919,8 +2026,25 @@
             "type" : "string",
             "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
+          },
+          "roleRestrictions" : {
+            "type" : "array",
+            "description" : "If this list contains roles then users attempting to read assets in this collection will need one of the listed roles",
+            "items" : {
+              "$ref" : "#/components/schemas/Role"
+            }
           }
         }
+      },
+      "Role" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "description" : "The roles you need to access assets within this institution",
+        "example" : "[NHMD_USER]"
       },
       "Institution" : {
         "type" : "object",
@@ -1929,6 +2053,14 @@
             "type" : "string",
             "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
+          },
+          "roleRestriction" : {
+            "type" : "array",
+            "description" : "The roles you need to access assets within this institution",
+            "example" : "[NHMD_USER]",
+            "items" : {
+              "$ref" : "#/components/schemas/Role"
+            }
           }
         }
       },
