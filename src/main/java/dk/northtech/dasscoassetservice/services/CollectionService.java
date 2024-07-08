@@ -53,6 +53,7 @@ public class CollectionService {
     }
 
     public List<Collection> listCollections(Institution institution) {
+        System.out.println(collectionCache.getCollectionMap());
         Optional<Institution> ifExists = institutionService.getIfExists(institution.name());
         if(ifExists.isEmpty()){
             throw new IllegalArgumentException("Institute doesnt exist");
