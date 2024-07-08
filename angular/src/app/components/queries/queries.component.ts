@@ -124,9 +124,7 @@ export class QueriesComponent implements OnInit {
   }
 
   saveSearch() {
-    const dialogRef = this.dialog.open(SaveSearchDialogComponent, {
-      width: '250px'
-    });
+    const dialogRef = this.dialog.open(SaveSearchDialogComponent);
 
     dialogRef.afterClosed().subscribe((title: string | undefined) => {
       if (title) {
@@ -144,8 +142,21 @@ export class QueriesComponent implements OnInit {
 
   savedSearchesDialog(): void {
     const dialogRef = this.dialog.open(SavedSearchesDialogComponent, {
-      width: '250px'
+      width: '300px'
     });
+
+    dialogRef.componentInstance.deleteQuery$
+      .pipe(filter(isNotUndefined))
+      .subscribe(queryName => {
+        this.queriesService.deleteSavedSearch(queryName)
+          .subscribe(deleted => {
+            if (deleted) {
+              this._snackBar.open('The search has been deleted.', 'OK');
+            } else {
+              this._snackBar.open('Error occurred. Try deleting again.', 'OK');
+            }
+          })
+      });
 
     dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
       if (queryMap) {
