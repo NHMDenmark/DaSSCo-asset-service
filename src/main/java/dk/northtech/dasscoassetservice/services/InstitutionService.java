@@ -1,7 +1,9 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.cache.InstitutionCache;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.InstitutionRepository;
+import io.swagger.models.auth.In;
 import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
@@ -15,14 +17,15 @@ public class InstitutionService {
 
     private InstitutionRepository institutionRepository;
     private static final String name_regex ="^[a-zA-ZÆØÅæøå ]+$";
+    private InstitutionCache institutionCache;
 
     @Inject
-    public InstitutionService(InstitutionRepository institutionRepository) {
+    public InstitutionService(InstitutionRepository institutionRepository, InstitutionCache institutionCache) {
         this.institutionRepository = institutionRepository;
         //        this.jdbi = Jdbi.create(dataSource)
 //                .registerRowMapper((ConstructorMapper.factory(Institute.class)))
 //                .installPlugin(new Jackson2Plugin());
-
+        this.institutionCache = institutionCache;
     }
 
     public Institution createInstitution(Institution institution) {
@@ -34,13 +37,17 @@ public class InstitutionService {
         if(Strings.isNullOrEmpty(institution.name())) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
-        if (institutionRepository.findInstitution(institution.name()).isPresent()){
+
+        if (institutionCache.institutionExists(institution.name())){
             throw new IllegalArgumentException("Institute already exists");
         }
 //        else if (!institution.name().matches(name_regex)){
 //            throw new IllegalArgumentException("Name must be alphanumeric");
 //        }
+
         institutionRepository.persistInstitution(institution);
+        institutionCache.putInstitutionInCache(institution.name(), institution);
+
         return institution;
     }
 
@@ -50,7 +57,7 @@ public class InstitutionService {
 //        } else if (!institution.name().matches(name_regex)){
 //            throw new IllegalArgumentException("Name must be alphanumeric");
 //        }
-        return institutionRepository.listInstitutions();
+        return institutionCache.getInstitutions().stream().toList();
     }
 
     public Optional<Institution> getIfExists(String institutionName) {

@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.cache.CollectionCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.CollectionRepository;
@@ -15,12 +16,14 @@ import java.util.Optional;
 public class CollectionService {
     private final InstitutionService institutionService;
     private final CollectionRepository collectionRepository;
+    private CollectionCache collectionCache;
 
 
     @Inject
-    public CollectionService(InstitutionService institutionService, CollectionRepository collectionRepository) {
+    public CollectionService(InstitutionService institutionService, CollectionRepository collectionRepository, CollectionCache collectionCache) {
         this.institutionService = institutionService;
         this.collectionRepository = collectionRepository;
+        this.collectionCache = collectionCache;
     }
 
     public Collection persistCollection(Collection collection, String institutionName) {
