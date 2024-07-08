@@ -56,6 +56,7 @@ export class QueryHandlerComponent implements OnInit {
 
   removeQueryForm(index: number) {
     this.queries.delete(index);
+    this.saveQueryEvent.emit(Array.from(this.queries.values()).map(val => val));
   }
 
   removeComponent() {

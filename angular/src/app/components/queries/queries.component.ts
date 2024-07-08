@@ -179,11 +179,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   updateSearch() {
+    console.log(JSON.stringify(Object.fromEntries(this.queries)))
     if (this.queryUpdatedTitle && this.queryTitle) {
       this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
         .subscribe(updated => {
           this.queryTitle = updated?.name;
           this.queryUpdatedTitle = updated?.name;
+          console.log('updated', updated?.query)
         })
     }
   }
