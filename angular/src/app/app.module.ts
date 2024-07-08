@@ -42,6 +42,7 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
 import {MatDialogModule} from "@angular/material/dialog";
 import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
 import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
+import {MatPaginatorModule} from "@angular/material/paginator";
 
 @NgModule({
   declarations: [
@@ -92,7 +93,8 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     MatCheckboxModule,
     MatExpansionModule,
     MatCardModule,
-    MatListModule
+    MatListModule,
+    MatPaginatorModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

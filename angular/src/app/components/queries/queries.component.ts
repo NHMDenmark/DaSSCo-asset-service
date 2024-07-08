@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from "../../services/queries.service";
 import {filter, iif, map, Observable, of, take} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
@@ -11,14 +11,16 @@ import {
 import {MatDialog} from "@angular/material/dialog";
 import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {MatPaginator} from "@angular/material/paginator";
 
 @Component({
   selector: 'dassco-queries',
   templateUrl: './queries.component.html',
   styleUrls: ['./queries.component.scss']
 })
-export class QueriesComponent implements OnInit {
+export class QueriesComponent implements OnInit, AfterViewInit {
   @ViewChild('queryHandlerContainer', { read: ViewContainerRef, static: true }) queryHandlerEle: ViewContainerRef | undefined;
+  @ViewChild(MatPaginator) paginator: MatPaginator | undefined;
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
@@ -67,6 +69,10 @@ export class QueriesComponent implements OnInit {
   ngOnInit(): void {
     this.nodes$.pipe(filter(isNotUndefined),take(1))
       .subscribe(_nodes => this.newSelect(undefined))
+  }
+
+  ngAfterViewInit(): void {
+    if (this.paginator) this.dataSource.paginator = this.paginator;
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
@@ -145,6 +151,7 @@ export class QueriesComponent implements OnInit {
       width: '300px'
     });
 
+    // deleting a saved query
     dialogRef.componentInstance.deleteQuery$
       .pipe(filter(isNotUndefined))
       .subscribe(queryName => {
@@ -158,6 +165,7 @@ export class QueriesComponent implements OnInit {
           })
       });
 
+    // opening saved query
     dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
       if (queryMap) {
         this.queryTitle = queryMap.title;
@@ -179,8 +187,4 @@ export class QueriesComponent implements OnInit {
         })
     }
   }
-
-  // clearcache() { // temp
-  //   localStorage.clear();
-  // }
 }
