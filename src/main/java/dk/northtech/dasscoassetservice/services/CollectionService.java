@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.cache.CollectionCache;
+import dk.northtech.dasscoassetservice.cache.InstitutionCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.repositories.CollectionRepository;
@@ -14,16 +15,17 @@ import java.util.Optional;
 
 @Service
 public class CollectionService {
-    private final InstitutionService institutionService;
     private final CollectionRepository collectionRepository;
     private CollectionCache collectionCache;
+    private InstitutionCache institutionCache;
 
 
     @Inject
-    public CollectionService(InstitutionService institutionService, CollectionRepository collectionRepository, CollectionCache collectionCache) {
-        this.institutionService = institutionService;
+    public CollectionService(InstitutionCache institutionCache,
+                             CollectionRepository collectionRepository, CollectionCache collectionCache) {
         this.collectionRepository = collectionRepository;
         this.collectionCache = collectionCache;
+        this.institutionCache = institutionCache;
     }
 
     public Collection persistCollection(Collection collection, String institutionName) {
@@ -35,12 +37,10 @@ public class CollectionService {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
 
-        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if(ifExists.isEmpty()){
+        if (!institutionCache.institutionExists(institutionName)){
             throw new IllegalArgumentException("Institute doesnt exist");
         } else {
-            Institution institution = ifExists.get();
-            if (collectionRepository.listCollections(institution).contains(collection)){
+            if (collectionCache.getCollections(institutionName).contains(collection)){
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
         }
@@ -48,17 +48,17 @@ public class CollectionService {
         Collection col = new Collection(collection.name(), institutionName);
 
         collectionRepository.persistCollection(col);
+        collectionCache.putCollectionInCache(institutionName, col.name(), col);
 
         return collection;
     }
 
     public List<Collection> listCollections(Institution institution) {
-        System.out.println(collectionCache.getCollectionMap());
-        Optional<Institution> ifExists = institutionService.getIfExists(institution.name());
-        if(ifExists.isEmpty()){
+
+        if (!institutionCache.getInstitutions().contains(institution)){
             throw new IllegalArgumentException("Institute doesnt exist");
         }
-        return collectionRepository.listCollections(institution);
+        return collectionCache.getCollections(institution.name());
     }
 
     public Optional<Collection> findCollection(String collectionName) {

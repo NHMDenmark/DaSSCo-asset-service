@@ -4,7 +4,9 @@ import dk.northtech.dasscoassetservice.domain.Collection;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class CollectionCache {
@@ -20,5 +22,12 @@ public class CollectionCache {
 
     public void putCollectionInCache(String institutionName, String collectionName, Collection collection){
         this.collectionMap.put(institutionName + "." + collectionName, collection);
+    }
+
+    public List<Collection> getCollections(String institution){
+        return collectionMap.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(institution + "."))
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
     }
 }
