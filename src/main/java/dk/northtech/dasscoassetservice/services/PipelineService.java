@@ -58,7 +58,6 @@ public class PipelineService {
     }
 
     public List<Pipeline> listPipelines(Institution institution) {
-        System.out.println(pipelineCache.getPipelineCache());
         if (!institutionCache.getInstitutions().contains(institution)){
             throw new IllegalArgumentException("Institute does not exist");
         }
