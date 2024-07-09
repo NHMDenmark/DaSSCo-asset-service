@@ -14,6 +14,8 @@ tags:
   description: Endpoints related to asset's metadata
 - name: Collections
   description: Endpoints related to collections.
+- name: Digitisers
+  description: Endpoints related to digitisers
 - name: Institutions
   description: Endpoints related to institutions
 - name: Pipelines
@@ -454,6 +456,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/digitisers:
+    get:
+      tags:
+      - Digitisers
+      summary: Get Digitisers
+      description: Lists the existing digitisers in the System
+      operationId: getUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Digitiser'
         "400-599":
           content:
             application/json:
@@ -1311,6 +1335,15 @@ components:
           type: string
           description: The name of the institution which owns and digitised the specimen
           example: test-institution
+    Digitiser:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique Identifier
+        name:
+          type: string
+          description: Username of the User
     Institution:
       type: object
       properties:

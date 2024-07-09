@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
+import dk.northtech.dasscoassetservice.cache.DigitiserCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -26,9 +27,10 @@ public class AssetService {
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
     private final Jdbi jdbi;
+    private DigitiserCache digitiserCache;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService, PipelineService pipelineService) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService, PipelineService pipelineService, DigitiserCache digitiserCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -36,6 +38,7 @@ public class AssetService {
         this.statisticsDataService = statisticsDataService;
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
+        this.digitiserCache = digitiserCache;
     }
 
     public boolean auditAsset(Audit audit, String assetGuid) {
@@ -55,6 +58,11 @@ public class AssetService {
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
+
+        if (!digitiserCache.getDigitiserMap().containsKey(audit.user())){
+            digitiserCache.putDigitiserInCache(new Digitiser(audit.user(), audit.user()));
+        }
+
         return true;
     }
 
@@ -207,6 +215,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
+            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        }
+
         return existing;
     }
 
@@ -481,6 +494,7 @@ public class AssetService {
 
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
+
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if(assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
@@ -508,6 +522,14 @@ public class AssetService {
         statisticsDataService.refreshCachedData();
 
 //        this.statisticsDataService.addAssetToCache(asset);
+
+
+        if (asset.digitiser != null && !asset.digitiser.isEmpty()){
+            if (!digitiserCache.getDigitiserMap().containsKey(asset.digitiser)){
+                digitiserCache.putDigitiserInCache(new Digitiser(asset.digitiser, asset.digitiser));
+            }
+        }
+
         return asset;
     }
 

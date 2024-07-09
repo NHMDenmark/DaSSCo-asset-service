@@ -1,14 +1,7 @@
 package dk.northtech.dasscoassetservice.cache;
 
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
-import dk.northtech.dasscoassetservice.domain.Pipeline;
-import dk.northtech.dasscoassetservice.domain.Workstation;
-import dk.northtech.dasscoassetservice.repositories.CollectionRepository;
-import dk.northtech.dasscoassetservice.repositories.InstitutionRepository;
-import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
-import dk.northtech.dasscoassetservice.repositories.WorkstationRepository;
-import dk.northtech.dasscoassetservice.services.PipelineService;
+import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.*;
 import org.springframework.context.ApplicationListener;
 import jakarta.inject.Inject;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -27,13 +20,16 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private PipelineRepository pipelineRepository;
     private WorkstationCache workstationCache;
     private WorkstationRepository workstationRepository;
+    private DigitiserRepository digitiserRepository;
+    private DigitiserCache digitiserCache;
     private boolean initialized = false;
 
     @Inject
     public CacheInitializer(InstitutionCache institutionCache, InstitutionRepository institutionRepository,
                             CollectionCache collectionCache, CollectionRepository collectionRepository,
                             PipelineCache pipelineCache, PipelineRepository pipelineRepository,
-                            WorkstationCache workstationCache, WorkstationRepository workstationRepository){
+                            WorkstationCache workstationCache, WorkstationRepository workstationRepository,
+                            DigitiserRepository digitiserRepository, DigitiserCache digitiserCache){
         this.institutionCache = institutionCache;
         this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
@@ -42,6 +38,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.pipelineRepository = pipelineRepository;
         this.workstationCache = workstationCache;
         this.workstationRepository = workstationRepository;
+        this.digitiserRepository = digitiserRepository;
+        this.digitiserCache = digitiserCache;
     }
 
     @Override
@@ -67,6 +65,12 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                     if (!workstationList.isEmpty()){
                         for (Workstation workstation : workstationList){
                             this.workstationCache.putWorkstationInCache(workstation);
+                        }
+                    }
+                    List<Digitiser> digitiserList = digitiserRepository.listDigitisers();
+                    if (!digitiserList.isEmpty()){
+                        for (Digitiser digitiser : digitiserList){
+                            this.digitiserCache.putDigitiserInCache(digitiser);
                         }
                     }
                 }
