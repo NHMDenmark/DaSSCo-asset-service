@@ -22,6 +22,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private WorkstationRepository workstationRepository;
     private DigitiserRepository digitiserRepository;
     private DigitiserCache digitiserCache;
+    private SubjectRepository subjectRepository;
+    private SubjectCache subjectCache;
     private boolean initialized = false;
 
     @Inject
@@ -29,7 +31,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             CollectionCache collectionCache, CollectionRepository collectionRepository,
                             PipelineCache pipelineCache, PipelineRepository pipelineRepository,
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
-                            DigitiserRepository digitiserRepository, DigitiserCache digitiserCache){
+                            DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
+                            SubjectRepository subjectRepository, SubjectCache subjectCache){
         this.institutionCache = institutionCache;
         this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
@@ -40,6 +43,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.workstationRepository = workstationRepository;
         this.digitiserRepository = digitiserRepository;
         this.digitiserCache = digitiserCache;
+        this.subjectRepository = subjectRepository;
+        this.subjectCache = subjectCache;
     }
 
     @Override
@@ -71,6 +76,12 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                     if (!digitiserList.isEmpty()){
                         for (Digitiser digitiser : digitiserList){
                             this.digitiserCache.putDigitiserInCache(digitiser);
+                        }
+                    }
+                    List<String> subjectList = subjectRepository.listSubjects();
+                    if (!subjectList.isEmpty()){
+                        for (String subject : subjectList){
+                            this.subjectCache.putSubjectsInCache(subject);
                         }
                     }
                 }

@@ -28,6 +28,9 @@
     "name" : "Pipelines",
     "description" : "Endpoints related to institution pipelines"
   }, {
+    "name" : "Subjects",
+    "description" : "Endpoints related to subjects"
+  }, {
     "name" : "Workstations",
     "description" : "Endpoints related to institutions workstations"
   } ],
@@ -660,7 +663,7 @@
         "tags" : [ "Digitisers" ],
         "summary" : "Get Digitisers",
         "description" : "Lists the existing digitisers in the System",
-        "operationId" : "getUsers",
+        "operationId" : "getDigitisers",
         "responses" : {
           "200" : {
             "content" : {
@@ -866,6 +869,40 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Pipeline"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/subjects" : {
+      "get" : {
+        "tags" : [ "Subjects" ],
+        "summary" : "Get Subjects",
+        "description" : "Lists the existing asset subjects in the System",
+        "operationId" : "getSubjects",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
                 }
               }
             }

@@ -10,8 +10,6 @@ import java.util.List;
 
 @Service
 public class DigitiserService {
-
-    private DigitiserRepository userRepository;
     private DigitiserCache digitiserCache;
 
     @Inject
