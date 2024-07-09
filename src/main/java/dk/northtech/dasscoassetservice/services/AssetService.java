@@ -86,6 +86,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
+            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
+        }
+
         return true;
     }
 
@@ -125,6 +130,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(assetUpdateRequest.digitiser())){
+            digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+        }
+
         return true;
     }
 
@@ -149,6 +159,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
+            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
+        }
+
         return true;
     }
 
@@ -287,6 +302,9 @@ public class AssetService {
 
         jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assetAndSpecimens);
 
+        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
+            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        }
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
