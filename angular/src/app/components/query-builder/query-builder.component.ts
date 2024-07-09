@@ -55,7 +55,6 @@ export class QueryBuilderComponent implements OnInit {
   ngOnInit(): void {
     if (this.savedQuery) {
       this.wheres.clear();
-      console.log(this.savedQuery);
       // Array.from(this.savedQuery.where).forEach(where => {
         this.chosenNode.setValue({node: this.savedQuery.node, property: this.savedQuery.property});
         this.savedQuery.fields.forEach(whereField => {

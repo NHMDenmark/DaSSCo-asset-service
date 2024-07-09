@@ -81,6 +81,15 @@ public interface QueriesRepository extends SqlObject {
         });
     }
 
+    default int getAssetCountFromQuery(String query) {
+        boilerplate();
+        return withHandle(handle -> {
+            return handle.createQuery(query)
+                    .mapTo(Integer.class)
+                    .one();
+        });
+    }
+
     default SavedQuery saveQuery(SavedQuery savedQuery, String username) {
         boilerplate();
         String sql = """

@@ -86,6 +86,25 @@ public class QueriesService {
                     , date_asset_taken agtype);
                   """;
 
+    String assetCountSql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                    , $$
+                         MATCH (a:Asset) ${asset:-}
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a) ${collection:-}
+                         MATCH (e:Event)<-[:CHANGED_BY]-(a) ${event:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                         MATCH (u:User)<-[:INITIATED_BY]-(e) ${user:-}
+                         MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
+                         MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${institution:-}
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
+                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         RETURN count(DISTINCT a) as count
+                         LIMIT ${limit:-200}
+                      $$)
+                    as (count agtype);
+                  """;
+
     @Inject
     public QueriesService(Jdbi jdbi) {
     this.jdbi = jdbi;
@@ -98,9 +117,21 @@ public class QueriesService {
         return properties;
     }
 
-    public List<Asset> unwrapQuery(List<QueriesReceived> queries, int limit) {
-        List<Asset> allAssets = new ArrayList<>();
+    public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit) {
+        String query = unwrapQuery(queries, limit, true);
+        return jdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+    }
 
+    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit) {
+        String query = unwrapQuery(queries, limit, false);
+        if (query == null || StringUtils.isBlank(query)) return new ArrayList<>();
+
+        logger.info("Getting assets from query.");
+        System.out.println(query);
+        return jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+    }
+
+    public String unwrapQuery(List<QueriesReceived> queries, int limit, boolean count) {
         for (QueriesReceived received : queries) {
             String finalQuery;
             Map<String, String> whereMap = new HashMap<>();
@@ -142,15 +173,11 @@ public class QueriesService {
             }
 
             StringSubstitutor substitutor = new StringSubstitutor(whereMap);
-            finalQuery = substitutor.replace(assetSql);
-            if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
-
-            logger.info("Getting assets from query.");
-            System.out.println(finalQuery);
-            List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
-            allAssets.addAll(assets);
+            if (count) finalQuery = substitutor.replace(assetCountSql);
+            else finalQuery = substitutor.replace(assetSql);
+            return finalQuery;
         }
-        return allAssets;
+        return null;
     }
 
     public String joinFields(List<QueryWhere> wheres, String match) {

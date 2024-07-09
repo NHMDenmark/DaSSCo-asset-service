@@ -78,7 +78,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
             )))
         ));
 
-        List<Asset> assets = this.queriesService.unwrapQuery(queries, 200);
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200);
 
         assertThat(assets.size()).isAtLeast(1);
         for (Asset asset : assets) {

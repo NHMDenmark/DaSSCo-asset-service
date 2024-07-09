@@ -7,7 +7,7 @@
     </div>
 
     <div *ngIf="queryTitle">
-      <button mat-raised-button class="saved-searches-btn" type=submit (click)="updateSearch()">Update Search</button>
+      <button mat-raised-button class="saved-searches-btn" type="submit" (click)="updateSearch()">Update Search</button>
       <mat-form-field appearance="outline">
         <mat-label>Query Title</mat-label>
         <input matInput [(ngModel)]="queryUpdatedTitle">
@@ -31,7 +31,17 @@
     </mat-form-field>
   </div>
 
-  <div *ngIf="dataSource.data.length > 0" class="table">
+  <div class="table">
+    <div *ngIf="dataSource.data.length > 0">
+      <div class="count-div">{{dataSource.data.length}} /
+        <div *ngIf="loadingAssetCount; else showCount;">
+          <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+        </div>
+        <ng-template #showCount>
+          {{assetCount}}
+        </ng-template>
+      </div>
+    </div>
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
       <ng-container matColumnDef="asset_guid">
@@ -120,10 +130,10 @@
       <tr class="data-rows" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
       <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="4">No data matching the filter</td>
+        <td class="mat-cell" colspan="15">No data available</td>
       </tr>
     </table>
 
-    <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" aria-label="Select page of assets"></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[10, 25, 40, 80]" aria-label="Select page of assets"></mat-paginator>
   </div>
 </div>

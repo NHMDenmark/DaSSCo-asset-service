@@ -12,6 +12,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
+import _default from "chart.js/dist/plugins/plugin.tooltip";
 
 @Component({
   selector: 'dassco-queries',
@@ -24,11 +25,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
-  limit: number = 200;
+  limit: number = 10; // todo set to 200. 5 is for testing
   queries: Map<number, QueryView[]> = new Map;
   nodes: Map<string, string[]> = new Map();
-  queryTitle: string | undefined;
+  queryTitle: string | undefined; // yes i don't like how this title-thing is set up either, but for now... it's like this.
   queryUpdatedTitle: string | undefined;
+  loadingAssetCount: boolean = false;
+  assetCount: string | undefined = undefined;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -72,7 +75,9 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.paginator) this.dataSource.paginator = this.paginator;
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
@@ -114,11 +119,22 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       queryResponses.push(response);
     })
 
-    this.queriesService.getNodesFromQuery(queryResponses, this.limit).subscribe(result => {
-      if (result) {
-        this.dataSource.data = result;
-      }
-    })
+    this.queriesService.getAssetsFromQuery(queryResponses, this.limit)
+      .subscribe(result => {
+        if (result) {
+          this.dataSource.data = result;
+        }
+      })
+
+    this.loadingAssetCount = true;
+    this.queriesService.getAssetCountFromQuery(queryResponses)
+      .subscribe(count => {
+        if (count) {
+          if (count >= 10000) this.assetCount = '10000+';
+          else this.assetCount = count.toString();
+          this.loadingAssetCount = false;
+        }
+      })
   }
 
   clearAll() {
@@ -126,6 +142,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.queries.clear();
     this.dataSource.data = [];
     this.queryTitle = undefined;
+    this.assetCount = undefined;
     this.newSelect(undefined);
   }
 
@@ -171,6 +188,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         this.queryTitle = queryMap.title;
         this.queryUpdatedTitle = queryMap.title;
         this.queryHandlerEle?.clear();
+        this.dataSource.data = [];
         Array.from(queryMap.map.keys()).forEach((key) => {
           this.newSelect(queryMap.map.get(key));
         });
@@ -179,13 +197,11 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   updateSearch() {
-    console.log(JSON.stringify(Object.fromEntries(this.queries)))
     if (this.queryUpdatedTitle && this.queryTitle) {
       this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
         .subscribe(updated => {
           this.queryTitle = updated?.name;
           this.queryUpdatedTitle = updated?.name;
-          console.log('updated', updated?.query)
         })
     }
   }

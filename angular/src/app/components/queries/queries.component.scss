@@ -22,6 +22,18 @@
 
   .table {
     margin-top: 1rem;
+
+    .count-div {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: .5rem;
+      justify-content: flex-end;
+
+      mat-spinner {
+        margin-left: 5px;
+      }
+    }
+
     table {
       width: 100%;
 
