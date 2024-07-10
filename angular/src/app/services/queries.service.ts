@@ -48,7 +48,6 @@ export class QueriesService {
   }
 
   updateSavedSearch(savedQuery: SavedQuery, title: string): Observable<SavedQuery | undefined> {
-    console.log(JSON.stringify(savedQuery))
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {

@@ -8,21 +8,23 @@ export class LocalCacheService {
 
   constructor() { }
 
-  setQueries(queries: Map<number, QueryView[]>) {
-    localStorage.setItem('queries', JSON.stringify(Object.fromEntries(queries)));
+  setQueries(queries: {title: string | undefined, map: Map<number, QueryView[]>}) {
+    const mapString = JSON.stringify(Object.fromEntries(queries.map));
+    const newMap = {title: queries.title, map: mapString};
+    localStorage.setItem('queries', JSON.stringify(newMap));
   }
 
-  getQueries(): Map<string, QueryView[]> | undefined {
+  getQueries(): {title: string | undefined, map: Map<string, QueryView[]>} | undefined {
+    let query: {title: string | undefined, map: Map<string, QueryView[]>} | undefined;
     const queries = localStorage.getItem('queries');
-    console.log(JSON.parse(queries!))
-    return queries ? JSON.parse(queries) : undefined;
+    if (queries) {
+      const tempObj: {title: string | undefined, map: string} = JSON.parse(queries);
+      query = {title: tempObj.title, map: new Map(Object.entries(JSON.parse(tempObj.map)))};
+    }
+    return query;
   }
 
-  setQueryTitle(title: string) {
-    localStorage.setItem('query-title', title);
-  }
-
-  getQueryTitle() {
-    return localStorage.getItem('query-title');
+  clearQueryCache() {
+    localStorage.removeItem('queries');
   }
 }

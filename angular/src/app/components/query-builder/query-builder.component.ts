@@ -58,12 +58,10 @@ export class QueryBuilderComponent implements OnInit {
   ngOnInit(): void {
     if (this.savedQuery) {
       this.wheres.clear();
-      // Array.from(this.savedQuery.where).forEach(where => {
         this.chosenNode.setValue({node: this.savedQuery.node, property: this.savedQuery.property});
         this.savedQuery.fields.forEach(whereField => {
           this.addWhereData(whereField);
         })
-      // })
       this.save(undefined);
     }
   }
@@ -88,9 +86,7 @@ export class QueryBuilderComponent implements OnInit {
 
     this.wheres.controls.forEach(where => {
       let value;
-      // let dataType = QueryDataType.STRING;
       if (this.queryForm.get('dataType')?.value == QueryDataType.DATE) {
-        // dataType = QueryDataType.DATE;
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
           const dateEnd = <Moment>where.get('dateEnd')?.value;

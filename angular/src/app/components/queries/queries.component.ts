@@ -26,13 +26,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
-  limit: number = 10; // todo set to 200. 5 is for testing
+  limit: number = 200;
   queries: Map<number, QueryView[]> = new Map;
   nodes: Map<string, string[]> = new Map();
-  queryTitle: string | undefined; // yes i don't like how this title-thing is set up either, but for now... it's like this.
   queryUpdatedTitle: string | undefined;
   loadingAssetCount: boolean = false;
   assetCount: string | undefined = undefined;
+  queryData: {title: string | undefined, map: Map<string, QueryView[]>} | undefined; // saved/loaded or cached
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -75,9 +75,11 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.nodes$.pipe(filter(isNotUndefined),take(1))
       .subscribe(_nodes => {
         const cachedQueries = this.localCacheService.getQueries();
-        console.log(cachedQueries)
+
         if (cachedQueries) {
-          this.addSelectFromData(new Map(Object.entries(cachedQueries)));
+          this.queryData = cachedQueries;
+          this.addSelectFromData(this.queryData.map);
+          this.queryUpdatedTitle = this.queryData.title;
         } else {
           this.newSelect(undefined);
         }
@@ -99,7 +101,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       handlerComponent.instance.idx = childIdx;
       handlerComponent.instance.saveQueryEvent.subscribe(queries => {
         this.queries.set(childIdx, queries);
-        this.localCacheService.setQueries(this.queries)
+        this.localCacheService.setQueries({title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined, map: this.queries})
       });
       handlerComponent.instance.removeComponentEvent.subscribe(() => {
         this.queries.delete(childIdx);
@@ -154,8 +156,9 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.queryHandlerEle?.clear();
     this.queries.clear();
     this.dataSource.data = [];
-    this.queryTitle = undefined;
+    this.queryData = undefined;
     this.assetCount = undefined;
+    this.localCacheService.clearQueryCache();
     this.newSelect(undefined);
   }
 
@@ -197,15 +200,12 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
     // opening saved query
     dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
+      this.queryData = queryMap;
       if (queryMap) {
-        this.queryTitle = queryMap.title;
         this.queryUpdatedTitle = queryMap.title;
         this.queryHandlerEle?.clear();
         this.dataSource.data = [];
         this.addSelectFromData(queryMap.map);
-        // Array.from(queryMap.map.keys()).forEach((key) => {
-        //   this.newSelect(queryMap.map.get(key));
-        // });
       }
     });
   }
@@ -217,10 +217,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   updateSearch() {
-    if (this.queryUpdatedTitle && this.queryTitle) {
-      this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
+    if (this.queryUpdatedTitle && this.queryData?.title) {
+      this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryData.title)
         .subscribe(updated => {
-          this.queryTitle = updated?.name;
+          if (this.queryData) this.queryData.title = updated?.name;
           this.queryUpdatedTitle = updated?.name;
         })
     }
