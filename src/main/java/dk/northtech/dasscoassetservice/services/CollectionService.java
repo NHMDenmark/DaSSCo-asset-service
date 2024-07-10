@@ -47,20 +47,27 @@ public class CollectionService {
         if (Strings.isNullOrEmpty(collection.name())) {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
-
+/*
         Optional<Institution> ifExists = institutionService.getIfExists(collection.institution());
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institute doesnt exist");
         }
-         else {
+
+ */
+        if (!institutionCache.institutionExists(collection.institution())){
+            throw new IllegalArgumentException("Institute doesnt exist");
+        } else {
             if (collectionCache.getCollections(collection.institution()).contains(collection)){
+                throw new IllegalArgumentException("Collection already exists in this institute");
         }
         jdbi.inTransaction(h -> {
             CollectionRepository co = h.attach(CollectionRepository.class);
+            /*
             Institution institution = ifExists.get();
             if (co.listCollections(institution).contains(collection)) {
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
+             */
             Collection col = new Collection(collection.name(), collection.institution(), collection.roleRestrictions());
             co.persistCollection(col);
             collectionCache.putCollectionInCache(collection.institution(), col.name(), col);
@@ -72,15 +79,25 @@ public class CollectionService {
     }
 
     public List<Collection> listCollections(Institution institution, User user) {
+        /*
         Optional<Institution> ifExists = institutionService.getIfExists(institution.name());
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institute doesnt exist");
         }
+         */
+        if (institutionCache.institutionExists(institution.name())){
+            collectionCache.getCollections(institution.name());
+        } else {
+            throw new IllegalArgumentException("Institute doesnt exist");
+        }
         rightsValidationService.checkReadRightsThrowing(user,institution.name());
+        /*
         return jdbi.withHandle(h -> {
             CollectionRepository repository = h.attach(CollectionRepository.class);
             return repository.listCollections(institution);
+
         });
+         */
         return collectionCache.getCollections(institution.name());
     }
 
@@ -108,6 +125,7 @@ public class CollectionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
             return h;
         });
+        collectionCache.putCollectionInCache(collection.institution(), collection.name(), collection);
         return collection;
     }
 }

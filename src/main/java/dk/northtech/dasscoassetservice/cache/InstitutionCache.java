@@ -24,8 +24,8 @@ public class InstitutionCache {
         institutionMap.put(institutionName, institution);
     }
 
-    public Collection<Institution> getInstitutions(){
-        return institutionMap.values();
+    public List<Institution> getInstitutions(){
+        return institutionMap.values().stream().toList();
     }
 
     public boolean institutionExists(String id){

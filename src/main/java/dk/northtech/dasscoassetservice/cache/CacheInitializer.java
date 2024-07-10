@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.cache;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
+import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.springframework.context.ApplicationListener;
 import jakarta.inject.Inject;
@@ -14,9 +15,9 @@ import java.util.List;
 public class CacheInitializer implements ApplicationListener<ContextRefreshedEvent> {
 
     private InstitutionCache institutionCache;
-    private InstitutionRepository institutionRepository;
+    //private InstitutionRepository institutionRepository;
     private CollectionCache collectionCache;
-    private CollectionRepository collectionRepository;
+    //private CollectionRepository collectionRepository;
     private PipelineCache pipelineCache;
     private PipelineRepository pipelineRepository;
     private WorkstationCache workstationCache;
@@ -32,21 +33,23 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private StatusCache statusCache;
     private StatusRepository statusRepository;
     private boolean initialized = false;
+    Jdbi jdbi;
 
     @Inject
-    public CacheInitializer(InstitutionCache institutionCache, InstitutionRepository institutionRepository,
-                            CollectionCache collectionCache, CollectionRepository collectionRepository,
+    public CacheInitializer(InstitutionCache institutionCache, /*InstitutionRepository institutionRepository,*/
+                            CollectionCache collectionCache, /*CollectionRepository collectionRepository,*/
                             PipelineCache pipelineCache, PipelineRepository pipelineRepository,
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
                             SubjectRepository subjectRepository, SubjectCache subjectCache,
                             PayloadTypeRepository payloadTypeRepository, PayloadTypeCache payloadTypeCache,
                             PreparationTypeCache preparationTypeCache, PreparationTypeRepository preparationTypeRepository,
-                            StatusRepository statusRepository, StatusCache statusCache){
+                            StatusRepository statusRepository, StatusCache statusCache,
+                            Jdbi jdbi){
         this.institutionCache = institutionCache;
-        this.institutionRepository = institutionRepository;
+        //this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
-        this.collectionRepository = collectionRepository;
+        //this.collectionRepository = collectionRepository;
         this.pipelineCache = pipelineCache;
         this.pipelineRepository = pipelineRepository;
         this.workstationCache = workstationCache;
@@ -61,10 +64,70 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.preparationTypeRepository = preparationTypeRepository;
         this.statusRepository = statusRepository;
         this.statusCache = statusCache;
+        this.jdbi = jdbi;
     }
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event){
+        if (!initialized){
+            List<Institution> institutionList = jdbi.withHandle(h -> {
+                InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
+                return institutionRepository.listInstitutions();
+            });
+            if (!institutionList.isEmpty()){
+                for (Institution institution : institutionList) {
+                    institutionCache.putInstitutionInCache(institution.name(), institution);
+                    List<Collection> collectionList = jdbi.withHandle(h -> {
+                        CollectionRepository collectionRepository = h.attach(CollectionRepository.class);
+                        return collectionRepository.listCollections(institution);
+                    });
+                    if (!collectionList.isEmpty()){
+                        for (Collection collection : collectionList){
+                            this.collectionCache.putCollectionInCache(institution.name(), collection.name(), collection);
+                        }
+                    }
+                    List<Pipeline> pipelineList = pipelineRepository.listPipelines(institution);
+                    if (!pipelineList.isEmpty()){
+                        for (Pipeline pipeline : pipelineList){
+                            this.pipelineCache.putPipelineInCache(pipeline);
+                        }
+                    }
+                    List<Workstation> workstationList = workstationRepository.listWorkStations(institution);
+                    if (!workstationList.isEmpty()){
+                        for (Workstation workstation : workstationList){
+                            this.workstationCache.putWorkstationInCache(workstation);
+                        }
+                    }
+                }
+                List<Digitiser> digitiserList = digitiserRepository.listDigitisers();
+                if (!digitiserList.isEmpty()){
+                    for (Digitiser digitiser : digitiserList){
+                        this.digitiserCache.putDigitiserInCache(digitiser);
+                    }
+                }
+                List<String> subjectList = subjectRepository.listSubjects();
+                if (!subjectList.isEmpty()){
+                    for (String subject : subjectList){
+                        this.subjectCache.putSubjectsInCache(subject);
+                    }
+                }
+                List<String> payloadTypeList = payloadTypeRepository.listPayloadTypes();
+                if (!payloadTypeList.isEmpty()){
+                    for (String payloadType : payloadTypeList){
+                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                    }
+                }
+                List<String> preparationTypeList = preparationTypeRepository.listPreparationTypes();
+                if (!preparationTypeList.isEmpty()){
+                    for (String preparationType : preparationTypeList){
+                        this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                    }
+                }
+                // TODO: Add preparation types to asset creation and update asset!
+            }
+            initialized = true;
+        }
+        /*
         if (!initialized){
             List<Institution> institutionList = institutionRepository.listInstitutions();
             if (!institutionList.isEmpty()){
@@ -123,5 +186,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
             }
             initialized = true;
         }
+
+         */
     }
 }
