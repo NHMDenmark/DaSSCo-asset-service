@@ -15,16 +15,18 @@ export class QueryBuilderComponent implements OnInit {
     'ENDS WITH',
     'CONTAINS'
   ]
-  operators_date = [
-    '>=',
-    '<=',
-    'RANGE'
-  ]
-  operators_list = [ // file_formats in Asset is currently the only list
-    'IN'
-  ]
+
+  operatorsMap: Map<QueryDataType, string[]> =
+    new Map([
+      [QueryDataType.STRING, this.operators_string],
+      [QueryDataType.NUMBER, this.operators_string],
+      [QueryDataType.ENUM, ["="]],
+      [QueryDataType.DATE, ['>=', '<=', 'RANGE']],
+      [QueryDataType.LIST, ["IN"]]
+    ]);
+
   operators: string[] = [];
-  isDate = false;
+  enums: string[] = ['status'];
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
   @Input() savedQuery: QueryView | undefined;
@@ -33,6 +35,7 @@ export class QueryBuilderComponent implements OnInit {
 
   queryForm = this.fb.group({
     node: new FormControl<NodeProperty | null>(null),
+    dataType: new FormControl<QueryDataType | null>(null),
     wheres: this.fb.array([
       this.fb.group({
         operator: new FormControl(null, Validators.required),
@@ -75,7 +78,7 @@ export class QueryBuilderComponent implements OnInit {
             this.wheres.reset();
           }
         }
-        this.updateOperators(choice.property);
+        this.setOperatorsAndDataType(choice.property);
       }
     })
   }
@@ -85,9 +88,9 @@ export class QueryBuilderComponent implements OnInit {
 
     this.wheres.controls.forEach(where => {
       let value;
-      let dataType = QueryDataType.STRING;
-      if (this.isDate) {
-        dataType = QueryDataType.DATE;
+      // let dataType = QueryDataType.STRING;
+      if (this.queryForm.get('dataType')?.value == QueryDataType.DATE) {
+        // dataType = QueryDataType.DATE;
         if (where.get('operator')?.value == 'RANGE') {
           const dateStart = <Moment>where.get('dateStart')?.value;
           const dateEnd = <Moment>where.get('dateEnd')?.value;
@@ -103,7 +106,7 @@ export class QueryBuilderComponent implements OnInit {
       const newQueryField = {
         operator: where.get('operator')?.value,
         value: value,
-        dataType: dataType
+        dataType: this.queryForm.get('dataType')?.value
       } as QueryInner;
       innerList.push(newQueryField);
     })
@@ -120,20 +123,25 @@ export class QueryBuilderComponent implements OnInit {
     this.removeComponentEvent.emit();
   }
 
-  updateOperators(property: string) {
-    this.operators = this.operators_string;  // Default operators list
+  setOperatorsAndDataType(property: string) {
     if (property.includes('date') || property.includes('timestamp')) {
-      this.isDate = true;
-      this.operators = this.operators_date;
-    } else if (property.includes('file_formats')) {
-      this.isDate = false;
-      this.operators = this.operators_list;
+      this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
+    } else if (property.includes('file_formats')) { // todo should prob get list names from somewhere
+      this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
+    } else if (this.enums.includes(property)) {
+      this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
+      this.wheres.controls.forEach(where => where.get('operator')?.setValue(this.operatorsMap.get(QueryDataType.ENUM)![0]))
+    } else {
+      this.queryForm.get('dataType')?.setValue(QueryDataType.STRING);
     }
+    const dataType = this.queryForm.get('dataType')?.value;
+    this.operators = this.operatorsMap.get(dataType ? QueryDataType[dataType] : QueryDataType.STRING)!; // I'M SORRY i know ! is bad, but I KNOW it will always have STRING key. it is hardcoded goddammit.
   }
 
   addWhereData(where: QueryInner) {
     const isDate = where.dataType == QueryDataType.DATE;
     const rangedDate = isDate && where.operator.toLowerCase().includes('range');
+    this.queryForm.get('dataType')?.setValue(QueryDataType[where.dataType]);
 
     this.wheres.push(this.fb.group({
       operator: new FormControl(where.operator, Validators.required),
@@ -146,7 +154,7 @@ export class QueryBuilderComponent implements OnInit {
 
   addWhere() {
     this.wheres.push(this.fb.group({
-      operator: new FormControl(null, Validators.required),
+      operator: new FormControl(this.queryForm.get('dataType')?.value == QueryDataType.ENUM ? '=' : null, Validators.required),
       value: new FormControl(null, Validators.required),
       date: new FormControl<Date | null>(null),
       dateStart: new FormControl<Date | null>(null),
@@ -166,4 +174,6 @@ export class QueryBuilderComponent implements OnInit {
   compareNodeProperty(o1: any, o2: any): boolean {
     return !!(o1 && o2 && o1.node == o2.node && o1.property == o2.property);
   }
+
+  protected readonly QueryDataType = QueryDataType;
 }

@@ -26,6 +26,7 @@
               <div *ngIf="i > 0">
                 <p style="margin-right: .5rem;">OR</p>
               </div>
+
               <mat-form-field appearance="outline">
                 <mat-label>Operator</mat-label>
                 <mat-select formControlName="operator">
@@ -35,7 +36,7 @@
                 </mat-select>
               </mat-form-field>
 
-            <div *ngIf="isDate; else input">
+            <div *ngIf="queryForm.get('dataType')?.value == QueryDataType.DATE; else input">
               <div *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('RANGE'); else oneDate">
                 <mat-form-field appearance="outline">
                   <mat-label>Enter a date range</mat-label>
