@@ -13,6 +13,7 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import _default from "chart.js/dist/plugins/plugin.tooltip";
+import {LocalCacheService} from "../../services/local-cache.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -67,11 +68,20 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   constructor(private queriesService: QueriesService
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
+              , private localCacheService: LocalCacheService
   ) { }
 
   ngOnInit(): void {
     this.nodes$.pipe(filter(isNotUndefined),take(1))
-      .subscribe(_nodes => this.newSelect(undefined))
+      .subscribe(_nodes => {
+        const cachedQueries = this.localCacheService.getQueries();
+        console.log(cachedQueries)
+        if (cachedQueries) {
+          this.addSelectFromData(new Map(Object.entries(cachedQueries)));
+        } else {
+          this.newSelect(undefined);
+        }
+      })
   }
 
   ngAfterViewInit(): void {
@@ -87,7 +97,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       handlerComponent.instance.savedQuery = savedQuery;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
-      handlerComponent.instance.saveQueryEvent.subscribe(queries => this.queries.set(childIdx, queries));
+      handlerComponent.instance.saveQueryEvent.subscribe(queries => {
+        this.queries.set(childIdx, queries);
+        this.localCacheService.setQueries(this.queries)
+      });
       handlerComponent.instance.removeComponentEvent.subscribe(() => {
         this.queries.delete(childIdx);
         handlerComponent.destroy();
@@ -189,10 +202,17 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         this.queryUpdatedTitle = queryMap.title;
         this.queryHandlerEle?.clear();
         this.dataSource.data = [];
-        Array.from(queryMap.map.keys()).forEach((key) => {
-          this.newSelect(queryMap.map.get(key));
-        });
+        this.addSelectFromData(queryMap.map);
+        // Array.from(queryMap.map.keys()).forEach((key) => {
+        //   this.newSelect(queryMap.map.get(key));
+        // });
       }
+    });
+  }
+
+  addSelectFromData(query: Map<string, QueryView[]>) {
+    Array.from(query.keys()).forEach((key) => {
+      this.newSelect(query.get(key));
     });
   }
 
