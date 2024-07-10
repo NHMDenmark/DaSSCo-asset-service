@@ -12,6 +12,8 @@ tags:
   description: Endpoints related to assets.
 - name: Asset Metadata
   description: Endpoints related to asset's metadata
+- name: Caches
+  description: Endpoints related to the different caches in the System
 - name: Collections
   description: Endpoints related to collections.
 - name: Institutions
@@ -23,13 +25,45 @@ tags:
 - name: Workstations
   description: Endpoints related to institutions workstations
 paths:
+  /v1/assets/statusList:
+    get:
+      tags:
+      - Assets
+      summary: Get Asset Status List
+      description: Returns a list of the existing asset status in the system
+      operationId: getAssetStatus
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: The current status of an asset
+                  example: BEING_PROCESSED
+                  enum:
+                  - WORKING_COPY
+                  - ARCHIVE
+                  - BEING_PROCESSED
+                  - PROCESSING_HALTED
+                  - ISSUE_WITH_MEDIA
+                  - ISSUE_WITH_METADATA
+                  - FOR_DELETION
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/assets/status/{assetGuid}:
     get:
       tags:
       - Assets
       summary: Get Asset Status
       description: Returns the status of an asset.
-      operationId: getAssetStatus
+      operationId: getAssetStatus_1
       parameters:
       - name: assetGuid
         in: path
@@ -471,6 +505,28 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/caches:
+    get:
+      tags:
+      - Caches
+      summary: Get All Caches
+      description: Lists all the caches available in the system for the dropdowns
+      operationId: getAllCaches
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutions/{institutionName}/collections:
     get:
       tags:
@@ -770,6 +826,26 @@ paths:
       - dassco-idp: []
 components:
   schemas:
+    DaSSCoError:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Error
+        protocolVersion:
+          type: string
+          enum:
+          - "1.0"
+        errorCode:
+          type: string
+          enum:
+          - BAD_REQUEST
+          - UPSTREAM_ERROR
+          - INTERNAL_ERROR
+          - FORBIDDEN
+        errorMessage:
+          type: string
     AssetStatusInfo:
       type: object
       properties:
@@ -808,26 +884,6 @@ components:
           description: Number of MB allocated for the asset
           format: int32
           example: 10
-    DaSSCoError:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-          - Error
-        protocolVersion:
-          type: string
-          enum:
-          - "1.0"
-        errorCode:
-          type: string
-          enum:
-          - BAD_REQUEST
-          - UPSTREAM_ERROR
-          - INTERNAL_ERROR
-          - FORBIDDEN
-        errorMessage:
-          type: string
     AssetV1:
       type: object
       properties:

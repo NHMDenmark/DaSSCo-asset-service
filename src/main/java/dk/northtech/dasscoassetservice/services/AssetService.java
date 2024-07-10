@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.DigitiserCache;
 import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
+import dk.northtech.dasscoassetservice.cache.StatusCache;
 import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
@@ -32,11 +33,13 @@ public class AssetService {
     private DigitiserCache digitiserCache;
     private SubjectCache subjectCache;
     private PayloadTypeCache payloadTypeCache;
+    private StatusCache statusCache;
 
     @Inject
     public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService,
                         @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService,
-                        PipelineService pipelineService, DigitiserCache digitiserCache, SubjectCache subjectCache, PayloadTypeCache payloadTypeCache) {
+                        PipelineService pipelineService, DigitiserCache digitiserCache, SubjectCache subjectCache, PayloadTypeCache payloadTypeCache,
+                        StatusCache statusCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -47,6 +50,7 @@ public class AssetService {
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
+        this.statusCache = statusCache;
     }
 
     public boolean auditAsset(Audit audit, String assetGuid) {
@@ -255,6 +259,12 @@ public class AssetService {
             }
         }
 
+        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
+            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
+                statusCache.putStatusInCache(updatedAsset.status);
+            }
+        }
+
         return existing;
     }
 
@@ -335,6 +345,12 @@ public class AssetService {
         if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()){
             if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)){
                 payloadTypeCache.putPayloadTypesInCache(updatedAsset.payload_type);
+            }
+        }
+
+        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
+            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
+                statusCache.putStatusInCache(updatedAsset.status);
             }
         }
     }
@@ -592,6 +608,10 @@ public class AssetService {
             }
         }
 
+        if (!statusCache.getStatusMap().containsKey(asset.status.toString())){
+            statusCache.putStatusInCache(asset.status);
+        }
+
         return asset;
     }
 
@@ -605,6 +625,10 @@ public class AssetService {
 
     public List<String> listPayloadTypes(){
         return payloadTypeCache.getPayloadTypes();
+    }
+
+    public List<AssetStatus> listStatus(){
+        return statusCache.getStatus();
     }
 
     //This is here for mocking

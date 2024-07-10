@@ -29,6 +29,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private PayloadTypeCache payloadTypeCache;
     private PreparationTypeCache preparationTypeCache;
     private PreparationTypeRepository preparationTypeRepository;
+    private StatusCache statusCache;
+    private StatusRepository statusRepository;
     private boolean initialized = false;
 
     @Inject
@@ -39,7 +41,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
                             SubjectRepository subjectRepository, SubjectCache subjectCache,
                             PayloadTypeRepository payloadTypeRepository, PayloadTypeCache payloadTypeCache,
-                            PreparationTypeCache preparationTypeCache, PreparationTypeRepository preparationTypeRepository){
+                            PreparationTypeCache preparationTypeCache, PreparationTypeRepository preparationTypeRepository,
+                            StatusRepository statusRepository, StatusCache statusCache){
         this.institutionCache = institutionCache;
         this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
@@ -56,6 +59,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.payloadTypeCache = payloadTypeCache;
         this.preparationTypeCache = preparationTypeCache;
         this.preparationTypeRepository = preparationTypeRepository;
+        this.statusRepository = statusRepository;
+        this.statusCache = statusCache;
     }
 
     @Override
@@ -107,6 +112,12 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                 if (!preparationTypeList.isEmpty()){
                     for (String preparationType : preparationTypeList){
                         this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                    }
+                }
+                List<AssetStatus> statusList = statusRepository.listStatus();
+                if (!statusList.isEmpty()){
+                    for(AssetStatus status : statusList){
+                        this.statusCache.putStatusInCache(status);
                     }
                 }
             }

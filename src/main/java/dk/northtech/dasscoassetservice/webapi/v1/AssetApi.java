@@ -134,4 +134,14 @@ public class AssetApi {
     public List<String> getPayloadTypes(){
         return assetService.listPayloadTypes();
     }
+
+    @GET
+    @Path("/statusList")
+    @Operation(summary = "Get Asset Status List", description = "Returns a list of the existing asset status in the system")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetStatus.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<AssetStatus> getAssetStatus(){
+        return assetService.listStatus();
+    }
 }
