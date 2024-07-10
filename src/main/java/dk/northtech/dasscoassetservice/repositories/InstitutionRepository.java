@@ -1,12 +1,16 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.Role;
+import dk.northtech.dasscoassetservice.repositories.helpers.InstitutionMapper;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.springframework.stereotype.Repository;
 
@@ -14,24 +18,19 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-@Repository
-public class InstitutionRepository {
-    private Jdbi jdbi;
-    private DataSource dataSource;
+public interface InstitutionRepository extends SqlObject {
 
-    private static final String boilerplate =
+
+     static final String boilerplate =
             "CREATE EXTENSION IF NOT EXISTS age;\n" +
                          "LOAD 'age';\n" +
                          "SET search_path = ag_catalog, \"$user\", public;";
-    @Inject
-    public InstitutionRepository(Jdbi jdbi, DataSource dataSource) {
-        this.dataSource = dataSource;
-        this.jdbi = jdbi;
-    }
 
 
-    public void persistInstitution(Institution institution) {
+    @Transaction
+    default void persistInstitution(Institution institution) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
@@ -44,7 +43,8 @@ public class InstitutionRepository {
 
 
         try {
-            jdbi.withHandle(handle -> {
+            withHandle(handle -> {
+
 //                Connection connection = handle.getConnection();
 //                PgConnection pgConn = connection.unwrap(PgConnection.class);
 //                pgConn.addDataType("agtype", Agtype.class);
@@ -54,7 +54,6 @@ public class InstitutionRepository {
                 handle.createUpdate(sql)
                         .bind("params", agtype)
                         .execute();
-                handle.close();
                 return handle;
             });
         } catch (Exception e) {
@@ -62,49 +61,50 @@ public class InstitutionRepository {
         }
     }
 
-    public List<Institution> listInstitutions() {
+    default List<Institution> listInstitutions() {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (i:Institution)
+                            OPTIONAL MATCH (i)-[:RESTRICTED_TO]->(r:Role)
                             RETURN i.name
+                            , collect(r)
                         $$
-                        ) as (name agtype);""";
+                        ) as (name agtype, roles agtype);""";
 
 
         try {
-            return jdbi.withHandle(handle -> {
+            return withHandle(handle -> {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
                 handle.execute(boilerplate);
                 return handle.createQuery(sql)
-                        .map((rs, ctx) -> {
-                            Agtype name = rs.getObject("name", Agtype.class);
-                            return new Institution(name.getString());
-                        }).list();
+                        .map(new InstitutionMapper()).list();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public Optional<Institution> findInstitution(String institutionName) {
+
+
+    default Optional<Institution> findInstitution(String institutionName) {
         String sql =
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (i:Institution)
-                            WHERE i.name = $name
-                            RETURN i.name
+                            MATCH (i:Institution{name: $name})
+                            OPTIONAL MATCH (i)-[:RESTRICTED_TO]->(r:Role)
+                            RETURN i.name, collect(r)
                         $$
-                        , #params) as (name agtype);
+                        , #params) as (name agtype, roles agtype);
                         """;
 
 
         try {
-            return jdbi.withHandle(handle -> {
+            return withHandle(handle -> {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
@@ -112,13 +112,12 @@ public class InstitutionRepository {
                 AgtypeMap institutionNameAG = new AgtypeMapBuilder().add("name", institutionName).build();
                 Agtype agtype = AgtypeFactory.create(institutionNameAG);
                 return handle.createQuery(sql).bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            Agtype name = rs.getObject("name", Agtype.class);
-                            return new Institution(name.getString());
-                        }).findOne();
+                        .map(new InstitutionMapper()).findOne();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
+
+
 }

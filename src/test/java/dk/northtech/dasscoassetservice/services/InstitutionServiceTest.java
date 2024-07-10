@@ -1,8 +1,11 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Institution;
+import dk.northtech.dasscoassetservice.domain.Role;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +21,7 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testCreateInstitutionIllegalName() {
-        InstitutionService institutionService = new InstitutionService(null, null);
+        InstitutionService institutionService = new InstitutionService( null);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("")));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
     }
@@ -37,6 +40,23 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
             return institution.name().equals("Teztitution");
         }).findAny();
         assertThat(result.isPresent()).isTrue();
+    }
+
+    @Test
+    void testInstitutionRoles() {
+        institutionService.createInstitution(new Institution("teztitution_rolez", Arrays.asList(new Role("super-burger"), new Role("super-duper-bruger"))));
+        List<Institution> institutions = institutionService.listInstitutions();
+        Optional<Institution> result = institutions.stream().filter(institution -> {
+            return institution.name().equals("teztitution_rolez");
+        }).findAny();
+        assertThat(result.isPresent()).isTrue();
+        Institution institution = result.get();
+        assertThat(institution.roleRestriction()).hasSize(2);
+        Institution institution1 = new Institution(institution.name(), new ArrayList<>());
+        institutionService.updateInstitution(institution1);
+        Optional<Institution> resultOpt = institutionService.getIfExists("teztitution_rolez");
+        Institution resultLast = resultOpt.orElseThrow(RuntimeException::new);
+        assertThat(resultLast.roleRestriction()).isEmpty();
     }
 
     @Test

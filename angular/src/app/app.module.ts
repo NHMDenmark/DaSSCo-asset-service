@@ -39,6 +39,9 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
 import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
 import {MatListModule} from "@angular/material/list";
 import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
+import {MatDialogModule} from "@angular/material/dialog";
+import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
+import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
 
 @NgModule({
   declarations: [
@@ -57,6 +60,8 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     QueriesComponent,
     QueryBuilderComponent,
     QueryHandlerComponent,
+    SavedSearchesDialogComponent,
+    SaveSearchDialogComponent,
     DetailedViewComponent
   ],
   imports: [
@@ -81,6 +86,8 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     MatDividerModule,
     MatTableModule,
     MatCardModule,
+    MatExpansionModule,
+    MatDialogModule,
     MatChipsModule,
     MatCheckboxModule,
     MatExpansionModule,

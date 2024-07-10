@@ -29,7 +29,9 @@ public class AbstractIntegrationTest {
             .withEnv("POSTGRES_USER", "dassco_file_proxy")
             .withEnv("POSTGRES_PASSWORD", "dassco_file_proxy");
 
+    @Inject RightsValidationService rightsValidationService;
     @Inject InstitutionService institutionService;
+    @Inject CollectionService collectionService;
     @Inject PipelineService pipelineService;
     @Inject StatisticsDataService statisticsDataService;
     @Inject
@@ -41,6 +43,7 @@ public class AbstractIntegrationTest {
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
 
+    User user = new User();
     @Inject
     void setAssetService(AssetService assetService) {
         AssetService spyAssetService = spy(assetService);
@@ -52,7 +55,7 @@ public class AbstractIntegrationTest {
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
         // These tests assume the dev dataset, so roll that context on:
-        registry.add("spring.liquibase.contexts", () -> "default, development");
+        registry.add("spring.liquibase.contexts", () -> "default, development, test");
         registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_file_proxy");
     }
 }

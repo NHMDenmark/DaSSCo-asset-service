@@ -14,6 +14,7 @@ export class QueryHandlerComponent implements OnInit {
   @Output() removeComponentEvent = new EventEmitter<any>();
   @Output() saveQueryEvent = new EventEmitter<QueryView[]>();
   @Input() idx: number | undefined;
+  @Input() savedQuery: QueryView[] | undefined;
 
   @Input()
   set nodes(nodes: Map<string, string[]>) {
@@ -23,14 +24,21 @@ export class QueryHandlerComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    this.addWhere();
+    if (this.savedQuery) {
+      this.savedQuery.forEach(query => {
+        this.addWhere(query);
+      })
+    } else {
+      this.addWhere(undefined);
+    }
   }
 
-  addWhere() {
+  addWhere(savedQuery: QueryView | undefined) {
     if (this.queryBuilderEle) {
       const builderComponent = this.queryBuilderEle.createComponent(QueryBuilderComponent, {index: this.queryBuilderEle.length});
       const eleIdx = this.queryBuilderEle!.indexOf(builderComponent.hostView);
       builderComponent.instance.nodes = this.nodeMap;
+      builderComponent.instance.savedQuery = savedQuery;
       builderComponent.instance.saveQueryEvent.subscribe(where => {
         this.saveQuery(where, eleIdx);
       });
@@ -48,6 +56,7 @@ export class QueryHandlerComponent implements OnInit {
 
   removeQueryForm(index: number) {
     this.queries.delete(index);
+    this.saveQueryEvent.emit(Array.from(this.queries.values()).map(val => val));
   }
 
   removeComponent() {

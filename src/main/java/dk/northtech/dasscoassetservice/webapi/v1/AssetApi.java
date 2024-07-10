@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
+import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -37,14 +38,18 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class AssetApi {
     private final InternalStatusService internalStatusService;
+    private final RightsValidationService rightsValidationService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
     private AssetService assetService;
 
     @Inject
-    public AssetApi(InternalStatusService internalStatusService, AssetService assetService) {
+    public AssetApi(InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService) {
         this.internalStatusService = internalStatusService;
         this.assetService = assetService;
+        this.rightsValidationService = rightsValidationService;
     }
+
+
 
     @GET
     @Operation(summary = "Get Assets", description = "Returns a list of assets.")
@@ -81,7 +86,7 @@ public class AssetApi {
     @GET
     @Path("/inprogress")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetStatusInfo> getInternalStatusAmt(@QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
-import {Asset, QueryResponse} from "../types/query-types";
+import {Asset, QueryResponse, SavedQuery} from "../types/query-types";
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +24,42 @@ export class QueriesService {
         })
       );
 
+  savedQueries$
+    = this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.get<SavedQuery[]>(`${this.baseUrl}/saved`, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/nodes`, undefined))
+            );
+        })
+      );
+
+  saveSearch(savedQuery: SavedQuery): Observable<SavedQuery | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<SavedQuery>(`${this.baseUrl}/save`, JSON.stringify(savedQuery), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/save`, undefined))
+            );
+        })
+      );
+  }
+
+  updateSavedSearch(savedQuery: SavedQuery, title: string): Observable<SavedQuery | undefined> {
+    console.log(JSON.stringify(savedQuery))
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<SavedQuery>(`${this.baseUrl}/saved/update/${title}`, JSON.stringify(savedQuery), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/save`, undefined))
+            );
+        })
+      );
+  }
+
   getNodesFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
@@ -31,6 +67,18 @@ export class QueriesService {
           return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
               catchError(this.handleError(`get ${this.baseUrl}/${limit}`, undefined))
+            );
+        })
+      );
+  }
+
+  deleteSavedSearch(title: string): Observable<string | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.delete<string>(`${this.baseUrl}/saved/${title}`, {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/${title}`, undefined))
             );
         })
       );

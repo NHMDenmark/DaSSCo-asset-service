@@ -1,6 +1,17 @@
 .container {
   padding: 1rem;
 
+  .top-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .saved-searches-btn {
+    margin-bottom: 1rem;
+    margin-right: 1rem;
+  }
+
   .input-container {
     margin-top: 1rem;
 

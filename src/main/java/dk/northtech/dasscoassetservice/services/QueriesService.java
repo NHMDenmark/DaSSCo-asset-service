@@ -194,4 +194,20 @@ public class QueriesService {
         }
         return orJoiner.toString();
     }
+
+    public SavedQuery saveQuery(SavedQuery savedQuery, String username) {
+        return jdbi.onDemand(QueriesRepository.class).saveQuery(savedQuery, username);
+    }
+
+    public List<SavedQuery> getSavedQueries(String username) {
+        return jdbi.onDemand(QueriesRepository.class).getSavedQueries(username);
+    }
+
+    public SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
+        return jdbi.onDemand(QueriesRepository.class).updateSavedQuery(prevTitle, newQuery, username);
+    }
+
+    public String deleteSavedQuery(String title, String username) {
+        return jdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
+    }
 }

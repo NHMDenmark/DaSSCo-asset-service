@@ -16,6 +16,11 @@ public class User {
     public User() {
     }
 
+    public User(String username,  Set<String> roles) {
+        this.username = username;
+        this.roles = roles;
+    }
+
     public User(String username) {
         this.username = username;
     }

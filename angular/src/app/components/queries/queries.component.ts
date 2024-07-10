@@ -5,6 +5,12 @@ import {isNotUndefined} from "@northtech/ginnungagap";
 import {Asset, Query, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
 import {QueryHandlerComponent} from "../query-handler/query-handler.component";
+import {
+  SavedSearchesDialogComponent
+} from "../dialogs/saved-searches-dialog/saved-searches-dialog.component";
+import {MatDialog} from "@angular/material/dialog";
+import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'dassco-queries',
@@ -19,6 +25,8 @@ export class QueriesComponent implements OnInit {
   limit: number = 200;
   queries: Map<number, QueryView[]> = new Map;
   nodes: Map<string, string[]> = new Map();
+  queryTitle: string | undefined;
+  queryUpdatedTitle: string | undefined;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -52,17 +60,20 @@ export class QueriesComponent implements OnInit {
   );
 
   constructor(private queriesService: QueriesService
+              , public dialog: MatDialog
+              , private _snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
     this.nodes$.pipe(filter(isNotUndefined),take(1))
-      .subscribe(_nodes => this.newSelect())
+      .subscribe(_nodes => this.newSelect(undefined))
   }
 
-  newSelect() {
+  newSelect(savedQuery: QueryView[] | undefined) {
     if (this.queryHandlerEle) {
       const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
       handlerComponent.instance.nodes = this.nodes;
+      handlerComponent.instance.savedQuery = savedQuery;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
       handlerComponent.instance.saveQueryEvent.subscribe(queries => this.queries.set(childIdx, queries));
@@ -107,7 +118,68 @@ export class QueriesComponent implements OnInit {
   clearAll() {
     this.queryHandlerEle?.clear();
     this.queries.clear();
-    this.newSelect();
+    this.dataSource.data = [];
+    this.queryTitle = undefined;
+    this.newSelect(undefined);
+  }
+
+  saveSearch() {
+    const dialogRef = this.dialog.open(SaveSearchDialogComponent);
+
+    dialogRef.afterClosed().subscribe((title: string | undefined) => {
+      if (title) {
+        this.queriesService.saveSearch({name: title, query: JSON.stringify(Object.fromEntries(this.queries))})
+          .subscribe(saved => {
+            if (saved) {
+              this._snackBar.open('The search ' + title + ' has been saved.', 'OK');
+            } else {
+              this._snackBar.open('Error occurred when saving the search. Try again.', 'OK');
+            }
+          })
+      }
+    });
+  }
+
+  savedSearchesDialog(): void {
+    const dialogRef = this.dialog.open(SavedSearchesDialogComponent, {
+      width: '300px'
+    });
+
+    dialogRef.componentInstance.deleteQuery$
+      .pipe(filter(isNotUndefined))
+      .subscribe(queryName => {
+        this.queriesService.deleteSavedSearch(queryName)
+          .subscribe(deleted => {
+            if (deleted) {
+              this._snackBar.open('The search has been deleted.', 'OK');
+            } else {
+              this._snackBar.open('Error occurred. Try deleting again.', 'OK');
+            }
+          })
+      });
+
+    dialogRef.afterClosed().subscribe((queryMap: {title: string, map: Map<string, QueryView[]>} | undefined) => {
+      if (queryMap) {
+        this.queryTitle = queryMap.title;
+        this.queryUpdatedTitle = queryMap.title;
+        this.queryHandlerEle?.clear();
+        Array.from(queryMap.map.keys()).forEach((key) => {
+          this.newSelect(queryMap.map.get(key));
+        });
+      }
+    });
+  }
+
+  updateSearch() {
+    console.log(JSON.stringify(Object.fromEntries(this.queries)))
+    if (this.queryUpdatedTitle && this.queryTitle) {
+      this.queriesService.updateSavedSearch({name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))}, this.queryTitle)
+        .subscribe(updated => {
+          this.queryTitle = updated?.name;
+          this.queryUpdatedTitle = updated?.name;
+          console.log('updated', updated?.query)
+        })
+    }
   }
 
   // clearcache() { // temp

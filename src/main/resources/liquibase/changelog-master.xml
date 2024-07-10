@@ -7,6 +7,9 @@
     </preConditions>
     <include file="/liquibase/changelog-0.0.0.xml"/>
     <include file="/liquibase/changelog-1.0.0.xml"/>
-    <include file="/liquibase/changelog-1.0.0-test.xml"/>
     <include file="/liquibase/changelog-1.0.1.xml"/>
+    <include file="/liquibase/changelog-1.0.0-test.xml"/>
+    <include file="/liquibase/changelog-1.1.0.xml"/>
+    <include file="/liquibase/changelog-2.0.0.xml"/>
+    <include file="/liquibase/changelog-2.0.0-test.xml"/>
 </databaseChangeLog>

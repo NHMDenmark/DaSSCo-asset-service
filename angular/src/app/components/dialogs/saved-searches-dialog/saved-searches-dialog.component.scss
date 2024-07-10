@@ -1,0 +1,18 @@
+@import 'src/style/base';
+
+.container {
+  display: flex;
+  flex-direction: column;
+
+  ul {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-family: graphik-regular;
+  }
+
+  li:hover {
+    cursor: pointer;
+    background-color: #dcd6d6;
+  }
+}
