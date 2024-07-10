@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.DigitiserCache;
+import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -28,9 +29,12 @@ public class AssetService {
     private final PipelineService pipelineService;
     private final Jdbi jdbi;
     private DigitiserCache digitiserCache;
+    private SubjectCache subjectCache;
 
     @Inject
-    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService, PipelineService pipelineService, DigitiserCache digitiserCache) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService,
+                        @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService,
+                        PipelineService pipelineService, DigitiserCache digitiserCache, SubjectCache subjectCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -39,6 +43,7 @@ public class AssetService {
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
         this.digitiserCache = digitiserCache;
+        this.subjectCache = subjectCache;
     }
 
     public boolean auditAsset(Audit audit, String assetGuid) {
@@ -235,6 +240,12 @@ public class AssetService {
             digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
         }
 
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
+                subjectCache.putSubjectsInCache(updatedAsset.subject);
+            }
+        }
+
         return existing;
     }
 
@@ -304,6 +315,12 @@ public class AssetService {
 
         if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
             digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        }
+
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
+                subjectCache.putSubjectsInCache(updatedAsset.subject);
+            }
         }
     }
 
@@ -545,6 +562,12 @@ public class AssetService {
         if (asset.digitiser != null && !asset.digitiser.isEmpty()){
             if (!digitiserCache.getDigitiserMap().containsKey(asset.digitiser)){
                 digitiserCache.putDigitiserInCache(new Digitiser(asset.digitiser, asset.digitiser));
+            }
+        }
+
+        if (asset.subject != null && !asset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
+                subjectCache.putSubjectsInCache(asset.subject);
             }
         }
 

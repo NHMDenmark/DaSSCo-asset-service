@@ -45,7 +45,7 @@ public class SubjectRepository {
                 return handle.createQuery(sql)
                         .map((rs, ctx) -> {
                             Agtype subject = rs.getObject("subject", Agtype.class);
-                            return subject.toString();
+                            return subject.getString();
                         }).list();
             });
         } catch (Exception e){

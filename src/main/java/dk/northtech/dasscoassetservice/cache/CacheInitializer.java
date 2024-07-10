@@ -72,17 +72,17 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             this.workstationCache.putWorkstationInCache(workstation);
                         }
                     }
-                    List<Digitiser> digitiserList = digitiserRepository.listDigitisers();
-                    if (!digitiserList.isEmpty()){
-                        for (Digitiser digitiser : digitiserList){
-                            this.digitiserCache.putDigitiserInCache(digitiser);
-                        }
+                }
+                List<Digitiser> digitiserList = digitiserRepository.listDigitisers();
+                if (!digitiserList.isEmpty()){
+                    for (Digitiser digitiser : digitiserList){
+                        this.digitiserCache.putDigitiserInCache(digitiser);
                     }
-                    List<String> subjectList = subjectRepository.listSubjects();
-                    if (!subjectList.isEmpty()){
-                        for (String subject : subjectList){
-                            this.subjectCache.putSubjectsInCache(subject);
-                        }
+                }
+                List<String> subjectList = subjectRepository.listSubjects();
+                if (!subjectList.isEmpty()){
+                    for (String subject : subjectList){
+                        this.subjectCache.putSubjectsInCache(subject);
                     }
                 }
             }

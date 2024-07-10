@@ -44,7 +44,4 @@ public class Subjects {
     public List<String> getSubjects(){
         return subjectService.listSubjects();
     }
-
-    // TODO: Why is it returning "this is a subject::agtype"?
-    // Add subjects on asset creation / update / bulk update.
 }
