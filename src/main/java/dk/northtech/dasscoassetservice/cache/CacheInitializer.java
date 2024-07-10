@@ -24,6 +24,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private DigitiserCache digitiserCache;
     private SubjectRepository subjectRepository;
     private SubjectCache subjectCache;
+    private PayloadTypeRepository payloadTypeRepository;
+    private PayloadTypeCache payloadTypeCache;
     private boolean initialized = false;
 
     @Inject
@@ -32,7 +34,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             PipelineCache pipelineCache, PipelineRepository pipelineRepository,
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
-                            SubjectRepository subjectRepository, SubjectCache subjectCache){
+                            SubjectRepository subjectRepository, SubjectCache subjectCache,
+                            PayloadTypeRepository payloadTypeRepository, PayloadTypeCache payloadTypeCache){
         this.institutionCache = institutionCache;
         this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
@@ -45,6 +48,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.digitiserCache = digitiserCache;
         this.subjectRepository = subjectRepository;
         this.subjectCache = subjectCache;
+        this.payloadTypeRepository = payloadTypeRepository;
+        this.payloadTypeCache = payloadTypeCache;
     }
 
     @Override
@@ -83,6 +88,12 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                 if (!subjectList.isEmpty()){
                     for (String subject : subjectList){
                         this.subjectCache.putSubjectsInCache(subject);
+                    }
+                }
+                List<String> payloadTypeList = payloadTypeRepository.listPayloadTypes();
+                if (!payloadTypeList.isEmpty()){
+                    for (String payloadType : payloadTypeList){
+                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
                     }
                 }
             }

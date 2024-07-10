@@ -25,6 +25,9 @@
     "name" : "Institutions",
     "description" : "Endpoints related to institutions"
   }, {
+    "name" : "Payload Types",
+    "description" : "Endpoints related to the payload types of assets"
+  }, {
     "name" : "Pipelines",
     "description" : "Endpoints related to institution pipelines"
   }, {
@@ -787,6 +790,40 @@
           },
           "204" : {
             "description" : "No Content. Institution does not exist."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/payloadTypes" : {
+      "get" : {
+        "tags" : [ "Payload Types" ],
+        "summary" : "Get Payload Types",
+        "description" : "Returns a list of the existing payload types in the system",
+        "operationId" : "getPayloadTypes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
           },
           "400-599" : {
             "content" : {

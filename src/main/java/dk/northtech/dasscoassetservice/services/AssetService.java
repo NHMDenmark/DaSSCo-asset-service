@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.DigitiserCache;
+import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
@@ -30,11 +31,12 @@ public class AssetService {
     private final Jdbi jdbi;
     private DigitiserCache digitiserCache;
     private SubjectCache subjectCache;
+    private PayloadTypeCache payloadTypeCache;
 
     @Inject
     public AssetService(InstitutionService institutionService, CollectionService collectionService, WorkstationService workstationService,
                         @Lazy FileProxyClient fileProxyClient, Jdbi jdbi, StatisticsDataService statisticsDataService,
-                        PipelineService pipelineService, DigitiserCache digitiserCache, SubjectCache subjectCache) {
+                        PipelineService pipelineService, DigitiserCache digitiserCache, SubjectCache subjectCache, PayloadTypeCache payloadTypeCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -44,6 +46,7 @@ public class AssetService {
         this.jdbi = jdbi;
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
+        this.payloadTypeCache = payloadTypeCache;
     }
 
     public boolean auditAsset(Audit audit, String assetGuid) {
@@ -246,6 +249,12 @@ public class AssetService {
             }
         }
 
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)){
+                payloadTypeCache.putPayloadTypesInCache(updatedAsset.payload_type);
+            }
+        }
+
         return existing;
     }
 
@@ -320,6 +329,12 @@ public class AssetService {
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
                 subjectCache.putSubjectsInCache(updatedAsset.subject);
+            }
+        }
+
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)){
+                payloadTypeCache.putPayloadTypesInCache(updatedAsset.payload_type);
             }
         }
     }
@@ -568,6 +583,12 @@ public class AssetService {
         if (asset.subject != null && !asset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
                 subjectCache.putSubjectsInCache(asset.subject);
+            }
+        }
+
+        if (asset.payload_type != null && !asset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(asset.payload_type)){
+                payloadTypeCache.putPayloadTypesInCache(asset.payload_type);
             }
         }
 
