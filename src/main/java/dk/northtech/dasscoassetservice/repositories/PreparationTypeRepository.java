@@ -11,12 +11,13 @@ import java.sql.Connection;
 import java.util.List;
 
 @Repository
-public class PayloadTypeRepository {
+public class PreparationTypeRepository {
+
     private Jdbi jdbi;
     private DataSource dataSource;
 
     @Inject
-    public PayloadTypeRepository(Jdbi jdbi, DataSource dataSource){
+    public PreparationTypeRepository(Jdbi jdbi, DataSource dataSource){
         this.jdbi = jdbi;
         this.dataSource = dataSource;
     }
@@ -26,13 +27,14 @@ public class PayloadTypeRepository {
                     "LOAD 'age';\n" +
                     "SET search_path = ag_catalog, \"$user\", public;";
 
-    public List<String> listPayloadTypes(){
+
+    public List<String> listPreparationTypes() {
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco', $$
-                                    MATCH (a:Asset)
-                                    WHERE EXISTS(a.payload_type)
-                                    RETURN DISTINCT a.payload_type AS payload_type
-                                $$) as (payload_type agtype);
+                    MATCH (s:Specimen)
+                    WHERE EXISTS(s.preparation_type)
+                    RETURN DISTINCT s.preparation_type AS preparation_type
+                $$) as (preparation_type agtype);
                 """;
 
         try {
@@ -43,11 +45,11 @@ public class PayloadTypeRepository {
                 handle.execute(boilerplate);
                 return handle.createQuery(sql)
                         .map((rs, ctx) -> {
-                            Agtype subject = rs.getObject("payload_type", Agtype.class);
+                            Agtype subject = rs.getObject("preparation_type", Agtype.class);
                             return subject.getString();
                         }).list();
             });
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

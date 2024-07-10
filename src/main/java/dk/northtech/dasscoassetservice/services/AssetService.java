@@ -595,6 +595,18 @@ public class AssetService {
         return asset;
     }
 
+    public List<String> listSubjects(){
+        return subjectCache.getSubjects();
+    }
+
+    public List<Digitiser> listDigitisers(){
+        return digitiserCache.getDigitisers();
+    }
+
+    public List<String> listPayloadTypes(){
+        return payloadTypeCache.getPayloadTypes();
+    }
+
     //This is here for mocking
     public HttpInfo openHttpShare(MinimalAsset minimalAsset, User updateUser, int allocation) {
         return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);

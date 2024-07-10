@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.cache;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
+import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.springframework.context.ApplicationListener;
 import jakarta.inject.Inject;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -26,6 +27,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private SubjectCache subjectCache;
     private PayloadTypeRepository payloadTypeRepository;
     private PayloadTypeCache payloadTypeCache;
+    private PreparationTypeCache preparationTypeCache;
+    private PreparationTypeRepository preparationTypeRepository;
     private boolean initialized = false;
 
     @Inject
@@ -35,7 +38,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
                             SubjectRepository subjectRepository, SubjectCache subjectCache,
-                            PayloadTypeRepository payloadTypeRepository, PayloadTypeCache payloadTypeCache){
+                            PayloadTypeRepository payloadTypeRepository, PayloadTypeCache payloadTypeCache,
+                            PreparationTypeCache preparationTypeCache, PreparationTypeRepository preparationTypeRepository){
         this.institutionCache = institutionCache;
         this.institutionRepository = institutionRepository;
         this.collectionCache = collectionCache;
@@ -50,6 +54,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.subjectCache = subjectCache;
         this.payloadTypeRepository = payloadTypeRepository;
         this.payloadTypeCache = payloadTypeCache;
+        this.preparationTypeCache = preparationTypeCache;
+        this.preparationTypeRepository = preparationTypeRepository;
     }
 
     @Override
@@ -94,6 +100,13 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                 if (!payloadTypeList.isEmpty()){
                     for (String payloadType : payloadTypeList){
                         this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                    }
+                }
+
+                List<String> preparationTypeList = preparationTypeRepository.listPreparationTypes();
+                if (!preparationTypeList.isEmpty()){
+                    for (String preparationType : preparationTypeList){
+                        this.preparationTypeCache.putPreparationTypesInCache(preparationType);
                     }
                 }
             }

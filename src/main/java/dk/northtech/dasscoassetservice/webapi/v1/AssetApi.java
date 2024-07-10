@@ -1,14 +1,13 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.AssetV1;
-import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
-import dk.northtech.dasscoassetservice.domain.InternalStatusTimeFrame;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
+import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,10 +38,12 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class AssetApi {
     private final InternalStatusService internalStatusService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
+    private AssetService assetService;
 
     @Inject
-    public AssetApi(InternalStatusService internalStatusService) {
+    public AssetApi(InternalStatusService internalStatusService, AssetService assetService) {
         this.internalStatusService = internalStatusService;
+        this.assetService = assetService;
     }
 
     @GET
@@ -100,5 +101,37 @@ public class AssetApi {
             return Response.status(404).build();
         }
         return Response.status(200).entity(assetStatus.get()).build();
+    }
+
+    @GET
+    @Path("/subjectList")
+    @Operation(summary = "Get Asset Subject List", description = "Lists the existing asset subjects in the System")
+    @Produces(MediaType.APPLICATION_JSON)
+    // Roles allowed?
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<String> getSubjects(){
+        return this.assetService.listSubjects();
+    }
+
+    @GET
+    @Path(("/digitiserList"))
+    @Operation(summary = "Get Digitiser List", description = "Lists the existing digitisers in the System")
+    @Produces(MediaType.APPLICATION_JSON)
+    // Roles allowed?
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Digitiser.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<Digitiser> getDigitisers(){
+        return assetService.listDigitisers();
+    }
+
+    @GET
+    @Path("/payloadTypeList")
+    @Operation(summary = "Get Payload Types", description = "Returns a list of the existing payload types in the system")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<String> getPayloadTypes(){
+        return assetService.listPayloadTypes();
     }
 }

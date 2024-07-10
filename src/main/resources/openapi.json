@@ -19,20 +19,14 @@
     "name" : "Collections",
     "description" : "Endpoints related to collections."
   }, {
-    "name" : "Digitisers",
-    "description" : "Endpoints related to digitisers"
-  }, {
     "name" : "Institutions",
     "description" : "Endpoints related to institutions"
-  }, {
-    "name" : "Payload Types",
-    "description" : "Endpoints related to the payload types of assets"
   }, {
     "name" : "Pipelines",
     "description" : "Endpoints related to institution pipelines"
   }, {
-    "name" : "Subjects",
-    "description" : "Endpoints related to subjects"
+    "name" : "Specimens",
+    "description" : "Endpoints related to collection specimens"
   }, {
     "name" : "Workstations",
     "description" : "Endpoints related to institutions workstations"
@@ -89,6 +83,108 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/AssetV1"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/digitiserList" : {
+      "get" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Digitiser List",
+        "description" : "Lists the existing digitisers in the System",
+        "operationId" : "getDigitisers",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Digitiser"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/payloadTypeList" : {
+      "get" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Payload Types",
+        "description" : "Returns a list of the existing payload types in the system",
+        "operationId" : "getPayloadTypes",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/subjectList" : {
+      "get" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Asset Subject List",
+        "description" : "Lists the existing asset subjects in the System",
+        "operationId" : "getSubjects",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
                 }
               }
             }
@@ -661,40 +757,6 @@
         } ]
       }
     },
-    "/v1/digitisers" : {
-      "get" : {
-        "tags" : [ "Digitisers" ],
-        "summary" : "Get Digitisers",
-        "description" : "Lists the existing digitisers in the System",
-        "operationId" : "getDigitisers",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Digitiser"
-                  }
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/institutions" : {
       "get" : {
         "tags" : [ "Institutions" ],
@@ -806,40 +868,6 @@
         } ]
       }
     },
-    "/v1/payloadTypes" : {
-      "get" : {
-        "tags" : [ "Payload Types" ],
-        "summary" : "Get Payload Types",
-        "description" : "Returns a list of the existing payload types in the system",
-        "operationId" : "getPayloadTypes",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "type" : "string"
-                  }
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/institutions/{institutionName}/pipelines" : {
       "get" : {
         "tags" : [ "Pipelines" ],
@@ -925,12 +953,11 @@
         } ]
       }
     },
-    "/v1/subjects" : {
+    "/v1/collections/{collectionName}/specimens/preparationTypes" : {
       "get" : {
-        "tags" : [ "Subjects" ],
-        "summary" : "Get Subjects",
-        "description" : "Lists the existing asset subjects in the System",
-        "operationId" : "getSubjects",
+        "tags" : [ "Specimens" ],
+        "summary" : "Get Preparation Type List",
+        "operationId" : "getPreparationTypes",
         "responses" : {
           "200" : {
             "content" : {
@@ -1422,6 +1449,19 @@
           }
         }
       },
+      "Digitiser" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string",
+            "description" : "Unique Identifier"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "Username of the User"
+          }
+        }
+      },
       "AssetUpdateRequest" : {
         "type" : "object",
         "properties" : {
@@ -1795,19 +1835,6 @@
             "type" : "string",
             "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
-          }
-        }
-      },
-      "Digitiser" : {
-        "type" : "object",
-        "properties" : {
-          "userId" : {
-            "type" : "string",
-            "description" : "Unique Identifier"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "Username of the User"
           }
         }
       },
