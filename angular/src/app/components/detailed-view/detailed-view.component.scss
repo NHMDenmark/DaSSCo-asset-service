@@ -1,0 +1,83 @@
+.asset-metadata {
+  position: absolute;
+  top: 10vh;
+  left: 5vh;
+  width: 45vw;
+  height: 40vh;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.asset-files {
+  position: absolute;
+  top: 55vh;
+  left: 5vh;
+  right: 5vh;
+  height: 33vh;
+  border: 1px solid #ccc;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.icons {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  transform: translate(-50%);
+  display: flex;
+  justify-content: space-around;
+  width: 30vw;
+}
+
+.icon-display {
+  transform: scale(2);
+  transition: transform 0.3s, color 0.3s;
+  color: black;
+}
+
+.icon-display:hover {
+  color: #A8D6DC;
+  transform: scale(2) translate(3px, -3px);
+}
+
+.icon-display.disabled {
+  color: grey;
+  pointer-events: none;
+}
+
+.asset-files-table {
+  width: 100%;
+}
+
+.asset-thumbnail {
+  position: absolute;
+  top: 10vh;
+  right: 5vh;
+  width: 45vw;
+  height: 40vh;
+  overflow-y: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.asset-thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+.list-item-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  margin-bottom: 1vh;
+  margin-top: 1vh;
+}

@@ -29,9 +29,15 @@ import {MatSnackBarModule} from "@angular/material/snack-bar";
 import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatTableModule} from "@angular/material/table";
+import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
+import {MatChipsModule} from "@angular/material/chips";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatExpansionModule} from "@angular/material/expansion";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
+import {MatListModule} from "@angular/material/list";
 import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
 
 @NgModule({
@@ -39,6 +45,7 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     AppComponent,
     UserComponent,
     DocsComponent,
+    BulkUpdateComponent,
     StatisticsComponent,
     AssetsComponent,
     GraphComponent,
@@ -49,7 +56,8 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     StatusWidgetComponent,
     QueriesComponent,
     QueryBuilderComponent,
-    QueryHandlerComponent
+    QueryHandlerComponent,
+    DetailedViewComponent
   ],
   imports: [
     BrowserModule,
@@ -72,7 +80,12 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
     MatSnackBarModule,
     MatDividerModule,
     MatTableModule,
-    MatCardModule
+    MatCardModule,
+    MatChipsModule,
+    MatCheckboxModule,
+    MatExpansionModule,
+    MatCardModule,
+    MatListModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA
