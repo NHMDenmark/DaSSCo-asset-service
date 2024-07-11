@@ -12,7 +12,6 @@ import {MatDialog} from "@angular/material/dialog";
 import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
-import _default from "chart.js/dist/plugins/plugin.tooltip";
 import {LocalCacheService} from "../../services/local-cache.service";
 
 @Component({
@@ -27,7 +26,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
-  queries: Map<number, QueryView[]> = new Map;
+  queries: Map<string, QueryView[]> = new Map;
   nodes: Map<string, string[]> = new Map();
   queryUpdatedTitle: string | undefined;
   loadingAssetCount: boolean = false;
@@ -79,6 +78,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         if (cachedQueries) {
           this.queryData = cachedQueries;
           this.addSelectFromData(this.queryData.map);
+          this.queries = this.queryData.map;
           this.queryUpdatedTitle = this.queryData.title;
         } else {
           this.newSelect(undefined);
@@ -100,22 +100,24 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
       handlerComponent.instance.saveQueryEvent.subscribe(queries => {
-        this.queries.set(childIdx, queries);
+        this.queries.set(childIdx.toString(), queries);
         this.localCacheService.setQueries({title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined, map: this.queries})
       });
       handlerComponent.instance.removeComponentEvent.subscribe(() => {
-        this.queries.delete(childIdx);
+        this.queries.delete(childIdx.toString());
         handlerComponent.destroy();
       });
     }
   }
 
   saveQuery(queries: QueryView[], index: number) {
-    this.queries.set(index, queries);
+    this.queries.set(index.toString(), queries);
   }
 
   save() {
     const queryResponses: QueryResponse[] = [];
+
+    console.log(this.queries)
 
     this.queries.forEach((val, key) => {
       const nodeMap = new Map<string, QueryWhere[]>;
@@ -130,7 +132,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         return {select: value[0], where: value[1]} as Query;
       })
 
-      const response: QueryResponse = {id: key, query: qv2s};
+      const response: QueryResponse = {id: parseInt(key), query: qv2s};
       queryResponses.push(response);
     })
 
@@ -222,6 +224,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         .subscribe(updated => {
           if (this.queryData) this.queryData.title = updated?.name;
           this.queryUpdatedTitle = updated?.name;
+          this.localCacheService.setQueryTitle(updated?.name);
         })
     }
   }

@@ -8,10 +8,18 @@ export class LocalCacheService {
 
   constructor() { }
 
-  setQueries(queries: {title: string | undefined, map: Map<number, QueryView[]>}) {
+  setQueries(queries: {title: string | undefined, map: Map<string, QueryView[]>}) {
     const mapString = JSON.stringify(Object.fromEntries(queries.map));
     const newMap = {title: queries.title, map: mapString};
     localStorage.setItem('queries', JSON.stringify(newMap));
+  }
+
+  setQueryTitle(title: string | undefined) {
+    const cached = this.getQueries();
+    if (cached) {
+      cached.title = title;
+      this.setQueries(cached);
+    }
   }
 
   getQueries(): {title: string | undefined, map: Map<string, QueryView[]>} | undefined {
