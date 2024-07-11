@@ -149,6 +149,29 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/assets/restricted_access:
+    get:
+      tags:
+      - Assets
+      summary: Get Restricted Access List
+      description: Returns a list of the restricted access that the Assets in the
+        system have
+      operationId: getRestrictedAccess
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/assets/subjectList:
     get:
       tags:

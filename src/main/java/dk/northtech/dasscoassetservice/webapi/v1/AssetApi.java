@@ -149,4 +149,15 @@ public class AssetApi {
     public List<AssetStatus> getAssetStatus(){
         return assetService.listStatus();
     }
+
+    @GET
+    @Path("/restricted_access")
+    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ArrayList.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<InternalRole> getRestrictedAccess(){
+        return assetService.listRestrictedAccess();
+    }
+
 }

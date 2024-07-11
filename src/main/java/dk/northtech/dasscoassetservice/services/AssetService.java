@@ -1,10 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
-import dk.northtech.dasscoassetservice.cache.DigitiserCache;
-import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
-import dk.northtech.dasscoassetservice.cache.StatusCache;
-import dk.northtech.dasscoassetservice.cache.SubjectCache;
+import dk.northtech.dasscoassetservice.cache.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -35,6 +32,8 @@ public class AssetService {
     private SubjectCache subjectCache;
     private PayloadTypeCache payloadTypeCache;
     private StatusCache statusCache;
+    private PreparationTypeCache preparationTypeCache;
+    private RestrictedAccessCache restrictedAccessCache;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -48,7 +47,9 @@ public class AssetService {
                         DigitiserCache digitiserCache,
                         SubjectCache subjectCache,
                         PayloadTypeCache payloadTypeCache,
-                        StatusCache statusCache) {
+                        StatusCache statusCache,
+                        PreparationTypeCache preparationTypeCache,
+                        RestrictedAccessCache restrictedAccessCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -61,6 +62,8 @@ public class AssetService {
         this.payloadTypeCache = payloadTypeCache;
         this.statusCache = statusCache;
         this.rightsValidationService = rightsValidationService;
+        this.preparationTypeCache = preparationTypeCache;
+        this.restrictedAccessCache = restrictedAccessCache;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -279,6 +282,22 @@ public class AssetService {
         if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
             if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
                 statusCache.putStatusInCache(updatedAsset.status);
+            }
+        }
+
+        if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
+            for (Specimen specimen : updatedAsset.specimens){
+                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                    preparationTypeCache.putPreparationTypesInCache(specimen.preparation_type());
+                }
+            }
+        }
+
+        if (updatedAsset.restricted_access != null && !updatedAsset.restricted_access.isEmpty()){
+            for (InternalRole internalRole : updatedAsset.restricted_access){
+                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
+                    restrictedAccessCache.putRestrictedAccessInCache(internalRole.toString());
+                }
             }
         }
 
@@ -591,6 +610,14 @@ public class AssetService {
             }
         }
 
+        if (asset.specimens != null && !asset.specimens.isEmpty()){
+            for (Specimen specimen : asset.specimens){
+                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                    preparationTypeCache.putPreparationTypesInCache(specimen.preparation_type());
+                }
+            }
+        }
+
         if (asset.subject != null && !asset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
                 subjectCache.putSubjectsInCache(asset.subject);
@@ -605,6 +632,14 @@ public class AssetService {
 
         if (!statusCache.getStatusMap().containsKey(asset.status.toString())){
             statusCache.putStatusInCache(asset.status);
+        }
+
+        if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
+            for (InternalRole internalRole : asset.restricted_access){
+                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
+                    restrictedAccessCache.putRestrictedAccessInCache(internalRole.toString());
+                }
+            }
         }
 
         return asset;
@@ -624,6 +659,10 @@ public class AssetService {
 
     public List<AssetStatus> listStatus(){
         return statusCache.getStatus();
+    }
+
+    public List<InternalRole>  listRestrictedAccess(){
+        return restrictedAccessCache.getRestrictedAccessList();
     }
 
     //This is here for mocking

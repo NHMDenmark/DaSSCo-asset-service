@@ -146,4 +146,34 @@ public interface SpecimenRepository extends SqlObject {
         });
     }
 
+    default List<String> listPreparationTypes(){
+        boilerplate();
+        return listPreparationTypesInternal();
+    }
+
+    default List<String> listPreparationTypesInternal() {
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                    MATCH (s:Specimen)
+                    WHERE EXISTS(s.preparation_type)
+                    RETURN DISTINCT s.preparation_type AS preparation_type
+                $$) as (preparation_type agtype);
+                """;
+
+        try {
+            return withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConnection = connection.unwrap(PgConnection.class);
+                pgConnection.addDataType("agtype", Agtype.class);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype subject = rs.getObject("preparation_type", Agtype.class);
+                            return subject.getString();
+                        }).list();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

@@ -15,6 +15,7 @@ public class CacheService {
     private PayloadTypeCache payloadTypeCache;
     private PipelineCache pipelineCache;
     private PreparationTypeCache preparationTypeCache;
+    private RestrictedAccessCache restrictedAccessCache;
     private StatusCache statusCache;
     private SubjectCache subjectCache;
     private WorkstationCache workstationCache;
@@ -23,6 +24,7 @@ public class CacheService {
     public CacheService(CollectionCache collectionCache, DigitiserCache digitiserCache,
                         InstitutionCache institutionCache, PayloadTypeCache payloadTypeCache,
                         PipelineCache pipelineCache, PreparationTypeCache preparationTypeCache,
+                        RestrictedAccessCache restrictedAccessCache,
                         StatusCache statusCache, SubjectCache subjectCache,
                         WorkstationCache workstationCache){
         this.collectionCache = collectionCache;
@@ -31,6 +33,7 @@ public class CacheService {
         this.payloadTypeCache = payloadTypeCache;
         this.pipelineCache = pipelineCache;
         this.preparationTypeCache = preparationTypeCache;
+        this.restrictedAccessCache = restrictedAccessCache;
         this.statusCache = statusCache;
         this.subjectCache = subjectCache;
         this.workstationCache = workstationCache;
@@ -46,6 +49,7 @@ public class CacheService {
         allCaches.put("payload_types", payloadTypeCache.getPayloadTypeMap());
         allCaches.put("pipelines", pipelineCache.getPipelineCache());
         allCaches.put("preparation_types", preparationTypeCache.getPreparationType());
+        allCaches.put("restricted_access", restrictedAccessCache.getRestrictedAccessMap());
         allCaches.put("status", statusCache.getStatusMap());
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
