@@ -1,12 +1,28 @@
 import { Injectable } from '@angular/core';
 import {QueryView} from "../types/query-types";
+import {catchError, Observable, of, switchMap} from "rxjs";
+import {OidcSecurityService} from "angular-auth-oidc-client";
+import {HttpClient} from "@angular/common/http";
 
 @Injectable({
   providedIn: 'root'
 })
-export class LocalCacheService {
+export class CacheService {
+  baseUrl = '/api/v1/caches';
 
-  constructor() { }
+  constructor(public oidcSecurityService: OidcSecurityService
+    , private http: HttpClient) { }
+
+  cachedDropdownValues$: Observable<Map<string, object[]> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<Map<string, object[]>>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}`, undefined))
+          );
+      })
+    );
 
   setQueries(queries: {title: string | undefined, map: Map<string, QueryView[]>}) {
     const mapString = JSON.stringify(Object.fromEntries(queries.map));
@@ -34,5 +50,13 @@ export class LocalCacheService {
 
   clearQueryCache() {
     localStorage.removeItem('queries');
+  }
+
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(error);
+      console.error(operation + ' - ' + JSON.stringify(error));
+      return of(result as T);
+    };
   }
 }

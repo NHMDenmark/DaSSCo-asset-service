@@ -44,6 +44,7 @@ import { SavedSearchesDialogComponent } from './components/dialogs/saved-searche
 import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
 
 @NgModule({
   declarations: [
@@ -96,7 +97,8 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatCardModule,
     MatListModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatAutocompleteModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

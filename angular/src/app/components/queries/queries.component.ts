@@ -12,7 +12,7 @@ import {MatDialog} from "@angular/material/dialog";
 import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-search-dialog.component";
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
-import {LocalCacheService} from "../../services/local-cache.service";
+import {CacheService} from "../../services/cache.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -50,6 +50,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       if (properties) {
         const propertiesMap = new Map<string, string[]>(JSON.parse(properties));
         this.nodes = propertiesMap;
+        console.log(propertiesMap)
         return propertiesMap;
       }
       return new Map();
@@ -67,13 +68,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   constructor(private queriesService: QueriesService
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
-              , private localCacheService: LocalCacheService
+              , private cacheService: CacheService
   ) { }
 
   ngOnInit(): void {
     this.nodes$.pipe(filter(isNotUndefined),take(1))
       .subscribe(_nodes => {
-        const cachedQueries = this.localCacheService.getQueries();
+        const cachedQueries = this.cacheService.getQueries();
 
         if (cachedQueries) {
           this.queryData = cachedQueries;
@@ -101,7 +102,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       handlerComponent.instance.idx = childIdx;
       handlerComponent.instance.saveQueryEvent.subscribe(queries => {
         this.queries.set(childIdx.toString(), queries);
-        this.localCacheService.setQueries({title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined, map: this.queries})
+        this.cacheService.setQueries({title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined, map: this.queries})
       });
       handlerComponent.instance.removeComponentEvent.subscribe(() => {
         this.queries.delete(childIdx.toString());
@@ -160,7 +161,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.dataSource.data = [];
     this.queryData = undefined;
     this.assetCount = undefined;
-    this.localCacheService.clearQueryCache();
+    this.cacheService.clearQueryCache();
     this.newSelect(undefined);
   }
 
@@ -224,7 +225,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         .subscribe(updated => {
           if (this.queryData) this.queryData.title = updated?.name;
           this.queryUpdatedTitle = updated?.name;
-          this.localCacheService.setQueryTitle(updated?.name);
+          this.cacheService.setQueryTitle(updated?.name);
         })
     }
   }
