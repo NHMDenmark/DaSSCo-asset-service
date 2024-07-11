@@ -132,6 +132,9 @@ public class AssetService {
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
+
+        // Refresh cache:
+        reloadAssetCache();
     }
 
     public boolean unlockAsset(String assetGuid) {
@@ -744,6 +747,54 @@ public class AssetService {
 
     public List<InternalRole>  listRestrictedAccess(){
         return restrictedAccessCache.getRestrictedAccessList();
+    }
+
+    public void reloadAssetCache(){
+        List<String> subjectList = jdbi.withHandle(handle -> {
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            return assetRepository.listSubjects();
+        });
+        if (!subjectList.isEmpty()){
+            for (String subject : subjectList){
+                this.subjectCache.putSubjectsInCache(subject);
+            }
+        }
+        List<String> payloadTypeList = jdbi.withHandle(handle -> {
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            return assetRepository.listPayloadTypes();
+        });
+        if (!payloadTypeList.isEmpty()){
+            for (String payloadType : payloadTypeList){
+                this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+            }
+        }
+        List<String> preparationTypeList = jdbi.withHandle(handle -> {
+            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+            return specimenRepository.listPreparationTypes();
+        });
+        if (!preparationTypeList.isEmpty()){
+            for (String preparationType : preparationTypeList){
+                this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+            }
+        }
+        List<AssetStatus> statusList = jdbi.withHandle(handle -> {
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            return assetRepository.listStatus();
+        });
+        if (!statusList.isEmpty()){
+            for(AssetStatus status : statusList){
+                this.statusCache.putStatusInCache(status);
+            }
+        }
+        List<String> restrictedAccessList = jdbi.withHandle(handle -> {
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            return assetRepository.listRestrictedAccess();
+        });
+        if (!restrictedAccessList.isEmpty()){
+            for (String internalRole : restrictedAccessList){
+                this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+            }
+        }
     }
 
     //This is here for mocking
