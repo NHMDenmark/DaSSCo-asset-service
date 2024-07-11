@@ -18,7 +18,7 @@ On this meeting we mostly focused on part 1.
 
 ### Constraints
 - Specify can't show asset "derivatives", so an "asset derivative" in the ARS is just a new attachment in Specify
-- *We don't create "collection objects" in Specify, we only add "attachments" to existing "collections objects"* @Bhupjit can you verify this? 
+- We don't create "collection objects" in Specify, we only add "attachments" to existing "collections objects" 
 
 ### Architecture
 - Bhupjit suggested that we should use a queue for this integration, so we're currently designing the architecture with that in mind. 
@@ -26,9 +26,10 @@ On this meeting we mostly focused on part 1.
 
 ### Requirements
 As part 1 of the ARS to Specify integration, we will look at:
-- When new assets are created by the digitisation process and added to the ARS, we want to sync the Asset metadata to Specify.
+- When new assets are created by the digitisation process and added to the ARS, we want to sync the Asset metadata and file to Specify.
   - This can be done using the Specify Rest API
   - An asset is only synced to Specify, if the Specimen (Collection Object) already exists in Specify.
+  - The file will be uploaded to the Specify WebServer
 - When an asset is updated in the ARS, we also need to sync the changes to Specify.
   - This can be done using the Specify Rest API
   - An asset is only synced to Specify, if the Specimen (Collection Object) already exists in Specify

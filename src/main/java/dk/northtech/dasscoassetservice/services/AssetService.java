@@ -1,9 +1,11 @@
 package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
+import dk.northtech.dasscoassetservice.cache.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
@@ -27,6 +29,12 @@ public class AssetService {
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
+    private DigitiserCache digitiserCache;
+    private SubjectCache subjectCache;
+    private PayloadTypeCache payloadTypeCache;
+    private StatusCache statusCache;
+    private PreparationTypeCache preparationTypeCache;
+    private RestrictedAccessCache restrictedAccessCache;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -36,7 +44,13 @@ public class AssetService {
             , Jdbi jdbi
             , StatisticsDataService statisticsDataService
             , PipelineService pipelineService
-            , RightsValidationService rightsValidationService) {
+            , RightsValidationService rightsValidationService,
+                        DigitiserCache digitiserCache,
+                        SubjectCache subjectCache,
+                        PayloadTypeCache payloadTypeCache,
+                        StatusCache statusCache,
+                        PreparationTypeCache preparationTypeCache,
+                        RestrictedAccessCache restrictedAccessCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -44,7 +58,13 @@ public class AssetService {
         this.statisticsDataService = statisticsDataService;
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
+        this.digitiserCache = digitiserCache;
+        this.subjectCache = subjectCache;
+        this.payloadTypeCache = payloadTypeCache;
+        this.statusCache = statusCache;
         this.rightsValidationService = rightsValidationService;
+        this.preparationTypeCache = preparationTypeCache;
+        this.restrictedAccessCache = restrictedAccessCache;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -65,6 +85,11 @@ public class AssetService {
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
+
+        if (!digitiserCache.getDigitiserMap().containsKey(audit.user())){
+            digitiserCache.putDigitiserInCache(new Digitiser(audit.user(), audit.user()));
+        }
+
         return true;
     }
 
@@ -90,6 +115,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
+            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
+        }
+
         return true;
     }
 
@@ -130,6 +160,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(assetUpdateRequest.digitiser())){
+            digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+        }
+
         return true;
     }
 
@@ -156,6 +191,11 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
+            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
+        }
+
         return true;
     }
 
@@ -223,6 +263,98 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
         statisticsDataService.refreshCachedData();
+
+        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
+            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        }
+
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
+                this.subjectCache.clearCache();
+                List<String> subjectList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listSubjects();
+                });
+                if (!subjectList.isEmpty()){
+                    for (String subject : subjectList){
+                        this.subjectCache.putSubjectsInCache(subject);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)){
+                this.payloadTypeCache.clearCache();
+                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listPayloadTypes();
+                });
+                if (!payloadTypeList.isEmpty()){
+                    for (String payloadType : payloadTypeList){
+                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
+            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
+                statusCache.clearCache();
+                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listStatus();
+                });
+                if (!statusList.isEmpty()){
+                    for(AssetStatus status : statusList){
+                        this.statusCache.putStatusInCache(status);
+                    }
+                }
+            }
+        }
+
+        boolean prepTypeExists = true;
+        if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
+            for (Specimen specimen : updatedAsset.specimens){
+                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                    prepTypeExists = false;
+                }
+            }
+            if(!prepTypeExists){
+                preparationTypeCache.clearCache();
+                List<String> preparationTypeList = jdbi.withHandle(handle -> {
+                    SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+                    return specimenRepository.listPreparationTypes();
+                });
+                if (!preparationTypeList.isEmpty()){
+                    for (String preparationType : preparationTypeList){
+                        this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.restricted_access != null && !updatedAsset.restricted_access.isEmpty()){
+            boolean restrictedAccessExists = true;
+            for (InternalRole internalRole : updatedAsset.restricted_access){
+                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
+                    restrictedAccessExists = false;
+                }
+            }
+            if (!restrictedAccessExists){
+                restrictedAccessCache.clearCache();
+                List<String> restrictedAccessList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listRestrictedAccess();
+                });
+                if (!restrictedAccessList.isEmpty()){
+                    for (String internalRole : restrictedAccessList){
+                        this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+                    }
+                }
+            }
+        }
+
         return existing;
     }
 
@@ -254,9 +386,11 @@ public class AssetService {
 
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+
         for(Asset asset: assets) {
             rightsValidationService.checkReadRightsThrowing(user, asset.institution,asset.collection);
         }
+
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -311,6 +445,55 @@ public class AssetService {
            }
            asset.tags = existingTags;
         });
+
+        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
+            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        }
+
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
+                this.subjectCache.clearCache();
+                List<String> subjectList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listSubjects();
+                });
+                if (!subjectList.isEmpty()){
+                    for (String subject : subjectList){
+                        this.subjectCache.putSubjectsInCache(subject);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)){
+                this.payloadTypeCache.clearCache();
+                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listPayloadTypes();
+                });
+                if (!payloadTypeList.isEmpty()){
+                    for (String payloadType : payloadTypeList){
+                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
+            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
+                statusCache.clearCache();
+                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listStatus();
+                });
+                if (!statusList.isEmpty()){
+                    for(AssetStatus status : statusList){
+                        this.statusCache.putStatusInCache(status);
+                    }
+                }
+            }
+        }
 
         return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
     }
@@ -500,7 +683,67 @@ public class AssetService {
         statisticsDataService.refreshCachedData();
 
 //        this.statisticsDataService.addAssetToCache(asset);
+
+
+        if (asset.digitiser != null && !asset.digitiser.isEmpty()){
+            if (!digitiserCache.getDigitiserMap().containsKey(asset.digitiser)){
+                digitiserCache.putDigitiserInCache(new Digitiser(asset.digitiser, asset.digitiser));
+            }
+        }
+
+        if (asset.specimens != null && !asset.specimens.isEmpty()){
+            for (Specimen specimen : asset.specimens){
+                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                    preparationTypeCache.putPreparationTypesInCache(specimen.preparation_type());
+                }
+            }
+        }
+
+        if (asset.subject != null && !asset.subject.isEmpty()){
+            if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
+                subjectCache.putSubjectsInCache(asset.subject);
+            }
+        }
+
+        if (asset.payload_type != null && !asset.payload_type.isEmpty()){
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(asset.payload_type)){
+                payloadTypeCache.putPayloadTypesInCache(asset.payload_type);
+            }
+        }
+
+        if (!statusCache.getStatusMap().containsKey(asset.status.toString())){
+            statusCache.putStatusInCache(asset.status);
+        }
+
+        if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
+            for (InternalRole internalRole : asset.restricted_access){
+                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
+                    restrictedAccessCache.putRestrictedAccessInCache(internalRole.toString());
+                }
+            }
+        }
+
         return asset;
+    }
+
+    public List<String> listSubjects(){
+        return subjectCache.getSubjects();
+    }
+
+    public List<Digitiser> listDigitisers(){
+        return digitiserCache.getDigitisers();
+    }
+
+    public List<String> listPayloadTypes(){
+        return payloadTypeCache.getPayloadTypes();
+    }
+
+    public List<AssetStatus> listStatus(){
+        return statusCache.getStatus();
+    }
+
+    public List<InternalRole>  listRestrictedAccess(){
+        return restrictedAccessCache.getRestrictedAccessList();
     }
 
     //This is here for mocking

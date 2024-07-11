@@ -1,5 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.cache.InstitutionCache;
+import dk.northtech.dasscoassetservice.cache.WorkstationCache;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Workstation;
 import dk.northtech.dasscoassetservice.domain.WorkstationStatus;
@@ -8,6 +10,7 @@ import jakarta.inject.Inject;
 import joptsimple.internal.Strings;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,18 +19,24 @@ import java.util.Optional;
 public class WorkstationService {
     private InstitutionService institutionService;
     private WorkstationRepository workstationRepository;
+    private InstitutionCache institutionCache;
+    private WorkstationCache workstationCache;
 
     @Inject
-    public WorkstationService(InstitutionService institutionService, WorkstationRepository workstationRepository) {
+    public WorkstationService(InstitutionService institutionService, WorkstationRepository workstationRepository,
+                              InstitutionCache institutionCache, WorkstationCache workstationCache) {
         this.institutionService = institutionService;
         this.workstationRepository = workstationRepository;
+        this.institutionCache = institutionCache;
+        this.workstationCache = workstationCache;
     }
 
     public List<Workstation> listWorkstations(Institution institution) {
-        if (institutionService.getIfExists(institution.name()).isEmpty()){
+        if (!institutionCache.getInstitutions().contains(institution)){
             throw new IllegalArgumentException("Institution does not exist");
         }
-        return workstationRepository.listWorkStations(institution);
+
+        return workstationCache.getWorkstations(institution.name());
     }
 
     public Optional<Workstation> findWorkstation(String workstationName) {
@@ -49,19 +58,18 @@ public class WorkstationService {
             throw new IllegalArgumentException("Workstation must have a name");
         }
 
-        Optional<Institution> instopt = institutionService.getIfExists(institutionName);
-        if (instopt.isEmpty()) {
+        if (!institutionCache.institutionExists(institutionName)){
             throw new IllegalArgumentException("Institution does not exist");
         }
 
-        Optional<Workstation> workstationOpt = workstationRepository.findWorkstation(workstation.name());
-        if (workstationOpt.isPresent()) {
-            throw new IllegalArgumentException("Workstation with name [" + workstation.name() + "] already exists in institution [" + workstationOpt.get().institution_name() + "]");
+        Workstation exists = workstationCache.workstationExists(workstation.name());
+        if (exists != null){
+            throw new IllegalArgumentException("Workstation with name [" + exists.name() + "] already exists in institution [" + exists.institution_name() + "]");
         }
 
         Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
-
         workstationRepository.persistWorkstation(newWs);
+        workstationCache.putWorkstationInCache(workstation);
 
         return workstation;
     }
@@ -80,12 +88,14 @@ public class WorkstationService {
             throw new IllegalArgumentException("Workstation name must be present");
         }
 
-        if (institutionService.getIfExists(institutionName).isEmpty()){
+        if (!institutionCache.institutionExists(institutionName)){
             throw new IllegalArgumentException("Institution does not exist");
         }
 
         Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
 
         workstationRepository.updateWorkstation(newWs);
+        // "Put" will replace the existing workstation with the new one, keeping the key.
+        workstationCache.putWorkstationInCache(newWs);
     }
 }

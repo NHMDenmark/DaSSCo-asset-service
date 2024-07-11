@@ -1,5 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.cache.InstitutionCache;
+import dk.northtech.dasscoassetservice.cache.PipelineCache;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
@@ -14,14 +16,17 @@ import java.util.Optional;
 
 @Service
 public class PipelineService {
-    private final InstitutionService institutionService;
     private final PipelineRepository pipelineRepository;
+    private InstitutionCache institutionCache;
+    private PipelineCache pipelineCache;
 
 
     @Inject
-    public PipelineService(InstitutionService institutionService, PipelineRepository pipelineRepository) {
-        this.institutionService = institutionService;
+    public PipelineService(PipelineRepository pipelineRepository,
+                           InstitutionCache institutionCache, PipelineCache pipelineCache) {
         this.pipelineRepository = pipelineRepository;
+        this.institutionCache = institutionCache;
+        this.pipelineCache = pipelineCache;
     }
 
     public Pipeline persistPipeline(Pipeline pipeline, String institutionName) {
@@ -34,29 +39,29 @@ public class PipelineService {
             throw new IllegalArgumentException("Name cannot be null or empty");
         }
 
-        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if(ifExists.isEmpty()) {
+        if (!institutionCache.institutionExists(institutionName)){
             throw new IllegalArgumentException("Institute doesnt exist");
         }
-        Optional<Pipeline> piplOpt = findPipeline(pipeline.name());
-        if(piplOpt.isPresent()){
-            Pipeline pipeline1 = piplOpt.get();
-            throw new IllegalArgumentException("A pipeline with name ["+pipeline1.name()+"] already exists within institution ["+pipeline1.institution()+"]");
+
+        Pipeline exists = pipelineCache.pipelineExists(pipeline.name());
+        if (exists != null){
+            throw new IllegalArgumentException("A pipeline with name ["+exists.name()+"] already exists within institution ["+exists.institution()+"]");
 
         }
 
         Pipeline pipe = new Pipeline(pipeline.name(), institutionName);
 
         pipelineRepository.persistPipeline(pipe);
+        pipelineCache.putPipelineInCache(pipe);
 
         return pipeline;
     }
 
     public List<Pipeline> listPipelines(Institution institution) {
-        if (institutionService.getIfExists(institution.name()).isEmpty()){
+        if (!institutionCache.getInstitutions().contains(institution)){
             throw new IllegalArgumentException("Institute does not exist");
         }
-        return pipelineRepository.listPipelines(institution);
+        return pipelineCache.getPipelines(institution.name());
     }
 
     public Optional<Pipeline> findPipeline(String pipelineName) {

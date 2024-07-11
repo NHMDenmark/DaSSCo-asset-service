@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.cache.InstitutionCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -22,11 +23,13 @@ public class InstitutionService {
 
     private static final String name_regex = "^[a-zA-ZÆØÅæøå ]+$";
     private Jdbi jdbi;
+    private InstitutionCache institutionCache;
 
     @Inject
-    public InstitutionService(Jdbi jdbi) {
+    public InstitutionService(Jdbi jdbi,
+                              InstitutionCache institutionCache) {
         this.jdbi = jdbi;
-
+        this.institutionCache = institutionCache;
     }
     LoadingCache<String, Institution> cache = Caffeine.newBuilder()
             .build(x -> {
@@ -49,7 +52,12 @@ public class InstitutionService {
         jdbi.inTransaction(h -> {
             InstitutionRepository repository = h.attach(InstitutionRepository.class);
             RoleRepository roleRepository = h.attach(RoleRepository.class);
+            /*
             if (repository.findInstitution(institution.name()).isPresent()) {
+                throw new IllegalArgumentException("Institute already exists");
+            }
+             */
+            if (institutionCache.institutionExists(institution.name())){
                 throw new IllegalArgumentException("Institute already exists");
             }
 //        else if (!institution.name().matches(name_regex)){
@@ -57,17 +65,16 @@ public class InstitutionService {
 //        }
             repository.persistInstitution(institution);
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestriction());
+            institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
+        //this.institutionCache.putInstitutionInCache(institution.name(), institution);
         this.cache.put(institution.name(),institution);
         return institution;
     }
 
     public List<Institution> listInstitutions() {
-        return jdbi.withHandle(h -> {
-            InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
-            return institutionRepository.listInstitutions();
-        });
+        return institutionCache.getInstitutions();
     }
 
     public Optional<Institution> getIfExists(String institutionName) {
@@ -94,6 +101,7 @@ public class InstitutionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
             return h;
         });
+        institutionCache.putInstitutionInCache(institution.name(), institution);
         cache.put(institution.name(),institution);
         return institution;
     }

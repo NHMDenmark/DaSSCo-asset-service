@@ -1,9 +1,6 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.DasscoEvent;
-import dk.northtech.dasscoassetservice.domain.Event;
-import dk.northtech.dasscoassetservice.domain.Specimen;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
@@ -759,6 +756,128 @@ public interface AssetRepository extends SqlObject {
                 return handle;
             });
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    default List<String> listSubjects(){
+        boilerplate();
+        return listSubjectsInternal();
+    }
+
+    default List<String> listSubjectsInternal(){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                    MATCH (a:Asset)
+                    WHERE EXISTS(a.subject)
+                    RETURN DISTINCT a.subject AS subject
+                $$) as (subject agtype);
+                """;
+
+        try {
+            return withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConnection = connection.unwrap(PgConnection.class);
+                pgConnection.addDataType("agtype", Agtype.class);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype subject = rs.getObject("subject", Agtype.class);
+                            return subject.getString();
+                        }).list();
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    default List<String> listPayloadTypes(){
+        boilerplate();
+        return listPayloadTypesInternal();
+    }
+
+    default List<String> listPayloadTypesInternal(){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                                    MATCH (a:Asset)
+                                    WHERE EXISTS(a.payload_type)
+                                    RETURN DISTINCT a.payload_type AS payload_type
+                                $$) as (payload_type agtype);
+                """;
+
+        try {
+            return withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConnection = connection.unwrap(PgConnection.class);
+                pgConnection.addDataType("agtype", Agtype.class);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype subject = rs.getObject("payload_type", Agtype.class);
+                            return subject.getString();
+                        }).list();
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    default List<AssetStatus> listStatus(){
+        boilerplate();
+        return listStatusInternal();
+    }
+
+    default List<AssetStatus> listStatusInternal(){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                    MATCH (a:Asset)
+                    WHERE EXISTS(a.status)
+                    RETURN DISTINCT a.status AS status
+                $$) as (status agtype);
+                """;
+
+        try {
+            return withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConnection = connection.unwrap(PgConnection.class);
+                pgConnection.addDataType("agtype", Agtype.class);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype subject = rs.getObject("status", Agtype.class);
+                            return AssetStatus.valueOf(subject.getString());
+                        }).list();
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    default List<String> listRestrictedAccess(){
+        boilerplate();
+        return listRestrictedAccessInternal();
+    }
+
+    default List<String> listRestrictedAccessInternal(){
+        String sql = """
+                SELECT DISTINCT restricted_access
+                FROM ag_catalog.cypher('dassco', $$
+                    MATCH (a:Asset)
+                    WHERE EXISTS(a.restricted_access)
+                    UNWIND a.restricted_access AS restricted_access
+                    RETURN DISTINCT restricted_access
+                $$) AS (restricted_access agtype);
+                """;
+
+        try {
+            return withHandle(handle -> {
+                Connection connection = handle.getConnection();
+                PgConnection pgConnection = connection.unwrap(PgConnection.class);
+                pgConnection.addDataType("agtype", Agtype.class);
+                return handle.createQuery(sql)
+                        .map((rs, ctx) -> {
+                            Agtype restricted_access = rs.getObject("restricted_access", Agtype.class);
+                            return restricted_access.getString();
+                        }).list();
+            });
+        } catch (Exception e){
             throw new RuntimeException(e);
         }
     }
