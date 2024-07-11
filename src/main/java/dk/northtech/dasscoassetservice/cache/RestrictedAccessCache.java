@@ -26,4 +26,8 @@ public class RestrictedAccessCache {
     public List<InternalRole> getRestrictedAccessList(){
         return this.restrictedAccessMap.values().stream().toList();
     }
+
+    public void clearCache(){
+        this.restrictedAccessMap.clear();
+    }
 }

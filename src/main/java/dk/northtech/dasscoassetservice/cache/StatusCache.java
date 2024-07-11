@@ -27,4 +27,8 @@ public class StatusCache {
     public void putStatusInCache(AssetStatus assetStatus){
         statusMap.put(assetStatus.name(), assetStatus);
     }
+
+    public void clearCache(){
+        this.statusMap.clear();
+    }
 }

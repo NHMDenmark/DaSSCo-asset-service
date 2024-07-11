@@ -26,4 +26,8 @@ public class PreparationTypeCache {
     public void putPreparationTypesInCache(String preparationType){
         preparationTypeMap.put(preparationType, preparationType);
     }
+
+    public void clearCache(){
+        this.preparationTypeMap.clear();
+    }
 }

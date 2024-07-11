@@ -27,4 +27,8 @@ public class SubjectCache {
     public void putSubjectsInCache(String subject) {
         subjectMap.put(subject, subject);
     }
+
+    public void clearCache(){
+        this.subjectMap.clear();
+    }
 }

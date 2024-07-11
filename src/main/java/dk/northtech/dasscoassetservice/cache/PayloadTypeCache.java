@@ -26,4 +26,8 @@ public class PayloadTypeCache {
     public void putPayloadTypesInCache(String payloadType){
         payloadTypeMap.put(payloadType, payloadType);
     }
+
+    public void clearCache(){
+        this.payloadTypeMap.clear();
+    }
 }
