@@ -31,10 +31,11 @@ public class DigitiserRepository {
     public List<Digitiser> listDigitisers(){
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
-                    , $$
-                        MATCH (u:User)
-                        RETURN u.name, u.user_id
-                    $$) as (name agtype, user_id agtype);
+                                    , $$
+                                        MATCH (u:User)
+                                        WHERE u.name IS NOT NULL AND u.user_id IS NOT NULL
+                                        RETURN u.name, u.user_id
+                                    $$) as (name agtype, user_id agtype);
                 """;
 
         try {

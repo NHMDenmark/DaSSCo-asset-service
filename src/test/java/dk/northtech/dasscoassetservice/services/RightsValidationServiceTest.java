@@ -20,12 +20,17 @@ class RightsValidationServiceTest extends AbstractIntegrationTest {
         institutionService.createInstitution(institution);
         Collection collection = new Collection("col_rv1", institution.name(), new ArrayList<>());
         collectionService.persistCollection(collection);
-
         boolean result = rightsValidationService.checkWriteRights(getUser("WRITE_test_1"), institution.name(), collection.name());
         assertThat(result).isTrue();
         //user does not have write right
         assertThat(rightsValidationService.checkWriteRights(getUser("READ_test_1"), institution.name(), collection.name())).isFalse();
     }
+
+    // TODO:
+    // Check why postman creates things without a user. This can be problematic.
+    // Set up an institution for read rights, and an institution for writing rights (is this really the way?)
+    // Create assets in both institutions.
+    // Manage to block outside person from reading the asset groups that they dont have permission to see.
 
     @Test
     public void testCheckReadRightsInstitution() {

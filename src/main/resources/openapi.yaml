@@ -1728,7 +1728,7 @@ components:
         name:
           type: string
       description: The roles you need to access assets within this institution
-      example: "[NHMD_USER]"
+      example: "[{'name': 'NHMD_USER'}]"
     Institution:
       type: object
       properties:
@@ -1739,7 +1739,7 @@ components:
         roleRestriction:
           type: array
           description: The roles you need to access assets within this institution
-          example: "[NHMD_USER]"
+          example: "[{'name': 'NHMD_USER'}]"
           items:
             $ref: '#/components/schemas/Role'
     Pipeline:

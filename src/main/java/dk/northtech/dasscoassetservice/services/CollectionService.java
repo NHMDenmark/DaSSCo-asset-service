@@ -55,6 +55,7 @@ public class CollectionService {
 
  */
         if (!institutionCache.institutionExists(collection.institution())){
+            System.out.println(institutionCache.getInstitutionMap());
             throw new IllegalArgumentException("Institute doesnt exist");
         } else {
             if (collectionCache.getCollections(collection.institution()).contains(collection)){

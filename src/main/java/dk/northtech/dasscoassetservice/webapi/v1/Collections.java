@@ -53,6 +53,8 @@ public class Collections {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
             , @Context SecurityContext securityContext) {
+        System.out.println(UserMapper.from(securityContext).username);
+        System.out.println(UserMapper.from(securityContext).roles);
         rightsValidationService.checkReadRights(UserMapper.from(securityContext),institutionName);
         return this.collectionService.listCollections(new Institution(institutionName), UserMapper.from(securityContext));
     }
@@ -61,7 +63,7 @@ public class Collections {
     @Operation(summary = "Create Collection", description = "Creates a new collection under an institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Collection createInstitution(
