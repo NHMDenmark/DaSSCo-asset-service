@@ -44,7 +44,7 @@ public class AssetGroups {
     @Path("createassetgroup")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @Operation(summary = "Create Asset Group", description = "Takes a Group Name and a List of Assets")
+    @Operation(summary = "Create Asset Group", description = "Takes a Group Name and a List of Assets. User needs at least read role on the assets to create an asset_group")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -55,7 +55,7 @@ public class AssetGroups {
     @GET
     @Path("/getgroup/{groupName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Get Asset Group", description = "Takes a Group Name and returns the asset metadata of assets in that group")
+    @Operation(summary = "Get Asset Group", description = "Takes a Group Name and returns the asset metadata of assets in that group. User needs at least read role on the assets to get their metadata back.")
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -65,11 +65,12 @@ public class AssetGroups {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List Asset Groups", description = "Returns a list of the existing Asset Groups")
+    @Operation(summary = "List Asset Groups", description = "Returns a list of the existing Asset Groups, only those the user has permission to see.")
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetGroup> getListAssetGroup(){
-        return this.assetGroupService.readListAssetGroup();
+    public List<AssetGroup> getListAssetGroup(@Context SecurityContext securityContext){
+        return this.assetGroupService.readListAssetGroup(UserMapper.from(securityContext));
     }
 
     @DELETE
