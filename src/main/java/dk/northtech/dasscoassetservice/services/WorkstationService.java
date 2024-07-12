@@ -32,7 +32,7 @@ public class WorkstationService {
     }
 
     public List<Workstation> listWorkstations(Institution institution) {
-        if (!institutionCache.getInstitutions().contains(institution)){
+        if (!institutionCache.institutionExists(institution.name())){
             throw new IllegalArgumentException("Institution does not exist");
         }
 

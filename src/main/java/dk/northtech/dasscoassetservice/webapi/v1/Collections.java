@@ -53,8 +53,6 @@ public class Collections {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
             , @Context SecurityContext securityContext) {
-        System.out.println(UserMapper.from(securityContext).username);
-        System.out.println(UserMapper.from(securityContext).roles);
         rightsValidationService.checkReadRights(UserMapper.from(securityContext),institutionName);
         return this.collectionService.listCollections(new Institution(institutionName), UserMapper.from(securityContext));
     }
