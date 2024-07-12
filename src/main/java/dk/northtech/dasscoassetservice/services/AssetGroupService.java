@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
@@ -17,12 +18,16 @@ public class AssetGroupService {
 
     private final Jdbi jdbi;
 
+    private final RightsValidationService rightsValidationService;
+
     @Inject
-    public AssetGroupService(Jdbi jdbi){
+    public AssetGroupService(Jdbi jdbi,
+                             RightsValidationService rightsValidationService){
         this.jdbi = jdbi;
+        this.rightsValidationService = rightsValidationService;
     }
 
-    public void createAssetGroup(AssetGroup assetGroup){
+    public void createAssetGroup(AssetGroup assetGroup, User user){
 
         if(assetGroup == null){
             throw new IllegalArgumentException("Empty body!");
@@ -49,6 +54,11 @@ public class AssetGroupService {
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
         if (assetGroupOptional.isPresent()){
             throw new IllegalArgumentException("Asset group already exists!");
+        }
+
+        // Check user roles, you need READ to be able to create an asset group:
+        for (Asset asset : assets){
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         }
 
         // Then:

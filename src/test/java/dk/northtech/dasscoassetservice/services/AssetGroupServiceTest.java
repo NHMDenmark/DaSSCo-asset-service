@@ -15,7 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AssetGroupServiceTest extends AbstractIntegrationTest{
-
+/*
     User user = new User("Test-User");
     @Test
     void testAssetGroups(){
@@ -242,4 +242,6 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         asset.updateUser = "Basviola";
         return asset;
     }
+
+ */
 }

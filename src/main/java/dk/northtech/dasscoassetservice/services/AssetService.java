@@ -805,4 +805,13 @@ public class AssetService {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
 
+    public Optional<Asset> checkUserRights(String assetGuid, User user){
+        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+        if (optionalAsset.isPresent()){
+            Asset found = optionalAsset.get();
+            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection);
+        }
+        return optionalAsset;
+    }
+
 }
