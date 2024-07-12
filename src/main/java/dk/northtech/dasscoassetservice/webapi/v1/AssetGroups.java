@@ -56,10 +56,11 @@ public class AssetGroups {
     @Path("/getgroup/{groupName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Get Asset Group", description = "Takes a Group Name and returns the asset metadata of assets in that group")
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getAssetGroup(@PathParam("groupName") String groupName){
-        return this.assetGroupService.readAssetGroup(groupName);
+    public List<Asset> getAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext){
+        return this.assetGroupService.readAssetGroup(groupName, UserMapper.from(securityContext));
     }
 
     @GET

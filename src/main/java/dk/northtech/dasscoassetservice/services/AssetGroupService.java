@@ -65,12 +65,16 @@ public class AssetGroupService {
         jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup);
     }
 
-    public List<Asset> readAssetGroup(String groupName){
+    public List<Asset> readAssetGroup(String groupName, User user){
 
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
-            return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
+            List<Asset> assets =  jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
+            for (Asset asset : assets){
+                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            }
+            return assets;
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
