@@ -126,4 +126,44 @@ public class AssetGroupService {
 
         return jdbi.onDemand(AssetGroupRepository.class).updateAssetGroup(groupName.toLowerCase(),assetList);
     }
+
+    public AssetGroup addAssetsToAssetGroup(String groupName, List<String> assetList, User user){
+
+        if (assetList == null){
+            throw new IllegalArgumentException("Empty body!");
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        if(assetList.isEmpty()){
+            throw new IllegalArgumentException("Asset Group has to have assets!");
+        }
+
+        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+        if (assets.size() != assetList.size()){
+            throw new IllegalArgumentException("One or more assets were not found!");
+        }
+
+        // Check if user has access to the assets they want to add:
+        for (Asset asset : assets){
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        }
+
+        // Check if user has access to the other assets in the Group:
+        List<Asset> assetsInGroup = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroupOptional.get().assets);
+        for (Asset asset : assetsInGroup){
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        }
+
+        // Everything ok! Proceed to the adding of the assets from the Asset Group:
+        Optional<AssetGroup> updateAssetGroup = jdbi.onDemand(AssetGroupRepository.class).addAssetsToAssetGroup(assetList, groupName);
+        if (updateAssetGroup.isPresent()){
+            return updateAssetGroup.get();
+        } else {
+            throw new IllegalArgumentException("Something went wrong.");
+        }
+    }
 }

@@ -281,6 +281,60 @@
         } ]
       }
     },
+    "/v1/assetgroups/updategroup/{groupName}/addAssets" : {
+      "patch" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Add Assets to Asset Group",
+        "description" : "Adds assets to the asset group.",
+        "operationId" : "addAssetsToAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetgroups/createassetgroup" : {
       "post" : {
         "tags" : [ "Asset Groups" ],
@@ -319,7 +373,7 @@
       "delete" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Delete Asset Groups",
-        "description" : "Deletes an Asset Group, takes the group name.",
+        "description" : "Deletes an Asset Group, using the Asset Group name. User needs at least read permission on the assets conforming a group to delete them.",
         "operationId" : "deleteAssetGroup",
         "parameters" : [ {
           "name" : "groupName",
