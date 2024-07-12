@@ -285,7 +285,7 @@
       "post" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Create Asset Group",
-        "description" : "Takes a Group Name and a List of Assets",
+        "description" : "Takes a Group Name and a List of Assets. User needs at least read role on the assets to create an asset_group",
         "operationId" : "createAssetGroup",
         "requestBody" : {
           "content" : {
@@ -352,7 +352,7 @@
       "get" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Get Asset Group",
-        "description" : "Takes a Group Name and returns the asset metadata of assets in that group",
+        "description" : "Takes a Group Name and returns the asset metadata of assets in that group. User needs at least read role on the assets to get their metadata back.",
         "operationId" : "getAssetGroup",
         "parameters" : [ {
           "name" : "groupName",
@@ -394,7 +394,7 @@
       "get" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "List Asset Groups",
-        "description" : "Returns a list of the existing Asset Groups",
+        "description" : "Returns a list of the existing Asset Groups, only those the user has permission to see.",
         "operationId" : "getListAssetGroup",
         "responses" : {
           "200" : {

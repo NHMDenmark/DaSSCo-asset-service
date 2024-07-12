@@ -31,9 +31,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class AssetGroups {
 
-    // TODO: Roles allowed?
-
-    private final AssetGroupService assetGroupService;
+   private final AssetGroupService assetGroupService;
 
     @Inject
     public AssetGroups(AssetGroupService assetGroupService){
@@ -75,12 +73,13 @@ public class AssetGroups {
 
     @DELETE
     @Path("/deletegroup/{groupName}")
-    @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, takes the group name.")
+    @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, using the Asset Group name. User needs at least read permission on the assets conforming a group to delete them.")
     @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteAssetGroup(@PathParam("groupName") String groupName){
-        this.assetGroupService.deleteAssetGroup(groupName);
+    public void deleteAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext){
+        this.assetGroupService.deleteAssetGroup(groupName, UserMapper.from(securityContext));
     }
 
     @PUT

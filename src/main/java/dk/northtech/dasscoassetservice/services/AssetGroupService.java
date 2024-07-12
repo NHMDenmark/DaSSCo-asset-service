@@ -91,13 +91,16 @@ public class AssetGroupService {
         }
     }
 
-    public void deleteAssetGroup(String groupName){
-
+    public void deleteAssetGroup(String groupName, User user){
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isEmpty()){
             throw new IllegalArgumentException("Asset group does not exist!");
         }
 
+        List<Asset> assetList = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroupOptional.get().assets);
+        for (Asset asset : assetList){
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        }
         jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
     }
 
