@@ -118,7 +118,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Event> getEvents(@PathParam("assetGuid") String assetGuid
          , @Context SecurityContext securityContext) {
-        return this.assetService.getEvents(assetGuid);
+        return this.assetService.getEvents(assetGuid, UserMapper.from(securityContext));
     }//check Rights
 
     @POST
