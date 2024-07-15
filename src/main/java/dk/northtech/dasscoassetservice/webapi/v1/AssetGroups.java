@@ -82,18 +82,6 @@ public class AssetGroups {
         this.assetGroupService.deleteAssetGroup(groupName, UserMapper.from(securityContext));
     }
 
-    @PUT
-    @Path("/updategroup/{groupName}")
-    @Operation(summary = "Update Asset Group", description = "Updates the assets in an asset group.")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public AssetGroup updateAssetGroup(@PathParam("groupName") String groupName, List<String> assetList){
-        return this.assetGroupService.updateAssetGroup(groupName, assetList);
-    }
-
     @PATCH
     @Path("/updategroup/{groupName}/addAssets")
     @Operation(summary = "Add Assets to Asset Group", description = "Adds assets to the asset group.")

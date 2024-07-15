@@ -65,14 +65,6 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default AssetGroup updateAssetGroup(String assetGroup, List<String> assetList){
-        boilerplate();
-        updateAssetGroupInternal(assetGroup, assetList);
-        Optional<AssetGroup> optionalAssetGroup =  readAssetGroupInternal(assetGroup);
-        return optionalAssetGroup.orElseGet(AssetGroup::new);
-    }
-
-    @Transaction
     default Optional<AssetGroup> addAssetsToAssetGroup(List<String> assetList, String groupName){
         boilerplate();
         return addAssetsToAssetGroupInternal(assetList, groupName);
@@ -249,56 +241,6 @@ public interface AssetGroupRepository extends SqlObject {
             throw new RuntimeException(e);
         }
 
-    }
-
-    default void updateAssetGroupInternal(String groupName, List<String> assetList){
-
-        String assetListAsString = assetList.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        // Detach assets, then attach again.
-        String detachEdgesSql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (Asset_Group{name:$group_name})-[c:CONTAINS]->(Asset)
-                       DELETE c
-                   $$
-                , #params) as (ag agtype);
-                """;
-
-        String attachEdgeSql = """
-                SELECT * FROM ag_catalog.cypher(
-                    'dassco'
-                        , $$
-                            MATCH (ag:Asset_Group{name:$group_name})
-                            MATCH (a:Asset)
-                            
-                            WHERE a.asset_guid IN [%s]
-                            MERGE (ag)-[:CONTAINS]->(a)
-                        $$
-                    , #params) as (a agtype);
-                """.formatted(assetListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                // Detach Edges (Assets and Asset Group Remain).
-                handle.createUpdate(detachEdgesSql)
-                        .bind("params", agtype)
-                        .execute();
-                // Attach Group to Assets
-                handle.createUpdate(attachEdgeSql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
     }
 
     default Optional<AssetGroup> addAssetsToAssetGroupInternal(List<String> assetList, String groupName){

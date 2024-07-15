@@ -104,29 +104,6 @@ public class AssetGroupService {
         jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
     }
 
-    public AssetGroup updateAssetGroup(String groupName, List<String> assetList){
-
-        if (assetList == null){
-            throw new IllegalArgumentException("Empty body!");
-        }
-
-        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
-        if (assetGroupOptional.isEmpty()) {
-            throw new IllegalArgumentException("Asset group does not exist!");
-        }
-
-        if(assetList.isEmpty()){
-            throw new IllegalArgumentException("Asset Group has to have assets!");
-        }
-
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
-        if (assets.size() != assetList.size()){
-            throw new IllegalArgumentException("One or more assets were not found!");
-        }
-
-        return jdbi.onDemand(AssetGroupRepository.class).updateAssetGroup(groupName.toLowerCase(),assetList);
-    }
-
     public AssetGroup addAssetsToAssetGroup(String groupName, List<String> assetList, User user){
 
         if (assetList == null){
