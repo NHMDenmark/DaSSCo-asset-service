@@ -106,9 +106,15 @@ public class AssetGroups {
         return this.assetGroupService.addAssetsToAssetGroup(groupName, assetList, UserMapper.from(securityContext));
     }
 
-
-    // TODO: Create two new endpoints: add assets to group, remove assets from group. Takes a list of assets.
- // TODO: NEED to check if they have permission before adding or deleting. In the frontend maybe the assets they can see will be displayed,
- //  but for now, backend wise, the check needs to exist.
- // TODO: Order: get the list (either add or remove), check if user has access to the assets, then check if user has access to the group.
+    @PATCH
+    @Path("/updategroup/{groupName}/removeAssets")
+    @Operation(summary = "Remove Assets from Asset Group", description = "Removes assets from the asset group.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public AssetGroup removeAssetFromAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext){
+        return this.assetGroupService.removeAssetsFromAssetGroup(groupName, assetList, UserMapper.from(securityContext));
+    }
 }

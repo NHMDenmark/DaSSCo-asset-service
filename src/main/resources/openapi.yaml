@@ -329,6 +329,41 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/assetgroups/updategroup/{groupName}/removeAssets:
+    patch:
+      tags:
+      - Asset Groups
+      summary: Remove Assets from Asset Group
+      description: Removes assets from the asset group.
+      operationId: removeAssetFromAssetGroup
+      parameters:
+      - name: groupName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetGroup'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/assetgroups/updategroup/{groupName}:
     put:
       tags:

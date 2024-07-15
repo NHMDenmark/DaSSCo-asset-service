@@ -78,6 +78,12 @@ public interface AssetGroupRepository extends SqlObject {
         return addAssetsToAssetGroupInternal(assetList, groupName);
     }
 
+    @Transaction
+    default Optional<AssetGroup> removeAssetsFromAssetGroup(List<String> assetList, String groupName){
+        boilerplate();
+        return removeAssetsFromAssetGroupInternal(assetList, groupName);
+    }
+
     default void createAssetGroupInternal(AssetGroup assetGroup){
 
         String assetListAsString = assetGroup.assets.stream()
@@ -325,5 +331,40 @@ public interface AssetGroupRepository extends SqlObject {
         }
 
         return readAssetGroupInternal(groupName);
+    }
+
+    default Optional<AssetGroup> removeAssetsFromAssetGroupInternal(List<String> assetList, String groupName){
+        String assetListAsString = assetList.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                MATCH (ag:Asset_Group {name: $group_name})
+                MATCH (a:Asset)
+                WHERE a.name IN [%s]
+                MATCH (ag)-[r:CONTAINS]->(a)
+                DELETE r
+                RETURN ag
+                $$, #params) as (ag agtype);
+                """.formatted(assetListAsString);
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
+        return readAssetGroupInternal(groupName);
+
     }
 }
