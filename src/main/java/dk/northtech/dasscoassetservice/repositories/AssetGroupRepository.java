@@ -189,7 +189,9 @@ public interface AssetGroupRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                                 'dassco'
                                    , $$
-                                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)-[:IS_PART_OF]->(c:Collection)-[:RESTRICTED_TO]->(r:Role)
+                                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
+                                       OPTIONAL MATCH (a)-[:IS_PART_OF]->(c:Collection)-[:RESTRICTED_TO]->(r:Role)
+                                       OPTIONAL MATCH (a)-[:BELONGS_TO]->(i:Institution)-[:RESTRICTED_TO]->(r)
                                        WHERE r.name IN [%s]
                                        RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids
                                    $$

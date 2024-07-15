@@ -15,12 +15,22 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AssetGroupServiceTest extends AbstractIntegrationTest{
-/*
-    User user = new User("Test-User");
+
     @Test
-    void testAssetGroups(){
+    void testAssetGroupsServiceUser(){
+        // Creation of Asset Group as a Service User should work always:
+        User user = new User("Test-User");
+        user.roles.add("service-user");
         Asset firstAsset = this.getTestAsset("create-asset-group-1");
+        firstAsset.institution = "role-institution-1";
+        firstAsset.collection = "role-collection-1";
+        firstAsset.pipeline = "ri1_p1";
+        firstAsset.workstation = "ri1_w1";
         Asset secondAsset = this.getTestAsset("create-asset-group-2");
+        secondAsset.institution = "role-institution-1";
+        secondAsset.collection = "role-collection-1";
+        secondAsset.pipeline = "ri1_p1";
+        secondAsset.workstation = "ri1_w1";
 
         assetService.persistAsset(firstAsset, user, 1);
         assetService.persistAsset(secondAsset, user, 1);
@@ -32,13 +42,13 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assetGroup.assets.add(firstAsset.asset_guid);
         assetGroup.assets.add(secondAsset.asset_guid);
 
-        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
 
-        assetGroupService.createAssetGroup(assetGroup);
+        assetGroupService.createAssetGroup(assetGroup, user);
 
         // Creation of Asset Group Assertions:
-        assetGroupList = assetGroupService.readListAssetGroup();
+        assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(1);
         assertThat(assetGroupList.getFirst().group_name).isEqualTo(assetGroup.group_name);
         assertThat(assetGroupList.getFirst().assets.size()).isEqualTo(2);
@@ -46,12 +56,62 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(assetGroupList.getFirst().assets.contains(secondAsset.asset_guid)).isTrue();
 
         // Deletion:
-        assetGroupService.deleteAssetGroup(assetGroup.group_name);
-        assetGroupList = assetGroupService.readListAssetGroup();
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
+
+    @Test
+    void testAssetGroupsRole1(){
+        // Creation of Asset Group as a WRITE_test-role-1 should work:
+        User user = new User("Test-User");
+        user.roles.add("WRITE_test-role-1");
+        Asset firstAsset = this.getTestAsset("create-asset-group-1");
+        firstAsset.institution = "role-institution-1";
+        firstAsset.collection = "role-collection-1";
+        firstAsset.pipeline = "ri1_p1";
+        firstAsset.workstation = "ri1_w1";
+        Asset secondAsset = this.getTestAsset("create-asset-group-2");
+        secondAsset.institution = "role-institution-1";
+        secondAsset.collection = "role-collection-1";
+        secondAsset.pipeline = "ri1_p1";
+        secondAsset.workstation = "ri1_w1";
+
+        assetService.persistAsset(firstAsset, user, 1);
+        assetService.persistAsset(secondAsset, user, 1);
+
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.assets = new ArrayList<>();
+
+        assetGroup.group_name = "test-group";
+        assetGroup.assets.add(firstAsset.asset_guid);
+        assetGroup.assets.add(secondAsset.asset_guid);
+
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
+        assertThat(assetGroupList.size()).isEqualTo(0);
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        // Creation of Asset Group Assertions:
+        assetGroupList = assetGroupService.readListAssetGroup(user);
+
+        assertThat(assetGroupList.size()).isEqualTo(1);
+        assertThat(assetGroupList.getFirst().group_name).isEqualTo(assetGroup.group_name);
+        assertThat(assetGroupList.getFirst().assets.size()).isEqualTo(2);
+        assertThat(assetGroupList.getFirst().assets.contains(firstAsset.asset_guid)).isTrue();
+        assertThat(assetGroupList.getFirst().assets.contains(secondAsset.asset_guid)).isTrue();
+
+        // Deletion:
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupList = assetGroupService.readListAssetGroup(user);
+        assertThat(assetGroupList.size()).isEqualTo(0);
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
+
+    /*
 
     @Test
     void testCreateAssetGroupNoBody(){
@@ -222,15 +282,11 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup();
         assertThat(assetGroupList.size()).isEqualTo(0);
     }
-
+*/
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_pid = guid + "-pid";
         asset.status = AssetStatus.BEING_PROCESSED;
-        asset.pipeline = "i1_p1";
-        asset.workstation = "i1_w1";
-        asset.institution = "institution_1";
-        asset.collection = "i1_c1";
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
@@ -242,6 +298,4 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         asset.updateUser = "Basviola";
         return asset;
     }
-
- */
 }

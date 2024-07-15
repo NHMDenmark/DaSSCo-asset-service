@@ -87,7 +87,7 @@ public class AssetGroupService {
             return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user.roles);
         } else {
             // Else, they are Users with custom roles, and they should only get the asset groups they can see:
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroupInternal(true, user.roles);
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user.roles);
         }
     }
 

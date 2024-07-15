@@ -665,7 +665,7 @@ public class AssetService {
         if (allocation == 0){
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
-        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         validateAssetFields(asset);
         validateAsset(asset);
 
