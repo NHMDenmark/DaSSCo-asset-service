@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import org.apache.commons.compress.utils.Lists;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -25,28 +26,18 @@ class QueriesServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void unwrapQuery() {
-        institutionService.createInstitution(new Institution("FNOOP"));
-        pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
-        collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
-        collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
-        Asset firstAsset = getTestAsset("asset_fnoop");
-        firstAsset.pipeline = "fnoopyline";
-        firstAsset.workstation = "i2_w1";
-        firstAsset.institution = "FNOOP";
-        firstAsset.collection = "n_c1";
-        firstAsset.asset_pid = "pid-auditAsset";
-        firstAsset.asset_locked = false;
-        firstAsset.status = AssetStatus.BEING_PROCESSED;
+        Optional<Institution> institution = institutionService.getIfExists("FNOOP");
+        if (institution.isEmpty()) {
+            institutionService.createInstitution(new Institution("FNOOP"));
+            pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
+            collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+            collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
+        }
+
+        Asset firstAsset = getTestAsset("asset_fnoop_1", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(firstAsset, user, 11);
 
-        Asset secondAsset = getTestAsset("asset_nnad");
-        secondAsset.pipeline = "pl-01";
-        secondAsset.workstation = "i2_w1";
-        secondAsset.institution = "NNAD";
-        secondAsset.collection = "i_c1";
-        secondAsset.asset_pid = "piddipiddy";
-        secondAsset.asset_locked = false;
-        secondAsset.status = AssetStatus.BEING_PROCESSED;
+        Asset secondAsset = getTestAsset("asset_nnad_1", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
         assetService.persistAsset(secondAsset, user, 11);
 
         long yesterday = Instant.now().minus(1, ChronoUnit.DAYS).toEpochMilli();
@@ -98,61 +89,28 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         }
     }
 
-    @Disabled
     @Test
     public void testingUserEvents() {
-        institutionService.createInstitution(new Institution("FNOOP"));
-        pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
-        collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
-        collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
-        Asset firstAsset = getTestAsset("asset_fnoop");
-        firstAsset.pipeline = "fnoopyline";
-        firstAsset.workstation = "i2_w1";
-        firstAsset.institution = "FNOOP";
-        firstAsset.collection = "n_c1";
-        firstAsset.asset_pid = "pid-auditAsset";
-        firstAsset.asset_locked = false;
-        firstAsset.status = AssetStatus.BEING_PROCESSED;
+        Optional<Institution> institution = institutionService.getIfExists("FNOOP");
+        if (institution.isEmpty()) {
+            institutionService.createInstitution(new Institution("FNOOP"));
+            pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
+            collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+            collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
+        }
+        Asset firstAsset = getTestAsset("asset_fnoop_2", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(firstAsset, user, 11);
 
-        Asset secondAsset = getTestAsset("asset_nnad");
-        secondAsset.pipeline = "pl-01";
-        secondAsset.workstation = "i2_w1";
-        secondAsset.institution = "NNAD";
-        secondAsset.collection = "i_c1";
-        secondAsset.asset_pid = "piddipiddy";
-        secondAsset.asset_locked = false;
-        secondAsset.status = AssetStatus.BEING_PROCESSED;
+        Asset secondAsset = getTestAsset("asset_nnad", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
         assetService.persistAsset(secondAsset, user, 11);
 
         Asset updatedAsest = secondAsset;
         updatedAsest.funding = "So much money it's insane";
-
         assetService.updateAsset(updatedAsest, user);
-
         updatedAsest.funding = "Even more money!!";
         assetService.updateAsset(updatedAsest, user);
 
-        Asset toDeleteAsset = getTestAsset("asset_deleting");
-        toDeleteAsset.pipeline = "pl-01";
-        toDeleteAsset.workstation = "i2_w1";
-        toDeleteAsset.institution = "NNAD";
-        toDeleteAsset.collection = "i_c1";
-        toDeleteAsset.asset_pid = "piddipiddy";
-        toDeleteAsset.asset_locked = false;
-        toDeleteAsset.status = AssetStatus.BEING_PROCESSED;
-        assetService.persistAsset(toDeleteAsset, user, 11);
-
-        boolean deleted = assetService.deleteAsset("asset_deleting", user);
-        System.out.println("deleted: " + deleted);
-
-        Asset auditedAsset = getTestAsset("audited");
-        auditedAsset.pipeline = "pl-01";
-        auditedAsset.workstation = "i2_w1";
-        auditedAsset.institution = "NNAD";
-        auditedAsset.collection = "i_c1";
-        auditedAsset.asset_pid = "piddipiddy";
-        auditedAsset.asset_locked = false;
+        Asset auditedAsset = getTestAsset("audited", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
         auditedAsset.status = AssetStatus.BEING_PROCESSED;
 
         assetService.persistAsset(auditedAsset, user, 11);
@@ -160,31 +118,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
                 , "i2_w1", "pl-01", user.username));
         assetService.auditAsset(auditingUser, new Audit(auditingUser.username), "audited");
 
-        long yesterday = Instant.now().minus(1, ChronoUnit.DAYS).toEpochMilli();
-        long twodaysago = Instant.now().minus(2, ChronoUnit.DAYS).toEpochMilli();
         long tomorrow = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();
-
-        List<QueriesReceived> queries = new LinkedList<QueriesReceived>(Arrays.asList(
-            new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
-                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
-                    new QueryWhere("asset_guid", Arrays.asList(
-                            new QueryInner("=", "asset_nnad", QueryDataType.STRING)
-                    )),
-                    new QueryWhere("updated_timestamp", Arrays.asList(
-                            new QueryInner("RANGE", twodaysago + "#" + tomorrow, QueryDataType.DATE)
-                    )),
-                    new QueryWhere("asset_created_by", Arrays.asList(
-                            new QueryInner("=", "moogie-woogie", QueryDataType.STRING)
-                    )),
-                    new QueryWhere("asset_updated_by", Arrays.asList(
-                            new QueryInner("=", "moogie-woogie", QueryDataType.STRING)
-                    )),
-                    new QueryWhere("created_timestamp", Arrays.asList(
-                            new QueryInner("RANGE", yesterday + "#" + tomorrow, QueryDataType.DATE)
-                    ))
-                )))
-            )))
-        ));
 
         List<QueriesReceived> queries2 = new LinkedList<QueriesReceived>(Arrays.asList(
             new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
@@ -198,46 +132,42 @@ class QueriesServiceTest extends AbstractIntegrationTest {
                     new QueryWhere("audited_by", Arrays.asList(
                             new QueryInner("=", "moogie-auditor", QueryDataType.STRING)
                     ))
-//                    new QueryWhere("updated_timestamp", Arrays.asList(
-//                            new QueryInner("RANGE", twodaysago + "#" + tomorrow, QueryDataType.DATE)
-//                    )),
-//                    new QueryWhere("asset_created_by", Arrays.asList(
-//                            new QueryInner("=", "moogie-woogie", QueryDataType.STRING)
-//                    )),
-//                    new QueryWhere("asset_updated_by", Arrays.asList(
-//                            new QueryInner("=", "moogie-woogie", QueryDataType.STRING)
-//                    ))
                 )))
-//                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
-//                    new QueryWhere("audited_by", Arrays.asList(
-//                            new QueryInner("=", "moogie-auditor", QueryDataType.STRING)
-//                    ))
-//                )))
             )))
         ));
 
         List<Asset> assets = this.queriesService.getAssetsFromQuery(queries2, 200);
-//        List<Asset> set = new HashSet<>(assets).stream().toList();
-//        System.out.println(assets);
-//        for (Asset asset : assets) {
-//            System.out.println(asset.toString());
-//        }
-        for (Asset asset : assets) {
-            System.out.println(asset.toString());
+        assertThat(assets.size()).isAtLeast(2);
+        int asset_nnadCount = 0;
+        for (Asset asset1 : assets) {
+            if (asset1.asset_guid.equalsIgnoreCase("asset_nnad")) asset_nnadCount++;
         }
+        boolean auditedFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase("audited"));
+        boolean notUpdatedAssetFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase("asset_fnoop"));
+
+        assertThat(asset_nnadCount).isEqualTo(1); // updated twice, so there'll be at least three events for this asset.
+        assertThat(auditedFound).isTrue();
+        assertThat(notUpdatedAssetFound).isFalse();
     }
 
-    public Asset getTestAsset(String guid) {
+    public Asset getTestAsset(String guid, String username, String institution, String workstation, String pipeline, String collection) {
         Asset asset = new Asset();
         asset.asset_locked = false;
-        asset.digitiser = user.username;
+        asset.digitiser = username;
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
-        asset.updateUser = user.username;
+        asset.updateUser = username;
+        asset.pipeline = pipeline;
+        asset.workstation = workstation;
+        asset.institution = institution;
+        asset.collection = collection;
+        asset.asset_pid = "pid-auditAsset";
+        asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
         return asset;
     }
 

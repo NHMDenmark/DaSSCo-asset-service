@@ -1,3 +1,5 @@
+@import 'src/style/base';
+
 .container {
   padding: 1rem;
 
@@ -54,4 +56,13 @@
       }
     }
   }
+}
+
+.mat-menu-item {
+  height: fit-content !important;
+  line-height: 30px;
+}
+
+.mat-menu-item-true { // not the first element
+  border-top: thin solid $primaryColor;
 }
