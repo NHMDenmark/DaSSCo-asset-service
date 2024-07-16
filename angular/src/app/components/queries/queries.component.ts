@@ -23,7 +23,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   @ViewChild('queryHandlerContainer', { read: ViewContainerRef, static: true }) queryHandlerEle: ViewContainerRef | undefined;
   @ViewChild(MatPaginator) paginator: MatPaginator | undefined;
   displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
-    'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'creation_date', 'user_name'];
+    'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'timestamp', 'events', 'user_name'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
@@ -38,20 +38,19 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     .pipe(
       filter(isNotUndefined),
       map(nodes => {
-        localStorage.setItem('node-properties', JSON.stringify(nodes));
+        this.cacheService.setNodeProperties(nodes);
+        // localStorage.setItem('node-properties', JSON.stringify(nodes));
         this.nodes = nodes;
         return new Map(Object.entries(nodes));
       })
     )
 
   propertiesCached$
-    = of (localStorage.getItem('node-properties')).pipe(
+    = of (this.cacheService.getNodeProperties()).pipe(
     map(properties => {
       if (properties) {
-        const propertiesMap = new Map<string, string[]>(JSON.parse(properties));
-        this.nodes = propertiesMap;
-        console.log(propertiesMap)
-        return propertiesMap;
+        this.nodes = properties;
+        return properties;
       }
       return new Map();
     })
@@ -59,10 +58,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   nodes$: Observable<Map<string, string[]> | undefined>
   = iif(() => { // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
-      return localStorage.getItem('node-properties') == null;
+      return this.cacheService.getNodeProperties() == undefined;
     },
-    this.propertiesCall$, // if it's empty
-    this.propertiesCached$ // if it's not empty
+    this.propertiesCall$, // if it's undefined
+    this.propertiesCached$ // if it's not undefined
   );
 
   constructor(private queriesService: QueriesService
@@ -117,8 +116,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   save() {
     const queryResponses: QueryResponse[] = [];
-
-    console.log(this.queries)
 
     this.queries.forEach((val, key) => {
       const nodeMap = new Map<string, QueryWhere[]>;
