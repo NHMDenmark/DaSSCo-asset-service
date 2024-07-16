@@ -46,7 +46,7 @@ public interface QueriesRepository extends SqlObject {
             """
                 SELECT * FROM ag_catalog.cypher('dassco', $$
                 MATCH (n)
-                WHERE NOT 'Event' IN labels(n)
+                WHERE NOT 'Event' IN labels(n) AND NOT 'User' IN labels(n)
                 WITH labels(n) AS lbl, keys(n) AS keys, size(keys(n)) AS key_count
                 UNWIND lbl AS label
                 WITH label, keys, key_count

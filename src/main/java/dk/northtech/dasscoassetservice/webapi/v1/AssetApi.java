@@ -49,8 +49,6 @@ public class AssetApi {
         this.rightsValidationService = rightsValidationService;
     }
 
-
-
     @GET
     @Operation(summary = "Get Assets", description = "Returns a list of assets.")
     @Produces(MediaType.APPLICATION_JSON)

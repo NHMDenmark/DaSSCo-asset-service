@@ -59,7 +59,6 @@ public class Queries {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit) {
-        System.out.println(queries);
         return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit);
     }
 
