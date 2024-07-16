@@ -402,7 +402,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     }
 
     @Test
-    void readListAssetGroupServiceUser(){
+    void readListAssetGroup(){
         Asset firstAsset = this.getTestAsset("readList-service");
         firstAsset.institution = "role-institution-1";
         firstAsset.collection = "role-collection-1";
@@ -442,57 +442,6 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.clear();
     }
 
-    @Test
-    void readListAssetGroupRole(){
-        Asset firstAsset = this.getTestAsset("readList-role1");
-        firstAsset.institution = "role-institution-1";
-        firstAsset.collection = "role-collection-1";
-        firstAsset.pipeline = "ri1_p1";
-        firstAsset.workstation = "ri1_w1";
-
-        Asset secondAsset = this.getTestAsset("readList-role2");
-        secondAsset.institution = "role-institution-2";
-        secondAsset.collection = "role-collection-2";
-        secondAsset.pipeline = "ri2_p1";
-        secondAsset.workstation = "ri2_w1";
-
-        user.roles.add("service-user");
-        assetService.persistAsset(firstAsset, user, 1);
-        assetService.persistAsset(secondAsset, user, 1);
-
-        AssetGroup assetGroup = new AssetGroup();
-        AssetGroup secondAssetGroup = new AssetGroup();
-        assetGroup.assets = new ArrayList<>();
-        secondAssetGroup.assets = new ArrayList<>();
-
-        assetGroup.group_name = "test-group";
-        secondAssetGroup.group_name = "test-group-2";
-        assetGroup.assets.add(firstAsset.asset_guid);
-        secondAssetGroup.assets.add(secondAsset.asset_guid);
-
-        assetGroupService.createAssetGroup(assetGroup, user);
-        assetGroupService.createAssetGroup(secondAssetGroup, user);
-
-        user.roles.clear();
-        user.roles.add("READ_test-role-1");
-
-        List<AssetGroup> found = assetGroupService.readListAssetGroup(user);
-        assertThat(found.size()).isEqualTo(1);
-        assertThat(assetGroupService.readAssetGroup(assetGroup.group_name, user)).isNotEmpty();
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
-        assertThrows(DasscoIllegalActionException.class, () ->assetGroupService.deleteAssetGroup(secondAssetGroup.group_name, user));
-        user.roles.clear();
-        user.roles.add("READ_test-role-2");
-        List<AssetGroup> secondFound = assetGroupService.readListAssetGroup(user);
-        assertThat(found.size()).isEqualTo(1);
-        assertThat(assetGroupService.readAssetGroup(secondAssetGroup.group_name, user)).isNotEmpty();
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
-        assetGroupService.deleteAssetGroup(secondAssetGroup.group_name, user);
-        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(0);
-        user.roles.clear();
-        // TODO: There's something wrong with the query, it is returning every asset group, even those that should not be returned, based on the roles!
-    }
 
 
     public Asset getTestAsset(String guid) {

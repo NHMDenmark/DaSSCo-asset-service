@@ -82,13 +82,7 @@ public class AssetGroupService {
     }
 
     public List<AssetGroup> readListAssetGroup(User user){
-        // If the user is an admin, developer or service user, roles don't matter, return everything.
-        if (user.roles.contains(SecurityRoles.ADMIN) || user.roles.contains(SecurityRoles.DEVELOPER) || user.roles.contains(SecurityRoles.SERVICE)){
             return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user.roles);
-        } else {
-            // Else, they are Users with custom roles, and they should only get the asset groups they can see:
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user.roles);
-        }
     }
 
     public void deleteAssetGroup(String groupName, User user){

@@ -364,41 +364,6 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
-  /v1/assetgroups/updategroup/{groupName}:
-    put:
-      tags:
-      - Asset Groups
-      summary: Update Asset Group
-      description: Updates the assets in an asset group.
-      operationId: updateAssetGroup
-      parameters:
-      - name: groupName
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AssetGroup'
-        "400-599":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DaSSCoError'
-      security:
-      - dassco-idp: []
   /v1/assetmetadata/{assetGuid}/assetreceived:
     post:
       tags:

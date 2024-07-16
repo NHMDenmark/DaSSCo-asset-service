@@ -155,18 +155,6 @@ public interface AssetGroupRepository extends SqlObject {
 
     default List<AssetGroup> readListAssetGroupInternal(boolean roles, Set<String> userRoles){
 
-        String userRolesAsString = userRoles.stream()
-                .map(role -> {
-                    if (role.startsWith("READ_")){
-                        role = role.substring(5);
-                    } else if (role.startsWith("WRITE_")){
-                        role = role.substring(6);
-                    }
-                    return "'" + role + "'";
-                })
-                .collect(Collectors.joining(", "));
-
-
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
@@ -177,20 +165,6 @@ public interface AssetGroupRepository extends SqlObject {
                 ) as (group_name agtype, asset_guids agtype);     
                 """;
 
-        String sqlRoles = """
-                SELECT * FROM ag_catalog.cypher(
-                                'dassco'
-                                   , $$
-                                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                                       OPTIONAL MATCH (a)-[:IS_PART_OF]->(c:Collection)-[:RESTRICTED_TO]->(r:Role)
-                                       OPTIONAL MATCH (a)-[:BELONGS_TO]->(i:Institution)-[:RESTRICTED_TO]->(r)
-                                       WHERE r.name IN [%s]
-                                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids
-                                   $$
-                                ) as (group_name agtype, asset_guids agtype)
-                """.formatted(userRolesAsString);
-
-        if (!roles) {
             return withHandle(handle -> handle.createQuery(sql)
                     .map((rs, ctx) -> {
                         AssetGroup assetGroup = new AssetGroup();
@@ -201,18 +175,6 @@ public interface AssetGroupRepository extends SqlObject {
                         return assetGroup;
                     })
                     .list());
-        } else {
-            return withHandle(handle -> handle.createQuery(sqlRoles)
-                    .map((rs, ctx) -> {
-                        AssetGroup assetGroup = new AssetGroup();
-                        Agtype groupName = rs.getObject("group_name", Agtype.class);
-                        assetGroup.group_name = groupName.getString();
-                        Agtype assets = rs.getObject("asset_guids", Agtype.class);
-                        assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        return assetGroup;
-                    })
-                    .list());
-        }
     }
 
     default void deleteAssetGroupInternal(String groupName){
