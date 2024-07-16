@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.services.AssetGroupService;
@@ -41,9 +42,9 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default void createAssetGroup(AssetGroup assetGroup){
+    default void createAssetGroup(AssetGroup assetGroup, User user){
         boilerplate();
-        createAssetGroupInternal(assetGroup);
+        createAssetGroupInternal(assetGroup, user);
     }
 
     @Transaction
@@ -53,15 +54,15 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default List<AssetGroup> readListAssetGroup(boolean roles, Set<String> userRoles){
+    default List<AssetGroup> readListAssetGroup(boolean roles, User user){
         boilerplate();
-        return readListAssetGroupInternal(roles, userRoles);
+        return readListAssetGroupInternal(roles, user);
     }
 
     @Transaction
-    default void deleteAssetGroup(String groupName){
+    default void deleteAssetGroup(String groupName, User user){
         boilerplate();
-        deleteAssetGroupInternal(groupName);
+        deleteAssetGroupInternal(groupName, user);
     }
 
     @Transaction
@@ -76,7 +77,7 @@ public interface AssetGroupRepository extends SqlObject {
         return removeAssetsFromAssetGroupInternal(assetList, groupName);
     }
 
-    default void createAssetGroupInternal(AssetGroup assetGroup){
+    default void createAssetGroupInternal(AssetGroup assetGroup, User user){
 
         String assetListAsString = assetGroup.assets.stream()
                 .map(asset -> "'" + asset + "'")
@@ -86,7 +87,10 @@ public interface AssetGroupRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                     'dassco'
                         , $$
+                        MERGE (u:User {name: $user_name, user_id: $user_name})
                         MERGE (ag:Asset_Group{name:$group_name})
+                        MERGE (ag)-[:HAS_ACCESS]-(u)
+                        MERGE (ag)-[:MADE_BY]-(u)
                     $$
                     , #params) as (a agtype);
                 """;
@@ -104,7 +108,9 @@ public interface AssetGroupRepository extends SqlObject {
                     , #params) as (a agtype);
                 """.formatted(assetListAsString);
 
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", assetGroup.group_name);
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("group_name", assetGroup.group_name);
+                builder.add("user_name", user.username);
 
         try {
             withHandle(handle -> {
@@ -153,7 +159,7 @@ public interface AssetGroupRepository extends SqlObject {
         });
     }
 
-    default List<AssetGroup> readListAssetGroupInternal(boolean roles, Set<String> userRoles){
+    default List<AssetGroup> readListAssetGroupInternal(boolean roles, User user){
 
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
@@ -165,6 +171,17 @@ public interface AssetGroupRepository extends SqlObject {
                 ) as (group_name agtype, asset_guids agtype);     
                 """;
 
+        String sqlRoles = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                   , $$
+                       MATCH (u:User {name: $user_name})<-[:HAS_ACCESS]-(ag:Asset_Group)-[:CONTAINS]->(a:Asset)
+                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
+                   $$
+                , #params) as (group_name agtype, asset_guids agtype, user_name agtype);
+                """;
+
+        if (!roles){
             return withHandle(handle -> handle.createQuery(sql)
                     .map((rs, ctx) -> {
                         AssetGroup assetGroup = new AssetGroup();
@@ -172,24 +189,47 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.group_name = groupName.getString();
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                        assetGroup.hasAccess = new ArrayList<>();
                         return assetGroup;
                     })
                     .list());
+        } else {
+            return withHandle(handle -> {
+                AgtypeMap agParams = new AgtypeMapBuilder()
+                        .add("user_name", user.username)
+                        .build();
+                Agtype agtype = AgtypeFactory.create(agParams);
+                return handle.createQuery(sqlRoles)
+                        .bind("params", agtype)
+                        .map((rs, ctx) -> {
+                            AssetGroup assetGroup = new AssetGroup();
+                            assetGroup.hasAccess = new ArrayList<>();
+                            Agtype groupName = rs.getObject("group_name", Agtype.class);
+                            assetGroup.group_name = groupName.getString();
+                            Agtype assets = rs.getObject("asset_guids", Agtype.class);
+                            assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                            assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
+                            return assetGroup;
+                        })
+                        .list();
+            });
+        }
     }
 
-    default void deleteAssetGroupInternal(String groupName){
+    default void deleteAssetGroupInternal(String groupName, User user){
 
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                    , $$
-                       MATCH (ag:Asset_Group{name:$group_name})
+                       MATCH (ag:Asset_Group{name:$group_name})-[:MADE_BY]->(u:User {name: $user_name})
                        DETACH DELETE ag
                    $$
                 , #params) as (ag agtype);
                 """;
 
         AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+        builder.add("user_name", user.username);
 
         try {
             withHandle(handle -> {

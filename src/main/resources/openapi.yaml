@@ -257,8 +257,8 @@ paths:
       tags:
       - Asset Groups
       summary: Delete Asset Groups
-      description: "Deletes an Asset Group, using the Asset Group name. User needs\
-        \ at least read permission on the assets conforming a group to delete them."
+      description: "Deletes an Asset Group, using the Asset Group name. Only the user\
+        \ that created the group can delete it."
       operationId: deleteAssetGroup
       parameters:
       - name: groupName
@@ -1398,6 +1398,12 @@ components:
             type: string
             description: List of assets in the group
             example: "[\"Asset_1\",\"Asset_2\"]"
+        hasAccess:
+          type: array
+          description: Users with access to the Asset Group
+          items:
+            type: string
+            description: Users with access to the Asset Group
     Asset:
       type: object
       properties:

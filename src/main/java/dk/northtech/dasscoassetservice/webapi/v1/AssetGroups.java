@@ -73,7 +73,7 @@ public class AssetGroups {
 
     @DELETE
     @Path("/deletegroup/{groupName}")
-    @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, using the Asset Group name. User needs at least read permission on the assets conforming a group to delete them.")
+    @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, using the Asset Group name. Only the user that created the group can delete it.")
     @Produces(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")

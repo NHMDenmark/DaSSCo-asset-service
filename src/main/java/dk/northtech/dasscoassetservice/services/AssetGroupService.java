@@ -57,13 +57,17 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group already exists!");
         }
 
+        if (assetGroup.hasAccess == null){
+            throw new IllegalArgumentException("sharedWith cannot be null");
+        }
+
         // Check user roles, you need READ to be able to create an asset group:
         for (Asset asset : assets){
             rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         }
 
         // Then:
-        jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup);
+        jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
     }
 
     public List<Asset> readAssetGroup(String groupName, User user){
@@ -82,20 +86,23 @@ public class AssetGroupService {
     }
 
     public List<AssetGroup> readListAssetGroup(User user){
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user.roles);
+        if (user.roles.contains(SecurityRoles.ADMIN) || user.roles.contains(SecurityRoles.DEVELOPER) || user.roles.contains(SecurityRoles.SERVICE)){
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user);
+        }
+        else {
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user);
+        }
     }
 
     public void deleteAssetGroup(String groupName, User user){
+
+        // Only the creator of the asset group can delete it:
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isEmpty()){
             throw new IllegalArgumentException("Asset group does not exist!");
         }
 
-        List<Asset> assetList = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroupOptional.get().assets);
-        for (Asset asset : assetList){
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-        }
-        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
+        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase(), user);
     }
 
     public AssetGroup addAssetsToAssetGroup(String groupName, List<String> assetList, User user){
