@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -98,12 +99,20 @@ public class RightsValidationService {
         }
     }
 
-    public void checkReadRightsThrowing(User user, AssetGroup assetGroup, boolean write){
-        // TODO:
-        boolean hasRight = checkRights(user, assetGroup, write);
+    public boolean checkReadRightsThrowing(User user, AssetGroup assetGroup){
+        boolean hasRight = checkRights(user, assetGroup);
         if (!hasRight) {
             LOGGER.warn("User {} does not have read access to assetGroup {}",user.username,assetGroup.group_name);
             throw new DasscoIllegalActionException();
+        }
+        return true;
+    }
+
+    public void checkWriteRightsThrowing(User user, AssetGroup assetGroup){
+        boolean hasRight = checkWriteRights(user, assetGroup);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have write access to assetGroup {}",user.username,assetGroup.group_name);
+            throw new DasscoIllegalActionException("User is not the owner of this asset group.");
         }
     }
 
@@ -154,7 +163,7 @@ public class RightsValidationService {
         return true;
     }
 
-    public boolean checkRights(User user, AssetGroup assetGroup, boolean write){
+    public boolean checkRights(User user, AssetGroup assetGroup){
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
                 || roles.contains(InternalRole.SERVICE_USER.roleName)
@@ -167,6 +176,17 @@ public class RightsValidationService {
         }
 
         return false;
+    }
+
+    public boolean checkWriteRights(User user, AssetGroup assetGroup){
+        Set<String> roles = user.roles;
+        if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.SERVICE_USER.roleName)
+                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            return true;
+        }
+
+        return jdbi.onDemand(UserRepository.class).isUserOwnerOfAssetGroup(assetGroup.group_name.toLowerCase(), user.username);
     }
 
     //expand write roles into read roles and writeroles

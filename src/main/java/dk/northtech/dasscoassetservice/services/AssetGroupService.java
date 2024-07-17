@@ -1,9 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.AssetGroup;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
@@ -93,7 +90,7 @@ public class AssetGroupService {
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
-            rightsValidationService.checkReadRightsThrowing(user, assetGroup, false);
+            rightsValidationService.checkReadRightsThrowing(user, assetGroup);
             return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
@@ -141,11 +138,7 @@ public class AssetGroupService {
         }
 
         // Check if User has access to the asset Group:
-        List<String> users = jdbi.onDemand(AssetGroupRepository.class).getHasAccess(groupName);
-
-        if (!users.contains(user.username)){
-            throw new IllegalArgumentException("user " + user.username + " has no access to this asset group");
-        }
+        rightsValidationService.checkWriteRightsThrowing(user, assetGroupOptional.get());
 
         // Check if user has access to the assets they want to add:
         for (Asset asset : assets){
@@ -180,12 +173,10 @@ public class AssetGroupService {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-        List<String> users = jdbi.onDemand(AssetGroupRepository.class).getHasAccess(groupName);
-        if (!users.contains(user.username)){
-            throw new IllegalArgumentException("user " + user.username + " has no access to this asset group");
-        }
+        // Check if User has access to the asset Group:
+        rightsValidationService.checkWriteRightsThrowing(user, assetGroupOptional.get());
 
-        // Check if user has access to the assets they want to add:
+        // Check if user has access to the assets they want to remove:
         for (Asset asset : assets){
             rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         }

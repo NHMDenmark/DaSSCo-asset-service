@@ -34,6 +34,12 @@ public interface UserRepository extends SqlObject {
         return this.getUserByUsernameInternal(username);
     }
 
+    @Transaction
+    default boolean isUserOwnerOfAssetGroup(String groupName, String username){
+        boilerplate();
+        return this.isUserOwnerOfAssetGroupInternal(groupName, username);
+    }
+
     default boolean getUserByUsernameInternal(String username){
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
@@ -47,6 +53,35 @@ public interface UserRepository extends SqlObject {
 
         AgtypeMapBuilder builder = new AgtypeMapBuilder()
                 .add("user_name", username);
+
+        try {
+            return withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                return handle.createQuery(sql)
+                        .bind("params", agtype)
+                        .mapTo(Boolean.class)
+                        .findOne()
+                        .orElse(false);
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    default boolean isUserOwnerOfAssetGroupInternal(String groupName, String username){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                    'dassco'
+                        , $$
+                        MATCH (u:User {name: $user_name})<-[:MADE_BY]-(ag:Asset_Group {name: $asset_group})
+                        RETURN EXISTS((u))
+                    $$
+                    , #params) as (u agtype);
+                """;
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("user_name", username);
+        builder.add("asset_group", groupName);
 
         try {
             return withHandle(handle -> {
