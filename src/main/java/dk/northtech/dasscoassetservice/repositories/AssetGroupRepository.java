@@ -77,6 +77,12 @@ public interface AssetGroupRepository extends SqlObject {
         return removeAssetsFromAssetGroupInternal(assetList, groupName);
     }
 
+    @Transaction
+    default List<String> getHasAccess(String assetGroup){
+        boilerplate();
+        return getHasAccessInternal(assetGroup);
+    }
+
     default void createAssetGroupInternal(AssetGroup assetGroup, User user){
 
         String assetListAsString = assetGroup.assets.stream()
@@ -133,10 +139,10 @@ public interface AssetGroupRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                    , $$
-                       MATCH (ag:Asset_Group{name:$group_name})-[:CONTAINS]->(a:Asset)
-                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids
+                       MATCH (u:User)-[:HAS_ACCESS]-(ag:Asset_Group{name:$group_name})-[:CONTAINS]->(a:Asset)
+                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
                    $$
-                , #params) as (group_name agtype, asset_guids agtype);     
+                , #params) as (group_name agtype, asset_guids agtype, user_name agtype);     
                 """;
 
         return withHandle(handle -> {
@@ -153,8 +159,9 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.group_name = groupName.getString();
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                        assetGroup.hasAccess = new ArrayList<>();
+                        assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
                         return assetGroup;
-
                     }).findOne();
         });
     }
@@ -166,9 +173,10 @@ public interface AssetGroupRepository extends SqlObject {
                 'dassco'
                    , $$
                        MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids
+                       MATCH (ag)-[:HAS_ACCESS]->(u:User)
+                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
                    $$
-                ) as (group_name agtype, asset_guids agtype);     
+                ) as (group_name agtype, asset_guids agtype, user_name agtype);     
                 """;
 
         String sqlRoles = """
@@ -190,6 +198,7 @@ public interface AssetGroupRepository extends SqlObject {
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         assetGroup.hasAccess = new ArrayList<>();
+                        assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
                         return assetGroup;
                     })
                     .list());
@@ -203,11 +212,11 @@ public interface AssetGroupRepository extends SqlObject {
                         .bind("params", agtype)
                         .map((rs, ctx) -> {
                             AssetGroup assetGroup = new AssetGroup();
-                            assetGroup.hasAccess = new ArrayList<>();
                             Agtype groupName = rs.getObject("group_name", Agtype.class);
                             assetGroup.group_name = groupName.getString();
                             Agtype assets = rs.getObject("asset_guids", Agtype.class);
                             assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                            assetGroup.hasAccess = new ArrayList<>();
                             assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
                             return assetGroup;
                         })
@@ -257,8 +266,8 @@ public interface AssetGroupRepository extends SqlObject {
                 MATCH (a:Asset)
                 WHERE a.name IN [%s]
                 MERGE (ag)-[:CONTAINS]->(a)
-                RETURN ag
-                $$, #params) as (ag agtype);
+                RETURN ag.name AS group_name
+                $$, #params) as (group_name agtype);
                 """.formatted(assetListAsString);
 
         AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
@@ -266,17 +275,14 @@ public interface AssetGroupRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
+                return handle.createUpdate(sql)
                         .bind("params", agtype)
                         .execute();
-
-                return handle;
-            });
+                        });
         } catch (Exception e){
             throw new RuntimeException(e);
         }
-
-        return readAssetGroupInternal(groupName);
+        return this.readAssetGroupInternal(groupName);
     }
 
     default Optional<AssetGroup> removeAssetsFromAssetGroupInternal(List<String> assetList, String groupName){
@@ -312,5 +318,27 @@ public interface AssetGroupRepository extends SqlObject {
 
         return readAssetGroupInternal(groupName);
 
+    }
+
+    default List<String> getHasAccessInternal(String groupName) {
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                MATCH (u: User)<-[:HAS_ACCESS]-(ag:Asset_Group {name: $group_name})
+                return u.name
+                $$, #params) as (users agtype);
+                """;
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+
+        try {
+            return withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                return handle.createQuery(sql)
+                        .bind("params", agtype)
+                        .map((rs, ctx) -> rs.getString("users").replace("\"", "")).list();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
