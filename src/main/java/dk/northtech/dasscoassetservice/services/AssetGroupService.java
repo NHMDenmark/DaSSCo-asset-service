@@ -6,11 +6,13 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
+import java.awt.color.ICC_ColorSpace;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,17 +59,37 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group already exists!");
         }
 
+
+
         if (assetGroup.hasAccess == null){
             throw new IllegalArgumentException("sharedWith cannot be null");
         }
 
-        // Check user roles, you need READ to be able to create an asset group:
-        for (Asset asset : assets){
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-        }
+        if (!assetGroup.hasAccess.isEmpty()){
+            // Check user roles. You need WRITE access to create the asset group and invite people to it.
+            for (Asset asset: assets){
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            }
 
-        // Then:
-        jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+            // Check if all the users exist!
+            for (String username : assetGroup.hasAccess){
+                if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                    throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
+                }
+            }
+            // TODO:
+            System.out.println("shared asset group created! yay!");
+            //jdbi.onDemand(AssetGroupRepository.class).createSharedAssetGroup(assetGroup, user);
+
+        } else {
+            // Check user roles, you need READ to be able to create an asset group:
+            for (Asset asset : assets){
+                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            }
+
+            // Then:
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+        }
     }
 
     public List<Asset> readAssetGroup(String groupName, User user){
@@ -182,5 +204,22 @@ public class AssetGroupService {
         } else {
             throw new IllegalArgumentException("Something went wrong.");
         }
+    }
+
+    public AssetGroup grantAccessToAssetGroup(String groupName, List<String> users, User user){
+        // TODO:
+
+        if (users == null || users.isEmpty()){
+            throw new IllegalArgumentException("There needs to be a list of Users");
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        AssetGroup found = assetGroupOptional.get();
+
+        return new AssetGroup();
     }
 }

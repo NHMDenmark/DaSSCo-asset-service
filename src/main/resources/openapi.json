@@ -478,6 +478,60 @@
         } ]
       }
     },
+    "/v1/assetgroups/grantAccess/{groupName}" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Grant Access to Asset Group",
+        "description" : "Gives access to other users to the Asset Group. Users have to have permission to see the assets in the Asset Group",
+        "operationId" : "grantAccessToAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetgroups/updategroup/{groupName}/removeAssets" : {
       "patch" : {
         "tags" : [ "Asset Groups" ],

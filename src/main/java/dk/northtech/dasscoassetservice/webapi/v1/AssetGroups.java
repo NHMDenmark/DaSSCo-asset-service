@@ -105,4 +105,16 @@ public class AssetGroups {
     public AssetGroup removeAssetFromAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext){
         return this.assetGroupService.removeAssetsFromAssetGroup(groupName, assetList, UserMapper.from(securityContext));
     }
+
+    @PUT
+    @Path("/grantAccess/{groupName}")
+    @Operation(summary = "Grant Access to Asset Group", description = "Gives access to other users to the Asset Group. Users have to have permission to see the assets in the Asset Group")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public AssetGroup grantAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext){
+     return this.assetGroupService.grantAccessToAssetGroup(groupName, users, UserMapper.from(securityContext));
+    }
 }

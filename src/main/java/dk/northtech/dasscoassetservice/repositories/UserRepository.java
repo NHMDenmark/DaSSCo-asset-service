@@ -1,0 +1,64 @@
+package dk.northtech.dasscoassetservice.repositories;
+
+import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
+import org.apache.age.jdbc.base.Agtype;
+import org.apache.age.jdbc.base.AgtypeFactory;
+import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
+import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.transaction.Transaction;
+import org.postgresql.jdbc.PgConnection;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public interface UserRepository extends SqlObject {
+
+    //This must be called once per transaction
+    default void boilerplate() {
+        withHandle(handle -> {
+            Connection connection = handle.getConnection();
+            try {
+                PgConnection pgConn = connection.unwrap(PgConnection.class);
+                pgConn.addDataType("agtype", Agtype.class);
+                handle.execute(DBConstants.AGE_BOILERPLATE);
+                return handle;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Transaction
+    default boolean getUserByUsername(String username){
+        boilerplate();
+        return this.getUserByUsernameInternal(username);
+    }
+
+    default boolean getUserByUsernameInternal(String username){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                    'dassco'
+                        , $$
+                        MATCH (u:User {name: $user_name})
+                        RETURN EXISTS((u))
+                    $$
+                    , #params) as (u agtype);
+                """;
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("user_name", username);
+
+        try {
+            return withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                return handle.createQuery(sql)
+                        .bind("params", agtype)
+                        .mapTo(Boolean.class)
+                        .findOne()
+                        .orElse(false);
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+}

@@ -48,6 +48,12 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
+    default void createSharedAssetGroup(AssetGroup assetGroup, User user){
+        boilerplate();
+        createSharedAssetGroupInternal(assetGroup, user);
+    }
+
+    @Transaction
     default Optional<AssetGroup> readAssetGroup(String assetGroupName){
         boilerplate();
         return readAssetGroupInternal(assetGroupName);
@@ -132,6 +138,18 @@ public interface AssetGroupRepository extends SqlObject {
         } catch (Exception e){
             throw new RuntimeException(e);
         }
+    }
+
+    default void createSharedAssetGroupInternal(AssetGroup assetGroup, User user){
+        String assetListAsString = assetGroup.assets.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String userListAsString = assetGroup.hasAccess.stream()
+                .map(users -> "'" + users + "'")
+                .collect(Collectors.joining(", "));
+
+
     }
 
     default Optional<AssetGroup> readAssetGroupInternal(String assetGroupName){
