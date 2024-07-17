@@ -165,14 +165,13 @@ public class AssetGroupService {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-        // Check if user has access to the assets they want to add:
-        for (Asset asset : assets){
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        List<String> users = jdbi.onDemand(AssetGroupRepository.class).getHasAccess(groupName);
+        if (!users.contains(user.username)){
+            throw new IllegalArgumentException("user " + user.username + " has no access to this asset group");
         }
 
-        // Check if user has access to the other assets in the Group:
-        List<Asset> assetsInGroup = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroupOptional.get().assets);
-        for (Asset asset : assetsInGroup){
+        // Check if user has access to the assets they want to add:
+        for (Asset asset : assets){
             rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         }
 
