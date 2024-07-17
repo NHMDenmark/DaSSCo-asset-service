@@ -59,10 +59,8 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group already exists!");
         }
 
-
-
         if (assetGroup.hasAccess == null){
-            throw new IllegalArgumentException("sharedWith cannot be null");
+            throw new IllegalArgumentException("hasAccess cannot be null");
         }
 
         if (!assetGroup.hasAccess.isEmpty()){
@@ -77,9 +75,8 @@ public class AssetGroupService {
                     throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
                 }
             }
-            // TODO:
-            System.out.println("shared asset group created! yay!");
-            //jdbi.onDemand(AssetGroupRepository.class).createSharedAssetGroup(assetGroup, user);
+            // This gives read access to the Assets in the group:
+            jdbi.onDemand(AssetGroupRepository.class).createSharedAssetGroup(assetGroup, user);
 
         } else {
             // Check user roles, you need READ to be able to create an asset group:
@@ -93,15 +90,11 @@ public class AssetGroupService {
     }
 
     public List<Asset> readAssetGroup(String groupName, User user){
-
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
-            List<Asset> assets =  jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
-            for (Asset asset : assets){
-                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-            }
-            return assets;
+            rightsValidationService.checkReadRightsThrowing(user, assetGroup, false);
+            return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }

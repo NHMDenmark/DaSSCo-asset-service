@@ -406,7 +406,7 @@
       "get" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Get Asset Group",
-        "description" : "Takes a Group Name and returns the asset metadata of assets in that group. User needs at least read role on the assets to get their metadata back.",
+        "description" : "Takes a Group Name and returns the asset metadata of assets in that group. User needs to have access to the Asset Group.",
         "operationId" : "getAssetGroup",
         "parameters" : [ {
           "name" : "groupName",

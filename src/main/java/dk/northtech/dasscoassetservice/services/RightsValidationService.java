@@ -17,15 +17,18 @@ public class RightsValidationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(RightsValidationService.class);
     InstitutionService institutionService;
     CollectionService collectionService;
+    AssetGroupService assetGroupService;
     private Jdbi jdbi;
 
     public static final String WRITE_ROLE_PREFIX = "WRITE_";
     public static final String READ_ROLE_PREFIX = "READ_";
 
     @Inject
-    public RightsValidationService(InstitutionService institutionService, @Lazy CollectionService collectionService, Jdbi jdbi) {
+    public RightsValidationService(InstitutionService institutionService, @Lazy CollectionService collectionService,
+                                   @Lazy AssetGroupService assetGroupService, Jdbi jdbi) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
+        this.assetGroupService = assetGroupService;
         this.jdbi = jdbi;
     }
 
@@ -95,6 +98,15 @@ public class RightsValidationService {
         }
     }
 
+    public void checkReadRightsThrowing(User user, AssetGroup assetGroup, boolean write){
+        // TODO:
+        boolean hasRight = checkRights(user, assetGroup, write);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have read access to assetGroup {}",user.username,assetGroup.group_name);
+            throw new DasscoIllegalActionException();
+        }
+    }
+
     public void checkWriteRightsThrowing(User user, String institutionName, String collectionName) {
         boolean hasRight = checkRights(user, institutionName, collectionName, true);
         if(!hasRight) {
@@ -140,6 +152,21 @@ public class RightsValidationService {
         }
         //If no roles exists everyone has access
         return true;
+    }
+
+    public boolean checkRights(User user, AssetGroup assetGroup, boolean write){
+        Set<String> roles = user.roles;
+        if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.SERVICE_USER.roleName)
+                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            return true;
+        }
+
+        if (assetGroup.hasAccess.contains(user.username)){
+            return true;
+        }
+
+        return false;
     }
 
     //expand write roles into read roles and writeroles

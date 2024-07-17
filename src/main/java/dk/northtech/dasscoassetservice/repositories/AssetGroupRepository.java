@@ -101,8 +101,8 @@ public interface AssetGroupRepository extends SqlObject {
                         , $$
                         MERGE (u:User {name: $user_name, user_id: $user_name})
                         MERGE (ag:Asset_Group{name:$group_name})
-                        MERGE (ag)-[:HAS_ACCESS]-(u)
-                        MERGE (ag)-[:MADE_BY]-(u)
+                        MERGE (ag)-[:HAS_ACCESS]->(u)
+                        MERGE (ag)-[:MADE_BY]->(u)
                     $$
                     , #params) as (a agtype);
                 """;
@@ -149,7 +149,52 @@ public interface AssetGroupRepository extends SqlObject {
                 .map(users -> "'" + users + "'")
                 .collect(Collectors.joining(", "));
 
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                    'dassco'
+                        , $$
+                        MATCH (v:User)
+                        WHERE v.name IN [%s]
+                        MERGE (u:User {name: $user_name, user_id: $user_name})
+                        MERGE (ag:Asset_Group{name:$group_name})
+                        MERGE (ag)-[:HAS_ACCESS]->(u)
+                        MERGE (ag)-[:HAS_ACCESS]->(v)
+                        MERGE (ag)-[:MADE_BY]->(u)
+                    $$
+                    , #params) as (a agtype);
+                """.formatted(userListAsString);
 
+        String sqlAssets = """
+                SELECT * FROM ag_catalog.cypher(
+                    'dassco'
+                        , $$
+                            MATCH (ag:Asset_Group{name:$group_name})
+                            MATCH (a:Asset)
+                            
+                            WHERE a.asset_guid IN [%s]
+                            MERGE (ag)-[:CONTAINS]->(a)
+                        $$
+                    , #params) as (a agtype);
+                """.formatted(assetListAsString);
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("group_name", assetGroup.group_name);
+        builder.add("user_name", user.username);
+
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+                handle.createUpdate(sqlAssets)
+                        .bind("params", agtype)
+                        .execute();
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     default Optional<AssetGroup> readAssetGroupInternal(String assetGroupName){
@@ -157,8 +202,9 @@ public interface AssetGroupRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                    , $$
-                       MATCH (u:User)-[:HAS_ACCESS]-(ag:Asset_Group{name:$group_name})-[:CONTAINS]->(a:Asset)
-                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
+                       MATCH (u:User)-[:HAS_ACCESS]-(ag:Asset_Group {name: $group_name})
+                       MATCH (ag)-[:CONTAINS]->(a:Asset)
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) AS user_names
                    $$
                 , #params) as (group_name agtype, asset_guids agtype, user_name agtype);     
                 """;
@@ -177,8 +223,8 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.group_name = groupName.getString();
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        assetGroup.hasAccess = new ArrayList<>();
-                        assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
+                        Agtype hasAccess = rs.getObject("user_name", Agtype.class);
+                        assetGroup.hasAccess = hasAccess.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         return assetGroup;
                     }).findOne();
         });
@@ -192,7 +238,7 @@ public interface AssetGroupRepository extends SqlObject {
                    , $$
                        MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
                        MATCH (ag)-[:HAS_ACCESS]->(u:User)
-                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names
                    $$
                 ) as (group_name agtype, asset_guids agtype, user_name agtype);     
                 """;
@@ -202,7 +248,9 @@ public interface AssetGroupRepository extends SqlObject {
                 'dassco'
                    , $$
                        MATCH (u:User {name: $user_name})<-[:HAS_ACCESS]-(ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                       RETURN ag.name AS group_name, collect(a.asset_guid) AS asset_guids, u.name
+                       WITH ag, a, u
+                       MATCH (ag)-[:HAS_ACCESS]->(allUsers:User)
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT allUsers.name) AS user_names
                    $$
                 , #params) as (group_name agtype, asset_guids agtype, user_name agtype);
                 """;
@@ -215,8 +263,8 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.group_name = groupName.getString();
                         Agtype assets = rs.getObject("asset_guids", Agtype.class);
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        assetGroup.hasAccess = new ArrayList<>();
-                        assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
+                        Agtype users = rs.getObject("user_name", Agtype.class);
+                        assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         return assetGroup;
                     })
                     .list());
@@ -234,8 +282,8 @@ public interface AssetGroupRepository extends SqlObject {
                             assetGroup.group_name = groupName.getString();
                             Agtype assets = rs.getObject("asset_guids", Agtype.class);
                             assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                            assetGroup.hasAccess = new ArrayList<>();
-                            assetGroup.hasAccess.add(rs.getObject("user_name", Agtype.class).getString());
+                            Agtype users = rs.getObject("user_name", Agtype.class);
+                            assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                             return assetGroup;
                         })
                         .list();
