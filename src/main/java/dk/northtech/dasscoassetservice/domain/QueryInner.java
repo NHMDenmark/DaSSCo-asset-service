@@ -33,7 +33,7 @@ public class QueryInner {
 
         if (match.contains("c")) { // is collection name, which means the value is sent as "inst_name.coll_name"
             String[] splitValue = value.split("\\.");
-            if (splitValue.length > 0) {
+            if (splitValue.length > 1) {
                 value = splitValue[1];
             }
         }

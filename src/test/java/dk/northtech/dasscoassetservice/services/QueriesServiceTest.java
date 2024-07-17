@@ -73,7 +73,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
             )))
         ));
 
-        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200);
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200, user);
 
         assertThat(assets.size()).isAtLeast(1);
         for (Asset asset : assets) {
@@ -136,7 +136,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
             )))
         ));
 
-        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries2, 200);
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries2, 200, user);
         assertThat(assets.size()).isAtLeast(2);
         int asset_nnadCount = 0;
         for (Asset asset1 : assets) {
@@ -148,6 +148,54 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assertThat(asset_nnadCount).isEqualTo(1); // updated twice, so there'll be at least three events for this asset.
         assertThat(auditedFound).isTrue();
         assertThat(notUpdatedAssetFound).isFalse();
+    }
+
+    @Test
+    public void testAccess() {
+        user.roles = new HashSet<>(Arrays.asList("READ_CLOSED_INST_USER", "READ_WOOP_USER", "READ_CLOSED_coll_USER")); // NOT allowed on WOOP.WOOP_coll_closed_USER collection.
+        List<QueriesReceived> queryCollectionWhere = new LinkedList<QueriesReceived>(Arrays.asList(
+                new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
+                        new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+                                new QueryWhere("asset_guid", Arrays.asList(
+                                        new QueryInner("CONTAINS", "a", QueryDataType.STRING)
+                                ))
+                        ))),
+                        new Query("Collection", new LinkedList<QueryWhere>(Arrays.asList(
+                                new QueryWhere("name", Arrays.asList(
+                                        new QueryInner("CONTAINS", "closed", QueryDataType.STRING)
+                                ))
+                        )))
+                )))
+        ));
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(queryCollectionWhere, 200, user);
+
+        assertThat(assets.size()).isEqualTo(1);
+        assertThat(assets.get(0).asset_guid).isEqualTo("asset_4");
+        assertThat(assets.get(0).collection).isEqualTo("CLOSED_coll");
+
+        List<QueriesReceived> queriesNoCollectionWhere = new LinkedList<QueriesReceived>(Arrays.asList(
+                new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
+                        new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+                                new QueryWhere("asset_guid", Arrays.asList(
+                                        new QueryInner("CONTAINS", "a", QueryDataType.STRING)
+                                ))
+                        )))
+                )))
+        ));
+
+        List<Asset> assets2 = this.queriesService.getAssetsFromQuery(queriesNoCollectionWhere, 200, user);
+        int assets3 = this.queriesService.getAssetCountFromQuery(queriesNoCollectionWhere, 200, user);
+
+        boolean WOOP_coll_closedNotExist = assets2.stream().anyMatch(asset -> asset.collection.equalsIgnoreCase("WOOP_coll_closed"));
+        assertThat(WOOP_coll_closedNotExist).isFalse();
+
+        boolean CLOSED_collExists = assets2.stream().anyMatch(asset -> asset.collection.equalsIgnoreCase("CLOSED_coll"));
+        assertThat(CLOSED_collExists).isTrue();
+
+        boolean WOOP_coll_openExists = assets2.stream().anyMatch(asset -> asset.collection.equalsIgnoreCase("WOOP_coll_open"));
+        assertThat(WOOP_coll_openExists).isTrue();
+
+        assertThat(assets2.size()).isEqualTo(assets3);
     }
 
     public Asset getTestAsset(String guid, String username, String institution, String workstation, String pipeline, String collection) {

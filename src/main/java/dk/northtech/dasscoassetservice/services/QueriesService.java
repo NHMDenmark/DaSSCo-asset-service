@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 @Service
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
-    private final Jdbi jdbi;
+    private Jdbi jdbi;
+    private RightsValidationService rightsValidationService;
 
     List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
     List<String> propertiesDigitiser = Arrays.asList("asset_created_by", "asset_deleted_by", "asset_updated_by", "audited_by");
@@ -29,11 +30,12 @@ public class QueriesService {
                 'dassco'
                     , $$
                          MATCH (a:Asset) ${asset:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a) ${collection:-}
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event)<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e)
                          ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${institution:-}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         ${instCollAccess:-}
                          OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
                          OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
@@ -100,13 +102,14 @@ public class QueriesService {
                 'dassco'
                     , $$
                          MATCH (a:Asset) ${asset:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a) ${collection:-}
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event)<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e)
                          ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
                          MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
                          MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${institution:-}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         ${instCollAccess:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
                          RETURN count(DISTINCT a) as count
@@ -116,8 +119,9 @@ public class QueriesService {
                   """;
 
     @Inject
-    public QueriesService(Jdbi jdbi) {
-    this.jdbi = jdbi;
+    public QueriesService(RightsValidationService rightsValidationService, Jdbi jdbi) {
+        this.rightsValidationService = rightsValidationService;
+        this.jdbi = jdbi;
     }
 
     public Map<String, List<String>> getNodeProperties() {
@@ -127,13 +131,22 @@ public class QueriesService {
         return properties;
     }
 
-    public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit) {
-        String query = unwrapQuery(queries, limit, true);
+    public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+        if (!checkRights(user)) {
+            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        }
+        String query = unwrapQuery(queries, limit, true, collectionsAccess);
         return jdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
     }
 
-    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit) {
-        String query = unwrapQuery(queries, limit, false);
+    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+        if (!checkRights(user)) {
+            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        }
+
+        String query = unwrapQuery(queries, limit, false, collectionsAccess);
         if (query == null || StringUtils.isBlank(query)) return new ArrayList<>();
 
         logger.info("Getting assets from query.");
@@ -157,11 +170,13 @@ public class QueriesService {
         return distinctAssets;
     }
 
-    public String unwrapQuery(List<QueriesReceived> queries, int limit, boolean count) {
+    public String unwrapQuery(List<QueriesReceived> queries, int limit, boolean count, Set<String> collectionAccess) {
         for (QueriesReceived received : queries) {
             String finalQuery;
             Map<String, String> whereMap = new HashMap<>();
             whereMap.put("limit", Integer.toString(limit));
+            String collectionString = "";
+            String instutionString = "";
 
             for (Query query: received.query) {
                 if (query.select.equalsIgnoreCase("Asset")) { // a
@@ -173,8 +188,7 @@ public class QueriesService {
                     if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
                 }
                 if (query.select.equalsIgnoreCase("Institution")) { // i
-                    String where = joinFields(query.where, "i");
-                    if (!StringUtils.isBlank(where)) whereMap.put("institution", "\nWHERE (" + where + ")");
+                    instutionString = joinFields(query.where, "i");
                 }
                 if (query.select.equalsIgnoreCase("Workstation")) { // w
                     String where = joinFields(query.where, "w");
@@ -185,13 +199,30 @@ public class QueriesService {
                     if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
                 }
                 if (query.select.equalsIgnoreCase("Collection"))  { // c
-                    String where = joinFields(query.where, "c");
-                    if (!StringUtils.isBlank(where)) whereMap.put("collection", "\nWHERE (" + where + ")");
+                    collectionString = joinFields(query.where, "c");
                 }
                 if (query.select.equalsIgnoreCase("Specimen")) { // s
                     String where = joinFields(query.where, "s");
                     if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
                 }
+            }
+            if (collectionAccess != null) {
+                String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
+                StringJoiner orJoiner = new StringJoiner(" or ");
+
+                if (!StringUtils.isBlank(instutionString)) {
+                    orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
+                }
+                if (!StringUtils.isBlank(collectionString)) {
+                    orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
+                }
+                if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
+                    orJoiner.add("(c.name IN [" + collections + "])");
+                }
+                whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
+            } else {
+                logger.warn("User does not have access to any collections, and no assets will be returned.");
+                return null;
             }
 
             StringSubstitutor substitutor = new StringSubstitutor(whereMap);
@@ -295,5 +326,15 @@ public class QueriesService {
 
     public String deleteSavedQuery(String title, String username) {
         return jdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
+    }
+
+    public boolean checkRights(User user) {
+        Set<String> roles = user.roles;
+        if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.SERVICE_USER.roleName)
+                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            return true;
+        }
+        return false;
     }
 }
