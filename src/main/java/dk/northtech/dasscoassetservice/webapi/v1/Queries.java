@@ -58,9 +58,21 @@ public class Queries {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit) {
-        System.out.println(queries);
-        return this.queriesService.unwrapQuery(Arrays.asList(queries), limit);
+    public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
+        User user = UserMapper.from(securityContext);
+        return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user);
+    }
+
+    @POST
+    @Path("/assetcount")
+    @Operation(summary = "Get the number of assets for the query", description = "Get the count for the number of assets matching the query")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public int getAssetCount(QueriesReceived[] queries, @Context SecurityContext securityContext) {
+        User user = UserMapper.from(securityContext);
+        return this.queriesService.getAssetCountFromQuery(Arrays.asList(queries), 10000, user);
     }
 
     @POST

@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -8,9 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class RightsValidationService {
@@ -156,5 +155,50 @@ public class RightsValidationService {
 
     public void checkRoles(Set<Role> roles, Set<String> userRoles) {
 
+    }
+
+    public Set<String> getInstitutionsReadRights(Set<String> userRoles) {
+        Set<String> institutionNames = new HashSet<>();
+        List<Institution> institutionList = this.institutionService.listInstitutions();
+        for (Institution institution : institutionList) {
+            if (!institution.roleRestriction().isEmpty()) { // institution has role restrictions
+                for (Role role : institution.roleRestriction()) {
+                    if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
+                        institutionNames.add(institution.name());
+                    }
+                }
+            } else {
+                institutionNames.add(institution.name()); // no restrictions, everyone can access yay
+            }
+        }
+        return institutionNames;
+    }
+
+    public Set<String> getCollectionsReadRights(Set<String> userRoles) {
+        Set<String> collectionNames = new HashSet<>();
+        List<Collection> collectionList = this.collectionService.getAll();
+        for (Collection collection : collectionList) {
+            if (!collection.roleRestrictions().isEmpty()) { // collection has role restrictions
+                for (Role role : collection.roleRestrictions()) {
+                    if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
+                        collectionNames.add(collection.name());
+                    }
+                }
+            } else {
+                Optional<Institution> institution = this.institutionService.getIfExists(collection.institution());
+                if (institution.isPresent()) { // collection is role-less, so we need to check that the user can access the institution
+                    if (institution.get().roleRestriction().isEmpty()) { // institute and collection is free-for-all
+                        collectionNames.add(collection.name());
+                    } else {
+                        for (Role role : institution.get().roleRestriction()) { // checking the user can access the institution
+                            if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
+                                collectionNames.add(collection.name());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return collectionNames;
     }
 }

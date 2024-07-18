@@ -5,8 +5,9 @@
       <button mat-raised-button class="saved-searches-btn" (click)="saveSearch()">Save Search</button>
       <button mat-raised-button class="saved-searches-btn" (click)="savedSearchesDialog()">Saved Searches</button>
     </div>
-    <div *ngIf="queryTitle">
-      <button mat-raised-button class="saved-searches-btn" (click)="updateSearch()">Update Search</button>
+
+    <div *ngIf="queryData && queryData.title">
+      <button mat-raised-button class="saved-searches-btn" type="submit" (click)="updateSearch()">Update Search</button>
       <mat-form-field appearance="outline">
         <mat-label>Query Title</mat-label>
         <input matInput [(ngModel)]="queryUpdatedTitle">
@@ -30,7 +31,17 @@
     </mat-form-field>
   </div>
 
-  <div *ngIf="dataSource.data.length > 0" class="table">
+  <div class="table">
+    <div *ngIf="dataSource.data.length > 0">
+      <div class="count-div">{{dataSource.data.length}} /
+        <div *ngIf="loadingAssetCount; else showCount;">
+          <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+        </div>
+        <ng-template #showCount>
+          {{assetCount}}
+        </ng-template>
+      </div>
+    </div>
     <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
 
       <ng-container matColumnDef="asset_guid">
@@ -105,9 +116,23 @@
         <td mat-cell *matCellDef="let element"> {{element.workstation}} </td>
       </ng-container>
 
-      <ng-container matColumnDef="creation_date">
+      <ng-container matColumnDef="timestamp">
         <th mat-header-cell *matHeaderCellDef>Created Date</th>
         <td mat-cell *matCellDef="let element"> {{element.created_date | date}}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="events">
+        <th mat-header-cell *matHeaderCellDef>Events</th>
+        <td mat-cell *matCellDef="let element">
+          <div *ngIf="element.events">
+            <button mat-button [matMenuTriggerFor]="menu">Events</button>
+            <mat-menu #menu="matMenu">
+              <div *ngFor="let event of element.events; index as i" mat-menu-item class="mat-menu-item-{{i > 0}}">
+                <div>{{event.event}}
+                <br>{{event.user}}, {{event.timeStamp | date:'dd/MM-yyyy HH:mm'}}</div>
+              </div>
+            </mat-menu>
+          </div>
       </ng-container>
 
       <ng-container matColumnDef="user_name">
@@ -117,6 +142,12 @@
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr class="data-rows" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="15">No data available</td>
+      </tr>
     </table>
+
+    <mat-paginator [pageSizeOptions]="[10, 25, 40, 80]" aria-label="Select page of assets"></mat-paginator>
   </div>
 </div>
