@@ -44,7 +44,6 @@ public class Queries {
     @Path("/nodes")
     @Operation(summary = "Get node properties", description = "Collects all the properties of all the Nodes.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Map<String, List<String>> getNodeProperties() {
@@ -55,7 +54,6 @@ public class Queries {
     @Path("/{limit}")
     @Operation(summary = "Get assets from query", description = "Selects all assets based on the received queries.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
@@ -67,7 +65,6 @@ public class Queries {
     @Path("/assetcount")
     @Operation(summary = "Get the number of assets for the query", description = "Get the count for the number of assets matching the query")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public int getAssetCount(QueriesReceived[] queries, @Context SecurityContext securityContext) {
@@ -79,7 +76,6 @@ public class Queries {
     @Path("/save")
     @Operation(summary = "Save query to user", description = "Saves a query and links it to the user.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public SavedQuery saveQuery(SavedQuery savedQuery, @Context SecurityContext securityContext) {
@@ -91,7 +87,6 @@ public class Queries {
     @Path("/saved")
     @Operation(summary = "Gets the user's saved queries", description = "Gets the queries the user has saved.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<SavedQuery> getSavedQueries(@Context SecurityContext securityContext) {
@@ -101,12 +96,11 @@ public class Queries {
 
     @POST
     @Path("/saved/update/{title}")
-    @Operation(summary = "Gets the user's saved queries", description = "Gets the queries the user has saved.")
+    @Operation(summary = "Updates a user's saved query", description = "Updates a query the user has saved.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public SavedQuery getSavedQueries(SavedQuery newQuery, @Context SecurityContext securityContext, @PathParam("title") String prevTitle) {
+    public SavedQuery updateSavedQuery(SavedQuery newQuery, @Context SecurityContext securityContext, @PathParam("title") String prevTitle) {
         User user = UserMapper.from(securityContext);
         return this.queriesService.updateSavedQuery(prevTitle, newQuery, user.username);
     }
@@ -115,7 +109,6 @@ public class Queries {
     @Path("/saved/{title}")
     @Operation(summary = "Deletes a user's saved query", description = "Deletes the user's query from the title.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String deleteSavedQuery(@Context SecurityContext securityContext, @PathParam("title") String prevTitle) {

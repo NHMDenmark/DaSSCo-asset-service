@@ -220,9 +220,6 @@ public class QueriesService {
                     orJoiner.add("(c.name IN [" + collections + "])");
                 }
                 whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
-            } else {
-                logger.warn("User does not have access to any collections, and no assets will be returned.");
-                return null;
             }
 
             StringSubstitutor substitutor = new StringSubstitutor(whereMap);
