@@ -388,50 +388,27 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
 
-/*
+
     @Test
-    void readListAssetGroup(){
-        Asset firstAsset = this.getTestAsset("readList-service");
-        firstAsset.institution = "role-institution-1";
-        firstAsset.collection = "role-collection-1";
-        firstAsset.pipeline = "ri1_p1";
-        firstAsset.workstation = "ri1_w1";
-
-        Asset secondAsset = this.getTestAsset("readList-service-2");
-        secondAsset.institution = "role-institution-2";
-        secondAsset.collection = "role-collection-2";
-        secondAsset.pipeline = "ri2_p1";
-        secondAsset.workstation = "ri2_w1";
-
+    void readListAssetGroupServiceUser(){
         user.roles.add("service-user");
-        assetService.persistAsset(firstAsset, user, 1);
-        assetService.persistAsset(secondAsset, user, 1);
-
-        AssetGroup assetGroup = new AssetGroup();
-        AssetGroup secondAssetGroup = new AssetGroup();
-        assetGroup.assets = new ArrayList<>();
-        secondAssetGroup.assets = new ArrayList<>();
-
-        assetGroup.group_name = "test-group";
-        secondAssetGroup.group_name = "test-group-2";
-        assetGroup.assets.add(firstAsset.asset_guid);
-        secondAssetGroup.assets.add(secondAsset.asset_guid);
-
-        assetGroupService.createAssetGroup(assetGroup, user);
-        assetGroupService.createAssetGroup(secondAssetGroup, user);
 
         List<AssetGroup> found = assetGroupService.readListAssetGroup(user);
-        assertThat(found.size()).isEqualTo(2);
+        assertThat(found.size()).isEqualTo(3);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
-        assetGroupService.deleteAssetGroup(secondAssetGroup.group_name, user);
-        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(0);
+        user.roles.clear();
+    }
+
+    @Test
+    void readListAssetGroupRole1(){
+        User newUser = new User("role-1-user");
+        List<AssetGroup> found = assetGroupService.readListAssetGroup(newUser);
+        assertThat(found.size()).isEqualTo(1);
         user.roles.clear();
     }
 
 
-*/
+
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_pid = guid + "-pid";
