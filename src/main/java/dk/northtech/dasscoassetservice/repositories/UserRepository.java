@@ -40,6 +40,44 @@ public interface UserRepository extends SqlObject {
         return this.isUserOwnerOfAssetGroupInternal(groupName, username);
     }
 
+    @Transaction
+    default boolean userHasAccessToAsset(String user, String assetGuid){
+        boilerplate();
+        return this.userHasAccessToAssetInternal(user, assetGuid);
+    }
+
+    default boolean userHasAccessToAssetInternal(String user, String assetGuid){
+        String sql = """
+                SELECT * FROM ag_catalog.cypher(
+                    'dassco'
+                        , $$
+                        MATCH (u:User {name: $user_name})
+                        MATCH (a:Asset {asset_guid: $asset_guid})
+                        MATCH (ag:Asset_Group)-[:CONTAINS]->(a)
+                        MATCH (u)<-[:HAS_ACCESS]-(ag)
+                        RETURN COUNT(*) > 0 AS hasAccess
+                    $$
+                    , #params) as (hasAccess agtype);
+                """;
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("user_name", user);
+        builder.add("asset_guid", assetGuid);
+
+        try {
+            return withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                return handle.createQuery(sql)
+                        .bind("params", agtype)
+                        .mapTo(Boolean.class)
+                        .findOne()
+                        .orElse(false);
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
     default boolean getUserByUsernameInternal(String username){
         String sql = """
                 SELECT * FROM ag_catalog.cypher(

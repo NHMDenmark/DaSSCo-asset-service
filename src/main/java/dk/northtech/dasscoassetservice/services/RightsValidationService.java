@@ -99,6 +99,14 @@ public class RightsValidationService {
         }
     }
 
+    public void checkReadRightsThrowing(User user, String institutionName, String collectionName, String assetGuid){
+        boolean hasRight = checkRights(user, institutionName, collectionName, assetGuid, false);
+        if(!hasRight) {
+            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}",user.username,assetGuid,collectionName,institutionName);
+            throw new DasscoIllegalActionException();
+        }
+    }
+
     public boolean checkReadRightsThrowing(User user, AssetGroup assetGroup){
         boolean hasRight = checkRights(user, assetGroup);
         if (!hasRight) {
@@ -130,6 +138,52 @@ public class RightsValidationService {
             || roles.contains(InternalRole.DEVELOPER.roleName)) {
             return true;
         }
+        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
+        if (collectionOpt.isEmpty()) {
+            throw new DasscoIllegalActionException("Collection " + collectionName + " does not exist within institution " + institutionName);
+        }
+        Set<String> allUserRoles = getUserRoles(user.roles);
+        Collection collection = collectionOpt.get();
+        allUserRoles.forEach(System.out::println);
+        if (!collection.roleRestrictions().isEmpty()) {
+            for (Role r : collection.roleRestrictions()) {
+                System.out.println((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name());
+                if(allUserRoles.contains((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name())){
+                    return true;
+                }
+            }
+            return false;
+        }
+        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
+        if(ifExists.isEmpty()) {
+            throw new RuntimeException("This should not happen :^)");
+        }
+        Institution institution = ifExists.get();
+        if (!institution.roleRestriction().isEmpty()) {
+            for (Role r : institution.roleRestriction()) {
+                if(allUserRoles.contains((write?WRITE_ROLE_PREFIX: READ_ROLE_PREFIX)+r.name())){
+                    return true;
+                }
+            }
+            return false;
+        }
+        //If no roles exists everyone has access
+        return true;
+    }
+
+    public boolean checkRights(User user, String institutionName, String collectionName, String assetGuid, boolean write){
+        Set<String> roles = user.roles;
+        if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.SERVICE_USER.roleName)
+                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            return true;
+        }
+
+        boolean hasAccess = jdbi.onDemand(UserRepository.class).userHasAccessToAsset(user.username, assetGuid);
+        if (hasAccess){
+            return true;
+        }
+
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
         if (collectionOpt.isEmpty()) {
             throw new DasscoIllegalActionException("Collection " + collectionName + " does not exist within institution " + institutionName);

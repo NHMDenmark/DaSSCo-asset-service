@@ -809,7 +809,7 @@ public class AssetService {
         Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
         if (optionalAsset.isPresent()){
             Asset found = optionalAsset.get();
-            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection);
+            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
         }
         return optionalAsset;
     }
