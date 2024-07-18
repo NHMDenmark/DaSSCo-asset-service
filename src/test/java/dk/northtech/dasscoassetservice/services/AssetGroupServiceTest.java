@@ -337,73 +337,50 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.clear();
     }
 
-    /*
+
     @Test
     void testReadAssetGroupServiceUser(){
-        Asset firstAsset = this.getTestAsset("readGroup-service");
-        firstAsset.institution = "role-institution-1";
-        firstAsset.collection = "role-collection-1";
-        firstAsset.pipeline = "ri1_p1";
-        firstAsset.workstation = "ri1_w1";
-
         user.roles.add("service-user");
-        assetService.persistAsset(firstAsset, user, 1);
 
+        List<Asset> found = assetGroupService.readAssetGroup("ag-1", user);
+        assertThat(found.size()).isEqualTo(3);
+
+        user.roles.clear();
+    }
+
+    @Test
+    void testReadAssetGroupRole1(){
+        user.roles.add("READ_role-1");
         AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "test-1";
         assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
 
-        assetGroup.group_name = "test-group";
-        assetGroup.assets.add(firstAsset.asset_guid);
+        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
+        assertThat(assetGroupList.size()).isEqualTo(0);
 
         assetGroupService.createAssetGroup(assetGroup, user);
 
-        List<Asset> found = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assetGroupList = assetGroupService.readListAssetGroup(user);
+        assertThat(assetGroupList.size()).isEqualTo(1);
+        List<Asset> found = assetGroupService.readAssetGroup("test-1", user);
         assertThat(found.size()).isEqualTo(1);
 
         assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
-        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
+        assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
         user.roles.clear();
     }
+
 
     @Test
     void testReadAssetGroupForbidden(){
-        Asset firstAsset = this.getTestAsset("readGroup-role1");
-        firstAsset.institution = "role-institution-1";
-        firstAsset.collection = "role-collection-1";
-        firstAsset.pipeline = "ri1_p1";
-        firstAsset.workstation = "ri1_w1";
+        user.roles.add("READ_role-2");
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup("ag-1", user));
 
-        user.roles.add("service-user");
-        assetService.persistAsset(firstAsset, user, 1);
-
-        AssetGroup assetGroup = new AssetGroup();
-        assetGroup.assets = new ArrayList<>();
-
-        assetGroup.group_name = "test-group";
-        assetGroup.assets.add(firstAsset.asset_guid);
-
-        user.roles.clear();
-        user.roles.add("READ_test-role-1");
-
-        assetGroupService.createAssetGroup(assetGroup, user);
-
-        List<Asset> found = assetGroupService.readAssetGroup(assetGroup.group_name, user);
-        assertThat(found.size()).isEqualTo(1);
-
-        user.roles.clear();
-        user.roles.add("READ_test-role-2");
-        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
-
-        user.roles.clear();
-        user.roles.add("READ_test-role-1");
-
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
-        List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(0);
         user.roles.clear();
     }
-
 
     @Test
     void testReadAssetGroupGroupDoesNotExist(){
@@ -411,6 +388,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
 
+/*
     @Test
     void readListAssetGroup(){
         Asset firstAsset = this.getTestAsset("readList-service");
