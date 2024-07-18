@@ -165,7 +165,10 @@ public class QueriesService {
 
         distinctAssets.stream()
                 .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
-                .forEach(asset -> asset.events = jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
+                .forEach(asset -> {
+                    System.out.println("setting events to: " + jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
+                    asset.events = jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
+                });
 
         return distinctAssets;
     }
