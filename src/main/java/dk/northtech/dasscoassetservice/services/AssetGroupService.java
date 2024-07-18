@@ -141,9 +141,15 @@ public class AssetGroupService {
         // Check if User has access to the asset Group:
         rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
 
-        // Check if user has access to the assets they want to add:
-        for (Asset asset : assets){
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        // Check if user has access to the assets they want to add (remember, if shared asset group they need write role):
+        if (assetGroupOptional.get().hasAccess.size() > 1){
+            for (Asset asset : assets){
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            }
+        } else {
+            for (Asset asset : assets){
+                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            }
         }
 
         // Everything ok! Proceed to the adding of the assets from the Asset Group:

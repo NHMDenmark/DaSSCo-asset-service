@@ -428,6 +428,111 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
 
+    @Test
+    void testAddAssetsToAssetGroupReadRole(){
+        user.roles.add("READ_role-1");
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        List<String> assetsToAdd = new ArrayList<>();
+        assetsToAdd.add("asset-2");
+
+        assetGroupService.addAssetsToAssetGroup(assetGroup.group_name, assetsToAdd, user);
+        assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(2);
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+
+        user.roles.clear();
+    }
+
+    @Test
+    void testAddAssetsToAssetGroupWriteRole(){
+        user.roles.add("WRITE_role-1");
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+        assetGroup.hasAccess.add("service-user");
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        List<String> assetsToAdd = new ArrayList<>();
+        assetsToAdd.add("asset-2");
+
+        assetGroupService.addAssetsToAssetGroup(assetGroup.group_name, assetsToAdd, user);
+        assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(2);
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+
+        user.roles.clear();
+    }
+
+    @Test
+    void failTestAddAssetsToAssetGroupForbidden(){
+        user.roles.add("READ_role-1");
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<String> assets = new ArrayList<>();
+        assets.add("asset-2");
+        user.roles.clear();
+        user.roles.add("READ_role-2");
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.addAssetsToAssetGroup(assetGroup.group_name, assets, user));
+
+        user.roles.clear();
+    }
+
+    @Test
+    void testFailAddAssetsToAssetGroupNoBody(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.addAssetsToAssetGroup("someGroup", null, user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body!");
+    }
+
+    @Test
+    void testFailAddAssetsToAssetGroupAssetDoesNotExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.addAssetsToAssetGroup("someGroup", new ArrayList<>(), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
+
+    @Test
+    void testFailAddAssetsToAssetGroupAssetsIsEmpty(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.addAssetsToAssetGroup("ag-1", new ArrayList<>(), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset Group has to have assets!");
+    }
+
+    @Test
+    void testFailAddAssetsToAssetGroupAssetsNotFound(){
+        List<String> assets = new ArrayList<>();
+        assets.add("asset-1");
+        assets.add("non-existent");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.addAssetsToAssetGroup("ag-1", assets, user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
+    }
+
+    @Test
+    void testRemoveAssetsFromAssetGroupReadRole(){
+
+    }
+
 
 
     public Asset getTestAsset(String guid) {
