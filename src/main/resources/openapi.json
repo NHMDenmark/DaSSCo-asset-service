@@ -586,6 +586,60 @@
         } ]
       }
     },
+    "/v1/assetgroups/revokeAccess/{groupName}" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Revoke Access to Asset Group",
+        "description" : "Revokes access to other users to the Asset Group.",
+        "operationId" : "revokeAccessToAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetmetadata/{assetGuid}/assetreceived" : {
       "post" : {
         "tags" : [ "Asset Metadata" ],

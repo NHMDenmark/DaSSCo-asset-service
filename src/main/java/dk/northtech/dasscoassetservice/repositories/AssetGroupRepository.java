@@ -90,6 +90,12 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
+    default Optional<AssetGroup> revokeAccessToAssetGroup(List<String> users, String groupName){
+        boilerplate();
+        return revokeAccessToAssetGroupInternal(users, groupName);
+    }
+
+    @Transaction
     default List<String> getHasAccess(String assetGroup){
         boilerplate();
         return getHasAccessInternal(assetGroup);
@@ -416,8 +422,6 @@ public interface AssetGroupRepository extends SqlObject {
 
     default Optional<AssetGroup> grantAccessToAssetGroupInternal(List<String> users, String groupName){
 
-        // TODO: Match AG, Match Users, create relation U-HasAccess-AG
-
         String userListAsString = users.stream()
                 .map(asset -> "'" + asset + "'")
                 .collect(Collectors.joining(", "));
@@ -447,6 +451,38 @@ public interface AssetGroupRepository extends SqlObject {
             throw new RuntimeException(e);
         }
 
+        return readAssetGroupInternal(groupName);
+    }
+
+    default Optional<AssetGroup> revokeAccessToAssetGroupInternal(List<String> users, String groupName){
+        String userListAsString = users.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                MATCH (u: User)
+                WHERE u.name IN [%s]
+                MATCH (ag:Asset_Group { name: $group_name })
+                MATCH (u)<-[r:HAS_ACCESS]-(ag)
+                DELETE r
+                $$, #params) as (ag agtype);
+                """.formatted(userListAsString);
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
         return readAssetGroupInternal(groupName);
     }
 }

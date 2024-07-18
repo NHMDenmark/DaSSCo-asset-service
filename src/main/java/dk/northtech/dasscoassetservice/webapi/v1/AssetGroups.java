@@ -117,4 +117,16 @@ public class AssetGroups {
     public AssetGroup grantAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext){
      return this.assetGroupService.grantAccessToAssetGroup(groupName, users, UserMapper.from(securityContext));
     }
+
+    @PUT
+    @Path("/revokeAccess/{groupName}")
+    @Operation(summary = "Revoke Access to Asset Group", description = "Revokes access to other users to the Asset Group.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public AssetGroup revokeAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext){
+     return this.assetGroupService.revokeAccessToAssetGroup(groupName, users, UserMapper.from(securityContext));
+    }
 }

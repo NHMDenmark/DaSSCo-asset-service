@@ -226,5 +226,31 @@ public class AssetGroupService {
         return optAssetGroup.get();
     }
 
+    public AssetGroup revokeAccessToAssetGroup(String groupName, List<String> users, User user){
 
+        if (users == null || users.isEmpty()){
+            throw new IllegalArgumentException("There needs to be a list of Users");
+        }
+
+        // Check if all the users exist!
+        for (String username : users){
+            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
+            }
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
+        Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).revokeAccessToAssetGroup(users, groupName);
+        if (optAssetGroup.isEmpty()){
+            throw new IllegalArgumentException("There has been an error updating the asset");
+        }
+
+        return optAssetGroup.get();
+    }
 }
