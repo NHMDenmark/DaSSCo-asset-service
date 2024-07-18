@@ -22,8 +22,9 @@ import {CacheService} from "../../services/cache.service";
 export class QueriesComponent implements OnInit, AfterViewInit {
   @ViewChild('queryHandlerContainer', { read: ViewContainerRef, static: true }) queryHandlerEle: ViewContainerRef | undefined;
   @ViewChild(MatPaginator) paginator: MatPaginator | undefined;
-  displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
-    'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'timestamp', 'events', 'user_name'];
+  // displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
+  //   'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'timestamp', 'events', 'user_name'];
+ displayedColumns: string[  ] = ['asset_guid', 'institution_name', 'collection_name', 'file_formats', 'timestamp', 'events'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
