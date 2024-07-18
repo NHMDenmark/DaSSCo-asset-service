@@ -37,8 +37,8 @@ public interface CollectionRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MERGE (i:Institution {name: $institution_name})
-                            CREATE (c:Collection {name: $collection_name})
-                            MERGE (i)<-[:USED_BY]-(c)
+                            MERGE (c:Collection {name: $collection_name})
+                            MERGE (c)-[:USED_BY]->(i)
                             RETURN i.name, c.name
                         $$
                         , #params) as (institution_name agtype, collection_name agtype);
@@ -58,7 +58,6 @@ public interface CollectionRepository extends SqlObject {
                         .execute();
                 RoleRepository roleRepository = handle.attach(RoleRepository.class);
                 roleRepository.setRoleRestrictionCollection(collection, new Institution(collection.institution()), collection.roleRestrictions());
-
                 return handle;
             });
         } catch (Exception e) {
