@@ -390,7 +390,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
 
     @Test
-    void readListAssetGroupServiceUser(){
+    void testReadListAssetGroupServiceUser(){
         user.roles.add("service-user");
 
         List<AssetGroup> found = assetGroupService.readListAssetGroup(user);
@@ -400,11 +400,32 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     }
 
     @Test
-    void readListAssetGroupRole1(){
+    void testReadListAssetGroupRole1(){
         User newUser = new User("role-1-user");
         List<AssetGroup> found = assetGroupService.readListAssetGroup(newUser);
         assertThat(found.size()).isEqualTo(1);
         user.roles.clear();
+    }
+
+    // Delete Asset Group is used extensively in these unit tests. Won't test it explicitly.
+
+    @Test
+    void failTestDeleteAssetGroupForbidden(){
+        user.roles.add("service-user");
+        List<AssetGroup> found = assetGroupService.readListAssetGroup(user);
+        assertThat(found.size()).isEqualTo(3);
+
+        // Deleting does nothing:
+        assetGroupService.deleteAssetGroup("ag-1", user);
+
+        found = assetGroupService.readListAssetGroup(user);
+        assertThat(found.size()).isEqualTo(3);
+    }
+
+    @Test
+    void failTestDeleteAssetGroupGroupDoesNotExist(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.deleteAssetGroup("failing", user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
 
 
