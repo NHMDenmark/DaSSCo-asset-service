@@ -84,6 +84,12 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
+    default Optional<AssetGroup> grantAccessToAssetGroup(List<String> users, String groupName){
+        boilerplate();
+        return grantAccessToAssetGroupInternal(users, groupName);
+    }
+
+    @Transaction
     default List<String> getHasAccess(String assetGroup){
         boilerplate();
         return getHasAccessInternal(assetGroup);
@@ -406,5 +412,41 @@ public interface AssetGroupRepository extends SqlObject {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    default Optional<AssetGroup> grantAccessToAssetGroupInternal(List<String> users, String groupName){
+
+        // TODO: Match AG, Match Users, create relation U-HasAccess-AG
+
+        String userListAsString = users.stream()
+                .map(asset -> "'" + asset + "'")
+                .collect(Collectors.joining(", "));
+
+        String sql = """
+                SELECT * FROM ag_catalog.cypher('dassco', $$
+                MATCH (u: User)
+                WHERE u.name IN [%s]
+                MATCH (ag:Asset_Group { name: $group_name })
+                MERGE (u)<-[:HAS_ACCESS]-(ag)
+                return ag
+                $$, #params) as (ag agtype);
+                """.formatted(userListAsString);
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
+
+        try {
+            withHandle(handle -> {
+                Agtype agtype = AgtypeFactory.create(builder.build());
+                handle.createUpdate(sql)
+                        .bind("params", agtype)
+                        .execute();
+
+                return handle;
+            });
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
+        return readAssetGroupInternal(groupName);
     }
 }

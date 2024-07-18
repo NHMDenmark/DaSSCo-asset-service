@@ -108,8 +108,8 @@ public class RightsValidationService {
         return true;
     }
 
-    public void checkWriteRightsThrowing(User user, AssetGroup assetGroup){
-        boolean hasRight = checkWriteRights(user, assetGroup);
+    public void checkAssetGroupOwnershipThrowing(User user, AssetGroup assetGroup){
+        boolean hasRight = checkAssetGroupOwnership(user, assetGroup);
         if (!hasRight) {
             LOGGER.warn("User {} does not have write access to assetGroup {}",user.username,assetGroup.group_name);
             throw new DasscoIllegalActionException("User is not the owner of this asset group.");
@@ -178,7 +178,7 @@ public class RightsValidationService {
         return false;
     }
 
-    public boolean checkWriteRights(User user, AssetGroup assetGroup){
+    public boolean checkAssetGroupOwnership(User user, AssetGroup assetGroup){
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
                 || roles.contains(InternalRole.SERVICE_USER.roleName)
