@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
+import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,8 +18,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +51,6 @@ public class AssetApi {
         this.assetService = assetService;
         this.rightsValidationService = rightsValidationService;
     }
-
-
 
     @GET
     @Operation(summary = "Get Assets", description = "Returns a list of assets.")
@@ -160,4 +161,17 @@ public class AssetApi {
         return assetService.listRestrictedAccess();
     }
 
+    @POST
+    @Path("/readaccess")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
+    public void checkAccess(@QueryParam("asset_guid") String asset_guid
+            , @Context SecurityContext securityContext) {
+        Optional<Asset> assetOpt = assetService.getAsset(asset_guid);
+        if(assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("There is no such asset");
+        }
+        Asset asset = assetOpt.get();
+        rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
+    }
 }
