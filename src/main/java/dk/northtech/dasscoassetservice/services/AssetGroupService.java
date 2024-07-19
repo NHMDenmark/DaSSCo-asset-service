@@ -11,8 +11,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.awt.color.ICC_ColorSpace;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class AssetGroupService {
@@ -175,6 +174,9 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset Group has to have assets!");
         }
 
+        Set<String> assetSet = new HashSet<>(assetList); // Keep unique.
+        assetList = new ArrayList<>(assetSet);
+
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
@@ -183,9 +185,11 @@ public class AssetGroupService {
         // Check if User has access to the asset Group:
         rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
 
-        // Check if user has access to the assets they want to remove:
-        for (Asset asset : assets){
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        // Check if list of assets from asset group and list of assets from frontend are equal: Delete Asset Group if they are:
+        Set<String> assetGroupAssets = new HashSet<>(assetGroupOptional.get().assets);
+        if (assetGroupAssets.equals(assetSet)){
+            jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName, user);
+            return new AssetGroup();
         }
 
         // Everything ok! Proceed to the deletion of the assets from the Asset Group:
@@ -226,7 +230,7 @@ public class AssetGroupService {
 
         Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).grantAccessToAssetGroup(users, groupName);
         if (optAssetGroup.isEmpty()){
-            throw new IllegalArgumentException("There has been an error updating the asset");
+            throw new IllegalArgumentException("There has been an error updating the asset group");
         }
 
         return optAssetGroup.get();

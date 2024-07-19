@@ -588,8 +588,8 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     }
 
     @Test
-    void failTestRemoveAssetsToAssetGroupForbidden(){
-        User user = new User("failTestRemoveAssetsToAssetGroupForbidden");
+    void testRemoveAssetsDeletesGroup(){
+        User user = new User("testRemoveAssetsDeletesGroup");
         user.roles.add("READ_role-1");
         AssetGroup assetGroup = new AssetGroup();
         assetGroup.group_name = "new-group";
@@ -600,15 +600,17 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         assetGroupService.createAssetGroup(assetGroup, user);
 
-        List<String> assets = new ArrayList<>();
-        assets.add("asset-2");
-        user.roles.clear();
-        user.roles.add("READ_role-2");
-        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.removeAssetsFromAssetGroup(assetGroup.group_name, assets, user));
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(2);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        List<String> assetsToRemove = new ArrayList<>();
+        assetsToRemove.add("asset-2");
+        assetsToRemove.add("asset-1");
+
+        assetGroupService.removeAssetsFromAssetGroup(assetGroup.group_name, assetsToRemove, user);
+
+        assertThat(assetGroupService.readListAssetGroup(user).size()).isEqualTo(0);
     }
-
 
     @Test
     void testFailRemoveAssetsToAssetGroupNoBody(){
@@ -637,8 +639,139 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
     }
 
-    // TODO:
-    // Create tests for give access and revoke access:
+    @Test
+    void testGrantAccessServiceUser(){
+        User user = new User("testGrantAccessServiceUser");
+        user.roles.add("service-user");
+
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        User newUser = new User("role-2-user");
+        user.roles.add("READ_role-2");
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, newUser));
+
+        List<String> userList = new ArrayList<>();
+        userList.add("role-2-user");
+
+        assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, user);
+        // Now the second user has access =)
+        assets = assetGroupService.readAssetGroup(assetGroup.group_name, newUser);
+        assertThat(assets.size()).isEqualTo(1);
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+    }
+
+    @Test
+    void testGrantAccessWriteRole1(){
+        User user = new User("testGrantAccessWriteRole1");
+        user.roles.add("WRITE_role-1");
+
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        User newUser = new User("role-2-user");
+        user.roles.add("READ_role-2");
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, newUser));
+
+        List<String> userList = new ArrayList<>();
+        userList.add("role-2-user");
+
+        assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, user);
+        // Now the second user has access =)
+        assets = assetGroupService.readAssetGroup(assetGroup.group_name, newUser);
+        assertThat(assets.size()).isEqualTo(1);
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+    }
+
+    @Test
+    void failTestGrantAccessReadRole1(){
+        User user = new User("failTestGrantAccessReadRole1");
+        user.roles.add("READ_role-1");
+
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        List<String> userList = new ArrayList<>();
+        userList.add("role-2-user");
+
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, user));
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+    }
+
+    @Test
+    void failTestGrantAccessNotTheOwner(){
+        User user = new User("failTestGrantAccessNotTheOwner");
+        user.roles.add("WRITE_role-1");
+
+        AssetGroup assetGroup = new AssetGroup();
+        assetGroup.group_name = "new-group";
+        assetGroup.assets = new ArrayList<>();
+        assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+
+        List<Asset> assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
+        assertThat(assets.size()).isEqualTo(1);
+
+        User newUser = new User("role-1-user");
+        newUser.roles.add("WRITE_role-1");
+        List<String> userList = new ArrayList<>();
+        userList.add("role-1-user");
+
+        assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, newUser));
+
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+    }
+
+    @Test
+    void failGrantAccessNoUsers(){
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.grantAccessToAssetGroup("", null, null));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("There needs to be a list of Users");
+    }
+
+    @Test
+    void failGrantAccessNoUserFound(){
+        List<String> users = new ArrayList<>();
+        users.add("non-existent-user");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.grantAccessToAssetGroup("", users, null));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more users to share the Asset Group were not found");
+    }
+
+    @Test
+    void failGrantAccessNoAssetGroupFound(){
+        List<String> users = new ArrayList<>();
+        users.add("role-1-user");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.grantAccessToAssetGroup("non-existent-group", users, null));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
 
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
@@ -655,12 +788,4 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         asset.updateUser = "Basviola";
         return asset;
     }
-
-    // TODO:
-    // When removing assets from the asset group, if you remove one by one all of them, in the end there's an issue.
-    // CHECK WHAT IS IT.
-    // TODO: CHECK also what happens when a User has more than one asset group (onwership method in the repository!)
-    // I think something fails there.
-
-
 }
