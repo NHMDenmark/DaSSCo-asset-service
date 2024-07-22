@@ -309,14 +309,13 @@ public interface AssetGroupRepository extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                    , $$
-                       MATCH (ag:Asset_Group{name:$group_name})-[:MADE_BY]->(u:User {name: $user_name})
+                       MATCH (ag:Asset_Group{name:$group_name})
                        DETACH DELETE ag
                    $$
                 , #params) as (ag agtype);
                 """;
 
         AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-        builder.add("user_name", user.username);
 
         try {
             withHandle(handle -> {

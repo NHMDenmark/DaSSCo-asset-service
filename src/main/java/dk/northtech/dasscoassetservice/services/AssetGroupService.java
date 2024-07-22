@@ -115,6 +115,8 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
 
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
         jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase(), user);
     }
 
