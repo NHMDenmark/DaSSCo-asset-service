@@ -1,6 +1,9 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
+import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import dk.northtech.dasscoassetservice.repositories.QueriesRepository;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -11,54 +14,62 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
-    private final Jdbi jdbi;
+    private Jdbi jdbi;
+    private RightsValidationService rightsValidationService;
+
+    List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
+    List<String> propertiesDigitiser = Arrays.asList("asset_created_by", "asset_deleted_by", "asset_updated_by", "audited_by");
 
     String assetSql = """
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                     , $$
                          MATCH (a:Asset) ${asset:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a) ${collection:-}
-                         MATCH (e:Event)<-[:CHANGED_BY]-(a) ${event:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (u:User)<-[:INITIATED_BY]-(e) ${user:-}
-                         MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
-                         MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${institution:-}
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                         MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e)
+                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         ${instCollAccess:-}
+                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
+                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                         RETURN a.asset_guid
-                         , a.asset_pid
-                         , a.status
-                         , a.multi_specimen
-                         , a.funding
-                         , a.subject
-                         , a.payload_type
-                         , a.file_formats
-                         , a.asset_taken_date
-                         , a.internal_status
-                         , a.asset_locked
-                         , pa.asset_guid 
-                         , a.restricted_access
-                         , a.tags
-                         , a.error_message
-                         , a.error_timestamp
-                         , collect(s)
-                         , i.name
-                         , c.name
-                         , p.name
-                         , w.name
-                         , e.timestamp
-                         , a.date_asset_finalised
-                         , u.name
-                         , a.date_metadata_taken
-                         , a.date_asset_taken
+
+                          RETURN a.asset_guid
+                              , a.asset_pid
+                              , a.status
+                              , a.multi_specimen
+                              , a.funding
+                              , a.subject
+                              , a.payload_type
+                              , a.file_formats
+                              , a.asset_taken_date
+                              , a.internal_status
+                              , a.asset_locked
+                              , pa.asset_guid AS parent_guid
+                              , a.restricted_access
+                              , a.tags
+                              , a.error_message
+                              , a.error_timestamp
+                              , collect(s)
+                              , i.name AS institution_name
+                              , c.name AS collection_name
+                              , p.name AS pipeline_name
+                              , w.name AS workstation_name
+                              , e.timestamp AS creation_date
+                              , a.date_asset_finalised
+                              , u.name AS user_name
+                              , a.date_metadata_taken
+                              , a.date_asset_taken
                          LIMIT ${limit:-200}
                       $$)
-                    as (asset_guid agtype
+                    AS (asset_guid agtype
                     , asset_pid agtype
                     , status agtype
                     , multi_specimen agtype
@@ -86,38 +97,101 @@ public class QueriesService {
                     , date_asset_taken agtype);
                   """;
 
+    String assetCountSql = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                    , $$
+                         MATCH (a:Asset) ${asset:-}
+                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                         MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e)
+                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                         MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
+                         MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                         ${instCollAccess:-}
+                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
+                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         RETURN count(DISTINCT a) as count
+                         LIMIT ${limit:-200}
+                      $$)
+                    as (count agtype);
+                  """;
+
     @Inject
-    public QueriesService(Jdbi jdbi) {
-    this.jdbi = jdbi;
+    public QueriesService(RightsValidationService rightsValidationService, Jdbi jdbi) {
+        this.rightsValidationService = rightsValidationService;
+        this.jdbi = jdbi;
     }
 
     public Map<String, List<String>> getNodeProperties() {
         Map<String, List<String>> properties = jdbi.onDemand(QueriesRepository.class).getNodeProperties();
-        properties.get("Asset").addAll(Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp"));
-        properties.get("Asset").remove("restricted_access");
+        properties.get("Asset").addAll(propertiesTimestamps);
+        properties.get("Asset").addAll(propertiesDigitiser);
         return properties;
     }
 
-    public List<Asset> unwrapQuery(List<QueriesReceived> queries, int limit) {
-        List<Asset> allAssets = new ArrayList<>();
+    public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+        if (!checkRights(user)) {
+            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        }
+        String query = unwrapQuery(queries, limit, true, collectionsAccess);
+        return jdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+    }
 
+    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+        if (!checkRights(user)) {
+            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        }
+
+        String query = unwrapQuery(queries, limit, false, collectionsAccess);
+        if (query == null || StringUtils.isBlank(query)) return new ArrayList<>();
+
+        logger.info("Getting assets from query.");
+        System.out.println(query);
+        List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+        // gotta do the following to avoid duplicates in case the query returns an asset with multiple events.
+        Map<String, Long> assetCountMap = assets.stream()
+                .collect(Collectors.groupingBy(Asset::getAsset_guid, Collectors.counting()));
+
+        Set<String> duplicatedAssetGuids = assetCountMap.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        List<Asset> distinctAssets = new ArrayList<>(new HashSet<>(assets)); // object hash has been set so that not all properties are checked here
+
+        distinctAssets.stream()
+                .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
+                .forEach(asset -> {
+                    System.out.println("setting events to: " + jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
+                    asset.events = jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
+                });
+
+        return distinctAssets;
+    }
+
+    public String unwrapQuery(List<QueriesReceived> queries, int limit, boolean count, Set<String> collectionAccess) {
         for (QueriesReceived received : queries) {
             String finalQuery;
             Map<String, String> whereMap = new HashMap<>();
             whereMap.put("limit", Integer.toString(limit));
+            String collectionString = "";
+            String instutionString = "";
 
             for (Query query: received.query) {
                 if (query.select.equalsIgnoreCase("Asset")) { // a
-                    String eventTimestamps = checkForEventTimestamps(query.where); // cos event timestamps are set as if it belongs to the asset
+                    String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
                     if (!StringUtils.isBlank(eventTimestamps)) {
-                        whereMap.put("event", "\nWHERE " + eventTimestamps);
+                        whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
                     }
                     String where = joinFields(query.where, "a");
                     if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
                 }
                 if (query.select.equalsIgnoreCase("Institution")) { // i
-                    String where = joinFields(query.where, "i");
-                    if (!StringUtils.isBlank(where)) whereMap.put("institution", "\nWHERE (" + where + ")");
+                    instutionString = joinFields(query.where, "i");
                 }
                 if (query.select.equalsIgnoreCase("Workstation")) { // w
                     String where = joinFields(query.where, "w");
@@ -127,30 +201,36 @@ public class QueriesService {
                     String where = joinFields(query.where, "p");
                     if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
                 }
-                if (query.select.equalsIgnoreCase("User")) { // u
-                    String where = joinFields(query.where, "u");
-                    if (!StringUtils.isBlank(where)) whereMap.put("user", "\nWHERE (" + where + ")");
-                }
                 if (query.select.equalsIgnoreCase("Collection"))  { // c
-                    String where = joinFields(query.where, "c");
-                    if (!StringUtils.isBlank(where)) whereMap.put("collection", "\nWHERE (" + where + ")");
+                    collectionString = joinFields(query.where, "c");
                 }
                 if (query.select.equalsIgnoreCase("Specimen")) { // s
                     String where = joinFields(query.where, "s");
                     if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
                 }
             }
+            if (collectionAccess != null) {
+                String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
+                StringJoiner orJoiner = new StringJoiner(" or ");
+
+                if (!StringUtils.isBlank(instutionString)) {
+                    orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
+                }
+                if (!StringUtils.isBlank(collectionString)) {
+                    orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
+                }
+                if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
+                    orJoiner.add("(c.name IN [" + collections + "])");
+                }
+                whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
+            }
 
             StringSubstitutor substitutor = new StringSubstitutor(whereMap);
-            finalQuery = substitutor.replace(assetSql);
-            if (StringUtils.isBlank(finalQuery)) return new ArrayList<>();
-
-            logger.info("Getting assets from query.");
-            System.out.println(finalQuery);
-            List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(finalQuery);
-            allAssets.addAll(assets);
+            if (count) finalQuery = substitutor.replace(assetCountSql);
+            else finalQuery = substitutor.replace(assetSql);
+            return finalQuery;
         }
-        return allAssets;
+        return null;
     }
 
     public String joinFields(List<QueryWhere> wheres, String match) {
@@ -165,23 +245,60 @@ public class QueriesService {
         return orJoiner.toString();
     }
 
-    public String checkForEventTimestamps(List<QueryWhere> wheres) {
+    public String checkForEventUserProperties(List<QueryWhere> wheres) {
         StringJoiner orJoiner = new StringJoiner(" or ");
+        StringJoiner createdJoiner = new StringJoiner(" and ");
+        StringJoiner updatedJoiner = new StringJoiner(" and ");
+        StringJoiner auditedJoiner = new StringJoiner(" and ");
         List<QueryWhere> toRemove = new ArrayList<>();
+        
 
         for (QueryWhere where : wheres) {
-            if (where.property.equalsIgnoreCase("created_timestamp")) {
-                orJoiner.add("(e.event = \"" + DasscoEvent.CREATE_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
-                toRemove.add(where);
+            if (propertiesDigitiser.contains(where.property)) {
+                if (where.property.equalsIgnoreCase("asset_created_by")) {
+                    createdJoiner.add(getInnerQueries(where.fields, "u", "name"));
+                    toRemove.add(where);
+                }
+                if (where.property.equalsIgnoreCase("asset_deleted_by")) {
+                    orJoiner.add("(e.event = \"" + DasscoEvent.DELETE_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "u", "name") + ")");
+                    toRemove.add(where);
+                }
+                if (where.property.equalsIgnoreCase("asset_updated_by")) {
+                    updatedJoiner.add(getInnerQueries(where.fields, "u", "name"));
+                    toRemove.add(where);
+                }
+                if (where.property.equalsIgnoreCase("audited_by")) {
+                    auditedJoiner.add(getInnerQueries(where.fields, "u", "name"));
+                    toRemove.add(where);
+                }
             }
-            if (where.property.equalsIgnoreCase("updated_timestamp")) {
-                orJoiner.add("(e.event = \"" + DasscoEvent.UPDATE_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
-                toRemove.add(where);
+
+            if (propertiesTimestamps.contains(where.property)) {
+                if (where.property.equalsIgnoreCase("created_timestamp")) {
+                    createdJoiner.add(getInnerQueries(where.fields, "e", "timestamp"));
+                    toRemove.add(where);
+                }
+                if (where.property.equalsIgnoreCase("updated_timestamp")) {
+                    updatedJoiner.add(getInnerQueries(where.fields, "e", "timestamp"));
+                    toRemove.add(where);
+                }
+                if (where.property.equalsIgnoreCase("audited_timestamp")) {
+                    auditedJoiner.add(getInnerQueries(where.fields, "e", "timestamp"));
+                    toRemove.add(where);
+                }
             }
-            if (where.property.equalsIgnoreCase("audited_timestamp")) {
-                orJoiner.add("(e.event = \"" + DasscoEvent.AUDIT_ASSET_METADATA + "\" and " + getInnerQueries(where.fields, "e", "timestamp") + ")");
-                toRemove.add(where);
-            }
+        }
+        if (createdJoiner.length() > 0) {
+            createdJoiner.add("e.event = '" + DasscoEvent.CREATE_ASSET_METADATA + "'");
+            orJoiner.add("(" + createdJoiner + ")");
+        }
+        if (updatedJoiner.length() > 0) {
+            updatedJoiner.add("e.event = '" + DasscoEvent.UPDATE_ASSET_METADATA + "'");
+            orJoiner.add("(" + updatedJoiner + ")");
+        }
+        if (auditedJoiner.length() > 0) {
+            auditedJoiner.add("e.event = '" + DasscoEvent.AUDIT_ASSET + "'");
+            orJoiner.add("(" + auditedJoiner + ")");
         }
         if (!toRemove.isEmpty()) wheres.removeAll(toRemove);
         return orJoiner.toString();
@@ -209,5 +326,15 @@ public class QueriesService {
 
     public String deleteSavedQuery(String title, String username) {
         return jdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
+    }
+
+    public boolean checkRights(User user) {
+        Set<String> roles = user.roles;
+        if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.SERVICE_USER.roleName)
+                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            return true;
+        }
+        return false;
     }
 }

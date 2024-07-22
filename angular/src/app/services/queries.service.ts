@@ -48,7 +48,6 @@ export class QueriesService {
   }
 
   updateSavedSearch(savedQuery: SavedQuery, title: string): Observable<SavedQuery | undefined> {
-    console.log(JSON.stringify(savedQuery))
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
@@ -60,13 +59,25 @@ export class QueriesService {
       );
   }
 
-  getNodesFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
+  getAssetsFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
               catchError(this.handleError(`get ${this.baseUrl}/${limit}`, undefined))
+            );
+        })
+      );
+  }
+
+  getAssetCountFromQuery(queries: QueryResponse[]): Observable<number | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<number>(`${this.baseUrl}/assetcount`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/assetcount`, undefined))
             );
         })
       );

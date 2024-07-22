@@ -69,22 +69,22 @@ public class AssetService {
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
-        if(Strings.isNullOrEmpty(audit.user())) {
+        if (Strings.isNullOrEmpty(audit.user())) {
             throw new IllegalArgumentException("Audit must have a user!");
         }
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        rightsValidationService.checkReadRightsThrowing(user,asset.institution, asset.collection);
-        if(!InternalStatus.COMPLETED.equals(asset.internal_status)){
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
-        if(Objects.equals(asset.digitiser, audit.user())) {
+        if (Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event,asset);
+        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
 
         if (!digitiserCache.getDigitiserMap().containsKey(audit.user())){
             digitiserCache.putDigitiserInCache(new Digitiser(audit.user(), audit.user()));
@@ -95,19 +95,19 @@ public class AssetService {
 
     public boolean deleteAsset(String assetGuid, User user) {
         String userId = user.username;
-        if(Strings.isNullOrEmpty(userId)) {
+        if (Strings.isNullOrEmpty(userId)) {
             throw new IllegalArgumentException("User is null");
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        rightsValidationService.checkReadRights(user, asset.institution,asset.collection);
-        if(asset.asset_locked) {
+        rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+        if (asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
-        if(asset.date_asset_deleted != null) {
+        if (asset.date_asset_deleted != null) {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
@@ -123,10 +123,10 @@ public class AssetService {
         return true;
     }
 
-    public void deleteAssetMetadata(String assetGuid, User user){
+    public void deleteAssetMetadata(String assetGuid, User user) {
         // Check that the asset exists:
         Optional<Asset> optAsset = getAsset(assetGuid);
-        if (optAsset.isEmpty()){
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
@@ -139,7 +139,7 @@ public class AssetService {
 
     public boolean unlockAsset(String assetGuid) {
         Optional<Asset> optAsset = getAsset(assetGuid);
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
@@ -147,20 +147,28 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
         return true;
     }
-    public List<Event> getEvents(String assetGuid) {
+
+    public List<Event> getEvents(String assetGuid, User user) {
+        Optional<Asset> assetOpt = this.getAsset(assetGuid);
+        if (assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist");
+        }
+        Asset asset = assetOpt.get();
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
     }
+
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
         Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
         asset.internal_status = InternalStatus.COMPLETED;
         asset.error_message = null;
         asset.error_timestamp = null;
-        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(),DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
-        jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset,event);
+        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
+        jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
 
         statisticsDataService.refreshCachedData();
 
@@ -172,21 +180,21 @@ public class AssetService {
     }
 
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
-        if(assetSmbRequest.minimalAsset() == null) {
+        if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
         }
-        if(assetSmbRequest.shareName() == null) {
+        if (assetSmbRequest.shareName() == null) {
             throw new IllegalArgumentException("Share id cannot be null");
         }
         Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
 
         //Mark as asset received
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        if(asset.asset_locked) {
+        if (asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
@@ -209,17 +217,17 @@ public class AssetService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if(assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED && assetStatus != InternalStatus.ASSET_RECEIVED) {
+        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED && assetStatus != InternalStatus.ASSET_RECEIVED) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
-        if(optAsset.isEmpty()) {
+        if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
         asset.internal_status = assetStatus;
         asset.error_message = errorMessage;
-        if(!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
+        if (!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
             asset.error_timestamp = Instant.now();
         }
         jdbi.onDemand(AssetRepository.class)
@@ -231,25 +239,25 @@ public class AssetService {
 
     public Asset updateAsset(Asset updatedAsset, User user) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
-        if(assetOpt.isEmpty()) {
+        if (assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
-        if(Strings.isNullOrEmpty(updatedAsset.updateUser)) {
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
             throw new IllegalArgumentException("Update user must be provided");
         }
         validateAsset(updatedAsset);
         Asset existing = assetOpt.get();
-        rightsValidationService.checkWriteRightsThrowing(user,existing.institution,existing.collection);
+        rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
         Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
 
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
-        existing.workstation= updatedAsset.workstation;
+        existing.workstation = updatedAsset.workstation;
         existing.pipeline = updatedAsset.pipeline;
         existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
-        if(existing.asset_locked && !updatedAsset.asset_locked) {
+        if (existing.asset_locked && !updatedAsset.asset_locked) {
             throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
         }
         existing.asset_locked = updatedAsset.asset_locked;
@@ -361,7 +369,7 @@ public class AssetService {
         return existing;
     }
 
-    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user){
+    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user) {
                /* Bulk-Updatable fields:
             Tags (Added, not replaced).
             Status
@@ -375,50 +383,50 @@ public class AssetService {
             Collection?
         */
 
-        if (updatedAsset == null){
+        if (updatedAsset == null) {
             throw new IllegalArgumentException("Empty body, please specify fields to update");
         }
 
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)){
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
             throw new IllegalArgumentException("Update user must be provided!");
         }
 
-        if (assetList.isEmpty()){
+        if (assetList.isEmpty()) {
             throw new IllegalArgumentException("Assets to update cannot be empty.");
         }
 
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
 
-        for(Asset asset: assets) {
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution,asset.collection);
+        for (Asset asset : assets) {
+            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
         }
 
-        if (assets.size() != assetList.size()){
+        if (assets.size() != assetList.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
         // Check that the bulk update will not set the asset to be its own parent:
-        for (Asset asset : assets){
-            if (updatedAsset.parent_guid != null){
-                if(asset.asset_guid.equals(updatedAsset.parent_guid)) {
+        for (Asset asset : assets) {
+            if (updatedAsset.parent_guid != null) {
+                if (asset.asset_guid.equals(updatedAsset.parent_guid)) {
                     throw new IllegalArgumentException("Asset cannot be its own parent");
                 }
             }
         }
 
         // Parent_guid does not exist:
-        if (updatedAsset.parent_guid != null){
+        if (updatedAsset.parent_guid != null) {
             Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
-            if (optParent.isEmpty()){
+            if (optParent.isEmpty()) {
                 throw new IllegalArgumentException("asset_parent does not exist!");
             }
         }
 
         // Do not allow unlocking:
-        if (!updatedAsset.asset_locked){
+        if (!updatedAsset.asset_locked) {
             for (Asset asset : assets) {
-                if (asset.asset_locked){
+                if (asset.asset_locked) {
                     throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
                 }
             }
@@ -436,17 +444,17 @@ public class AssetService {
         event.timeStamp = Instant.now();
 
         assets.forEach(asset -> {
-           Map<String, String> existingTags = new HashMap<>(asset.tags);
-           for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()){
-               if (existingTags.containsKey(entry.getKey())) {
-                   if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
-                       existingTags.put(entry.getKey(), entry.getValue());
-                   }
-               } else {
-                   existingTags.put(entry.getKey(), entry.getValue());
-               }
-           }
-           asset.tags = existingTags;
+            Map<String, String> existingTags = new HashMap<>(asset.tags);
+            for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()) {
+                if (existingTags.containsKey(entry.getKey())) {
+                    if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
+                        existingTags.put(entry.getKey(), entry.getValue());
+                    }
+                } else {
+                    existingTags.put(entry.getKey(), entry.getValue());
+                }
+            }
+            asset.tags = existingTags;
         });
 
         if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
@@ -501,26 +509,26 @@ public class AssetService {
         return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
     }
 
-    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields){
+    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
 
-        if (updatedFields.status != null){
+        if (updatedFields.status != null) {
             builder.add("status", updatedFields.status.name());
         }
 
-        if (updatedFields.funding != null){
+        if (updatedFields.funding != null) {
             builder.add("funding", updatedFields.funding);
         }
 
-        if (updatedFields.subject != null){
+        if (updatedFields.subject != null) {
             builder.add("subject", updatedFields.subject);
         }
 
-        if (updatedFields.payload_type != null){
+        if (updatedFields.payload_type != null) {
             builder.add("payload_type", updatedFields.payload_type);
         }
 
-        if (updatedFields.parent_guid != null){
+        if (updatedFields.parent_guid != null) {
             builder.add("parent_id", updatedFields.parent_guid);
         }
 
@@ -538,7 +546,7 @@ public class AssetService {
         return builder;
     }
 
-    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields){
+    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields) {
 
         String assetListAsString = assetList.stream()
                 .map(asset -> "'" + asset + "'")
@@ -553,39 +561,39 @@ public class AssetService {
                             SET
                 """;
 
-        if (updatedFields.funding != null){
+        if (updatedFields.funding != null) {
             sql = sql + """
                                 a.funding = $funding,
                     """;
         }
-        if (updatedFields.subject != null){
+        if (updatedFields.subject != null) {
             sql = sql + """
                                 a.subject = $subject,
                     """;
         }
-        if (updatedFields.payload_type != null){
+        if (updatedFields.payload_type != null) {
             sql = sql + """
                                 a.payload_type = $payload_type,
                     """;
         }
 
-        if (updatedFields.status != null){
+        if (updatedFields.status != null) {
             sql = sql + """
                                 a.status = $status,
                     """;
         }
-        if (updatedFields.parent_guid != null){
+        if (updatedFields.parent_guid != null) {
             sql = sql + """
                                 a.parent_id = $parent_id,
                     """;
         }
         // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
-        if (updatedFields.asset_locked){
+        if (updatedFields.asset_locked) {
             sql = sql + """
                                 a.asset_locked = $asset_locked,
                     """;
         }
-        if (updatedFields.digitiser != null){
+        if (updatedFields.digitiser != null) {
             sql = sql + """
                                 a.digitiser = $digitiser,
                     """;
@@ -602,39 +610,39 @@ public class AssetService {
     }
 
     void validateAssetFields(Asset a) {
-        if(Strings.isNullOrEmpty(a.asset_guid)) {
+        if (Strings.isNullOrEmpty(a.asset_guid)) {
             throw new IllegalArgumentException("asset_guid cannot be null");
         }
-        if(Strings.isNullOrEmpty(a.asset_pid)){
+        if (Strings.isNullOrEmpty(a.asset_pid)) {
             throw new IllegalArgumentException("asset_pid cannot be null");
         }
-        if(a.status == null) {
+        if (a.status == null) {
             throw new IllegalArgumentException("Status cannot be null");
         }
     }
 
-    void validateAsset(Asset asset){
+    void validateAsset(Asset asset) {
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
-        if(ifExists.isEmpty()){
+        if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institution doesnt exist");
         }
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection, asset.institution);
-        if(collectionOpt.isEmpty()) {
+        if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
         Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
-        if(pipelineOpt.isEmpty()) {
+        if (pipelineOpt.isEmpty()) {
             throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
         }
-        if(asset.asset_guid.equals(asset.parent_guid)) {
+        if (asset.asset_guid.equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
         Optional<Workstation> workstationOpt = workstationService.findWorkstation(asset.workstation);
-        if(workstationOpt.isEmpty()){
+        if (workstationOpt.isEmpty()) {
             throw new IllegalArgumentException("Workstation does not exist");
         }
         Workstation workstation = workstationOpt.get();
-        if(workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)){
+        if (workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)) {
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
 
@@ -656,13 +664,12 @@ public class AssetService {
     }
 
 
-
     public Asset persistAsset(Asset asset, User user, int allocation) {
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
-        if(assetOpt.isPresent()) {
+        if (assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
-        if (allocation == 0){
+        if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
@@ -675,7 +682,7 @@ public class AssetService {
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
 
-        if(asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
+        if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
         } else {
@@ -801,6 +808,7 @@ public class AssetService {
     public HttpInfo openHttpShare(MinimalAsset minimalAsset, User updateUser, int allocation) {
         return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);
     }
+
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
