@@ -282,7 +282,7 @@
       }
     },
     "/v1/assetgroups/updategroup/{groupName}/addAssets" : {
-      "patch" : {
+      "put" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Add Assets to Asset Group",
         "description" : "Adds assets to the asset group.",
@@ -533,7 +533,7 @@
       }
     },
     "/v1/assetgroups/updategroup/{groupName}/removeAssets" : {
-      "patch" : {
+      "put" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Remove Assets from Asset Group",
         "description" : "Removes assets from the asset group.",

@@ -195,7 +195,7 @@ paths:
       security:
       - dassco-idp: []
   /v1/assetgroups/updategroup/{groupName}/addAssets:
-    patch:
+    put:
       tags:
       - Asset Groups
       summary: Add Assets to Asset Group
@@ -365,7 +365,7 @@ paths:
       security:
       - dassco-idp: []
   /v1/assetgroups/updategroup/{groupName}/removeAssets:
-    patch:
+    put:
       tags:
       - Asset Groups
       summary: Remove Assets from Asset Group

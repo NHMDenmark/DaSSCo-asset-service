@@ -27,7 +27,7 @@ public class AssetGroupService {
         this.rightsValidationService = rightsValidationService;
     }
 
-    public void createAssetGroup(AssetGroup assetGroup, User user){
+    public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, User user){
 
         if(assetGroup == null){
             throw new IllegalArgumentException("Empty body!");
@@ -84,6 +84,7 @@ public class AssetGroupService {
             // Then:
             jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
         }
+        return jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
     }
 
     public List<Asset> readAssetGroup(String groupName, User user){

@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -46,8 +47,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void createAssetGroup(AssetGroup assetGroup, @Context SecurityContext securityContext){
-        this.assetGroupService.createAssetGroup(assetGroup, UserMapper.from(securityContext));
+    public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, @Context SecurityContext securityContext){
+        return this.assetGroupService.createAssetGroup(assetGroup, UserMapper.from(securityContext));
     }
 
     @GET
@@ -82,7 +83,7 @@ public class AssetGroups {
         this.assetGroupService.deleteAssetGroup(groupName, UserMapper.from(securityContext));
     }
 
-    @PATCH
+    @PUT
     @Path("/updategroup/{groupName}/addAssets")
     @Operation(summary = "Add Assets to Asset Group", description = "Adds assets to the asset group.")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -94,7 +95,7 @@ public class AssetGroups {
         return this.assetGroupService.addAssetsToAssetGroup(groupName, assetList, UserMapper.from(securityContext));
     }
 
-    @PATCH
+    @PUT
     @Path("/updategroup/{groupName}/removeAssets")
     @Operation(summary = "Remove Assets from Asset Group", description = "Removes assets from the asset group.")
     @Consumes(MediaType.APPLICATION_JSON)
