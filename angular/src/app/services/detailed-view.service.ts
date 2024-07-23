@@ -15,13 +15,19 @@ export class DetailedViewService {
   private readonly assetUrl = inject(AssetService)
   private readonly proxyUrl = inject(FileProxy)
 
+  private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
+  private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile/";
+  private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile/";
+  private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
+  private deleteLocalFiles = this.proxyUrl + "/file_proxy/api/assetfiles/deleteLocalFiles/";
+
   getAssetMetadata(assetGuid : string): Observable<Asset | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get<Asset>(`${this.assetUrl}/api/v1/assetmetadata/${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
+          return this.http.get<Asset>(`${this.getMetadataUrl}${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.assetUrl}/api/v1/assetmetadata/${assetGuid}`, undefined))
+              catchError(this.handleError(`get ${this.getMetadataUrl}${assetGuid}`, undefined))
             );
         })
       );
@@ -31,7 +37,7 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createCsvFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
+          return this.http.post<string>(`${this.createCsvFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -45,7 +51,7 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.proxyUrl}/file_proxy/api/assetfiles/createZipFile/${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+          return this.http.post<string>(`${this.createZipFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -59,7 +65,7 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
+          return this.http.get(`${this.assetFiles}${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error)}))
@@ -71,7 +77,7 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.delete(`${this.proxyUrl}/file_proxy/api/assetfiles/deleteLocalFiles/${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+          return this.http.delete(`${this.deleteLocalFiles}${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
             .pipe(
               catchError((error) => {
                 return throwError(() => error)
@@ -86,9 +92,9 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
+          return this.http.get(`${this.assetFiles}${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
             .pipe(
-              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}/${thumbnail}`, undefined))
+              catchError(this.handleError(`get ${this.assetFiles}${institution}/${collection}/${assetGuid}/${thumbnail}`, undefined))
             )
         })
     )
@@ -98,9 +104,9 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get<string[]>(`${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
+          return this.http.get<string[]>(`${this.assetFiles}${institution}/${collection}/${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.proxyUrl}/file_proxy/api/assetfiles/${institution}/${collection}/${assetGuid}`, undefined))
+              catchError(this.handleError(`get ${this.assetFiles}${institution}/${collection}/${assetGuid}`, undefined))
             )
         })
       )
