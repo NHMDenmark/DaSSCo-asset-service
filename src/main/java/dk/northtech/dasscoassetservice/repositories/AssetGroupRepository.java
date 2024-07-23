@@ -48,12 +48,6 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default void createSharedAssetGroup(AssetGroup assetGroup, User user){
-        boilerplate();
-        createSharedAssetGroupInternal(assetGroup, user);
-    }
-
-    @Transaction
     default Optional<AssetGroup> readAssetGroup(String assetGroupName){
         boilerplate();
         return readAssetGroupInternal(assetGroupName);
@@ -143,63 +137,6 @@ public interface AssetGroupRepository extends SqlObject {
                         .bind("params", agtype)
                         .execute();
                 handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-    }
-
-    default void createSharedAssetGroupInternal(AssetGroup assetGroup, User user){
-        String assetListAsString = assetGroup.assets.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String userListAsString = assetGroup.hasAccess.stream()
-                .map(users -> "'" + users + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                    'dassco'
-                        , $$
-                        MATCH (v:User)
-                        WHERE v.name IN [%s]
-                        MERGE (u:User {name: $user_name, user_id: $user_name})
-                        MERGE (ag:Asset_Group{name:$group_name})
-                        MERGE (ag)-[:HAS_ACCESS]->(u)
-                        MERGE (ag)-[:HAS_ACCESS]->(v)
-                        MERGE (ag)-[:MADE_BY]->(u)
-                    $$
-                    , #params) as (a agtype);
-                """.formatted(userListAsString);
-
-        String sqlAssets = """
-                SELECT * FROM ag_catalog.cypher(
-                    'dassco'
-                        , $$
-                            MATCH (ag:Asset_Group{name:$group_name})
-                            MATCH (a:Asset)
-                            
-                            WHERE a.asset_guid IN [%s]
-                            MERGE (ag)-[:CONTAINS]->(a)
-                        $$
-                    , #params) as (a agtype);
-                """.formatted(assetListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                .add("group_name", assetGroup.group_name);
-        builder.add("user_name", user.username);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                handle.createUpdate(sqlAssets)
                         .bind("params", agtype)
                         .execute();
                 return handle;
