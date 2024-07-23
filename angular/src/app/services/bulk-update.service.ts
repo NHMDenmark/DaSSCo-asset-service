@@ -9,12 +9,12 @@ import {OidcSecurityService} from "angular-auth-oidc-client";
 })
 export class BulkUpdateService {
   // TODO: GET ASSETS FROM THE FRONTEND! THIS IS JUST MOCK DATA!
-  baseUrl = "/api/v1/assetmetadata/bulkUpdate?assets=test-bulk-update-1&assets=test-bulk-update-2"
+  baseUrl = "/api/v1/assetmetadata/bulkUpdate?"
 
   constructor(public oidcSecurityService: OidcSecurityService,
               private http: HttpClient) { }
 
-  updateAssets(updatedFields : Object): Observable<any> {
+  updateAssets(updatedFields : Object, assets : String): Observable<any> {
     let username;
     this.oidcSecurityService.checkAuth().subscribe(({isAuthenticated, userData}) => {
       if (isAuthenticated && userData){
@@ -29,7 +29,7 @@ export class BulkUpdateService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.put(`${this.baseUrl}`, updatedFieldsWithUsername, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
+          return this.http.put(`${this.baseUrl}${assets}`, updatedFieldsWithUsername, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
             .pipe(
               catchError(this.handleError(`put ${this.baseUrl}`))
             )

@@ -94,7 +94,7 @@ public class RightsValidationService {
         boolean hasRight = checkRights(user, institutionName, collectionName, false);
         if(!hasRight) {
             LOGGER.warn("User {} does not have read access to collection {} in institution {}",user.username,collectionName,institutionName);
-            throw new DasscoIllegalActionException();
+            throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
 
@@ -102,7 +102,7 @@ public class RightsValidationService {
         boolean hasRight = checkRights(user, institutionName, collectionName, assetGuid, false);
         if(!hasRight) {
             LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}",user.username,assetGuid,collectionName,institutionName);
-            throw new DasscoIllegalActionException();
+            throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
 
@@ -110,7 +110,7 @@ public class RightsValidationService {
         boolean hasRight = checkRights(user, assetGroup);
         if (!hasRight) {
             LOGGER.warn("User {} does not have read access to assetGroup {}",user.username,assetGroup.group_name);
-            throw new DasscoIllegalActionException();
+            throw new DasscoIllegalActionException("FORBIDDEN");
         }
         return true;
     }
@@ -127,7 +127,7 @@ public class RightsValidationService {
         boolean hasRight = checkRights(user, institutionName, collectionName, true);
         if(!hasRight) {
             LOGGER.warn("User {} does not have write access to collection {} in institution {}",user.username,collectionName,institutionName);
-            throw new DasscoIllegalActionException();
+            throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
     public boolean checkRights(User user, String institutionName, String collectionName, boolean write) {

@@ -1,8 +1,10 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnInit, TemplateRef, ViewChild} from '@angular/core';
 import {BulkUpdateService} from "../../services/bulk-update.service";
 import {MatSnackBar, MatSnackBarDismiss} from "@angular/material/snack-bar";
 import {HttpErrorResponse, HttpResponse} from "@angular/common/http";
 import {Observable} from "rxjs";
+import {MatDialog, MatDialogRef} from "@angular/material/dialog";
+
 
 @Component({
   selector: 'dassco-bulk-update',
@@ -11,8 +13,12 @@ import {Observable} from "rxjs";
 })
 export class BulkUpdateComponent implements OnInit {
 
+  @ViewChild('confirmationDialog') confirmationDialog : TemplateRef<any> = {} as TemplateRef<any>;
+  private dialogRef!: MatDialogRef<any>;
+
   constructor(private bulkUpdateService: BulkUpdateService,
-              private _snackBar: MatSnackBar) { }
+              private _snackBar: MatSnackBar,
+              private dialog : MatDialog) { }
 
   ngOnInit(): void {
   }
@@ -28,10 +34,10 @@ export class BulkUpdateComponent implements OnInit {
   statusList = ["WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION"];
   status: string = "";
 
+  // Asset List (TODO: Get from the Frontend)
+  assetList : string[] = ["test-bulk-update-1", "test-bulk-update-2"];
+
   // ASSET_LOCKED:
-  // TODO: ASSET_LOCKED is FALSE by default.
-  // TODO: Find a way to set it automatically to true if all the Assets passed from the SEARCH QUERY have asset_locked true.
-  // TODO: Or raise a warning somewhere.
   assetLocked: string = "";
 
   // SUBJECT:
@@ -70,12 +76,14 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   updateAssets(){
+
     // Creation of the JSON Body:
     const json = this.createJson();
 
-    console.log(json);
+    // Creation of the url:
+    const assets : string = this.assetList.map(item => `assets=${item}`).join('&');
 
-    this.bulkUpdateService.updateAssets(json).subscribe({
+    this.bulkUpdateService.updateAssets(json, assets).subscribe({
       next: (response: HttpResponse<any>) => {
         const assets: any[] = response.body;
         const assetGuid: string[] = assets.map(asset => asset.asset_guid);
@@ -91,7 +99,6 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   createJson(){
-
     const jsonObject: {[key: string]: any } = {};
 
     if (!isEmpty(this.tags)){
@@ -114,8 +121,6 @@ export class BulkUpdateComponent implements OnInit {
 
     // TODO: FIND A WAY TO GET THIS FROM THE LOGGED IN USER OR THE LIST OF ASSETS TO BE UPDATED
     // TODO: THIS IS MOCK-UP DATA:
-    jsonObject['institution'] = "institution_2";
-    jsonObject['collection'] = 'i2_c1';
     jsonObject['pipeline'] = "i2_p1";
     jsonObject['workstation'] = "i2_w1";
 
@@ -131,6 +136,26 @@ export class BulkUpdateComponent implements OnInit {
   showSuccessSnackBar(message: string): Observable<MatSnackBarDismiss>{
     const snackBarRef = this._snackBar.open(message, "Close")
     return snackBarRef.afterDismissed();
+  }
+
+  openConfirmationDialog() {
+    this.dialogRef = this.dialog.open(this.confirmationDialog, {
+      data: { assets: this.assetList }
+    });
+
+    this.dialogRef.afterClosed().subscribe(result => {
+      if (result === 'proceed') {
+        this.updateAssets();
+      }
+    });
+  }
+
+  onCancel(): void {
+    this.dialog.closeAll();
+  }
+
+  onDialogProceed(){
+    this.dialogRef.close('proceed');
   }
 
 }
