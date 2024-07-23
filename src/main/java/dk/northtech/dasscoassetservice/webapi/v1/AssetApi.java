@@ -165,7 +165,7 @@ public class AssetApi {
     @Path("/readaccess")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
-    public void checkAccess(@QueryParam("asset_guid") String asset_guid
+    public void checkAccess(@QueryParam("assetGuid") String asset_guid
             , @Context SecurityContext securityContext) {
         Optional<Asset> assetOpt = assetService.getAsset(asset_guid);
         if(assetOpt.isEmpty()) {
