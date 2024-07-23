@@ -79,8 +79,9 @@
   flex: 0 0 8% !important;
 }
 
-.event-center-false {
-
+.event-center-true {
+  display: flex;
+  justify-content: center;
 }
 
 .event-header-cell {
