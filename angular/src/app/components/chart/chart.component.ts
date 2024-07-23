@@ -8,7 +8,7 @@ import Chart, {
   LegendItem
 } from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types/types';
+import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types/graph-types';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {isNotUndefined} from '@northtech/ginnungagap';
 

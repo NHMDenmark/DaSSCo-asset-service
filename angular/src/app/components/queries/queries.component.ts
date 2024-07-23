@@ -2,7 +2,7 @@ import {AfterViewInit, Component, OnInit, ViewChild, ViewContainerRef} from '@an
 import {QueriesService} from "../../services/queries.service";
 import {filter, iif, map, Observable, of, take} from "rxjs";
 import {isNotUndefined} from "@northtech/ginnungagap";
-import {Asset, Query, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
+import {Query, QueryView, QueryWhere, QueryResponse} from "../../types/query-types";
 import {MatTableDataSource} from "@angular/material/table";
 import {QueryHandlerComponent} from "../query-handler/query-handler.component";
 import {
@@ -13,6 +13,8 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import {CacheService} from "../../services/cache.service";
+import {Asset} from "../../types/types";
+import {MatSort, Sort} from "@angular/material/sort";
 
 @Component({
   selector: 'dassco-queries',
@@ -22,9 +24,12 @@ import {CacheService} from "../../services/cache.service";
 export class QueriesComponent implements OnInit, AfterViewInit {
   @ViewChild('queryHandlerContainer', { read: ViewContainerRef, static: true }) queryHandlerEle: ViewContainerRef | undefined;
   @ViewChild(MatPaginator) paginator: MatPaginator | undefined;
-  // displayedColumns: string[] = ['asset_guid', 'status', 'multi_specimen', 'funding', 'subject', 'file_formats', 'internal_status',
-  //   'tags', 'specimens', 'institution_name', 'collection_name', 'pipeline_name', 'workstation_name', 'timestamp', 'events', 'user_name'];
- displayedColumns: string[  ] = ['asset_guid', 'institution_name', 'collection_name', 'file_formats', 'timestamp', 'events'];
+  @ViewChild(MatSort) set matSort(sort: MatSort) {
+    this.dataSource.sort = sort;
+  }
+
+  displayedColumns: string[  ] = ['asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
+  // displayedColumns: string[  ] = ['asset_guid'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
@@ -145,7 +150,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.loadingAssetCount = true;
     this.queriesService.getAssetCountFromQuery(queryResponses)
       .subscribe(count => {
-        if (count) {
+        if (count != undefined) {
           if (count >= 10000) this.assetCount = '10000+';
           else this.assetCount = count.toString();
           this.loadingAssetCount = false;
@@ -226,5 +231,37 @@ export class QueriesComponent implements OnInit, AfterViewInit {
           this.cacheService.setQueryTitle(updated?.name);
         })
     }
+  }
+
+  filterFileFormats(event: Event) {
+    console.log(event)
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+  }
+
+  sortData(sort: Sort) {
+    if (sort.active == 'barcode') {
+      const data = this.dataSource.data;
+
+      const sortedData = data.sort((a, b) => {
+        const isAsc = sort.direction === 'asc';
+        if (a.specimens && b.specimens) {
+          return this.compare(a.specimens[0].barcode, b.specimens[0].barcode, isAsc);
+        }
+        return 0;
+      })
+      this.dataSource.data = sortedData;
+    }
+  }
+
+  compare(a: number | string | undefined, b: number | string | undefined, isAsc: boolean) {
+    if (a && b) {
+      return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+    }
+    return 0;
   }
 }

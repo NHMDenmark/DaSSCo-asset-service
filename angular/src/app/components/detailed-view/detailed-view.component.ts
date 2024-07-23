@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import {DetailedViewService} from "../../services/detailed-view.service";
-import {Asset} from "../../types/query-types";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {ActivatedRoute, Params} from "@angular/router";
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {Asset} from "../../types/types";
 
 @Component({
   selector: 'dassco-detailed-view',

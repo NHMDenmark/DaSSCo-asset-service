@@ -1,9 +1,9 @@
 import {inject, Injectable} from '@angular/core';
-import {Asset} from "../types/query-types";
 import {catchError, Observable, of, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {AssetService, FileProxy} from "../utility";
+import {Asset} from "../types/types";
 
 @Injectable({
   providedIn: 'root'

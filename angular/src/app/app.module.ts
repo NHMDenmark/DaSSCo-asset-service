@@ -18,7 +18,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {DocsComponent} from './components/docs/docs.component';
 import {ChartComponent} from './components/chart/chart.component';
 import {GraphDataComponent} from './components/graph-data/graph-data.component';
-import {MatNativeDateModule, MatOptionModule} from '@angular/material/core';
+import {MatNativeDateModule, MatOptionModule, MatRippleModule} from '@angular/material/core';
 import {MatSelectModule} from '@angular/material/select';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -46,6 +46,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatMenuModule} from "@angular/material/menu";
+import {MatSortModule} from "@angular/material/sort";
 
 @NgModule({
   declarations: [
@@ -100,7 +101,9 @@ import {MatMenuModule} from "@angular/material/menu";
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatAutocompleteModule,
-    MatMenuModule
+    MatMenuModule,
+    MatSortModule,
+    MatRippleModule
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

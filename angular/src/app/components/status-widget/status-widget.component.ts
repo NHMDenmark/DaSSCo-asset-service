@@ -3,7 +3,7 @@ import {InternalStatusService} from '../../services/internal-status.service';
 import {filter, map, Observable} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {MatTableDataSource} from '@angular/material/table';
-import {InternalStatusDataSource} from '../../types/types';
+import {InternalStatusDataSource} from '../../types/graph-types';
 import {HttpResponse} from '@angular/common/http';
 
 @Component({
