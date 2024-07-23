@@ -73,7 +73,11 @@ public class AssetGroupService {
                 }
             }
             // This gives read access to the Assets in the group:
-            jdbi.onDemand(AssetGroupRepository.class).createSharedAssetGroup(assetGroup, user);
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+            Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).grantAccessToAssetGroup(assetGroup.hasAccess, assetGroup.group_name);
+            if (optAssetGroup.isEmpty()){
+                throw new IllegalArgumentException("There has been an error creating the asset group");
+            }
 
         } else {
             // Check user roles, you need READ to be able to create an asset group:

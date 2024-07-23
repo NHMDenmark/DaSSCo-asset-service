@@ -97,6 +97,15 @@
       </mat-form-field>
     </mat-expansion-panel>
     <br>
-    <button (click)="updateAssets()">Update Assets</button>
+    <button (click)="openConfirmationDialog()">Update Assets</button>
   </mat-accordion>
+  <ng-template #confirmationDialog let-data>
+    <h2 mat-dialog-title>Confirm</h2>
+    <mat-dialog-content>Are you sure you want to bulk update assets: {{ data.assets.join(', ') }}?</mat-dialog-content>
+    <mat-dialog-actions>
+      <button mat-button (click)="onCancel()">Cancel</button>
+      <button mat-button color="primary" (click)="onDialogProceed()">Proceed</button>
+    </mat-dialog-actions>
+  </ng-template>
+
 </form>
