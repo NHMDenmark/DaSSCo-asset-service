@@ -100,7 +100,9 @@
       </ng-container>
 
       <ng-container matColumnDef="events">
-        <mat-header-cell *matHeaderCellDef class="event-header-cell">Events</mat-header-cell>
+        <mat-header-cell *matHeaderCellDef class="event-header-cell"
+                         matTooltip="If the queried asset belongs to multiple events"
+                         [matTooltipPosition]="'above'">Events</mat-header-cell>
         <mat-cell *matCellDef="let element" class="event-center-{{element.events ? 'false' : 'true'}}">
           <div *ngIf="element.events; else noEvents">
             <button mat-stroked-button [matMenuTriggerFor]="menu">Events</button>
