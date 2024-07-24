@@ -141,6 +141,7 @@ export class DetailedViewComponent implements OnInit {
         return value.toString();
       }
     }).join(',') + "\r\n";
+    console.log(separatorLine + headerRow + dataRow);
     return separatorLine + headerRow + dataRow;
   }
 

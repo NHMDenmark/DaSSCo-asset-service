@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.configuration;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import dk.northtech.dasscoassetservice.domain.Directory;
+import jakarta.inject.Named;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
@@ -12,6 +13,7 @@ import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
 
@@ -40,5 +42,6 @@ public class DataSources {
             .registerRowMapper(ConstructorMapper.factory(Directory.class))
             .setSqlParser(new HashPrefixSqlParser());
   }
+
 }
 
