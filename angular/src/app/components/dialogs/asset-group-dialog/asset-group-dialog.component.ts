@@ -21,35 +21,23 @@ export class AssetGroupDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<AssetGroupDialogComponent>
-    , @Inject(MAT_DIALOG_DATA) public data: string
+    , @Inject(MAT_DIALOG_DATA) public newGroupOnly: boolean
     , private cacheService: CacheService
     , private assetGroupService: AssetGroupService) { }
 
   ngOnInit(): void {
   }
 
-  // existingGroup(group: string | undefined) {
-    // this.group = {group: group, new: false};
-    // console.log('heheheheh', this.group)
-  // }
-
-  // newGroup(event: any) {
-  //   event.stopPropagation();
-  //   this.nameSaved = true;
-  //   // this.new = true;
-  // }
-
   cancel() {
     this.dialogRef.close();
   }
 
   save() {
-    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: undefined}, new: this.new};
+    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: undefined, groupCreator: undefined}, new: this.new};
     if (this.new) {
       const hasAccess = this.digitiserFormControl.value;
       if (hasAccess) group.group.hasAccess = hasAccess;
     }
-    console.log(group)
     this.dialogRef.close(group);
   }
 }

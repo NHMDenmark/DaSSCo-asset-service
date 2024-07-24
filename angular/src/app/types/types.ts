@@ -64,6 +64,7 @@ export interface AssetGroup {
   group_name: string | undefined;
   assets: string[] | undefined;
   hasAccess: string[] | undefined;
+  groupCreator: string | undefined;
 }
 
 export interface Digitiser {

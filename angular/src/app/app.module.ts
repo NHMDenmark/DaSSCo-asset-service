@@ -48,6 +48,8 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatSortModule} from "@angular/material/sort";
 import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
+import { AssetGroupsComponent } from './components/asset-groups/asset-groups.component';
+import { NewGroupDialogComponent } from './components/dialogs/new-group-dialog/new-group-dialog.component';
 
 @NgModule({
   declarations: [
@@ -69,7 +71,9 @@ import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dial
     SavedSearchesDialogComponent,
     SaveSearchDialogComponent,
     DetailedViewComponent,
-    AssetGroupDialogComponent
+    AssetGroupDialogComponent,
+    AssetGroupsComponent,
+    NewGroupDialogComponent
   ],
   imports: [
     BrowserModule,

@@ -1,7 +1,7 @@
 <div class="container">
   <div mat-dialog-content>
     <mat-accordion class="example-headers-align">
-      <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel [expanded]="!newGroupOnly" [disabled]="newGroupOnly">
         <mat-expansion-panel-header>
           <mat-panel-title>
             Existing Group
@@ -20,23 +20,16 @@
                           class="group-name" [value]="group.group_name">{{group.group_name}}</mat-option>
             </mat-select>
           </mat-form-field>
-<!--          <mat-selection-list [multiple]="false">-->
-<!--              <mat-list-option *ngFor="let group of (assetGroups$ | async)"-->
-<!--                             class="group-name"-->
-<!--                             (click)="existingGroup(group.group_name)">-->
-<!--                {{group.group_name}}-->
-<!--              </mat-list-option>-->
-<!--          </mat-selection-list>-->
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true">
+      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true" [expanded]="newGroupOnly" >
         <mat-expansion-panel-header>
           <mat-panel-title>
             New Group
           </mat-panel-title>
           <mat-panel-description>
-            Add assets to a new group
+            Create new group
             <mat-icon>add_box</mat-icon>
           </mat-panel-description>
         </mat-expansion-panel-header>

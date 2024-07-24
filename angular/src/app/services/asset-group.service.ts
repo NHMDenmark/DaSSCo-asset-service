@@ -48,6 +48,41 @@ export class AssetGroupService {
       );
   }
 
+  updateGroupRemoveAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/removeAssets`, assets, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/updategroup/${groupName}/removeAssets`, undefined))
+            );
+        })
+      );
+  }
+
+  grantAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.put<AssetGroup>(`${this.baseUrl}/grantAccess/${groupName}`, users, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/grantAccess/${groupName}`, undefined))
+            );
+        })
+      );
+  }
+
+  revokeAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.put<AssetGroup>(`${this.baseUrl}/revokeAccess/${groupName}`, users, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/revokeAccess/${groupName}`, undefined))
+            );
+        })
+      );
+  }
 
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {

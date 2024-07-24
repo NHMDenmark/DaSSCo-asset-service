@@ -1,0 +1,67 @@
+.container {
+  padding: 1rem;
+
+  .actions {
+    button {
+      margin-bottom: .5rem;
+      margin-right: .5rem;
+    }
+  }
+
+  table {
+    width: 75%;
+  }
+
+  tr.detail-row {
+    height: 0;
+    background-color: whitesmoke;
+  }
+
+  tr.element-row:not(.expanded-row):hover {
+    background: whitesmoke;
+  }
+
+  tr.element-row:not(.expanded-row):active {
+    background: #efefef;
+  }
+
+  tr.element-row:is(.expanded-row) {
+    background: whitesmoke;
+  }
+
+  .element-row td {
+    border-bottom-width: 0;
+  }
+
+  .element-detail {
+    display: flex;
+    overflow: hidden;
+    gap: 4rem;
+  }
+
+  .element-description-attribution {
+    opacity: 0.5;
+  }
+
+  .add-item:hover {
+    cursor: pointer;
+    background-color: #e5e5e5;
+  }
+
+  .edit-actions {
+    margin: .5rem;
+    display: flex;
+    flex-direction: column;
+
+    button {
+      margin-bottom: .5rem;
+      //align-self: center;
+    }
+  }
+}
+
+.list-option-false {
+  ::ng-deep mat-pseudo-checkbox {
+    display: none !important;
+  }
+}

@@ -20,9 +20,20 @@
           Queries
         </button>
       </div>
-      <button mat-icon-button aria-label="icon-button with user icon" (click)="navigateToSite('user')">
+      <button mat-icon-button aria-label="icon-button with user icon"
+              [matMenuTriggerFor]="userMenu">
         <mat-icon class="user-icon">account_circle</mat-icon>
       </button>
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item (click)="navigateToSite('asset-groups')">
+          <mat-icon>workspaces</mat-icon>
+          <span>Asset Groups</span>
+        </button>
+        <button mat-menu-item (click)="navigateToSite('user')">
+          <mat-icon>person</mat-icon>
+          <span>Profile</span>
+        </button>
+      </mat-menu>
     </div>
   </mat-toolbar>
 <!--  <div class="test">-->

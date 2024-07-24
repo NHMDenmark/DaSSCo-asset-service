@@ -287,13 +287,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   addToGroup() {
     console.log(this.selection.selected)
     const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
-      width: '500px'
+      width: '500px',
+      data: false
     });
 
     dialogRef.afterClosed().subscribe((group: {group: AssetGroup, new: boolean}) => {
       if (group) {
         group.group.assets = this.selection.selected.map(asset => asset.asset_guid).filter(isNotUndefined);
-        console.log(group)
         if (group.new) {
           this.assetGroupService.newGroup(group.group)
             .subscribe(newGroup => console.log(newGroup));
