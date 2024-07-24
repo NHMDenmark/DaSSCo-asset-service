@@ -65,11 +65,11 @@ public class InstitutionService {
 //        }
             repository.persistInstitution(institution);
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestriction());
-            institutionCache.putInstitutionInCache(institution.name(), institution);
+            //institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
-        //this.institutionCache.putInstitutionInCache(institution.name(), institution);
-        this.cache.put(institution.name(),institution);
+        this.institutionCache.putInstitutionInCache(institution.name(), institution);
+        //this.cache.put(institution.name(),institution);
         return institution;
     }
 
@@ -81,7 +81,8 @@ public class InstitutionService {
         if(institutionName == null) {
             return Optional.empty();
         }
-        Institution institution = this.cache.get(institutionName);
+        //Institution institution = this.cache.get(institutionName);
+        Institution institution = institutionCache.getInstitution(institutionName);
         if(institution == null) {
             return Optional.empty();
         } else  {
@@ -102,7 +103,7 @@ public class InstitutionService {
             return h;
         });
         institutionCache.putInstitutionInCache(institution.name(), institution);
-        cache.put(institution.name(),institution);
+        //cache.put(institution.name(),institution);
         return institution;
     }
 }

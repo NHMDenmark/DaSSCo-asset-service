@@ -11,20 +11,14 @@ import {Asset} from "../../types/types";
   styleUrls: ['./detailed-view.component.scss']
 })
 export class DetailedViewComponent implements OnInit {
-
-  // Steps: 1. Get Asset Metadata
-  // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
-  // 3. Get Images. If Thumbnail, show thumbnail.
-  // TODO: CHECK that the User has permission to view the asset.
   // TODO: Connection with Query page. The Query should pass the Asset[] from the search (in order!) so we can move back and forth between the assets.
-  // The URL remains the same (on the first asset clicked) so on Back Button press we go back to the query list.
-  // For this view to be seen you need to either have assets test-1, test-2 and test-3 in the DB or change the assetList for Assets you have.
+  // TODO: The connection with the query page has to include the creation of the method to save the Asset[] in the actual list here.
   // TODO: Files are now grabbed from the local machine. This is problematic, as an asset could be complete, therefore no local instance of the file would exist. We need to create an endpoint, get the API to call ERDA directly and get the file we want (for the thumbnail we can just get it directly, for the zip download we need to download it, zip it, send it, delete it).
-
+  // Asset Guid is retrieved from the URL:
   assetGuid: string = "";
   currentIndex : number = -1;
   // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
-  assetList: string[] = ['test-1', 'test-2', 'test-3']
+  assetList: string[] = ['asset-1', 'asset-2', 'asset-3']
   dataLoaded: boolean = false;
 
   constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute, private _snackBar: MatSnackBar) { }
@@ -57,6 +51,7 @@ export class DetailedViewComponent implements OnInit {
   }
 
   fetchData(assetGuid : string){
+    // Steps: 1. Get Asset Metadata
     this.detailedViewService.getAssetMetadata(assetGuid).subscribe((response) => {
       if (response){
         this.asset = response;
@@ -70,6 +65,7 @@ export class DetailedViewComponent implements OnInit {
           return `Event: ${event.event}, Timestamp: ${event.timeStamp}`;
         }).join(", ");
         this.thumbnailUrl = "";
+        // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
         this.detailedViewService.getFileList(this.asset?.institution!, this.asset?.collection!, assetGuid).subscribe(response => {
           if (response){
             this.assetFiles = response;
@@ -77,6 +73,7 @@ export class DetailedViewComponent implements OnInit {
             if (thumbnail !== undefined){
               let lastSlashIndex = thumbnail.lastIndexOf("/");
               let fileName = thumbnail.substring(lastSlashIndex + 1);
+              // 3. Get Images. If Thumbnail, show thumbnail.
               this.detailedViewService.getThumbnail(this.asset?.institution!, this.asset?.collection!, assetGuid, fileName).subscribe(blob => {
                 if (blob){
                   const objectUrl = URL.createObjectURL(blob);

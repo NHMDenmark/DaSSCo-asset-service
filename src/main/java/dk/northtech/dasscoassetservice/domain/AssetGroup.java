@@ -10,4 +10,6 @@ public class AssetGroup {
     public String group_name;
     @Schema (description = "List of assets in the group", example = "[\"Asset_1\", \"Asset_2\"]")
     public List<String> assets;
+    @Schema (description = "Users with access to the Asset Group")
+    public List<String> hasAccess;
 }

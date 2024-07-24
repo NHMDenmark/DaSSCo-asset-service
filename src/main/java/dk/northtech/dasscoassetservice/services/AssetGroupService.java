@@ -1,28 +1,33 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.AssetGroup;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
 import jakarta.inject.Inject;
+import org.checkerframework.checker.nullness.Opt;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.awt.color.ICC_ColorSpace;
+import java.util.*;
 
 @Service
 public class AssetGroupService {
 
     private final Jdbi jdbi;
 
+    private final RightsValidationService rightsValidationService;
+
     @Inject
-    public AssetGroupService(Jdbi jdbi){
+    public AssetGroupService(Jdbi jdbi,
+                             RightsValidationService rightsValidationService){
         this.jdbi = jdbi;
+        this.rightsValidationService = rightsValidationService;
     }
 
-    public void createAssetGroup(AssetGroup assetGroup){
+    public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, User user){
 
         if(assetGroup == null){
             throw new IllegalArgumentException("Empty body!");
@@ -51,36 +56,75 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group already exists!");
         }
 
-        // Then:
-        jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup);
+        if (assetGroup.hasAccess == null){
+            throw new IllegalArgumentException("hasAccess cannot be null");
+        }
+
+        if (!assetGroup.hasAccess.isEmpty()){
+            // Check user roles. You need WRITE access to create the asset group and invite people to it.
+            for (Asset asset: assets){
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            }
+
+            // Check if all the users exist!
+            for (String username : assetGroup.hasAccess){
+                if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                    throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
+                }
+            }
+            // This gives read access to the Assets in the group:
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+            Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).grantAccessToAssetGroup(assetGroup.hasAccess, assetGroup.group_name);
+            if (optAssetGroup.isEmpty()){
+                throw new IllegalArgumentException("There has been an error creating the asset group");
+            }
+
+        } else {
+            // Check user roles, you need READ to be able to create an asset group:
+            for (Asset asset : assets){
+                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            }
+
+            // Then:
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+        }
+        return jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
     }
 
-    public List<Asset> readAssetGroup(String groupName){
-
+    public List<Asset> readAssetGroup(String groupName, User user){
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
+            rightsValidationService.checkReadRightsThrowing(user, assetGroup);
             return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
     }
 
-    public List<AssetGroup> readListAssetGroup(){
-        return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup();
+    public List<AssetGroup> readListAssetGroup(User user){
+        if (user.roles.contains(SecurityRoles.ADMIN) || user.roles.contains(SecurityRoles.DEVELOPER) || user.roles.contains(SecurityRoles.SERVICE)){
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user);
+        }
+        else {
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user);
+        }
     }
 
-    public void deleteAssetGroup(String groupName){
+    public void deleteAssetGroup(String groupName, User user){
 
+        // Only the creator of the asset group can delete it:
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
         if (assetGroupOptional.isEmpty()){
             throw new IllegalArgumentException("Asset group does not exist!");
         }
 
-        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
+        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase(), user);
     }
 
-    public AssetGroup updateAssetGroup(String groupName, List<String> assetList){
+    public AssetGroup addAssetsToAssetGroup(String groupName, List<String> assetList, User user){
 
         if (assetList == null){
             throw new IllegalArgumentException("Empty body!");
@@ -100,6 +144,130 @@ public class AssetGroupService {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
 
-        return jdbi.onDemand(AssetGroupRepository.class).updateAssetGroup(groupName.toLowerCase(),assetList);
+        // Check if User has access to the asset Group:
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
+        // Check if user has access to the assets they want to add (remember, if shared asset group they need write role):
+        if (assetGroupOptional.get().hasAccess.size() > 1){
+            for (Asset asset : assets){
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            }
+        } else {
+            for (Asset asset : assets){
+                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            }
+        }
+
+        // Everything ok! Proceed to the adding of the assets from the Asset Group:
+        Optional<AssetGroup> updateAssetGroup = jdbi.onDemand(AssetGroupRepository.class).addAssetsToAssetGroup(assetList, groupName);
+        if (updateAssetGroup.isPresent()){
+            return updateAssetGroup.get();
+        } else {
+            throw new IllegalArgumentException("Something went wrong.");
+        }
+    }
+
+    public AssetGroup removeAssetsFromAssetGroup(String groupName, List<String> assetList, User user){
+        if (assetList == null){
+            throw new IllegalArgumentException("Empty body!");
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        if(assetList.isEmpty()){
+            throw new IllegalArgumentException("Asset Group has to have assets!");
+        }
+
+        Set<String> assetSet = new HashSet<>(assetList); // Keep unique.
+        assetList = new ArrayList<>(assetSet);
+
+        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+        if (assets.size() != assetList.size()){
+            throw new IllegalArgumentException("One or more assets were not found!");
+        }
+
+        // Check if User has access to the asset Group:
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
+        // Check if list of assets from asset group and list of assets from frontend are equal: Delete Asset Group if they are:
+        Set<String> assetGroupAssets = new HashSet<>(assetGroupOptional.get().assets);
+        if (assetGroupAssets.equals(assetSet)){
+            jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName, user);
+            return new AssetGroup();
+        }
+
+        // Everything ok! Proceed to the deletion of the assets from the Asset Group:
+        Optional<AssetGroup> updateAssetGroup = jdbi.onDemand(AssetGroupRepository.class).removeAssetsFromAssetGroup(assetList, groupName);
+        if (updateAssetGroup.isPresent()){
+            return updateAssetGroup.get();
+        } else {
+            throw new IllegalArgumentException("Something went wrong.");
+        }
+    }
+
+    public AssetGroup grantAccessToAssetGroup(String groupName, List<String> users, User user){
+        if (users == null || users.isEmpty()){
+            throw new IllegalArgumentException("There needs to be a list of Users");
+        }
+
+        // Check if all the users exist!
+        for (String username : users){
+            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
+            }
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        AssetGroup found = assetGroupOptional.get();
+        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(found.assets);
+        if (!assets.isEmpty()){
+            for (Asset asset: assets){
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            }
+        }
+
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, found);
+
+        Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).grantAccessToAssetGroup(users, groupName);
+        if (optAssetGroup.isEmpty()){
+            throw new IllegalArgumentException("There has been an error updating the asset group");
+        }
+
+        return optAssetGroup.get();
+    }
+
+    public AssetGroup revokeAccessToAssetGroup(String groupName, List<String> users, User user){
+
+        if (users == null || users.isEmpty()){
+            throw new IllegalArgumentException("There needs to be a list of Users");
+        }
+
+        // Check if all the users exist!
+        for (String username : users){
+            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
+            }
+        }
+
+        Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
+        if (assetGroupOptional.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroupOptional.get());
+
+        Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).revokeAccessToAssetGroup(users, groupName);
+        if (optAssetGroup.isEmpty()){
+            throw new IllegalArgumentException("There has been an error updating the asset");
+        }
+
+        return optAssetGroup.get();
     }
 }

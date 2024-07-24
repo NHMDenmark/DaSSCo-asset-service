@@ -3,7 +3,7 @@
   top: 10vh;
   left: 5vh;
   width: 45vw;
-  height: 40vh;
+  bottom: 12.5vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
@@ -12,12 +12,26 @@
 .asset-files {
   position: absolute;
   top: 55vh;
-  left: 5vh;
   right: 5vh;
-  height: 33vh;
+  width: 45vw;
+  height: 32.5vh;
   border: 1px solid #ccc;
   padding: 10px;
   overflow-y: auto;
+}
+
+.asset-thumbnail {
+  position: absolute;
+  top: 10vh;
+  right: 5vh;
+  width: 45vw;
+  height: 40vh;
+  overflow-y: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #ccc;
+  padding: 10px;
 }
 
 .icons {
@@ -50,20 +64,6 @@
   width: 100%;
 }
 
-.asset-thumbnail {
-  position: absolute;
-  top: 10vh;
-  right: 5vh;
-  width: 45vw;
-  height: 40vh;
-  overflow-y: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid #ccc;
-  padding: 10px;
-}
-
 .asset-thumbnail img {
   max-width: 100%;
   max-height: 100%;
@@ -80,4 +80,8 @@
 .item {
   margin-bottom: 1vh;
   margin-top: 1vh;
+}
+
+.bold-text {
+  font-weight: bold;
 }

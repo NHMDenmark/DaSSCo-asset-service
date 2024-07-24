@@ -24,11 +24,15 @@ public class InstitutionCache {
         institutionMap.put(institutionName, institution);
     }
 
-    public List<Institution> getInstitutions(){
+    public List<Institution> getInstitutions() {
         return institutionMap.values().stream().toList();
     }
 
-    public boolean institutionExists(String id){
+    public boolean institutionExists(String id) {
         return institutionMap.containsKey(id);
+    }
+
+    public Institution getInstitution(String institutionName) {
+        return this.institutionMap.get(institutionName);
     }
 }

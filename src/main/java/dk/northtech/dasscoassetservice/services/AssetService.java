@@ -379,8 +379,6 @@ public class AssetService {
             Payload_Type
             Parent_Guid
             Digitiser
-            Institution?
-            Collection?
         */
 
         if (updatedAsset == null) {
@@ -399,7 +397,7 @@ public class AssetService {
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
 
         for (Asset asset : assets) {
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         }
 
         if (assets.size() != assetList.size()) {
@@ -457,6 +455,8 @@ public class AssetService {
             asset.tags = existingTags;
         });
 
+        List<Asset> bulkUpdateSuccess = jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
+
         if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
             digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
         }
@@ -506,7 +506,7 @@ public class AssetService {
             }
         }
 
-        return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
+        return bulkUpdateSuccess;
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {
@@ -811,6 +811,15 @@ public class AssetService {
 
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+    }
+
+    public Optional<Asset> checkUserRights(String assetGuid, User user){
+        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+        if (optionalAsset.isPresent()){
+            Asset found = optionalAsset.get();
+            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+        }
+        return optionalAsset;
     }
 
 }

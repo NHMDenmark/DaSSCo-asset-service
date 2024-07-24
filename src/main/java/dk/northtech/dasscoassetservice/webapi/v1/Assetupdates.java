@@ -185,8 +185,8 @@ public class Assetupdates {
     @ApiResponse(responseCode = "204", description = "No Content. AssetGuid does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
-    public Asset getAsset(@PathParam("assetGuid") String assetGuid) {
-        return this.assetService.getAsset(assetGuid).orElse(null);
+    public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
+        return this.assetService.checkUserRights(assetGuid, UserMapper.from(securityContext)).orElse(null);
     }
 
     @DELETE
