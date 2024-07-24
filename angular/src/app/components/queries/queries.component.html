@@ -32,18 +32,39 @@
   </div>
 
   <div class="table">
-    <div *ngIf="dataSource.data.length > 0">
-      <div class="count-div">{{dataSource.data.length}} /
-        <div *ngIf="loadingAssetCount; else showCount;">
-          <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+    <div class="table-properties">
+      <div>
+        <button mat-raised-button [disabled]="selection.isEmpty()" (click)="addToGroup()">Add To Group</button>
+      </div>
+
+      <div *ngIf="dataSource.data.length > 0">
+        <div>{{dataSource.data.length}} /
+          <div *ngIf="loadingAssetCount; else showCount;">
+            <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+          </div>
+          <ng-template #showCount>
+            {{assetCount}}
+          </ng-template>
         </div>
-        <ng-template #showCount>
-          {{assetCount}}
-        </ng-template>
       </div>
     </div>
 
     <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort (matSortChange)="sortData($event)">
+
+      <ng-container matColumnDef="select">
+        <mat-header-cell *matHeaderCellDef>
+          <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+          </mat-checkbox>
+        </mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <mat-checkbox (click)="$event.stopPropagation()"
+                        (change)="$event ? selection.toggle(row) : null"
+                        [checked]="selection.isSelected(row)">
+          </mat-checkbox>
+        </mat-cell>
+      </ng-container>
 
       <ng-container matColumnDef="asset_guid">
         <mat-header-cell *matHeaderCellDef mat-sort-header>Guid</mat-header-cell>
@@ -120,7 +141,8 @@
       </ng-container>
 
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns;"
+               (click)="selection.toggle(row)"></mat-row>
 
       <tr class="mat-row no-data-row" *matNoDataRow>
         <td class="mat-cell" colspan="5">No data available</td>

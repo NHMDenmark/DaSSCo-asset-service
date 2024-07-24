@@ -3,6 +3,7 @@ import {QueryView} from "../types/query-types";
 import {catchError, Observable, of, switchMap} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
+import {Digitiser} from "../types/types";
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +21,17 @@ export class CacheService {
         return this.http.get<Map<string, object[]>>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
           .pipe(
             catchError(this.handleError(`get ${this.baseUrl}`, undefined))
+          );
+      })
+    );
+
+  cachedDigitisers$: Observable<Map<string, Digitiser[]> | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<Map<string, Digitiser[]>>(`${this.baseUrl}/digitisers`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/digitisers`, undefined))
           );
       })
     );

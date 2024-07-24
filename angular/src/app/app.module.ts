@@ -47,6 +47,7 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatSortModule} from "@angular/material/sort";
+import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
 
 @NgModule({
   declarations: [
@@ -67,7 +68,8 @@ import {MatSortModule} from "@angular/material/sort";
     QueryHandlerComponent,
     SavedSearchesDialogComponent,
     SaveSearchDialogComponent,
-    DetailedViewComponent
+    DetailedViewComponent,
+    AssetGroupDialogComponent
   ],
   imports: [
     BrowserModule,

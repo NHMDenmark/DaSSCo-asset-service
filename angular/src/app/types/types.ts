@@ -60,6 +60,17 @@ export interface Event {
   workstation: string | undefined;
 }
 
+export interface AssetGroup {
+  group_name: string | undefined;
+  assets: string[] | undefined;
+  hasAccess: string[] | undefined;
+}
+
+export interface Digitiser {
+  userId: string | undefined;
+  name: string | undefined;
+}
+
 export enum FileFormat {
   TIF
   , JPEG

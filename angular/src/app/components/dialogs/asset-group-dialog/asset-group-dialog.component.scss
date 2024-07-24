@@ -1,0 +1,50 @@
+@use '@angular/material' as mat;
+@use 'sass:map';
+@import 'src/style/base';
+@import 'src/theme';
+
+$theme-config: mat.get-color-config($dassco-asset-service-theme);
+$primary-color: map.get($theme-config, 'primary');
+
+.container {
+  .mat-dialog-content {
+    height: fit-content;
+    overflow: visible;
+  }
+
+  mat-panel-description {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .group-name:hover {
+    cursor: pointer;
+  }
+
+  .new-group {
+    display: flex;
+    flex-direction: column;
+
+    mat-icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 100px;
+      box-shadow: -.5px .5px 3px grey;
+    }
+
+    mat-icon:hover {
+      cursor: pointer;
+    }
+
+    .saved-true, mat-icon:hover {
+      background-color: $primaryColor;
+      color: white;
+    }
+
+    .saved-false {
+      background-color: mat.get-color-from-palette($primary-color, 500);
+      color: white;
+    }
+  }
+}

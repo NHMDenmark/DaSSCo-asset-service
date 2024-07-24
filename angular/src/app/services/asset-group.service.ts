@@ -1,0 +1,59 @@
+import { Injectable } from '@angular/core';
+import {catchError, Observable, of, switchMap} from "rxjs";
+import {OidcSecurityService} from "angular-auth-oidc-client";
+import {HttpClient} from "@angular/common/http";
+import {AssetGroup} from "../types/types";
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AssetGroupService {
+  baseUrl = '/api/v1/assetgroups';
+
+  constructor(public oidcSecurityService: OidcSecurityService
+    , private http: HttpClient) { }
+
+  assetGroups$: Observable<AssetGroup[] | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<AssetGroup[]>(`${this.baseUrl}/`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/`, undefined))
+          );
+      })
+    );
+
+  newGroup(group: AssetGroup): Observable<AssetGroup | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<AssetGroup>(`${this.baseUrl}/createassetgroup/`, group, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/createassetgroup`, undefined))
+            );
+        })
+      );
+  }
+
+  updateGroupAddAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/addAssets`, assets, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/updategroup/${groupName}/addAssets`, undefined))
+            );
+        })
+      );
+  }
+
+
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(error);
+      console.error(operation + ' - ' + JSON.stringify(error));
+      return of(result as T);
+    };
+  }
+}

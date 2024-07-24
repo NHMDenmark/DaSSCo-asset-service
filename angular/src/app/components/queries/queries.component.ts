@@ -13,8 +13,11 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import {CacheService} from "../../services/cache.service";
-import {Asset} from "../../types/types";
+import {Asset, AssetGroup} from "../../types/types";
 import {MatSort, Sort} from "@angular/material/sort";
+import {SelectionModel} from "@angular/cdk/collections";
+import {AssetGroupDialogComponent} from "../dialogs/asset-group-dialog/asset-group-dialog.component";
+import {AssetGroupService} from "../../services/asset-group.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -28,8 +31,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = sort;
   }
 
-  displayedColumns: string[  ] = ['asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
-  // displayedColumns: string[  ] = ['asset_guid'];
+  displayedColumns: string[  ] = ['select', 'asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
+  selection = new SelectionModel<Asset>(true, []);
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
@@ -74,6 +77,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
               , private cacheService: CacheService
+              , private assetGroupService: AssetGroupService
   ) { }
 
   ngOnInit(): void {
@@ -263,5 +267,41 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
     }
     return 0;
+  }
+
+  isAllSelected() {
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.data.length;
+    return numSelected === numRows;
+  }
+
+  toggleAllRows() {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+
+    this.selection.select(...this.dataSource.data);
+  }
+
+  addToGroup() {
+    console.log(this.selection.selected)
+    const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
+      width: '500px'
+    });
+
+    dialogRef.afterClosed().subscribe((group: {group: AssetGroup, new: boolean}) => {
+      if (group) {
+        group.group.assets = this.selection.selected.map(asset => asset.asset_guid).filter(isNotUndefined);
+        console.log(group)
+        if (group.new) {
+          this.assetGroupService.newGroup(group.group)
+            .subscribe(newGroup => console.log(newGroup));
+        } else {
+          this.assetGroupService.updateGroupAddAssets(group.group.group_name, group.group.assets)
+            .subscribe(updatedGroup => console.log(updatedGroup));
+        }
+      }
+    });
   }
 }
