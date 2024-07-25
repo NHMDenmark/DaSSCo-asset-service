@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+import static java.util.Map.entry;
+
 @Service
 public class RightsValidationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(RightsValidationService.class);
@@ -143,10 +145,8 @@ public class RightsValidationService {
         }
         Set<String> allUserRoles = getUserRoles(user.roles);
         Collection collection = collectionOpt.get();
-        allUserRoles.forEach(System.out::println);
         if (!collection.roleRestrictions().isEmpty()) {
             for (Role r : collection.roleRestrictions()) {
-                System.out.println((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name());
                 if(allUserRoles.contains((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name())){
                     return true;
                 }
@@ -275,31 +275,37 @@ public class RightsValidationService {
         return institutionNames;
     }
 
-    public Set<String> getCollectionsReadRights(Set<String> userRoles) {
-        Set<String> collectionNames = new HashSet<>();
+    public Map<String, Set<String>> getCollectionRights(Set<String> userRoles) {
+        Set<String> collectionReadNames = new HashSet<>();
+        Set<String> collectionWriteNames = new HashSet<>();
         List<Collection> collectionList = this.collectionService.getAll();
+
         for (Collection collection : collectionList) {
             if (!collection.roleRestrictions().isEmpty()) { // collection has role restrictions
                 for (Role role : collection.roleRestrictions()) {
-                    if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
-                        collectionNames.add(collection.name());
+                    if (userRoles.contains(READ_ROLE_PREFIX + role.name())) {
+                        collectionReadNames.add(collection.name());
+                    } else if (userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
+                        collectionWriteNames.add(collection.name());
                     }
                 }
-            } else {
+            } else { // collection has NO restrictions
                 Optional<Institution> institution = this.institutionService.getIfExists(collection.institution());
                 if (institution.isPresent()) { // collection is role-less, so we need to check that the user can access the institution
                     if (institution.get().roleRestriction().isEmpty()) { // institute and collection is free-for-all
-                        collectionNames.add(collection.name());
+                        collectionWriteNames.add(collection.name());
                     } else {
                         for (Role role : institution.get().roleRestriction()) { // checking the user can access the institution
-                            if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
-                                collectionNames.add(collection.name());
+                            if (userRoles.contains(READ_ROLE_PREFIX + role.name())) {
+                                collectionReadNames.add(collection.name());
+                            } else if (userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
+                                collectionWriteNames.add(collection.name());
                             }
                         }
                     }
                 }
             }
         }
-        return collectionNames;
+        return Map.ofEntries(entry("read", collectionReadNames), entry("write", collectionWriteNames));
     }
 }

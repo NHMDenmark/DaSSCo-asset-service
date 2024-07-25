@@ -1153,6 +1153,39 @@
         } ]
       }
     },
+    "/v1/caches/digitisers" : {
+      "get" : {
+        "tags" : [ "Caches" ],
+        "summary" : "Get Digitiser Cache",
+        "description" : "Lists the cached digitisers",
+        "operationId" : "getDigitiserCache",
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : true
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
         "tags" : [ "Collections" ],
@@ -2078,6 +2111,10 @@
               "type" : "string",
               "description" : "Users with access to the Asset Group"
             }
+          },
+          "groupCreator" : {
+            "type" : "string",
+            "description" : "User who created the Asset Group originially"
           }
         }
       },
@@ -2269,6 +2306,11 @@
             "description" : "What happened to the asset",
             "example" : "UPDATE_ASSET",
             "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "BULK_UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED" ]
+          },
+          "writeAccess" : {
+            "type" : "boolean",
+            "description" : "Whether the current user has write access. Used in frontend operations.",
+            "example" : true
           }
         }
       },

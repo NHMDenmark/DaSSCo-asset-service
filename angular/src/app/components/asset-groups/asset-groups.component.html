@@ -1,40 +1,42 @@
 <div class="container">
-  <div class="actions">
-    <button [disabled]="selection.isEmpty()" mat-raised-button>Delete Groups</button>
-  </div>
+  <div *ngIf="(assetGroups$ | async); else noGroups">
+    <div class="actions">
+      <button [disabled]="groupSelection.isEmpty()" mat-raised-button (click)="deleteGroups()">Delete Groups</button>
+    </div>
 
-  <table *ngIf="assetGroups$ | async"
-         mat-table
-         [dataSource]="dataSource" [multiTemplateDataRows]="true"
-         class="mat-elevation-z8">
-    <ng-container matColumnDef="select">
-      <th mat-header-cell *matHeaderCellDef>
-        <mat-checkbox (change)="$event ? toggleAllRows() : null"
-                      [checked]="selection.hasValue() && isAllSelected()"
-                      [indeterminate]="selection.hasValue() && !isAllSelected()">
-        </mat-checkbox>
-      </th>
-      <td mat-cell *matCellDef="let row">
-        <mat-checkbox (click)="$event.stopPropagation()"
-                      (change)="$event ? selection.toggle(row) : null"
-                      [checked]="selection.isSelected(row)">
-        </mat-checkbox>
-      </td>
-    </ng-container>
+    <table mat-table
+           [dataSource]="dataSource" [multiTemplateDataRows]="true"
+           class="mat-elevation-z8">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef>
+          <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                        [checked]="groupSelection.hasValue() && isAllSelected()"
+                        [indeterminate]="groupSelection.hasValue() && !isAllSelected()">
+          </mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let row">
+          <mat-checkbox #checkbox
+                        (click)="$event.stopPropagation()"
+                        (change)="$event && row.isCreator ? groupSelection.toggle(row) : null"
+                        [checked]="row.isCreator && groupSelection.isSelected(row)"
+                        [disabled]="!row.isCreator">
+          </mat-checkbox>
+        </td>
+      </ng-container>
 
-    <ng-container matColumnDef="group_name">
-      <th mat-header-cell *matHeaderCellDef>Group Name</th>
-      <td mat-cell *matCellDef="let element">{{element.group_name}}</td>
-    </ng-container>
+      <ng-container matColumnDef="group_name">
+        <th mat-header-cell *matHeaderCellDef>Group Name</th>
+        <td mat-cell *matCellDef="let element">{{element.group_name}}</td>
+      </ng-container>
 
-    <ng-container matColumnDef="assets_count">
-      <th mat-header-cell *matHeaderCellDef>No. of Assets</th>
-      <td mat-cell *matCellDef="let element">
-        {{element.assets.length}}
-      </td>
-    </ng-container>
-    <ng-container matColumnDef="expand">
-      <th mat-header-cell *matHeaderCellDef aria-label="row actions">&nbsp;</th>
+      <ng-container matColumnDef="assets_count">
+        <th mat-header-cell *matHeaderCellDef>No. of Assets</th>
+        <td mat-cell *matCellDef="let element">
+          {{element.assets.length}}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="expand">
+        <th mat-header-cell *matHeaderCellDef aria-label="row actions">&nbsp;</th>
       <td mat-cell *matCellDef="let element">
         <button mat-icon-button aria-label="expand row" (click)="(expandedElement = expandedElement === element ? null : element); $event.stopPropagation()">
           <mat-icon *ngIf="expandedElement !== element">keyboard_arrow_down</mat-icon>
@@ -53,22 +55,24 @@
               <mat-list-option [checkboxPosition]="'before'"
                                *ngFor="let asset of element.assets"
                                class="list-option-{{editing}}"
-                               [value]="asset">{{asset}}</mat-list-option>
+                               [value]="asset"
+                               (click)="!editing && goToAsset(asset)">{{asset}}</mat-list-option>
             </mat-selection-list>
           </div>
 
-          <div>
+          <div class="digitiser-div">
             <mat-selection-list #digitisers>
               <div mat-subheader>Digitisers With Access</div>
-              <mat-list-option [checkboxPosition]="'before'"
+              <mat-list-option #option [checkboxPosition]="'before'"
                                 *ngFor="let digitiser of element.hasAccess"
-                                class="list-option-{{editing}}"
+                                class="list-option-digitiser-{{editing}}"
                                 [value]="digitiser"
-                                [disabled]="editing && element.groupCreator == digitiser">{{digitiser}} {{element.groupCreator == digitiser ? '(Creator)' : ''}}</mat-list-option>
+                                [disabled]="editing && element.groupCreator == digitiser"
+                               (click)="!editing && option.toggle()">{{digitiser}} {{element.groupCreator == digitiser ? '(Creator)' : ''}}</mat-list-option>
 
               <div *ngIf="editing && (cachedDigitisers$ | async) as digitisers">
-                <mat-form-field appearance="outline">
-                  <mat-label>Add Digitiser</mat-label>
+                <mat-form-field appearance="standard">
+                  <mat-label>Add Digitisers</mat-label>
                   <mat-select [multiple]="true" [formControl]="digitiserFormControl">
                     <ng-container *ngFor="let digitiser of digitisers | keyvalue" >
                       <mat-option *ngIf="!element.hasAccess.includes(digitiser.key)" [value]="digitiser.key">
@@ -81,22 +85,26 @@
             </mat-selection-list>
           </div>
 
-          <div class="edit-actions" *ngIf="element.groupCreator == (username$ | async) as username">
-            <button mat-mini-fab (click)="editGroup(); assets.deselectAll(); digitisers.deselectAll();">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <div *ngIf="editing" class="edit-actions">
-              <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="removeAssets(assets.selectedOptions.selected, element)">
-                Remove Assets
+          <div class="edit-actions">
+            <div *ngIf="element.isCreator">
+              <button mat-mini-fab (click)="editGroup(); assets.deselectAll(); digitisers.deselectAll();"
+                      matTooltip="Edit group"
+                      [matTooltipPosition]="'below'">
+                <mat-icon>edit</mat-icon>
               </button>
-              <button mat-raised-button [disabled]="digitisers.selectedOptions.isEmpty()" (click)="revokeAccess(digitisers.selectedOptions.selected, element)">
-                Revoke Access
-              </button>
-              <button mat-raised-button
-                      [disabled]="digitiserFormControl.value ? digitiserFormControl.value!.length <= 0 : true"
-                      (click)="newDigitiserAccess(element)">
-                Give Access
-              </button>
+              <div class="edit-btn-editing-{{editing}} edit-btns">
+                <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="removeAssets(assets.selectedOptions.selected, element)">
+                  Remove Assets
+                </button>
+                <button mat-raised-button [disabled]="digitisers.selectedOptions.isEmpty()" (click)="revokeAccess(digitisers.selectedOptions.selected, element)">
+                  Revoke Access
+                </button>
+                <button mat-raised-button
+                        [disabled]="digitiserFormControl.value ? digitiserFormControl.value!.length <= 0 : true"
+                        (click)="newDigitiserAccess(element)">
+                  Give Access
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -107,9 +115,14 @@
     <tr mat-row *matRowDef="let element; columns: displayedColumnsExpanded;"
         class="element-row"
         [class.expanded-row]="expandedElement === element"
-        (click)="expandedElement = expandedElement === element ? null : element; this.editing = false; this.addingDigitisers = false;">
+        (click)="expandedElement = expandedElement === element ? null : element; this.editing = false;">
     </tr>
     <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
   </table>
+  </div>
+
+  <ng-template #noGroups>
+    <h2 class="error-msg">No groups available to your user.</h2>
+  </ng-template>
 
 </div>

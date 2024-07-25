@@ -800,6 +800,28 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/caches/digitisers:
+    get:
+      tags:
+      - Caches
+      summary: Get Digitiser Cache
+      description: Lists the cached digitisers
+      operationId: getDigitiserCache
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/institutions/{institutionName}/collections:
     get:
       tags:
@@ -1474,6 +1496,9 @@ components:
           items:
             type: string
             description: Users with access to the Asset Group
+        groupCreator:
+          type: string
+          description: User who created the Asset Group originially
     Asset:
       type: object
       properties:
@@ -1671,6 +1696,11 @@ components:
           - DELETE_ASSET_METADATA
           - METADATA_TAKEN
           - ASSET_FINALISED
+        writeAccess:
+          type: boolean
+          description: Whether the current user has write access. Used in frontend
+            operations.
+          example: true
     Event:
       type: object
       properties:

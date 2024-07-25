@@ -50,18 +50,18 @@
     </div>
 
     <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort (matSortChange)="sortData($event)">
-
       <ng-container matColumnDef="select">
-        <mat-header-cell *matHeaderCellDef>
+        <mat-header-cell *matHeaderCellDef class="checkbox-width">
           <mat-checkbox (change)="$event ? toggleAllRows() : null"
                         [checked]="selection.hasValue() && isAllSelected()"
                         [indeterminate]="selection.hasValue() && !isAllSelected()">
           </mat-checkbox>
         </mat-header-cell>
-        <mat-cell *matCellDef="let row">
+        <mat-cell *matCellDef="let row" class="checkbox-width">
           <mat-checkbox (click)="$event.stopPropagation()"
-                        (change)="$event ? selection.toggle(row) : null"
-                        [checked]="selection.isSelected(row)">
+                        (change)="$event && row.writeAccess ? selection.toggle(row) : null"
+                        [checked]="row.writeAccess && selection.isSelected(row)"
+                        [disabled]="!row.writeAccess">
           </mat-checkbox>
         </mat-cell>
       </ng-container>
@@ -141,8 +141,7 @@
       </ng-container>
 
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns;"
-               (click)="selection.toggle(row)"></mat-row>
+      <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns;"></mat-row>
 
       <tr class="mat-row no-data-row" *matNoDataRow>
         <td class="mat-cell" colspan="5">No data available</td>

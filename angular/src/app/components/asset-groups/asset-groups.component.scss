@@ -1,6 +1,12 @@
 .container {
   padding: 1rem;
 
+  .error-msg {
+    width: 100%;
+    text-align: center;
+    font-family: graphik-regular;
+  }
+
   .actions {
     button {
       margin-bottom: .5rem;
@@ -37,6 +43,7 @@
     display: flex;
     overflow: hidden;
     gap: 4rem;
+    justify-content: space-between;
   }
 
   .element-description-attribution {
@@ -48,20 +55,36 @@
     background-color: #e5e5e5;
   }
 
+  .digitiser-div, .edit-actions, .detail-inner {
+    flex: 1;
+  }
+
   .edit-actions {
-    margin: .5rem;
-    display: flex;
-    flex-direction: column;
+    .edit-btns {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .edit-btn-editing-false {
+      visibility: hidden;
+    }
 
     button {
       margin-bottom: .5rem;
-      //align-self: center;
     }
   }
 }
 
-.list-option-false {
+.list-option-digitiser-false:hover { // i know this is messy, but until we get an acutal layout i'm not gonna spend more time on it lol
+  cursor: default;
   ::ng-deep mat-pseudo-checkbox {
-    display: none !important;
+    cursor: default;
+  }
+}
+
+.list-option-false, .list-option-digitiser-false  {
+  ::ng-deep mat-pseudo-checkbox {
+    color: rgba(0,0,0,0);
+    background-color: darkgrey;
   }
 }

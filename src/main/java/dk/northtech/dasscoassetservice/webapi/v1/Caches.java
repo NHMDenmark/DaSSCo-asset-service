@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
+import dk.northtech.dasscoassetservice.domain.Digitiser;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.Workstation;
 import dk.northtech.dasscoassetservice.services.*;
@@ -45,5 +46,17 @@ public class Caches {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Map<String, Object> getAllCaches(){
         return this.cacheService.getAllCaches();
+    }
+
+    @GET
+    @Path("digitisers")
+    @Operation(summary = "Get Digitiser Cache", description = "Lists the cached digitisers")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", description = "Successful operation",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Map<String, Digitiser> getDigitiserCache(){
+        return this.cacheService.getDigitiserMap();
     }
 }

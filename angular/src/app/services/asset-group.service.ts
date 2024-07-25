@@ -84,6 +84,18 @@ export class AssetGroupService {
       );
   }
 
+  deleteGroup(groupName: string | undefined): Observable<any | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.delete(`${this.baseUrl}/deletegroup/${groupName}`, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/deletegroup/${groupName}`, undefined))
+            );
+        })
+      );
+  }
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);

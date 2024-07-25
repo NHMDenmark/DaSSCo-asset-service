@@ -1,9 +1,13 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
+import {Component, OnInit} from '@angular/core';
+import {MatDialogRef} from "@angular/material/dialog";
 import {AssetGroupService} from "../../../services/asset-group.service";
 import {CacheService} from "../../../services/cache.service";
-import {AssetGroup} from "../../../types/types";
+import {AssetGroup, Digitiser} from "../../../types/types";
 import {FormControl} from "@angular/forms";
+import {filter, map, take} from "rxjs";
+import {isNotUndefined} from "@northtech/ginnungagap";
+import {AuthService} from "../../../services/auth.service";
+import {combineLatest} from "rxjs";
 
 @Component({
   selector: 'dassco-asset-group-dialog',
@@ -17,12 +21,26 @@ export class AssetGroupDialogComponent implements OnInit {
   digitiserFormControl = new FormControl<string[] | null>(null);
 
   assetGroups$ = this.assetGroupService.assetGroups$;
-  cachedDigitisers$ = this.cacheService.cachedDigitisers$;
+
+  cachedDigitisers$
+    = combineLatest([
+      this.authService.username$.pipe(filter(isNotUndefined), take(1)),
+      this.cacheService.cachedDigitisers$.pipe(filter(isNotUndefined))
+  ])
+    .pipe(
+      map(([username, digitisers]) => {
+        const digitiserMap= new Map<string, Digitiser[]>(Object.entries(digitisers));
+        if (digitiserMap.has(username)) {
+          digitiserMap.delete(username); // so the user can't choose themselves
+        }
+        return digitiserMap;
+      })
+    )
 
   constructor(
     public dialogRef: MatDialogRef<AssetGroupDialogComponent>
-    , @Inject(MAT_DIALOG_DATA) public newGroupOnly: boolean
     , private cacheService: CacheService
+    , private authService: AuthService
     , private assetGroupService: AssetGroupService) { }
 
   ngOnInit(): void {
@@ -33,7 +51,7 @@ export class AssetGroupDialogComponent implements OnInit {
   }
 
   save() {
-    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: undefined, groupCreator: undefined}, new: this.new};
+    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: undefined, groupCreator: undefined, isCreator: undefined}, new: this.new};
     if (this.new) {
       const hasAccess = this.digitiserFormControl.value;
       if (hasAccess) group.group.hasAccess = hasAccess;

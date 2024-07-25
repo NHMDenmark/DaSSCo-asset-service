@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {AssetGroupService} from "../../services/asset-group.service";
 import {AssetGroup} from "../../types/types";
-import {filter, map, take} from "rxjs";
+import {filter, map, startWith, take} from "rxjs";
 import {MatTableDataSource} from "@angular/material/table";
 import {isNotUndefined} from "@northtech/ginnungagap";
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -11,6 +11,9 @@ import {CacheService} from "../../services/cache.service";
 import {FormControl} from "@angular/forms";
 import {AuthService} from "../../services/auth.service";
 import {MatDialog} from "@angular/material/dialog";
+import {Router} from "@angular/router";
+import {MatCheckbox} from "@angular/material/checkbox";
+import {combineLatest} from "rxjs";
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -25,28 +28,36 @@ import {MatDialog} from "@angular/material/dialog";
   ],
 })
 export class AssetGroupsComponent implements OnInit {
+  @ViewChild('checkbox', {static: false}) checkboxes: MatCheckbox[] | undefined;
+
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
   displayedColumnsExpanded = [...this.displayedColumns, 'expand'];
-  isGroupCreator = true;
-  username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1))
-  selection = new SelectionModel<AssetGroup>(true, []);
+  groupSelection = new SelectionModel<AssetGroup>(true, []);
   editing = false;
-  addingDigitisers = false;
   digitiserFormControl = new FormControl<string[] | null>(null);
 
+  username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
   cachedDigitisers$ = this.cacheService.cachedDigitisers$;
 
   assetGroups$
-    = this.assetGroupService.assetGroups$
+    = combineLatest([
+    this.assetGroupService.assetGroups$.pipe(startWith([]),filter(isNotUndefined)),
+    this.authService.username$.pipe(filter(isNotUndefined))
+  ])
     .pipe(
-      filter(isNotUndefined),
-      map(groups => this.dataSource.data = groups)
+      map(([groups, username]) => {
+        groups.forEach((group: AssetGroup) => {
+          if (group.groupCreator == username) group.isCreator = true;
+        })
+        return this.dataSource.data = groups;
+      })
     )
 
   constructor(private assetGroupService: AssetGroupService
             , private cacheService: CacheService
+            , private router: Router
             , public dialog: MatDialog
             , private authService: AuthService) { }
 
@@ -54,32 +65,30 @@ export class AssetGroupsComponent implements OnInit {
   }
 
   isAllSelected() {
-    const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
+    const numSelected = this.groupSelection.selected.length;
+    const numRows = this.dataSource.data.filter(group => group.isCreator).length;
     return numSelected === numRows;
   }
 
   toggleAllRows() {
     if (this.isAllSelected()) {
-      this.selection.clear();
+      this.groupSelection.clear();
       return;
     }
 
-    this.selection.select(...this.dataSource.data);
+    this.groupSelection.select(...this.dataSource.data.filter(group => group.isCreator));
   }
 
   editGroup() {
     this.editing = !this.editing;
-    this.addingDigitisers = false;
   }
 
   removeAssets(assets: MatListOption[], group: AssetGroup) {
     const selectedAssets: string[] = assets.map(option => option.value);
     this.assetGroupService.updateGroupRemoveAssets(group.group_name, selectedAssets)
       .subscribe(updatedGroup => {
-        console.log(updatedGroup);
         if (updatedGroup) {
-          this.updateDataSourceGroup(group, updatedGroup);
+          this.updateDataSourceGroup(group, updatedGroup, false);
         }
       });
   }
@@ -89,7 +98,7 @@ export class AssetGroupsComponent implements OnInit {
     this.assetGroupService.revokeAccess(group.group_name, selectedUsers)
       .subscribe(updatedGroup => {
         if (updatedGroup) {
-          this.updateDataSourceGroup(group, updatedGroup);
+          this.updateDataSourceGroup(group, updatedGroup, false);
         }
       });
   }
@@ -100,16 +109,36 @@ export class AssetGroupsComponent implements OnInit {
       this.assetGroupService.grantAccess(group.group_name, selectedUsers)
         .subscribe(updatedGroup => {
           if (updatedGroup) {
-            this.updateDataSourceGroup(group, updatedGroup);
+            this.updateDataSourceGroup(group, updatedGroup, false);
           }
         });
     }
   }
 
-  updateDataSourceGroup(prevGroup: AssetGroup, newGroup: AssetGroup) {
+  updateDataSourceGroup(prevGroup: AssetGroup, newGroup: AssetGroup | null, remove: boolean) {
     const i = this.dataSource.data.findIndex(g => g == prevGroup);
-    this.dataSource.data[i].assets = newGroup.assets;
-    this.dataSource.data[i].hasAccess = newGroup.hasAccess;
+    if (remove) {
+      this.dataSource.data.splice(i, 1);
+      this.dataSource._updateChangeSubscription();
+    } else {
+      if (newGroup) {
+        this.dataSource.data[i].assets = newGroup.assets;
+        this.dataSource.data[i].hasAccess = newGroup.hasAccess;
+      }
+    }
+  }
+
+  goToAsset(assetGuid: string) {
+    this.router.navigate(['/detailed-view/' + assetGuid]);
+  }
+
+  deleteGroups() {
+    if (this.groupSelection.selected) {
+      this.groupSelection.selected.forEach(group => {
+        this.assetGroupService.deleteGroup(group.group_name)
+          .subscribe(() => this.updateDataSourceGroup(group, null, true))
+      })
+    }
   }
 
 }

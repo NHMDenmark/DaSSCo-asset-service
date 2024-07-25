@@ -1,7 +1,7 @@
 <div class="container">
   <div mat-dialog-content>
     <mat-accordion class="example-headers-align">
-      <mat-expansion-panel [expanded]="!newGroupOnly" [disabled]="newGroupOnly">
+      <mat-expansion-panel [expanded]="true">
         <mat-expansion-panel-header>
           <mat-panel-title>
             Existing Group
@@ -23,7 +23,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true" [expanded]="newGroupOnly" >
+      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true">
         <mat-expansion-panel-header>
           <mat-panel-title>
             New Group
@@ -38,8 +38,8 @@
           <mat-form-field appearance="outline">
             <mat-label>Group Name</mat-label>
             <input (change)="nameSaved = false" matInput placeholder="Butterflies" [(ngModel)]="groupName">
-<!--            <mat-icon matSuffix (click)="newGroup($event)" class="saved-{{nameSaved}}">check</mat-icon>-->
           </mat-form-field>
+
           <div *ngIf="(cachedDigitisers$ | async) as digitisers">
             <mat-form-field appearance="fill">
               <mat-label>Digitisers</mat-label>
