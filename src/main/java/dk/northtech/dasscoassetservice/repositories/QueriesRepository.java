@@ -31,7 +31,8 @@ public interface QueriesRepository extends SqlObject {
             try {
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
+                handle.execute("set search_path TO ag_catalog;");
+                //handle.execute(DBConstants.AGE_BOILERPLATE);
                 return handle;
             } catch (SQLException e) {
                 throw new RuntimeException(e);

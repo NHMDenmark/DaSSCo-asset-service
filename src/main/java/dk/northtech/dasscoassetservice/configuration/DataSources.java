@@ -11,25 +11,37 @@ import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.postgres.PostgresPlugin;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
+
 
 import javax.sql.DataSource;
 
 @Configuration
 public class DataSources {
 
-  @Bean
-  public DataSource dataSource(HikariConfig hikariConfig) {
+  @Bean(name="admin")
+  @Primary
+  public DataSource adminDataSource(@Named("admin-config")HikariConfig hikariConfig) {
     return new HikariDataSource(hikariConfig);
   }
 
   // Using an explicit bean to carry the configuration allows the tooling to recognize the Hikari-specific property
   // names and, say, offer them as autocompletion in the property file.
-  @Bean
-  @ConfigurationProperties("datasource")
-  public HikariConfig hikariConfig() {
+  @Bean(name="admin-config")
+  @ConfigurationProperties("datasource.admin")
+  public HikariConfig adminHikariConfig() {
+    return new HikariConfig();
+  }
+
+  @Bean(name="readonly")
+  @DependsOn("liquibase")
+  public DataSource readonlyDataSource(@Named("readonly-config") HikariConfig hikariConfig){
+    return new HikariDataSource(hikariConfig);
+  }
+
+  @Bean(name="readonly-config")
+  @ConfigurationProperties("datasource.readonly")
+  public HikariConfig readonlyHikariConfig(){
     return new HikariConfig();
   }
 

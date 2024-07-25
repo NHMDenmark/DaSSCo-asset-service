@@ -3,7 +3,7 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
-    <changeSet id="VERSION-3.0.0" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-3.0.0" author="Nicolas Jan" contextFilter="test, development">
         <sql>
             CREATE USER ${readonly.username} WITH PASSWORD '${readonly.password}';
             GRANT CONNECT ON DATABASE dassco_file_proxy TO ${readonly.username};

@@ -6,13 +6,20 @@ import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import dk.northtech.dasscoassetservice.repositories.QueriesRepository;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
+import org.jdbi.v3.core.statement.HashPrefixSqlParser;
+import org.jdbi.v3.jackson2.Jackson2Plugin;
+import org.jdbi.v3.postgres.PostgresPlugin;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +27,7 @@ import java.util.stream.Collectors;
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
     private Jdbi jdbi;
+    private DataSource dataSource;
     private RightsValidationService rightsValidationService;
 
     List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
@@ -119,9 +127,16 @@ public class QueriesService {
                   """;
 
     @Inject
-    public QueriesService(RightsValidationService rightsValidationService, Jdbi jdbi) {
+    public QueriesService(RightsValidationService rightsValidationService,
+                          @Named("readonly")DataSource dataSource) {
         this.rightsValidationService = rightsValidationService;
-        this.jdbi = jdbi;
+        this.dataSource = dataSource;
+        this.jdbi = Jdbi.create(dataSource)
+                .installPlugin(new PostgresPlugin())
+                .installPlugin(new SqlObjectPlugin())
+                .installPlugin(new Jackson2Plugin())
+                .registerRowMapper(ConstructorMapper.factory(Directory.class))
+                .setSqlParser(new HashPrefixSqlParser());
     }
 
     public Map<String, List<String>> getNodeProperties() {
