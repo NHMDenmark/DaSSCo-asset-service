@@ -12,6 +12,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -128,7 +129,7 @@ public class QueriesService {
     }
 
     public Map<String, List<String>> getNodeProperties() {
-        Map<String, List<String>> properties = jdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
         properties.get("Asset").addAll(propertiesTimestamps);
         properties.get("Asset").addAll(propertiesDigitiser);
         return properties;
@@ -169,7 +170,7 @@ public class QueriesService {
         distinctAssets.stream()
                 .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
                 .forEach(asset -> {
-                    System.out.println("setting events to: " + jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
+                    System.out.println("setting events to: " + readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
                     asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
                 });
 

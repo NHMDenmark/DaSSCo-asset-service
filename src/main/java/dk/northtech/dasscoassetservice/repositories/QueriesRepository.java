@@ -96,7 +96,7 @@ public interface QueriesRepository extends SqlObject {
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                   , $$
-                        MATCH (u:User {name: $username})
+                        MERGE (u:User {name: $username, user_id: $username})
                         MERGE (q:Query {name: $name, query: $query})
                         MERGE (u)<-[:SAVED_BY]-(q)
                         RETURN q.name, q.query
