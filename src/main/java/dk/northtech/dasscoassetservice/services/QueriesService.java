@@ -11,6 +11,7 @@ import org.apache.commons.text.StringSubstitutor;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
     private Jdbi jdbi;
+    private Jdbi readonlyJdbi;
     private RightsValidationService rightsValidationService;
 
     List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
@@ -119,9 +121,10 @@ public class QueriesService {
                   """;
 
     @Inject
-    public QueriesService(RightsValidationService rightsValidationService, Jdbi jdbi) {
+    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi")Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
+        this.readonlyJdbi = readonlyJdbi;
     }
 
     public Map<String, List<String>> getNodeProperties() {
@@ -137,7 +140,7 @@ public class QueriesService {
             collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
         }
         String query = unwrapQuery(queries, limit, true, collectionsAccess);
-        return jdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+        return readonlyJdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
     }
 
     public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
@@ -151,7 +154,7 @@ public class QueriesService {
 
         logger.info("Getting assets from query.");
         System.out.println(query);
-        List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+        List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
         // gotta do the following to avoid duplicates in case the query returns an asset with multiple events.
         Map<String, Long> assetCountMap = assets.stream()
                 .collect(Collectors.groupingBy(Asset::getAsset_guid, Collectors.counting()));
@@ -167,7 +170,7 @@ public class QueriesService {
                 .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
                 .forEach(asset -> {
                     System.out.println("setting events to: " + jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
-                    asset.events = jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
+                    asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
                 });
 
         return distinctAssets;
@@ -317,7 +320,7 @@ public class QueriesService {
     }
 
     public List<SavedQuery> getSavedQueries(String username) {
-        return jdbi.onDemand(QueriesRepository.class).getSavedQueries(username);
+        return readonlyJdbi.onDemand(QueriesRepository.class).getSavedQueries(username);
     }
 
     public SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
