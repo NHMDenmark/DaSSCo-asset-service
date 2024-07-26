@@ -25,8 +25,7 @@ public class WorkstationRepository {
     private DataSource dataSource;
 
     @Inject
-    public WorkstationRepository(Jdbi jdbi, DataSource dataSource) {
-        this.dataSource = dataSource;
+    public WorkstationRepository(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
 

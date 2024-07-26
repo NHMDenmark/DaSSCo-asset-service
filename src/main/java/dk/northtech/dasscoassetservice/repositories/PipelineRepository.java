@@ -20,11 +20,9 @@ import java.util.Optional;
 @Repository
 public class PipelineRepository {
     private Jdbi jdbi;
-    private DataSource dataSource;
 
     @Inject
-    public PipelineRepository(Jdbi jdbi, DataSource dataSource) {
-        this.dataSource = dataSource;
+    public PipelineRepository(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
 

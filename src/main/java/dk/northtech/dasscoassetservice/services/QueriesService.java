@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
     private Jdbi jdbi;
-    private DataSource dataSource;
+    private Jdbi adminJdbi;
     private RightsValidationService rightsValidationService;
 
     List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
@@ -128,15 +128,15 @@ public class QueriesService {
 
     @Inject
     public QueriesService(RightsValidationService rightsValidationService,
-                          @Named("readonly")DataSource dataSource) {
+                          @Named("readonly")DataSource dataSource, Jdbi jdbi) {
         this.rightsValidationService = rightsValidationService;
-        this.dataSource = dataSource;
         this.jdbi = Jdbi.create(dataSource)
                 .installPlugin(new PostgresPlugin())
                 .installPlugin(new SqlObjectPlugin())
                 .installPlugin(new Jackson2Plugin())
                 .registerRowMapper(ConstructorMapper.factory(Directory.class))
                 .setSqlParser(new HashPrefixSqlParser());
+        this.adminJdbi = jdbi;
     }
 
     public Map<String, List<String>> getNodeProperties() {
@@ -328,7 +328,7 @@ public class QueriesService {
     }
 
     public SavedQuery saveQuery(SavedQuery savedQuery, String username) {
-        return jdbi.onDemand(QueriesRepository.class).saveQuery(savedQuery, username);
+        return adminJdbi.onDemand(QueriesRepository.class).saveQuery(savedQuery, username);
     }
 
     public List<SavedQuery> getSavedQueries(String username) {
@@ -336,11 +336,11 @@ public class QueriesService {
     }
 
     public SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {
-        return jdbi.onDemand(QueriesRepository.class).updateSavedQuery(prevTitle, newQuery, username);
+        return adminJdbi.onDemand(QueriesRepository.class).updateSavedQuery(prevTitle, newQuery, username);
     }
 
     public String deleteSavedQuery(String title, String username) {
-        return jdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
+        return adminJdbi.onDemand(QueriesRepository.class).deleteSavedQuery(title, username);
     }
 
     public boolean checkRights(User user) {

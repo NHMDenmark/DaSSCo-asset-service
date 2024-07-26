@@ -30,8 +30,7 @@ public class InternalStatusRepository {
             "SET search_path = ag_catalog, \"$user\", public;";
 
     @Inject
-    public InternalStatusRepository(Jdbi jdbi, DataSource dataSource) {
-        this.dataSource = dataSource;
+    public InternalStatusRepository(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
 

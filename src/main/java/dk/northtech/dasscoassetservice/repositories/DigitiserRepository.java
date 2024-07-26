@@ -23,9 +23,8 @@ public class DigitiserRepository {
                     "SET search_path = ag_catalog, \"$user\", public;";
 
     @Inject
-    public DigitiserRepository(Jdbi jdbi, DataSource dataSource){
+    public DigitiserRepository(Jdbi jdbi){
         this.jdbi = jdbi;
-        this.dataSource = dataSource;
     }
 
     public List<Digitiser> listDigitisers(){

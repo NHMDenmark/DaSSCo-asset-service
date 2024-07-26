@@ -41,33 +41,33 @@ We need to create a read-only user that is going to be used for the Query page. 
 * ``docker exec -it <container-id> bash`` will access the container.
 * ``psql -U <admin-user> -d <database>`` will enter the postgres console.
 * We enter here the creation of the new user, and give access to the schemas:
-```CREATE USER ${readonly.username} WITH PASSWORD '${readonly.password}';
-   GRANT CONNECT ON DATABASE dassco_file_proxy TO ${readonly.username};
-   GRANT USAGE ON SCHEMA public TO ${readonly.username};
-   GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${readonly.username};
-   GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO ${readonly.username};
-   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${readonly.username};
+```CREATE USER readonly_username WITH PASSWORD 'readonly_password';
+   GRANT CONNECT ON DATABASE dassco_file_proxy TO readonly_username;
+   GRANT USAGE ON SCHEMA public TO readonly_username;
+   GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_username;
+   GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO readonly_username;
+   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO readonly_username;
 
-   GRANT USAGE ON SCHEMA ag_catalog TO ${readonly.username};
-   GRANT SELECT ON ALL TABLES IN SCHEMA ag_catalog TO ${readonly.username};
-   GRANT USAGE ON ALL SEQUENCES IN SCHEMA ag_catalog TO ${readonly.username};
-   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ag_catalog TO ${readonly.username};
+   GRANT USAGE ON SCHEMA ag_catalog TO readonly_username;
+   GRANT SELECT ON ALL TABLES IN SCHEMA ag_catalog TO readonly_username;
+   GRANT USAGE ON ALL SEQUENCES IN SCHEMA ag_catalog TO readonly_username;
+   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ag_catalog TO readonly_username;
 
-   GRANT USAGE ON SCHEMA dassco TO ${readonly.username};
-   GRANT SELECT ON ALL TABLES IN SCHEMA dassco TO ${readonly.username};
-   GRANT USAGE ON ALL SEQUENCES IN SCHEMA dassco TO ${readonly.username};
-   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA dassco TO ${readonly.username};
+   GRANT USAGE ON SCHEMA dassco TO readonly_username;
+   GRANT SELECT ON ALL TABLES IN SCHEMA dassco TO readonly_username;
+   GRANT USAGE ON ALL SEQUENCES IN SCHEMA dassco TO readonly_username;
+   GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA dassco TO readonly_username;
 
-   GRANT USAGE ON SCHEMA information_schema TO ${readonly.username};
-   GRANT USAGE ON SCHEMA pg_catalog TO ${readonly.username};
-   GRANT USAGE ON SCHEMA pg_toast TO ${readonly.username};
+   GRANT USAGE ON SCHEMA information_schema TO readonly_username;
+   GRANT USAGE ON SCHEMA pg_catalog TO readonly_username;
+   GRANT USAGE ON SCHEMA pg_toast TO readonly_username;
 
-   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT SELECT ON TABLES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT USAGE ON SEQUENCES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT SELECT ON TABLES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT USAGE ON SEQUENCES TO ${readonly.username};
-   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};```
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT SELECT ON TABLES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT USAGE ON SEQUENCES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT EXECUTE ON FUNCTIONS TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT SELECT ON TABLES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT USAGE ON SEQUENCES TO readonly_username;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT EXECUTE ON FUNCTIONS TO readonly_username;```
