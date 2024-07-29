@@ -109,10 +109,10 @@ public class QueriesService {
                          MATCH (e:Event)<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e)
                          ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
-                         MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                          ${instCollAccess:-}
+                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
+                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
                          RETURN count(DISTINCT a) as count

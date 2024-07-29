@@ -5,7 +5,7 @@ import {
   defaultView,
   StatValue,
   GraphStatsV2, ViewV2, CUSTOM_DATE_FORMAT, ChartDataTypes
-} from '../../types/types';
+} from '../../types/graph-types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment-timezone';
 import {FormControl, FormGroup} from '@angular/forms';

@@ -131,7 +131,6 @@ export class QueryBuilderComponent implements OnInit {
         } else {
           const date = <Moment>where.get('date')?.value;
           value = date.valueOf();
-          console.log(date.valueOf())
         }
       } else {
         value = where.get('value')?.value;
