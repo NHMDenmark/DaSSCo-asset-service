@@ -35,6 +35,12 @@
       mat-spinner {
         margin-left: 5px;
       }
+
+      .group-btns {
+        display: flex;
+        flex-direction: row;
+        gap: .5rem;
+      }
     }
 
     mat-table {

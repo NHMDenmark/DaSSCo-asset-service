@@ -33,8 +33,9 @@
 
   <div class="table">
     <div class="table-properties">
-      <div>
+      <div class="group-btns">
         <button mat-raised-button [disabled]="selection.isEmpty()" (click)="addToGroup()">Add To Group</button>
+        <button mat-raised-button [routerLink]="'/asset-groups'">My Groups</button>
       </div>
 
       <div *ngIf="dataSource.data.length > 0">
@@ -91,7 +92,6 @@
         <mat-cell *matCellDef="let element">
           <ng-container *ngFor="let file of element.file_formats; let isLast = last">
             {{isLast ? file : file + ','}}
-            <br />
           </ng-container>
         </mat-cell>
       </ng-container>
