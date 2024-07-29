@@ -822,4 +822,8 @@ public class AssetService {
         return optionalAsset;
     }
 
+    public List<Asset> readMultipleAssets(List<String> assets){
+        return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assets);
+    }
+
 }

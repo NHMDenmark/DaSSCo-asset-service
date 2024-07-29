@@ -42,7 +42,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   assetCount: string | undefined = undefined;
   queryData: {title: string | undefined, map: Map<string, QueryView[]>} | undefined; // saved/loaded or cached
   selectedAssets = new Set<string>();
-  areAssetsSelected = false;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -143,6 +142,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
       const response: QueryResponse = {id: parseInt(key), query: qv2s};
       queryResponses.push(response);
+      this.selection.clear();
     })
 
     this.queriesService.getAssetsFromQuery(queryResponses, this.limit)
@@ -309,26 +309,16 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     }
   }
 
-
-  toggleSelection(asset: any) {
-    if (this.isSelected(asset)) {
-      this.selectedAssets.delete(asset.asset_guid);
-    } else {
-      this.selectedAssets.add(asset.asset_guid);
-    }
-    this.areAssetsSelected = this.selectedAssets.size > 0;
-  }
-
-  isSelected(asset: any): boolean {
-    return this.selectedAssets.has(asset.asset_guid);
-  }
-
   downloadCsv() {
-    console.log(this.selectedAssets);
+    console.log(this.selection);
     console.log('Download Asset CSV');
   }
 
   downloadZip() {
     console.log('Download Asset ZIP');
+  }
+
+  areAssetsSelected(){
+    return this.selection.hasValue();
   }
 }

@@ -66,14 +66,14 @@
           </mat-checkbox>
         </mat-cell>
       </ng-container>
-
+<!--
       <ng-container matColumnDef="select">
         <mat-header-cell *matHeaderCellDef>Select</mat-header-cell>
         <mat-cell *matCellDef="let element">
           <mat-checkbox (change)="toggleSelection(element)" [checked]="isSelected(element)"></mat-checkbox>
         </mat-cell>
       </ng-container>
-
+-->
       <ng-container matColumnDef="asset_guid">
         <mat-header-cell *matHeaderCellDef mat-sort-header>Guid</mat-header-cell>
         <mat-cell *matCellDef="let element">{{element.asset_guid}}</mat-cell>
@@ -159,7 +159,7 @@
   </div>
 
   <div class="button-container">
-    <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected">Download Asset CSV</button>
-    <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected">Download Asset ZIP</button>
+    <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected()">Download Asset CSV</button>
+    <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">Download Asset ZIP</button>
   </div>
 </div>

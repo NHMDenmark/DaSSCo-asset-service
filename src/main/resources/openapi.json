@@ -64,6 +64,37 @@
         } ]
       }
     },
+    "/v1/assets/readaccessmultiple" : {
+      "post" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Access Permission for Multiple Assets",
+        "description" : "Checks if the User has access or not to many assets.",
+        "operationId" : "checkAccessMultiple",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assets/statusList" : {
       "get" : {
         "tags" : [ "Assets" ],

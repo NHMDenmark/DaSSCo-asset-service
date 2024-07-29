@@ -7,6 +7,7 @@ import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -175,4 +177,29 @@ public class AssetApi {
         rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
     }
 
+    @POST
+    @Path("/readaccessmultiple")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary =  "Get Access Permission for Multiple Assets", description = "Checks if the User has access or not to many assets.")
+    public Response checkAccessMultiple(List<String> assets, @Context SecurityContext securityContext){
+        List<Asset> assetList = assetService.readMultipleAssets(assets);
+        if (assetList.size() != assets.size()){
+            throw new IllegalArgumentException("One or more assets were not found");
+        }
+
+        List<String> restrictedAssets = new ArrayList<>();
+
+        for (Asset asset : assetList){
+            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            if(!hasAccess){
+                restrictedAssets.add(asset.asset_guid);
+            }
+        }
+
+        if (!restrictedAssets.isEmpty()){
+            return Response.status(403).entity(new DaSSCoError("1.0", DaSSCoErrorCode.FORBIDDEN, "User does not have access to following assets: " + restrictedAssets.toString())).build();
+        }
+
+        return Response.status(200).entity("User has access to all the assets").build();
+    }
 }
