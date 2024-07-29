@@ -14,6 +14,8 @@ import org.apache.commons.text.StringSubstitutor;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
     private Jdbi jdbi;
+    private Jdbi readonlyJdbi;
     private RightsValidationService rightsValidationService;
 
     LoadingCache<User, Map<String, Set<String>>> accessCache = Caffeine.newBuilder() // <user, <"read", ["collection2"]>>
@@ -129,13 +132,14 @@ public class QueriesService {
                   """;
 
     @Inject
-    public QueriesService(RightsValidationService rightsValidationService, Jdbi jdbi) {
+    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi")Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
+        this.readonlyJdbi = readonlyJdbi;
     }
 
     public Map<String, List<String>> getNodeProperties() {
-        Map<String, List<String>> properties = jdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
         properties.get("Asset").addAll(propertiesTimestamps);
         properties.get("Asset").addAll(propertiesDigitiser);
         return properties;
@@ -174,8 +178,6 @@ public class QueriesService {
                     .values().stream()
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
-            System.out.println("collectionsAccess");
-            System.out.println(collectionsAccess);
         }
 
         List<Asset> allAssets = new ArrayList<>();
@@ -192,15 +194,6 @@ public class QueriesService {
                 allAssets.addAll(distinctAssets);
             }
         }
-
-//        String query = unwrapQuery(queries, limit, false, collectionsAccess, fullAccess);
-//        if (query == null || StringUtils.isBlank(query)) return new ArrayList<>();
-
-//        logger.info("Getting assets from query.");
-//        System.out.println(query);
-//        List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
-//        List<Asset> distinctAssets = handleDuplicatedAssets(assets);
-//        applyWriteAccess(accessMap, distinctAssets);
 
         return allAssets;
     }
@@ -375,7 +368,7 @@ public class QueriesService {
     }
 
     public List<SavedQuery> getSavedQueries(String username) {
-        return jdbi.onDemand(QueriesRepository.class).getSavedQueries(username);
+        return readonlyJdbi.onDemand(QueriesRepository.class).getSavedQueries(username);
     }
 
     public SavedQuery updateSavedQuery(String prevTitle, SavedQuery newQuery, String username) {

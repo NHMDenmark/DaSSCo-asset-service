@@ -27,6 +27,25 @@ tags:
 - name: Workstations
   description: Endpoints related to institutions workstations
 paths:
+  /v1/assets/readaccess:
+    post:
+      tags:
+      - Assets
+      summary: Get Access Permission
+      description: Checks if User has access or not to certain assets.
+      operationId: checkAccess
+      parameters:
+      - name: assetGuid
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
   /v1/assets/statusList:
     get:
       tags:
