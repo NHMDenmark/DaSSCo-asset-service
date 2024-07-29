@@ -160,7 +160,7 @@ public class QueriesService {
             String query = unwrapQuery(received, limit, true, collectionsAccess, fullAccess);
             if (query != null && !StringUtils.isBlank(query)) {
                 logger.info("Getting asset count from query.");
-                allAssets += jdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+                allAssets += readonlyJdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
             }
         }
 
@@ -187,7 +187,7 @@ public class QueriesService {
             if (query != null && !StringUtils.isBlank(query)) {
                 logger.info("Getting assets from query.");
                 System.out.println(query);
-                List<Asset> assets = jdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+                List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
                 List<Asset> distinctAssets = handleDuplicatedAssets(assets);
 
                 applyWriteAccess(accessMap, distinctAssets);
@@ -212,7 +212,7 @@ public class QueriesService {
 
         distinctAssets.stream()
                 .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
-                .forEach(asset -> asset.events = jdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid)); // setting events for the duplicated assets
+                .forEach(asset -> asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid)); // setting events for the duplicated assets
 
         return distinctAssets;
     }
