@@ -28,7 +28,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = sort;
   }
 
-  displayedColumns: string[  ] = ['asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
+  displayedColumns: string[  ] = ['select', 'asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
   // displayedColumns: string[  ] = ['asset_guid'];
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
@@ -38,6 +38,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   loadingAssetCount: boolean = false;
   assetCount: string | undefined = undefined;
   queryData: {title: string | undefined, map: Map<string, QueryView[]>} | undefined; // saved/loaded or cached
+  selectedAssets = new Set<string>();
+  areAssetsSelected = false;
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -263,5 +265,27 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
     }
     return 0;
+  }
+
+  toggleSelection(asset: any) {
+    if (this.isSelected(asset)) {
+      this.selectedAssets.delete(asset.asset_guid);
+    } else {
+      this.selectedAssets.add(asset.asset_guid);
+    }
+    this.areAssetsSelected = this.selectedAssets.size > 0;
+  }
+
+  isSelected(asset: any): boolean {
+    return this.selectedAssets.has(asset.asset_guid);
+  }
+
+  downloadCsv() {
+    console.log(this.selectedAssets);
+    console.log('Download Asset CSV');
+  }
+
+  downloadZip() {
+    console.log('Download Asset ZIP');
   }
 }

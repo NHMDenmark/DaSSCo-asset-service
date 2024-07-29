@@ -18,7 +18,7 @@ export class DetailedViewComponent implements OnInit {
   assetGuid: string = "";
   currentIndex : number = -1;
   // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
-  assetList: string[] = ['asset-1', 'asset-2', 'asset-3']
+  assetList: string[] = ['test-asset-1', 'test-asset-2', 'test-asset-3']
   dataLoaded: boolean = false;
 
   constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute, private _snackBar: MatSnackBar) { }
