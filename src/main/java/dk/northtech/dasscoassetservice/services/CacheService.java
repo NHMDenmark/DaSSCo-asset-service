@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.inject.Inject;
 import dk.northtech.dasscoassetservice.cache.*;
+import dk.northtech.dasscoassetservice.domain.Digitiser;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -55,5 +56,9 @@ public class CacheService {
         allCaches.put("workstations", workstationCache.getWorkstationMap());
 
         return allCaches;
+    }
+
+    public Map<String, Digitiser> getDigitiserMap(){
+        return digitiserCache.getDigitiserMap();
     }
 }

@@ -1,0 +1,60 @@
+<div class="container">
+  <div mat-dialog-content>
+    <mat-accordion class="example-headers-align">
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            Existing Group
+          </mat-panel-title>
+          <mat-panel-description>
+            Add assets to a saved group
+            <mat-icon>workspaces</mat-icon>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div>
+          <mat-form-field appearance="fill">
+            <mat-label>Groups</mat-label>
+            <mat-select [(ngModel)]="groupName" (selectionChange)="new = false">
+              <mat-option *ngFor="let group of (assetGroups$ | async)"
+                          class="group-name" [value]="group.group_name">{{group.group_name}}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+
+      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            New Group
+          </mat-panel-title>
+          <mat-panel-description>
+            Create new group
+            <mat-icon>add_box</mat-icon>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="new-group">
+          <mat-form-field appearance="outline">
+            <mat-label>Group Name</mat-label>
+            <input (change)="nameSaved = false" matInput placeholder="Butterflies" [(ngModel)]="groupName">
+          </mat-form-field>
+
+          <div *ngIf="(cachedDigitisers$ | async) as digitisers">
+            <mat-form-field appearance="fill">
+              <mat-label>Digitisers</mat-label>
+              <mat-select [multiple]="true" [formControl]="digitiserFormControl">
+                <mat-option *ngFor="let digitiser of digitisers | keyvalue" [value]="digitiser.key">{{digitiser.key}}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+
+  <div mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-stroked-button (click)="save()">Save</button>
+  </div>
+</div>

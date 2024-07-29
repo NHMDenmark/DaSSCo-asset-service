@@ -72,13 +72,13 @@ export class QueriesService {
       );
   }
 
-  getAssetCountFromQuery(queries: QueryResponse[]): Observable<number | undefined> {
+  getAssetCountFromQuery(queries: QueryResponse[], limit: number): Observable<number | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<number>(`${this.baseUrl}/assetcount`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+          return this.http.post<number>(`${this.baseUrl}/assetcount/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
-              catchError(this.handleError(`get ${this.baseUrl}/assetcount`, undefined))
+              catchError(this.handleError(`get ${this.baseUrl}/assetcount${limit}`, undefined))
             );
         })
       );

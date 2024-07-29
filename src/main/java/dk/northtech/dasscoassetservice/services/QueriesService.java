@@ -1,5 +1,8 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -16,6 +19,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +28,10 @@ public class QueriesService {
     private Jdbi jdbi;
     private Jdbi readonlyJdbi;
     private RightsValidationService rightsValidationService;
+
+    LoadingCache<User, Map<String, Set<String>>> accessCache = Caffeine.newBuilder() // <user, <"read", ["collection2"]>>
+            .expireAfterWrite(15, TimeUnit.MINUTES)
+            .build(user -> this.rightsValidationService.getCollectionRights(user.roles));
 
     List<String> propertiesTimestamps = Arrays.asList("created_timestamp", "updated_timestamp", "audited_timestamp");
     List<String> propertiesDigitiser = Arrays.asList("asset_created_by", "asset_deleted_by", "asset_updated_by", "audited_by");
@@ -70,6 +78,7 @@ public class QueriesService {
                               , u.name AS user_name
                               , a.date_metadata_taken
                               , a.date_asset_taken
+                              , ${writeAccess:-null}
                          LIMIT ${limit:-200}
                       $$)
                     AS (asset_guid agtype
@@ -97,7 +106,8 @@ public class QueriesService {
                     , date_asset_finalised agtype
                     , user_name agtype
                     , date_metadata_taken agtype
-                    , date_asset_taken agtype);
+                    , date_asset_taken agtype
+                    , write_access agtype);
                   """;
 
     String assetCountSql = """
@@ -137,104 +147,141 @@ public class QueriesService {
 
     public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
         Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
-        if (!checkRights(user)) {
-            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        boolean fullAccess = checkRights(user);
+        if (!fullAccess) {
+            collectionsAccess = accessCache.get(user)
+                    .values().stream()
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
         }
-        String query = unwrapQuery(queries, limit, true, collectionsAccess);
-        return readonlyJdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+
+        int allAssets = 0;
+        for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
+            String query = unwrapQuery(received, limit, true, collectionsAccess, fullAccess);
+            if (query != null && !StringUtils.isBlank(query)) {
+                logger.info("Getting asset count from query.");
+                allAssets += readonlyJdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
+            }
+        }
+
+        return allAssets;
     }
 
     public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
         Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
-        if (!checkRights(user)) {
-            collectionsAccess = this.rightsValidationService.getCollectionsReadRights(user.roles);
+        Map<String, Set<String>> accessMap = null;
+
+        boolean fullAccess = checkRights(user);
+        if (!fullAccess) {
+            accessMap = accessCache.get(user);
+            collectionsAccess = accessMap // will be empty if the user has no rights to anything
+                    .values().stream()
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
         }
 
-        String query = unwrapQuery(queries, limit, false, collectionsAccess);
-        if (query == null || StringUtils.isBlank(query)) return new ArrayList<>();
+        List<Asset> allAssets = new ArrayList<>();
 
-        logger.info("Getting assets from query.");
-        System.out.println(query);
-        List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+        for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
+            String query = unwrapQuery(received, limit, false, collectionsAccess, fullAccess);
+            if (query != null && !StringUtils.isBlank(query)) {
+                logger.info("Getting assets from query.");
+                System.out.println(query);
+                List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
+                List<Asset> distinctAssets = handleDuplicatedAssets(assets);
+
+                applyWriteAccess(accessMap, distinctAssets);
+                allAssets.addAll(distinctAssets);
+            }
+        }
+
+        return allAssets;
+    }
+
+    public List<Asset> handleDuplicatedAssets(List<Asset> originalAssets) {
         // gotta do the following to avoid duplicates in case the query returns an asset with multiple events.
-        Map<String, Long> assetCountMap = assets.stream()
+        Map<String, Long> assetCountMap = originalAssets.stream() // counts how many of each guid
                 .collect(Collectors.groupingBy(Asset::getAsset_guid, Collectors.counting()));
 
-        Set<String> duplicatedAssetGuids = assetCountMap.entrySet().stream()
+        Set<String> duplicatedAssetGuids = assetCountMap.entrySet().stream() // collects the guids with more than 1
                 .filter(entry -> entry.getValue() > 1)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
-        List<Asset> distinctAssets = new ArrayList<>(new HashSet<>(assets)); // object hash has been set so that not all properties are checked here
+        List<Asset> distinctAssets = new ArrayList<>(new HashSet<>(originalAssets)); // object hash has been set so that not all properties are checked here
 
         distinctAssets.stream()
                 .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
-                .forEach(asset -> {
-                    System.out.println("setting events to: " + readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid));
-                    asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid);
-                });
+                .forEach(asset -> asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid)); // setting events for the duplicated assets
 
         return distinctAssets;
     }
 
-    public String unwrapQuery(List<QueriesReceived> queries, int limit, boolean count, Set<String> collectionAccess) {
-        for (QueriesReceived received : queries) {
-            String finalQuery;
-            Map<String, String> whereMap = new HashMap<>();
-            whereMap.put("limit", Integer.toString(limit));
-            String collectionString = "";
-            String instutionString = "";
-
-            for (Query query: received.query) {
-                if (query.select.equalsIgnoreCase("Asset")) { // a
-                    String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
-                    if (!StringUtils.isBlank(eventTimestamps)) {
-                        whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
-                    }
-                    String where = joinFields(query.where, "a");
-                    if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
-                }
-                if (query.select.equalsIgnoreCase("Institution")) { // i
-                    instutionString = joinFields(query.where, "i");
-                }
-                if (query.select.equalsIgnoreCase("Workstation")) { // w
-                    String where = joinFields(query.where, "w");
-                    if (!StringUtils.isBlank(where)) whereMap.put("workstation", "\nWHERE (" + where + ")");
-                }
-                if (query.select.equalsIgnoreCase("Pipeline")) { // p
-                    String where = joinFields(query.where, "p");
-                    if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
-                }
-                if (query.select.equalsIgnoreCase("Collection"))  { // c
-                    collectionString = joinFields(query.where, "c");
-                }
-                if (query.select.equalsIgnoreCase("Specimen")) { // s
-                    String where = joinFields(query.where, "s");
-                    if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
-                }
-            }
-            if (collectionAccess != null) {
-                String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
-                StringJoiner orJoiner = new StringJoiner(" or ");
-
-                if (!StringUtils.isBlank(instutionString)) {
-                    orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
-                }
-                if (!StringUtils.isBlank(collectionString)) {
-                    orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
-                }
-                if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
-                    orJoiner.add("(c.name IN [" + collections + "])");
-                }
-                whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
-            }
-
-            StringSubstitutor substitutor = new StringSubstitutor(whereMap);
-            if (count) finalQuery = substitutor.replace(assetCountSql);
-            else finalQuery = substitutor.replace(assetSql);
-            return finalQuery;
+    public void applyWriteAccess(Map<String, Set<String>> accessMap, List<Asset> distinctAssets) {
+        if (accessMap != null && !accessMap.isEmpty()) {
+            distinctAssets.stream()
+                    .filter(asset -> accessMap.get("write").contains(asset.collection))
+                    .forEach(asset -> asset.writeAccess = true);
         }
-        return null;
+    }
+
+    public String unwrapQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess, boolean fullAccess) {
+        String finalQuery;
+        Map<String, String> whereMap = new HashMap<>();
+        whereMap.put("limit", Integer.toString(limit));
+        String collectionString = "";
+        String instutionString = "";
+
+        for (Query query: queryReceived.query) {
+            if (query.select.equalsIgnoreCase("Asset")) { // a
+                String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
+                if (!StringUtils.isBlank(eventTimestamps)) {
+                    whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
+                }
+                String where = joinFields(query.where, "a");
+                if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
+            }
+            if (query.select.equalsIgnoreCase("Institution")) { // i
+                instutionString = joinFields(query.where, "i");
+            }
+            if (query.select.equalsIgnoreCase("Workstation")) { // w
+                String where = joinFields(query.where, "w");
+                if (!StringUtils.isBlank(where)) whereMap.put("workstation", "\nWHERE (" + where + ")");
+            }
+            if (query.select.equalsIgnoreCase("Pipeline")) { // p
+                String where = joinFields(query.where, "p");
+                if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
+            }
+            if (query.select.equalsIgnoreCase("Collection"))  { // c
+                collectionString = joinFields(query.where, "c");
+            }
+            if (query.select.equalsIgnoreCase("Specimen")) { // s
+                String where = joinFields(query.where, "s");
+                if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
+            }
+        }
+        if (collectionAccess != null && !collectionAccess.isEmpty()) {
+            String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
+            StringJoiner orJoiner = new StringJoiner(" or ");
+
+            if (!StringUtils.isBlank(instutionString)) {
+                orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
+            }
+            if (!StringUtils.isBlank(collectionString)) {
+                orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
+            }
+            if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
+                orJoiner.add("(c.name IN [" + collections + "])");
+            }
+            whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
+        } else if (fullAccess) {
+            whereMap.put("writeAccess", "true");
+        }
+
+        StringSubstitutor substitutor = new StringSubstitutor(whereMap);
+        if (count) finalQuery = substitutor.replace(assetCountSql);
+        else finalQuery = substitutor.replace(assetSql);
+        return finalQuery;
     }
 
     public String joinFields(List<QueryWhere> wheres, String match) {

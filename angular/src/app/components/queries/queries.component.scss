@@ -25,14 +25,21 @@
   .table {
     margin-top: 1rem;
 
-    .count-div {
+    .table-properties {
       display: flex;
       flex-direction: row;
       margin-bottom: .5rem;
-      justify-content: flex-end;
+      align-items: center;
+      justify-content: space-between;
 
       mat-spinner {
         margin-left: 5px;
+      }
+
+      .group-btns {
+        display: flex;
+        flex-direction: row;
+        gap: .5rem;
       }
     }
 
@@ -48,7 +55,7 @@
       }
 
       .small-width {
-        width: 5rem;
+        width: 5rem !important;
       }
 
       mat-header-cell {
@@ -64,6 +71,10 @@
       }
     }
   }
+}
+
+.checkbox-width {
+  flex: 0 0 8% !important;
 }
 
 .mat-menu-item {
@@ -91,7 +102,7 @@
 tr.no-data-row{
   display: flex;
   align-items: center;
-  td{
+  td {
     flex: 1;
     display: flex;
     align-items: center;

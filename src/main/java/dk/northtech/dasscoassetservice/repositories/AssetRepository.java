@@ -173,6 +173,7 @@ public interface AssetRepository extends SqlObject {
                          , u.name
                          , a.date_metadata_taken
                          , a.date_asset_taken
+                         , null
                       $$
                     , #params)
                     as (asset_guid agtype
@@ -200,7 +201,8 @@ public interface AssetRepository extends SqlObject {
                     , date_asset_finalised agtype
                     , user_name agtype
                     , date_metadata_taken agtype
-                    , date_asset_taken agtype);
+                    , date_asset_taken agtype
+                    , write_access agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -261,6 +263,7 @@ public interface AssetRepository extends SqlObject {
                          , u.name
                          , a.date_metadata_taken
                          , a.date_asset_taken
+                         , null
                       $$
                     )
                     as (asset_guid agtype
@@ -288,7 +291,8 @@ public interface AssetRepository extends SqlObject {
                     , date_asset_finalised agtype
                     , user_name agtype
                     , date_metadata_taken agtype
-                    , date_asset_taken agtype);
+                    , date_asset_taken agtype
+                    , write_access agtype);
                   """.formatted(assetListAsString);
 
         return withHandle(handle -> handle.createQuery(sql)

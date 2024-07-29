@@ -153,9 +153,10 @@ public interface AssetGroupRepository extends SqlObject {
                    , $$
                        MATCH (u:User)-[:HAS_ACCESS]-(ag:Asset_Group {name: $group_name})
                        MATCH (ag)-[:CONTAINS]->(a:Asset)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) AS user_names
+                       MATCH (ag)-[:MADE_BY]->(uu:User)
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) AS user_names, uu.name
                    $$
-                , #params) as (group_name agtype, asset_guids agtype, user_name agtype);     
+                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);     
                 """;
 
         return withHandle(handle -> {
@@ -174,6 +175,8 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         Agtype hasAccess = rs.getObject("user_name", Agtype.class);
                         assetGroup.hasAccess = hasAccess.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                        Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
+                        assetGroup.groupCreator = groupCreator.getString();
                         return assetGroup;
                     }).findOne();
         });
@@ -187,9 +190,10 @@ public interface AssetGroupRepository extends SqlObject {
                    , $$
                        MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
                        MATCH (ag)-[:HAS_ACCESS]->(u:User)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names
+                       MATCH (ag)-[:MADE_BY]->(uu:User)
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names, uu.name
                    $$
-                ) as (group_name agtype, asset_guids agtype, user_name agtype);     
+                ) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);     
                 """;
 
         String sqlRoles = """
@@ -199,9 +203,10 @@ public interface AssetGroupRepository extends SqlObject {
                        MATCH (u:User {name: $user_name})<-[:HAS_ACCESS]-(ag:Asset_Group)-[:CONTAINS]->(a:Asset)
                        WITH ag, a, u
                        MATCH (ag)-[:HAS_ACCESS]->(allUsers:User)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT allUsers.name) AS user_names
+                       MATCH (ag)-[:MADE_BY]->(uu:User)
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT allUsers.name) AS user_names, uu.name
                    $$
-                , #params) as (group_name agtype, asset_guids agtype, user_name agtype);
+                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);
                 """;
 
         if (!roles){
@@ -214,6 +219,8 @@ public interface AssetGroupRepository extends SqlObject {
                         assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                         Agtype users = rs.getObject("user_name", Agtype.class);
                         assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                        Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
+                        assetGroup.groupCreator = groupCreator.getString();
                         return assetGroup;
                     })
                     .list());
@@ -233,6 +240,8 @@ public interface AssetGroupRepository extends SqlObject {
                             assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
                             Agtype users = rs.getObject("user_name", Agtype.class);
                             assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                            Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
+                            assetGroup.groupCreator = groupCreator.getString();
                             return assetGroup;
                         })
                         .list();

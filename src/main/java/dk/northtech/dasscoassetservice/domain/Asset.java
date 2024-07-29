@@ -79,6 +79,8 @@ public class Asset {
     public Instant error_timestamp;
     @Schema(description = "The name of the event for the Asset", example = "CREATE_ASSET_METADATA")
     public DasscoEvent event_name;
+    @Schema(description = "Whether the current user has write access. Used in frontend operations.", example = "TRUE")
+    public boolean writeAccess;
 
     public String getAsset_guid() {
         return asset_guid;

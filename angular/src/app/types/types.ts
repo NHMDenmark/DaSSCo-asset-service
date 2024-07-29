@@ -42,6 +42,7 @@ export interface Asset {
   pipeline: string | undefined;
   error_message: string | undefined;
   error_timestamp: Moment | undefined;
+  writeAccess: boolean | undefined;
 }
 
 export interface Specimen {
@@ -58,6 +59,19 @@ export interface Event {
   event: string | undefined;
   pipeline: string | undefined;
   workstation: string | undefined;
+}
+
+export interface AssetGroup {
+  group_name: string | undefined;
+  assets: string[] | undefined;
+  hasAccess: string[] | undefined;
+  groupCreator: string | undefined;
+  isCreator: boolean | undefined;
+}
+
+export interface Digitiser {
+  userId: string | undefined;
+  name: string | undefined;
 }
 
 export enum FileFormat {

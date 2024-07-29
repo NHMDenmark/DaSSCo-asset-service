@@ -32,18 +32,40 @@
   </div>
 
   <div class="table">
-    <div *ngIf="dataSource.data.length > 0">
-      <div class="count-div">{{dataSource.data.length}} /
-        <div *ngIf="loadingAssetCount; else showCount;">
-          <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+    <div class="table-properties">
+      <div class="group-btns">
+        <button mat-raised-button [disabled]="selection.isEmpty()" (click)="addToGroup()">Add To Group</button>
+        <button mat-raised-button [routerLink]="'/asset-groups'">My Groups</button>
+      </div>
+
+      <div *ngIf="dataSource.data.length > 0">
+        <div>{{dataSource.data.length}} /
+          <div *ngIf="loadingAssetCount; else showCount;">
+            <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
+          </div>
+          <ng-template #showCount>
+            {{assetCount}}
+          </ng-template>
         </div>
-        <ng-template #showCount>
-          {{assetCount}}
-        </ng-template>
       </div>
     </div>
 
     <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort (matSortChange)="sortData($event)">
+      <ng-container matColumnDef="select">
+        <mat-header-cell *matHeaderCellDef class="checkbox-width">
+          <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+          </mat-checkbox>
+        </mat-header-cell>
+        <mat-cell *matCellDef="let row" class="checkbox-width">
+          <mat-checkbox (click)="$event.stopPropagation()"
+                        (change)="$event && row.writeAccess ? selection.toggle(row) : null"
+                        [checked]="row.writeAccess && selection.isSelected(row)"
+                        [disabled]="!row.writeAccess">
+          </mat-checkbox>
+        </mat-cell>
+      </ng-container>
 
       <ng-container matColumnDef="select">
         <mat-header-cell *matHeaderCellDef>Select</mat-header-cell>
@@ -77,7 +99,6 @@
         <mat-cell *matCellDef="let element">
           <ng-container *ngFor="let file of element.file_formats; let isLast = last">
             {{isLast ? file : file + ','}}
-            <br />
           </ng-container>
         </mat-cell>
       </ng-container>

@@ -13,8 +13,11 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import {CacheService} from "../../services/cache.service";
-import {Asset} from "../../types/types";
+import {Asset, AssetGroup} from "../../types/types";
 import {MatSort, Sort} from "@angular/material/sort";
+import {SelectionModel} from "@angular/cdk/collections";
+import {AssetGroupDialogComponent} from "../dialogs/asset-group-dialog/asset-group-dialog.component";
+import {AssetGroupService} from "../../services/asset-group.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -29,7 +32,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   displayedColumns: string[  ] = ['select', 'asset_guid', 'institution', 'collection', 'barcode', 'file_formats', 'created_date', 'events'];
-  // displayedColumns: string[  ] = ['asset_guid'];
+  selection = new SelectionModel<Asset>(true, []);
   dataSource = new MatTableDataSource<Asset>();
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
@@ -47,7 +50,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       filter(isNotUndefined),
       map(nodes => {
         this.cacheService.setNodeProperties(nodes);
-        // localStorage.setItem('node-properties', JSON.stringify(nodes));
         this.nodes = nodes;
         return new Map(Object.entries(nodes));
       })
@@ -76,6 +78,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
               , private cacheService: CacheService
+              , private assetGroupService: AssetGroupService
   ) { }
 
   ngOnInit(): void {
@@ -150,7 +153,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       })
 
     this.loadingAssetCount = true;
-    this.queriesService.getAssetCountFromQuery(queryResponses)
+    this.queriesService.getAssetCountFromQuery(queryResponses, this.limit)
       .subscribe(count => {
         if (count != undefined) {
           if (count >= 10000) this.assetCount = '10000+';
@@ -177,11 +180,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       if (title) {
         this.queriesService.saveSearch({name: title, query: JSON.stringify(Object.fromEntries(this.queries))})
           .subscribe(saved => {
-            if (saved) {
-              this._snackBar.open('The search ' + title + ' has been saved.', 'OK');
-            } else {
-              this._snackBar.open('Error occurred when saving the search. Try again.', 'OK');
-            }
+            this.openSnackBar(saved, 'The search "' + title + '" has been saved.')
           })
       }
     });
@@ -198,11 +197,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe(queryName => {
         this.queriesService.deleteSavedSearch(queryName)
           .subscribe(deleted => {
-            if (deleted) {
-              this._snackBar.open('The search has been deleted.', 'OK');
-            } else {
-              this._snackBar.open('Error occurred. Try deleting again.', 'OK');
-            }
+            this.openSnackBar(deleted, 'The search has been deleted.')
           })
       });
 
@@ -266,6 +261,54 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     }
     return 0;
   }
+
+  isAllSelected() { // assets selection
+    const numSelected = this.selection.selected.length;
+    const numRows = this.dataSource.data.filter(asset => asset.writeAccess).length;
+    return numSelected === numRows;
+  }
+
+  toggleAllRows() { // asset rows
+    if (this.isAllSelected()) {
+      this.selection.clear();
+      return;
+    }
+    this.selection.select(...this.dataSource.data.filter(asset => asset.writeAccess));
+  }
+
+  addToGroup() {
+    const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
+      width: '500px'
+    });
+
+    console.log(this.selection.selected)
+
+    dialogRef.afterClosed().subscribe((group: {group: AssetGroup, new: boolean}) => {
+      if (group) {
+        group.group.assets = this.selection.selected.map(asset => asset.asset_guid).filter(isNotUndefined);
+        if (group.new) {
+          this.assetGroupService.newGroup(group.group)
+            .subscribe(newGroup => {
+              this.openSnackBar(newGroup, 'The group "' + group.group.group_name + '" has been created.')
+            });
+        } else {
+          this.assetGroupService.updateGroupAddAssets(group.group.group_name, group.group.assets)
+            .subscribe(updatedGroup => {
+              this.openSnackBar(updatedGroup, 'The group "' + group.group.group_name + '" has been updated.')
+            });
+        }
+      }
+    });
+  }
+
+  openSnackBar(object: any | undefined, success: string) {
+    if (object) {
+      this._snackBar.open(success, 'OK');
+    } else {
+      this._snackBar.open('An error occurred. Try again.', 'OK');
+    }
+  }
+
 
   toggleSelection(asset: any) {
     if (this.isSelected(asset)) {

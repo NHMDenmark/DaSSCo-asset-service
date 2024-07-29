@@ -118,6 +118,11 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
             asset.parent_guid = parent_guid.getString();
         }
+        rs.getString("write_access");
+        if (!rs.wasNull()) {
+            Agtype writeAccess = rs.getObject("write_access", Agtype.class);
+            asset.writeAccess = writeAccess.getBoolean();
+        }
         return asset;
     }
 
