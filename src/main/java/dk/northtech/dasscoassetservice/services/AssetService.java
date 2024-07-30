@@ -15,6 +15,8 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -824,6 +826,39 @@ public class AssetService {
 
     public List<Asset> readMultipleAssets(List<String> assets){
         return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assets);
+    }
+
+    public String createCSVString(List<Asset> assets){
+        String csv = "";
+        if (assets.isEmpty()){
+            return "";
+        }
+        StringBuilder csvBuilder = new StringBuilder();
+        Field[] fields = Asset.class.getDeclaredFields();
+        String headers = String.join(",", Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
+        csvBuilder.append(headers).append("\n");
+        for (Asset asset : assets){
+            StringJoiner joiner = new StringJoiner(",");
+            for (Field field : fields){
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(asset);
+                    joiner.add(escapeCsvValue(value != null ? value.toString() : ""));
+                } catch (IllegalAccessException e) {
+                    joiner.add("");
+                }
+            }
+            csvBuilder.append(joiner).append("\n");
+        }
+        return csvBuilder.toString();
+    }
+
+    public String escapeCsvValue(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            value = "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
 }

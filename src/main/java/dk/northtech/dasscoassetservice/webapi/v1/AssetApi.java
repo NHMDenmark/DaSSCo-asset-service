@@ -30,10 +30,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -180,26 +178,41 @@ public class AssetApi {
     @POST
     @Path("/readaccessmultiple")
     @Produces(APPLICATION_JSON)
-    @Operation(summary =  "Get Access Permission for Multiple Assets", description = "Checks if the User has access or not to many assets.")
+    @Operation(summary =  "Get Access Permission for Multiple Assets", description = "Checks if the User has access or not to many assets. Returns the asset metadata for the assets the User has access to.")
     public Response checkAccessMultiple(List<String> assets, @Context SecurityContext securityContext){
-        List<Asset> assetList = assetService.readMultipleAssets(assets);
-        if (assetList.size() != assets.size()){
+        // Set: No repeated assets, just in case:
+        Set<String> assetSet = new HashSet<>(assets);
+        // Assets found in backend:
+        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+
+        // If one or more assets don't exist, complain:
+        if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
         }
-
-        List<String> restrictedAssets = new ArrayList<>();
+        // List of Assets that the User has access to:
+        List<Asset> hasReadAccessTo = new ArrayList<>();
 
         for (Asset asset : assetList){
             boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
-            if(!hasAccess){
-                restrictedAssets.add(asset.asset_guid);
+            if(hasAccess){
+                hasReadAccessTo.add(asset);
             }
         }
+        // If assets that the user has access to is different to the assets got from backend, means that User does not have access to some assets:
+        if (hasReadAccessTo.size() != assetList.size()){
+            // Remove assets that User HAS access to get the ones he dont:
+            // Return that list to the frontend so User knows:
+            Set<String> guidsToRemove = hasReadAccessTo.stream()
+                    .map(Asset::getAsset_guid)
+                    .collect(Collectors.toSet());
+            assetSet.removeAll(guidsToRemove);
 
-        if (!restrictedAssets.isEmpty()){
-            return Response.status(403).entity(new DaSSCoError("1.0", DaSSCoErrorCode.FORBIDDEN, "User does not have access to following assets: " + restrictedAssets.toString())).build();
+            return Response.status(403).entity(new DaSSCoError("1.0", DaSSCoErrorCode.FORBIDDEN, "User does not have access to assets: " + assetSet)).build();
+        } else {
+            // Return the csv String:
+            return Response.status(200)
+                    .entity(assetService.createCSVString(hasReadAccessTo))
+                    .build();
         }
-
-        return Response.status(200).entity("User has access to all the assets").build();
     }
 }

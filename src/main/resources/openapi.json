@@ -68,7 +68,7 @@
       "post" : {
         "tags" : [ "Assets" ],
         "summary" : "Get Access Permission for Multiple Assets",
-        "description" : "Checks if the User has access or not to many assets.",
+        "description" : "Checks if the User has access or not to many assets. Returns the asset metadata for the assets the User has access to.",
         "operationId" : "checkAccessMultiple",
         "requestBody" : {
           "content" : {
