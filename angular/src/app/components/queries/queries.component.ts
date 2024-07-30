@@ -262,7 +262,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   isAllSelected() { // assets selection
     const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.filter(asset => asset.writeAccess).length;
+    const numRows = this.dataSource.data.length;
     return numSelected === numRows;
   }
 
@@ -271,15 +271,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       this.selection.clear();
       return;
     }
-    this.selection.select(...this.dataSource.data.filter(asset => asset.writeAccess));
+    this.selection.select(...this.dataSource.data);
   }
 
   addToGroup() {
     const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
       width: '500px'
     });
-
-    console.log(this.selection.selected)
 
     dialogRef.afterClosed().subscribe((group: {group: AssetGroup, new: boolean}) => {
       if (group) {

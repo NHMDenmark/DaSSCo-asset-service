@@ -1,0 +1,14 @@
+<div class="container">
+  <div mat-dialog-content>
+    You don't have write access to the following assets:
+    <div *ngFor="let asset of assets">
+      <p>{{asset}}</p>
+    </div>
+    Would you like to remove them from the group?
+  </div>
+
+  <div mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-stroked-button (click)="remove()">Yes</button>
+  </div>
+</div>

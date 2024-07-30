@@ -60,9 +60,8 @@
         </mat-header-cell>
         <mat-cell *matCellDef="let row" class="checkbox-width">
           <mat-checkbox (click)="$event.stopPropagation()"
-                        (change)="$event && row.writeAccess ? selection.toggle(row) : null"
-                        [checked]="row.writeAccess && selection.isSelected(row)"
-                        [disabled]="!row.writeAccess">
+                        (change)="$event ? selection.toggle(row) : null"
+                        [checked]="selection.isSelected(row)">
           </mat-checkbox>
         </mat-cell>
       </ng-container>
