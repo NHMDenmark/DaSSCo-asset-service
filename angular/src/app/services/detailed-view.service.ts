@@ -89,7 +89,6 @@ export class DetailedViewService {
       )
   }
 
-
   getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail : string) {
     return this.oidcSecurityService.getAccessToken()
       .pipe(

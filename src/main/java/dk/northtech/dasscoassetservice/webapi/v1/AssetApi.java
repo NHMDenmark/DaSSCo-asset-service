@@ -182,9 +182,10 @@ public class AssetApi {
     public Response CsvMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
+        System.out.println(assetSet);
         // Assets found in backend:
         List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
-
+        System.out.println(assetList);
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
