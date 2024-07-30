@@ -16,9 +16,10 @@ export class DetailedViewService {
   private readonly proxyUrl = inject(FileProxy)
 
   private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
-  private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile/";
+  private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile";
   private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile/";
   private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
+  private tempFiles = this.proxyUrl + "/file_proxy/api/assetfiles/getTempFile"
   private deleteLocalFiles = this.proxyUrl + "/file_proxy/api/assetfiles/deleteLocalFiles/";
 
   getAssetMetadata(assetGuid : string): Observable<Asset | undefined> {
@@ -33,11 +34,11 @@ export class DetailedViewService {
       );
   }
 
-  postCsv(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+  postCsv(assets : string[]) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.createCsvFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
+          return this.http.post<any>(`${this.createCsvFile}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -61,11 +62,12 @@ export class DetailedViewService {
       );
   }
 
-  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) : Observable<Blob> {
+  getFile(file : string) : Observable<Blob> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.assetFiles}${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
+          console.log(`${this.tempFiles}/${file}`)
+          return this.http.get(`${this.tempFiles}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error)}))

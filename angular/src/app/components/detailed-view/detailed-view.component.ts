@@ -112,52 +112,20 @@ export class DetailedViewComponent implements OnInit {
     return this.currentIndex === 0;
   }
 
-
-  convertToCsv() {
-    const separatorLine = 'sep=,\r\n';
-    const headerRow = Object.keys(this.asset).join(",") + '\r\n';
-    const dataRow = Object.values(this.asset).map(value => {
-      if (value === null || value === undefined){
-        return "null";
-      }
-      if (Array.isArray(value)){
-        if (value.length !== 0){
-          const formattedArray = value.map(item => JSON.stringify(item).replace(/"/g, '""')).join(', ');
-          return `"${formattedArray}"`;
-        } else {
-          return "[]"
-        }
-      } else if (value instanceof Date) {
-        return value.toISOString();
-      } else if (value instanceof Object) {
-        if (Object.entries(value).length !== 0){
-          return Object.entries(value).map(([key, val]) => {
-            return `${key}: ${val}`;
-          })
-        } else {
-            return "{}"
-        }
-      } else {
-        return value.toString();
-      }
-    }).join(',') + "\r\n";
-    return separatorLine + headerRow + dataRow;
-  }
-
-
   downloadCsv(){
-    this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+    let currentAsset : string[] = [this.asset.asset_guid!];
+    this.detailedViewService.postCsv(currentAsset)
       .subscribe({
         next: (response) => {
           if (response.status === 200){
-            this.detailedViewService.getFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+            this.detailedViewService.getFile("assets.csv")
               .subscribe(
                 {
                   next: (data) => {
                     const url = window.URL.createObjectURL(data);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = this.asset.asset_guid + ".csv";
+                    link.download = "assets.csv";
 
                     document.body.appendChild(link);
                     link.click();
@@ -187,7 +155,8 @@ export class DetailedViewComponent implements OnInit {
     }
 
     downloadZip(){
-      this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+      let currentAsset : string[] = [this.asset.asset_guid!];
+      this.detailedViewService.postCsv(currentAsset)
         .subscribe({
           next: (response) => {
             if (response.status === 200){
@@ -195,7 +164,7 @@ export class DetailedViewComponent implements OnInit {
                 .subscribe({
                   next: (response) => {
                     if (response.status === 200){
-                      this.detailedViewService.getFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                      this.detailedViewService.getFile(this.asset.asset_guid + ".zip")
                         .subscribe({
                           next: (data) => {
                             const url = window.URL.createObjectURL(data);

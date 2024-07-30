@@ -38,19 +38,24 @@
     "description" : "Endpoints related to institutions workstations"
   } ],
   "paths" : {
-    "/v1/assets/readaccess" : {
+    "/v1/assets/readaccessmultiple" : {
       "post" : {
         "tags" : [ "Assets" ],
-        "summary" : "Get Access Permission",
-        "description" : "Checks if User has access or not to certain assets.",
-        "operationId" : "checkAccess",
-        "parameters" : [ {
-          "name" : "assetGuid",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
+        "summary" : "Create CSV String for Multiple Assets",
+        "description" : "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.",
+        "operationId" : "CsvMultipleAssets",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
           }
-        } ],
+        },
         "responses" : {
           "default" : {
             "description" : "default response",
@@ -64,24 +69,19 @@
         } ]
       }
     },
-    "/v1/assets/readaccessmultiple" : {
+    "/v1/assets/readaccess" : {
       "post" : {
         "tags" : [ "Assets" ],
-        "summary" : "Get Access Permission for Multiple Assets",
-        "description" : "Checks if the User has access or not to many assets. Returns the asset metadata for the assets the User has access to.",
-        "operationId" : "checkAccessMultiple",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }
-            }
+        "summary" : "Get Access Permission",
+        "description" : "Checks if User has access or not to certain assets.",
+        "operationId" : "checkAccess",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
           }
-        },
+        } ],
         "responses" : {
           "default" : {
             "description" : "default response",

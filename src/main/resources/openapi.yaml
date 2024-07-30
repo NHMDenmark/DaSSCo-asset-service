@@ -27,6 +27,30 @@ tags:
 - name: Workstations
   description: Endpoints related to institutions workstations
 paths:
+  /v1/assets/readaccessmultiple:
+    post:
+      tags:
+      - Assets
+      summary: Create CSV String for Multiple Assets
+      description: Checks if the User has access or not to many assets. Returns a
+        CSV String to create the CSV file for the assets if the User has access to
+        all the Assets or returns Forbidden + the list of assets that the User does
+        not have permission to see.
+      operationId: CsvMultipleAssets
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
   /v1/assets/readaccess:
     post:
       tags:
@@ -39,28 +63,6 @@ paths:
         in: query
         schema:
           type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-      security:
-      - dassco-idp: []
-  /v1/assets/readaccessmultiple:
-    post:
-      tags:
-      - Assets
-      summary: Get Access Permission for Multiple Assets
-      description: Checks if the User has access or not to many assets. Returns the
-        asset metadata for the assets the User has access to.
-      operationId: checkAccessMultiple
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: array
-              items:
-                type: string
       responses:
         default:
           description: default response
