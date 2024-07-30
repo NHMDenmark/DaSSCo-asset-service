@@ -49,6 +49,12 @@ export class DetailedViewService {
   }
 
   postZip(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+    // check permission for creating the zip file
+    // if not, return 403 and information about the failed assets
+    // if yes, get images from the assets that have assets, save them in temp in different folders based on the a_guid
+    // create the zip file
+    // download
+    // profit
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
