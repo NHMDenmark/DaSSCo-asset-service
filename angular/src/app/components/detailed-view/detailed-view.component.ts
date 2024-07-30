@@ -133,7 +133,7 @@ export class DetailedViewComponent implements OnInit {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                    this.detailedViewService.deleteFile()
                       .subscribe({
                         next: () => {
                         },
@@ -178,10 +178,10 @@ export class DetailedViewComponent implements OnInit {
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
 
-                            this.detailedViewService.deleteFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                            this.detailedViewService.deleteFile()
                               .subscribe({
                                 next: () => {
-                                  this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                                  this.detailedViewService.deleteFile()
                                     .subscribe({
                                       next: () => {
                                       }, error: () => {

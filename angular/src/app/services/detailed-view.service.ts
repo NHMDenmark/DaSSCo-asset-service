@@ -20,7 +20,7 @@ export class DetailedViewService {
   private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile/";
   private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
   private tempFiles = this.proxyUrl + "/file_proxy/api/assetfiles/getTempFile"
-  private deleteLocalFiles = this.proxyUrl + "/file_proxy/api/assetfiles/deleteLocalFiles/";
+  private deleteTempFolder = this.proxyUrl + "/file_proxy/api/assetfiles/deleteTempFolder";
 
   getAssetMetadata(assetGuid : string): Observable<Asset | undefined> {
     return this.oidcSecurityService.getAccessToken()
@@ -75,11 +75,11 @@ export class DetailedViewService {
       )
   }
 
-  deleteFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) {
+  deleteFile() {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.delete(`${this.deleteLocalFiles}${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+          return this.http.delete(`${this.deleteTempFolder}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
             .pipe(
               catchError((error) => {
                 return throwError(() => error)
