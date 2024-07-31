@@ -29,12 +29,12 @@ public class AssetService {
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
-    private DigitiserCache digitiserCache;
-    private SubjectCache subjectCache;
-    private PayloadTypeCache payloadTypeCache;
-    private StatusCache statusCache;
-    private PreparationTypeCache preparationTypeCache;
-    private RestrictedAccessCache restrictedAccessCache;
+    private final DigitiserCache digitiserCache;
+    private final SubjectCache subjectCache;
+    private final PayloadTypeCache payloadTypeCache;
+    private final StatusCache statusCache;
+    private final PreparationTypeCache preparationTypeCache;
+    private final RestrictedAccessCache restrictedAccessCache;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -202,11 +202,9 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
 
         statisticsDataService.refreshCachedData();
-
         if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
             digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
         }
-
         return true;
     }
 
@@ -327,8 +325,9 @@ public class AssetService {
         boolean prepTypeExists = true;
         if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
             for (Specimen specimen : updatedAsset.specimens){
-                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())) {
                     prepTypeExists = false;
+                    break;
                 }
             }
             if(!prepTypeExists){

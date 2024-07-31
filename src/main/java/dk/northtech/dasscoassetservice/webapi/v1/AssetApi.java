@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.StatisticsDataService;
+import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,8 +18,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,4 +163,21 @@ public class AssetApi {
         return assetService.listRestrictedAccess();
     }
 
+    @POST
+    @Path("/readaccess")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
+    public Response checkAccess(@QueryParam("assetGuid") String asset_guid
+            , @Context SecurityContext securityContext) {
+        Optional<Asset> assetOpt = assetService.getAsset(asset_guid);
+        if(assetOpt.isEmpty()) {
+            logger.info("Cannot get read rights for asset {}, it doesnt exist", asset_guid);
+            return Response.status(404).build();
+        }
+        Asset asset = assetOpt.get();
+        logger.info("start checking");
+        rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
+        logger.info("end checking");
+        return Response.status(204).build();
+    }
 }
