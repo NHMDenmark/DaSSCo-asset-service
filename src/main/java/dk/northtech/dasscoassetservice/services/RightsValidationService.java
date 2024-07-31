@@ -103,6 +103,7 @@ public class RightsValidationService {
         }
     }
     public boolean checkRights(User user, String institutionName, String collectionName, boolean write) {
+
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
             || roles.contains(InternalRole.SERVICE_USER.roleName)

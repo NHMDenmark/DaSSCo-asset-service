@@ -1,0 +1,16 @@
+services:
+  rabbitMq:
+    build: .
+    image: rabbitmq
+ #   environment:
+#      HOSTNAME: teztrabbit
+#      POSTGRES_USER: dassco_asset_service
+#      POSTGRES_PASSWORD: dassco_asset_service
+    ports:
+      - 15672:15672
+      - 5672:5672
+    networks:
+      - dassco-file-proxy_default
+networks:
+  dassco-file-proxy_default:
+      external: true
