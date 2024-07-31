@@ -283,8 +283,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       width: '500px'
     });
 
-    console.log(this.selection.selected)
-
     dialogRef.afterClosed().subscribe((group: {group: AssetGroup, new: boolean}) => {
       if (group) {
         group.group.assets = this.selection.selected.map(asset => asset.asset_guid).filter(isNotUndefined);
@@ -353,7 +351,54 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   downloadZip() {
-    console.log('Download Asset ZIP');
+    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
+    this.detailedViewService.postCsv(assetGuids)
+      .subscribe({
+        next: (response) => {
+          if (response.status == 200){
+            this.detailedViewService.postZip(assetGuids)
+              .subscribe({
+                next: (response) => {
+                  if (response.status == 200){
+                    this.detailedViewService.getFile("assets.zip").subscribe(
+                      {
+                        next: (data) => {
+                          const url = window.URL.createObjectURL(data);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = "assets.zip";
+
+                          document.body.appendChild(link);
+                          link.click();
+
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(url);
+
+                          this.detailedViewService.deleteFile()
+                            .subscribe({
+                              next: () => {
+                              },
+                              error: () => {
+                                this.openSnackBar("There has been an error deleting the files", "Close")
+                              }
+                            })
+                        },
+                        error: () => {
+                          this.openSnackBar("There has been an error downloading the ZIP file.", "Close");
+                        }
+                      })
+                  }
+                },
+                error: () => {
+                  this.openSnackBar("There has been an error saving the files to the Temp Folder", "Close");
+                }
+              })
+          }
+        },
+        error: () => {
+          this.openSnackBar("There has been an error saving the CSV File", "Close");
+        }
+      });
   }
 
   areAssetsSelected(){

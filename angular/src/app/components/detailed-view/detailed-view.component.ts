@@ -160,17 +160,17 @@ export class DetailedViewComponent implements OnInit {
         .subscribe({
           next: (response) => {
             if (response.status === 200){
-              this.detailedViewService.postZip(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+              this.detailedViewService.postZip(currentAsset)
                 .subscribe({
                   next: (response) => {
                     if (response.status === 200){
-                      this.detailedViewService.getFile(this.asset.asset_guid + ".zip")
+                      this.detailedViewService.getFile("assets.zip")
                         .subscribe({
                           next: (data) => {
                             const url = window.URL.createObjectURL(data);
                             const link = document.createElement('a');
                             link.href = url;
-                            link.download = this.asset.asset_guid + ".zip";
+                            link.download = "assets.zip";
 
                             document.body.appendChild(link);
                             link.click();
@@ -180,15 +180,6 @@ export class DetailedViewComponent implements OnInit {
 
                             this.detailedViewService.deleteFile()
                               .subscribe({
-                                next: () => {
-                                  this.detailedViewService.deleteFile()
-                                    .subscribe({
-                                      next: () => {
-                                      }, error: () => {
-                                        this.openSnackBar("There has been an error deleting the CSV file", "Close");
-                                      }
-                                    })
-                                },
                                 error: () => {
                                   this.openSnackBar("There has been an error deleting the ZIP file", "Close");
                                 }

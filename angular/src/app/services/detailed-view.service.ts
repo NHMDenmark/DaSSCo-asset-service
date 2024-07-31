@@ -17,7 +17,7 @@ export class DetailedViewService {
 
   private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
   private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile";
-  private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile/";
+  private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile";
   private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
   private tempFiles = this.proxyUrl + "/file_proxy/api/assetfiles/getTempFile"
   private deleteTempFolder = this.proxyUrl + "/file_proxy/api/assetfiles/deleteTempFolder";
@@ -48,17 +48,11 @@ export class DetailedViewService {
       );
   }
 
-  postZip(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
-    // check permission for creating the zip file
-    // if not, return 403 and information about the failed assets
-    // if yes, get images from the assets that have assets, save them in temp in different folders based on the a_guid
-    // create the zip file
-    // download
-    // profit
+  postZip(assets : string[]) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.createZipFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+          return this.http.post<string>(`${this.createZipFile}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -72,7 +66,6 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          console.log(`${this.tempFiles}/${file}`)
           return this.http.get(`${this.tempFiles}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
