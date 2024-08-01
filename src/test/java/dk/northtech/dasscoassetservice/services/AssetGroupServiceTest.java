@@ -29,7 +29,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         // No asset group exist yet:
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
 
         assetGroup.hasAccess = new ArrayList<>();
 
@@ -54,7 +54,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         // Deletion:
         assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
@@ -74,7 +74,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         // No asset group exist yet:
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
 
         assetGroup.hasAccess = new ArrayList<>();
         assetGroup.hasAccess.add("role-1-user");
@@ -104,7 +104,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         // Deletion:
         assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
@@ -307,12 +307,12 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assetGroup.assets.add("non-existent-asset-2");
 
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
 
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
     }
 
     @Test
@@ -324,20 +324,27 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assetGroup.assets = new ArrayList<>();
         assetGroup.hasAccess = new ArrayList<>();
 
-        assetGroup.group_name = "ag-1";
+        assetGroup.group_name = "testCreateAssetGroupAlreadyExists";
         assetGroup.assets = new ArrayList<>();
         assetGroup.assets.add("asset-1");
+        assetGroup.hasAccess = new ArrayList<>();
 
         user.roles.add("service-user");
 
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
+
+        assetGroupService.createAssetGroup(assetGroup, user);
+        assetGroupList = assetGroupService.readListAssetGroup(user);
+        assertThat(assetGroupList.size()).isEqualTo(1);
 
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group already exists!");
 
+        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        assertThat(assetGroupList.size()).isEqualTo(3);
+        assertThat(assetGroupList.size()).isEqualTo(0);
     }
 
 
@@ -396,7 +403,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.add("service-user");
 
         List<AssetGroup> found = assetGroupService.readListAssetGroup(user);
-        assertThat(found.size()).isEqualTo(3);
+        assertThat(found.size()).isEqualTo(0);
     }
 
     @Test
