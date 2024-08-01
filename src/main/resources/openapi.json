@@ -566,6 +566,40 @@
         } ]
       }
     },
+    "/v1/assetgroups/owned" : {
+      "get" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "List Asset Groups",
+        "description" : "Returns a list of the existing Asset Groups, only those the user has permission to see.",
+        "operationId" : "getOwnListAssetGroup",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetgroups/grantAccess/{groupName}" : {
       "put" : {
         "tags" : [ "Asset Groups" ],
@@ -1844,6 +1878,9 @@
             "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
           },
           "errorMessage" : {
+            "type" : "string"
+          },
+          "body" : {
             "type" : "string"
           }
         }

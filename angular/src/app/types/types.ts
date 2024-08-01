@@ -74,6 +74,14 @@ export interface Digitiser {
   name: string | undefined;
 }
 
+export interface DasscoError {
+  type: string | undefined;
+  protocolVersion: string | undefined;
+  errorCode: string | undefined;
+  errorMessage: string | undefined;
+  body: string | undefined;
+}
+
 export enum FileFormat {
   TIF
   , JPEG

@@ -16,7 +16,7 @@
           <mat-form-field appearance="fill">
             <mat-label>Groups</mat-label>
             <mat-select [(ngModel)]="groupName" (selectionChange)="new = false">
-              <mat-option *ngFor="let group of (assetGroups$ | async)"
+              <mat-option *ngFor="let group of (ownAssetGroups$ | async)"
                           class="group-name" [value]="group.group_name">{{group.group_name}}</mat-option>
             </mat-select>
           </mat-form-field>

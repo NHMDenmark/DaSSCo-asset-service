@@ -60,6 +60,12 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
+    default List<AssetGroup> readOwnedListAssetGroup(User user){
+        boilerplate();
+        return readOwnedListAssetGroupInternal(user);
+    }
+
+    @Transaction
     default void deleteAssetGroup(String groupName, User user){
         boilerplate();
         deleteAssetGroupInternal(groupName, user);
@@ -247,6 +253,43 @@ public interface AssetGroupRepository extends SqlObject {
                         .list();
             });
         }
+    }
+
+    default List<AssetGroup> readOwnedListAssetGroupInternal(User user){
+
+        String sqlRoles = """
+                SELECT * FROM ag_catalog.cypher(
+                'dassco'
+                   , $$
+                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
+                       MATCH (ag)-[:HAS_ACCESS]->(u:User)
+                       MATCH (ag)-[:MADE_BY]->(uu:User {name: $username})
+                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names, uu.name
+                   $$
+                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);
+                """;
+
+            return withHandle(handle -> {
+                AgtypeMap agParams = new AgtypeMapBuilder()
+                        .add("username", user.username)
+                        .build();
+                Agtype agtype = AgtypeFactory.create(agParams);
+                return handle.createQuery(sqlRoles)
+                        .bind("params", agtype)
+                        .map((rs, ctx) -> {
+                            AssetGroup assetGroup = new AssetGroup();
+                            Agtype groupName = rs.getObject("group_name", Agtype.class);
+                            assetGroup.group_name = groupName.getString();
+                            Agtype assets = rs.getObject("asset_guids", Agtype.class);
+                            assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                            Agtype users = rs.getObject("user_name", Agtype.class);
+                            assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
+                            Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
+                            assetGroup.groupCreator = groupCreator.getString();
+                            return assetGroup;
+                        })
+                        .list();
+            });
     }
 
     default void deleteAssetGroupInternal(String groupName, User user){

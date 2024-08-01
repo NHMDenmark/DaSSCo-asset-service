@@ -20,7 +20,7 @@ export class AssetGroupDialogComponent implements OnInit {
   nameSaved = true;
   digitiserFormControl = new FormControl<string[] | null>(null);
 
-  assetGroups$ = this.assetGroupService.assetGroups$;
+  ownAssetGroups$ = this.assetGroupService.ownAssetGroups$;
 
   cachedDigitisers$
     = combineLatest([
@@ -51,7 +51,7 @@ export class AssetGroupDialogComponent implements OnInit {
   }
 
   save() {
-    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: undefined, groupCreator: undefined, isCreator: undefined}, new: this.new};
+    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: [], groupCreator: undefined, isCreator: undefined}, new: this.new};
     if (this.new) {
       const hasAccess = this.digitiserFormControl.value;
       if (hasAccess) group.group.hasAccess = hasAccess;

@@ -13,12 +13,15 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import {CacheService} from "../../services/cache.service";
-import {Asset, AssetGroup} from "../../types/types";
+import {Asset, AssetGroup, DasscoError} from "../../types/types";
 import {MatSort, Sort} from "@angular/material/sort";
 import {SelectionModel} from "@angular/cdk/collections";
 import {AssetGroupDialogComponent} from "../dialogs/asset-group-dialog/asset-group-dialog.component";
 import {AssetGroupService} from "../../services/asset-group.service";
 import {DetailedViewService} from "../../services/detailed-view.service";
+import {
+  IllegalAssetGroupDialogComponent
+} from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
 
 @Component({
   selector: 'dassco-queries',
@@ -288,13 +291,35 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         group.group.assets = this.selection.selected.map(asset => asset.asset_guid).filter(isNotUndefined);
         if (group.new) {
           this.assetGroupService.newGroup(group.group)
-            .subscribe(newGroup => {
-              this.openSnackBar(newGroup, 'The group "' + group.group.group_name + '" has been created.')
+            .subscribe(response => {
+              if ((response as DasscoError).errorMessage) {
+                const error = response as DasscoError;
+                this.dialog.open(IllegalAssetGroupDialogComponent, {
+                  width: '500px',
+                  data: {
+                    assets: error.body,
+                    removable: false
+                  }
+                });
+              } else if ((response as AssetGroup).group_name) {
+                this._snackBar.open('The group "' + group.group.group_name + '" has been created.', 'OK');
+              }
             });
         } else {
           this.assetGroupService.updateGroupAddAssets(group.group.group_name, group.group.assets)
-            .subscribe(updatedGroup => {
-              this.openSnackBar(updatedGroup, 'The group "' + group.group.group_name + '" has been updated.')
+            .subscribe(response => {
+              if ((response as DasscoError).errorMessage) {
+                const error = response as DasscoError;
+                this.dialog.open(IllegalAssetGroupDialogComponent, {
+                  width: '500px',
+                  data: {
+                    assets: error.body,
+                    removable: false
+                  }
+                });
+              } else {
+                this.openSnackBar(response, 'The group "' + group.group.group_name + '" has been updated.')
+              }
             });
         }
       }

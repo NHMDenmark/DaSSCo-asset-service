@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {AssetGroupService} from "../../services/asset-group.service";
-import {AssetGroup} from "../../types/types";
+import {AssetGroup, DasscoError} from "../../types/types";
 import {filter, map, startWith, take} from "rxjs";
 import {MatTableDataSource} from "@angular/material/table";
 import {isNotUndefined} from "@northtech/ginnungagap";
@@ -14,6 +14,9 @@ import {MatDialog} from "@angular/material/dialog";
 import {Router} from "@angular/router";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {combineLatest} from "rxjs";
+import {
+  IllegalAssetGroupDialogComponent
+} from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -83,9 +86,14 @@ export class AssetGroupsComponent implements OnInit {
     this.editing = !this.editing;
   }
 
-  removeAssets(assets: MatListOption[], group: AssetGroup) {
+  removeMatListOptionAssets(assets: MatListOption[], group: AssetGroup) {
     const selectedAssets: string[] = assets.map(option => option.value);
-    this.assetGroupService.updateGroupRemoveAssets(group.group_name, selectedAssets)
+    this.removeAssets(selectedAssets, group);
+  }
+
+  removeAssets(assets: string[], group: AssetGroup) {
+    // const selectedAssets: string[] = assets.map(option => option.value);
+    this.assetGroupService.updateGroupRemoveAssets(group.group_name, assets)
       .subscribe(updatedGroup => {
         if (updatedGroup) {
           this.updateDataSourceGroup(group, updatedGroup, false);
@@ -107,9 +115,27 @@ export class AssetGroupsComponent implements OnInit {
     const selectedUsers = this.digitiserFormControl.value;
     if (selectedUsers) {
       this.assetGroupService.grantAccess(group.group_name, selectedUsers)
-        .subscribe(updatedGroup => {
-          if (updatedGroup) {
-            this.updateDataSourceGroup(group, updatedGroup, false);
+        .subscribe(response => {
+          if ((response as DasscoError).errorCode) {
+            const error = response as DasscoError;
+            if (error.body) {
+              const errorDialogRef = this.dialog.open(IllegalAssetGroupDialogComponent, {
+                width: '500px',
+                data: {
+                  assets: error.body,
+                  removable: true
+                }
+              });
+
+              errorDialogRef.afterClosed().subscribe((assets: string[] | undefined) => {
+                if (assets) {
+                  this.removeAssets(assets, group);
+                }
+              })
+            }
+          }
+          if ((response as AssetGroup).group_name) {
+            this.updateDataSourceGroup(group, (response as AssetGroup), false);
           }
         });
     }

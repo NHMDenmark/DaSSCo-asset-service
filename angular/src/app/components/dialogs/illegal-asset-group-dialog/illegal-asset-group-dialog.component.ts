@@ -7,9 +7,14 @@ import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
   styleUrls: ['./illegal-asset-group-dialog.component.scss']
 })
 export class IllegalAssetGroupDialogComponent implements OnInit {
+  assetList: string[] | undefined;
 
   constructor(public dialogRef: MatDialogRef<IllegalAssetGroupDialogComponent>
-            , @Inject(MAT_DIALOG_DATA) public assets: string[]) { }
+            , @Inject(MAT_DIALOG_DATA) public data: {assets: string | undefined, removable: boolean}) {
+    if (data.assets) {
+      this.assetList = data.assets.substring(1, data.assets.length-1).split(", ");
+    }
+  }
 
   ngOnInit(): void {
   }
@@ -18,7 +23,7 @@ export class IllegalAssetGroupDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  remove() {
-     this.dialogRef.close(this.assets);
+  remove(returnData: string[] | undefined) {
+     this.dialogRef.close(returnData);
   }
 }

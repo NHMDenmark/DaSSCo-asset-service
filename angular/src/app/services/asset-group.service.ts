@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {catchError, Observable, of, switchMap} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
-import {HttpClient} from "@angular/common/http";
-import {AssetGroup} from "../types/types";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
+import {AssetGroup, DasscoError} from "../types/types";
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +12,17 @@ export class AssetGroupService {
 
   constructor(public oidcSecurityService: OidcSecurityService
     , private http: HttpClient) { }
+
+  ownAssetGroups$: Observable<AssetGroup[] | undefined>
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<AssetGroup[]>(`${this.baseUrl}/owned`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/owned`, undefined))
+          );
+      })
+    );
 
   assetGroups$: Observable<AssetGroup[] | undefined>
     = this.oidcSecurityService.getAccessToken()
@@ -24,25 +35,25 @@ export class AssetGroupService {
       })
     );
 
-  newGroup(group: AssetGroup): Observable<AssetGroup | undefined> {
+  newGroup(group: AssetGroup): Observable<AssetGroup | DasscoError | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.post<AssetGroup>(`${this.baseUrl}/createassetgroup/`, group, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.baseUrl}/createassetgroup`, undefined))
+              catchError(error => of((error as HttpErrorResponse).error as DasscoError))
             );
         })
       );
   }
 
-  updateGroupAddAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | undefined> {
+  updateGroupAddAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | DasscoError | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/addAssets`, assets, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.baseUrl}/updategroup/${groupName}/addAssets`, undefined))
+              catchError(error => of((error as HttpErrorResponse).error as DasscoError))
             );
         })
       );
@@ -60,13 +71,13 @@ export class AssetGroupService {
       );
   }
 
-  grantAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | undefined> {
+  grantAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | DasscoError | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.put<AssetGroup>(`${this.baseUrl}/grantAccess/${groupName}`, users, {headers: {'Authorization': 'Bearer ' + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.baseUrl}/grantAccess/${groupName}`, undefined))
+              catchError(error => of((error as HttpErrorResponse).error as DasscoError))
             );
         })
       );

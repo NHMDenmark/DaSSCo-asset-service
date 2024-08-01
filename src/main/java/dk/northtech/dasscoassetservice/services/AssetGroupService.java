@@ -72,7 +72,7 @@ public class AssetGroupService {
                 }
             }
             if (!assetsWithoutPermission.isEmpty()){
-                throw new DasscoIllegalActionException("FORBIDDEN, User does not have write access to: " + assetsWithoutPermission);
+                throw new DasscoIllegalActionException("FORBIDDEN, User does not have write access to all assets.", assetsWithoutPermission.toString());
             }
 
             // Check if all the users exist!
@@ -98,7 +98,7 @@ public class AssetGroupService {
                 }
             }
             if (!assetsWithoutPermission.isEmpty()){
-                throw new DasscoIllegalActionException("FORBIDDEN, User does not have read access to: " + assetsWithoutPermission);
+                throw new DasscoIllegalActionException("FORBIDDEN, User does not have read access to all assets.", assetsWithoutPermission.toString());
             }
             // Then:
             jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
@@ -123,6 +123,15 @@ public class AssetGroupService {
         }
         else {
             return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user);
+        }
+    }
+
+    public List<AssetGroup> readOwnedAssetGroups(User user){
+        if (user.roles.contains(SecurityRoles.ADMIN)){
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user);
+        }
+        else {
+            return jdbi.onDemand(AssetGroupRepository.class).readOwnedListAssetGroup(user);
         }
     }
 
@@ -172,7 +181,7 @@ public class AssetGroupService {
                 }
             }
             if (!forbiddenAssets.isEmpty()){
-                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access for: " + forbiddenAssets);
+                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access to all assets.", forbiddenAssets.toString());
             }
         } else {
             List<String> forbiddenAssets = new ArrayList<>();
@@ -183,7 +192,7 @@ public class AssetGroupService {
                 }
             }
             if (!forbiddenAssets.isEmpty()){
-                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access for: " + forbiddenAssets);
+                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access to all assets.", forbiddenAssets.toString());
             }
         }
 
@@ -265,7 +274,7 @@ public class AssetGroupService {
                 }
             }
             if (!forbiddenAssets.isEmpty()){
-                throw new DasscoIllegalActionException("FORBIDDEN. User cannot grant access to this asset group as it has no WRITE access to: " + forbiddenAssets);
+                throw new DasscoIllegalActionException("FORBIDDEN. User cannot grant access to this asset group as it lacks proper WRITE access.", forbiddenAssets.toString());
             }
         }
 

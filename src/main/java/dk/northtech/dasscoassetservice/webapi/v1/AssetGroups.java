@@ -72,6 +72,17 @@ public class AssetGroups {
         return this.assetGroupService.readListAssetGroup(UserMapper.from(securityContext));
     }
 
+    @GET
+    @Path("/owned")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "List Asset Groups", description = "Returns a list of the existing Asset Groups, only those the user has permission to see.")
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<AssetGroup> getOwnListAssetGroup(@Context SecurityContext securityContext){
+        return this.assetGroupService.readOwnedAssetGroups(UserMapper.from(securityContext));
+    }
+
     @DELETE
     @Path("/deletegroup/{groupName}")
     @Operation(summary = "Delete Asset Groups", description = "Deletes an Asset Group, using the Asset Group name. Only the user that created the group can delete it.")

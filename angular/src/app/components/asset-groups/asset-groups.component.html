@@ -93,7 +93,7 @@
                 <mat-icon>edit</mat-icon>
               </button>
               <div class="edit-btn-editing-{{editing}} edit-btns">
-                <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="removeAssets(assets.selectedOptions.selected, element)">
+                <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="removeMatListOptionAssets(assets.selectedOptions.selected, element)">
                   Remove Assets
                 </button>
                 <button mat-raised-button [disabled]="digitisers.selectedOptions.isEmpty()" (click)="revokeAccess(digitisers.selectedOptions.selected, element)">
