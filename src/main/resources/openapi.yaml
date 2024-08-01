@@ -27,7 +27,7 @@ tags:
 - name: Workstations
   description: Endpoints related to institutions workstations
 paths:
-  /v1/assets/readaccessmultiple:
+  /v1/assets/readaccessforcsv:
     post:
       tags:
       - Assets

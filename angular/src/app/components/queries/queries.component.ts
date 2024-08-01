@@ -315,7 +315,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.getFile("assets.csv").subscribe(
+            this.detailedViewService.getFile("assets.csv")
+              .subscribe(
               {
                 next: (data) => {
                   const url = window.URL.createObjectURL(data);
@@ -334,18 +335,19 @@ export class QueriesComponent implements OnInit, AfterViewInit {
                       next: () => {
                       },
                       error: () => {
-                        this.openSnackBar("There's been an error deleting the CSV file", "Close")
+                        this.openSnackBar("There's been an error deleting the CSV file", "There's been an error deleting the CSV file")
                       }
                     })
                 },
                 error: () => {
-                  this.openSnackBar("There has been an error downloading the CSV file.", "Close");
+                  this.openSnackBar("There has been an error downloading the CSV file.", "There has been an error downloading the CSV file.");
                 }
               })
           }
         },
         error: (error) => {
-          this.openSnackBar(error.error, "Close");
+          console.log(error.error)
+          this.openSnackBar(error.error, error.error);
         }
       });
   }

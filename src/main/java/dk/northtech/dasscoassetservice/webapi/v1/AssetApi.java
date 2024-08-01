@@ -176,7 +176,7 @@ public class AssetApi {
     }
 
     @POST
-    @Path("/readaccessmultiple")
+    @Path("/readaccessforcsv")
     @Produces(APPLICATION_JSON)
     @Operation(summary =  "Create CSV String for Multiple Assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
     public Response CsvMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
