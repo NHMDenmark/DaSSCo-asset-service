@@ -18,7 +18,8 @@ export class DetailedViewService {
   private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
   private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile";
   private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile";
-  private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
+  private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/listfiles/";
+  private thumbnail = this.proxyUrl + "/file_proxy/api/files/assets/"
   private tempFiles = this.proxyUrl + "/file_proxy/api/assetfiles/getTempFile"
   private deleteTempFolder = this.proxyUrl + "/file_proxy/api/assetfiles/deleteTempFolder";
 
@@ -92,7 +93,7 @@ export class DetailedViewService {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.assetFiles}${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
+          return this.http.get(`${this.thumbnail}${institution}/${collection}/${assetGuid}/${thumbnail}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: 'blob'})
             .pipe(
               catchError(this.handleError(`get ${this.assetFiles}${institution}/${collection}/${assetGuid}/${thumbnail}`, undefined))
             )
@@ -100,13 +101,13 @@ export class DetailedViewService {
     )
   }
 
-  getFileList(institution: string, collection: string, assetGuid: string){
+  getFileList(assetGuid: string){
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get<string[]>(`${this.assetFiles}${institution}/${collection}/${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
+          return this.http.get<string[]>(`${this.assetFiles}${assetGuid}`, { headers: {'Authorization': "Bearer " + token}})
             .pipe(
-              catchError(this.handleError(`get ${this.assetFiles}${institution}/${collection}/${assetGuid}`, undefined))
+              catchError(this.handleError(`get ${this.assetFiles}${assetGuid}`, undefined))
             )
         })
       )

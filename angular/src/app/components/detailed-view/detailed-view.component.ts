@@ -66,9 +66,12 @@ export class DetailedViewComponent implements OnInit {
         }).join(", ");
         this.thumbnailUrl = "";
         // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
-        this.detailedViewService.getFileList(this.asset?.institution!, this.asset?.collection!, assetGuid).subscribe(response => {
+        this.detailedViewService.getFileList(assetGuid).subscribe(response => {
           if (response){
-            this.assetFiles = response;
+            this.assetFiles = response.map(filePath =>{
+              let parts : string[] = filePath.split('/');
+              return parts[parts.length - 1];
+            })
             const thumbnail = this.assetFiles.find(file => file.includes('thumbnail') || "");
             if (thumbnail !== undefined){
               let lastSlashIndex = thumbnail.lastIndexOf("/");
