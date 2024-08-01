@@ -16,10 +16,11 @@ export class DetailedViewService {
   private readonly proxyUrl = inject(FileProxy)
 
   private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
-  private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile/";
-  private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile/";
+  private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile";
+  private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile";
   private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/";
-  private deleteLocalFiles = this.proxyUrl + "/file_proxy/api/assetfiles/deleteLocalFiles/";
+  private tempFiles = this.proxyUrl + "/file_proxy/api/assetfiles/getTempFile"
+  private deleteTempFolder = this.proxyUrl + "/file_proxy/api/assetfiles/deleteTempFolder";
 
   getAssetMetadata(assetGuid : string): Observable<Asset | undefined> {
     return this.oidcSecurityService.getAccessToken()
@@ -33,11 +34,11 @@ export class DetailedViewService {
       );
   }
 
-  postCsv(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+  postCsv(assets : string[]) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.createCsvFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
+          return this.http.post<any>(`${this.createCsvFile}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -47,11 +48,11 @@ export class DetailedViewService {
       );
   }
 
-  postZip(asset: string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) : Observable<any> {
+  postZip(assets : string[]) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.createZipFile}${institution}/${collection}/${assetGuid}`, asset, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+          return this.http.post<string>(`${this.createZipFile}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -61,11 +62,11 @@ export class DetailedViewService {
       );
   }
 
-  getFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined ) : Observable<Blob> {
+  getFile(file : string) : Observable<Blob> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.assetFiles}${institution}/${collection}/${assetGuid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
+          return this.http.get(`${this.tempFiles}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error)}))
@@ -73,11 +74,11 @@ export class DetailedViewService {
       )
   }
 
-  deleteFile(file : string, institution : string | undefined, collection : string | undefined, assetGuid : string | undefined) {
+  deleteFile() {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.delete(`${this.deleteLocalFiles}${institution}/${collection}/${assetGuid}/${file}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+          return this.http.delete(`${this.deleteTempFolder}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
             .pipe(
               catchError((error) => {
                 return throwError(() => error)
@@ -86,7 +87,6 @@ export class DetailedViewService {
         })
       )
   }
-
 
   getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail : string) {
     return this.oidcSecurityService.getAccessToken()

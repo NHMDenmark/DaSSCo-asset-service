@@ -18,6 +18,7 @@ import {MatSort, Sort} from "@angular/material/sort";
 import {SelectionModel} from "@angular/cdk/collections";
 import {AssetGroupDialogComponent} from "../dialogs/asset-group-dialog/asset-group-dialog.component";
 import {AssetGroupService} from "../../services/asset-group.service";
+import {DetailedViewService} from "../../services/detailed-view.service";
 
 @Component({
   selector: 'dassco-queries',
@@ -41,6 +42,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   loadingAssetCount: boolean = false;
   assetCount: string | undefined = undefined;
   queryData: {title: string | undefined, map: Map<string, QueryView[]>} | undefined; // saved/loaded or cached
+  selectedAssets = new Set<string>();
 
   propertiesCall$: Observable<Map<string, string[]> | undefined>
     = this.queriesService.nodeProperties$
@@ -76,7 +78,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
               , private cacheService: CacheService
-              , private assetGroupService: AssetGroupService
+              , private assetGroupService: AssetGroupService,
+              private detailedViewService : DetailedViewService
   ) { }
 
   ngOnInit(): void {
@@ -141,6 +144,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
       const response: QueryResponse = {id: parseInt(key), query: qv2s};
       queryResponses.push(response);
+      this.selection.clear();
     })
 
     this.queriesService.getAssetsFromQuery(queryResponses, this.limit)
@@ -303,5 +307,103 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     } else {
       this._snackBar.open('An error occurred. Try again.', 'OK');
     }
+  }
+
+  downloadCsv() {
+    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
+    this.detailedViewService.postCsv(assetGuids)
+      .subscribe({
+        next: (response) => {
+          if (response.status == 200){
+            this.detailedViewService.getFile("assets.csv")
+              .subscribe(
+              {
+                next: (data) => {
+                  const url = window.URL.createObjectURL(data);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = "assets.csv";
+
+                  document.body.appendChild(link);
+                  link.click();
+
+                  document.body.removeChild(link);
+                  window.URL.revokeObjectURL(url);
+
+                  this.detailedViewService.deleteFile()
+                    .subscribe({
+                      next: () => {
+                      },
+                      error: () => {
+                        this.openSnackBar("There's been an error deleting the CSV file", "There's been an error deleting the CSV file")
+                      }
+                    })
+                },
+                error: () => {
+                  this.openSnackBar("There has been an error downloading the CSV file.", "There has been an error downloading the CSV file.");
+                }
+              })
+          }
+        },
+        error: (error) => {
+          console.log(error.error)
+          this.openSnackBar(error.error, error.error);
+        }
+      });
+  }
+
+  downloadZip() {
+    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
+    this.detailedViewService.postCsv(assetGuids)
+      .subscribe({
+        next: (response) => {
+          if (response.status == 200){
+            this.detailedViewService.postZip(assetGuids)
+              .subscribe({
+                next: (response) => {
+                  if (response.status == 200){
+                    this.detailedViewService.getFile("assets.zip").subscribe(
+                      {
+                        next: (data) => {
+                          const url = window.URL.createObjectURL(data);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = "assets.zip";
+
+                          document.body.appendChild(link);
+                          link.click();
+
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(url);
+
+                          this.detailedViewService.deleteFile()
+                            .subscribe({
+                              next: () => {
+                              },
+                              error: () => {
+                                this.openSnackBar("There has been an error deleting the files", "Close")
+                              }
+                            })
+                        },
+                        error: () => {
+                          this.openSnackBar("There has been an error downloading the ZIP file.", "Close");
+                        }
+                      })
+                  }
+                },
+                error: () => {
+                  this.openSnackBar("There has been an error saving the files to the Temp Folder", "Close");
+                }
+              })
+          }
+        },
+        error: () => {
+          this.openSnackBar("There has been an error saving the CSV File", "Close");
+        }
+      });
+  }
+
+  areAssetsSelected() {
+    return this.selection.hasValue();
   }
 }
