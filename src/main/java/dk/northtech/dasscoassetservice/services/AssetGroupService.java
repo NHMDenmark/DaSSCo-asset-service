@@ -4,6 +4,8 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
 import jakarta.inject.Inject;
 import org.checkerframework.checker.nullness.Opt;
@@ -61,9 +63,16 @@ public class AssetGroupService {
         }
 
         if (!assetGroup.hasAccess.isEmpty()){
+            List<String> assetsWithoutPermission = new ArrayList<>();
             // Check user roles. You need WRITE access to create the asset group and invite people to it.
             for (Asset asset: assets){
-                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                if (!hasAccess){
+                    assetsWithoutPermission.add(asset.asset_guid);
+                }
+            }
+            if (!assetsWithoutPermission.isEmpty()){
+                throw new DasscoIllegalActionException("FORBIDDEN, User does not have write access to: " + assetsWithoutPermission);
             }
 
             // Check if all the users exist!
@@ -80,11 +89,17 @@ public class AssetGroupService {
             }
 
         } else {
+            List<String> assetsWithoutPermission = new ArrayList<>();
             // Check user roles, you need READ to be able to create an asset group:
             for (Asset asset : assets){
-                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+                if (!hasAccess){
+                    assetsWithoutPermission.add(asset.asset_guid);
+                }
             }
-
+            if (!assetsWithoutPermission.isEmpty()){
+                throw new DasscoIllegalActionException("FORBIDDEN, User does not have read access to: " + assetsWithoutPermission);
+            }
             // Then:
             jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
         }
