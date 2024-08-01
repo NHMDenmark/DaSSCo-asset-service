@@ -164,12 +164,26 @@ public class AssetGroupService {
 
         // Check if user has access to the assets they want to add (remember, if shared asset group they need write role):
         if (assetGroupOptional.get().hasAccess.size() > 1){
+            List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets){
-                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                if (!hasAccess){
+                    forbiddenAssets.add(asset.asset_guid);
+                }
+            }
+            if (!forbiddenAssets.isEmpty()){
+                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access for: " + forbiddenAssets);
             }
         } else {
+            List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets){
-                rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+                if (!hasAccess){
+                    forbiddenAssets.add(asset.asset_guid);
+                }
+            }
+            if (!forbiddenAssets.isEmpty()){
+                throw new DasscoIllegalActionException("FORBIDDEN. User does not have read access for: " + forbiddenAssets);
             }
         }
 
@@ -243,8 +257,15 @@ public class AssetGroupService {
         AssetGroup found = assetGroupOptional.get();
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(found.assets);
         if (!assets.isEmpty()){
+            List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset: assets){
-                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                if (!hasAccess){
+                    forbiddenAssets.add(asset.asset_guid);
+                }
+            }
+            if (!forbiddenAssets.isEmpty()){
+                throw new DasscoIllegalActionException("FORBIDDEN. User cannot grant access to this asset group as it has no WRITE access to: " + forbiddenAssets);
             }
         }
 
