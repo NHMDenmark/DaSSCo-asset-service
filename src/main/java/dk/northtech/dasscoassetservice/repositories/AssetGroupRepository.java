@@ -21,6 +21,7 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,9 +43,9 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default void createAssetGroup(AssetGroup assetGroup, User user){
+    default void createAssetGroup(AssetGroup assetGroup, User user, Instant now){
         boilerplate();
-        createAssetGroupInternal(assetGroup, user);
+        createAssetGroupInternal(assetGroup, user, now);
     }
 
     @Transaction
@@ -54,9 +55,9 @@ public interface AssetGroupRepository extends SqlObject {
     }
 
     @Transaction
-    default List<AssetGroup> readListAssetGroup(boolean roles, User user){
+    default List<AssetGroup> readListAssetGroup(User user){
         boilerplate();
-        return readListAssetGroupInternal(roles, user);
+        return readListAssetGroupInternal(user);
     }
 
     @Transaction
@@ -101,7 +102,7 @@ public interface AssetGroupRepository extends SqlObject {
         return getHasAccessInternal(assetGroup);
     }
 
-    default void createAssetGroupInternal(AssetGroup assetGroup, User user){
+    default void createAssetGroupInternal(AssetGroup assetGroup, User user, Instant now){
 
         String assetListAsString = assetGroup.assets.stream()
                 .map(asset -> "'" + asset + "'")
@@ -112,7 +113,7 @@ public interface AssetGroupRepository extends SqlObject {
                     'dassco'
                         , $$
                         MERGE (u:User {name: $user_name, user_id: $user_name})
-                        MERGE (ag:Asset_Group{name:$group_name})
+                        MERGE (ag:Asset_Group{name:$group_name, timestamp:$timestamp})
                         MERGE (ag)-[:HAS_ACCESS]->(u)
                         MERGE (ag)-[:MADE_BY]->(u)
                     $$
@@ -135,6 +136,7 @@ public interface AssetGroupRepository extends SqlObject {
         AgtypeMapBuilder builder = new AgtypeMapBuilder()
                 .add("group_name", assetGroup.group_name);
                 builder.add("user_name", user.username);
+                builder.add("timestamp", now.toEpochMilli());
 
         try {
             withHandle(handle -> {
@@ -188,19 +190,7 @@ public interface AssetGroupRepository extends SqlObject {
         });
     }
 
-    default List<AssetGroup> readListAssetGroupInternal(boolean roles, User user){
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                       MATCH (ag)-[:HAS_ACCESS]->(u:User)
-                       MATCH (ag)-[:MADE_BY]->(uu:User)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names, uu.name
-                   $$
-                ) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);     
-                """;
+    default List<AssetGroup> readListAssetGroupInternal(User user){
 
         String sqlRoles = """
                 SELECT * FROM ag_catalog.cypher(
@@ -215,22 +205,6 @@ public interface AssetGroupRepository extends SqlObject {
                 , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);
                 """;
 
-        if (!roles){
-            return withHandle(handle -> handle.createQuery(sql)
-                    .map((rs, ctx) -> {
-                        AssetGroup assetGroup = new AssetGroup();
-                        Agtype groupName = rs.getObject("group_name", Agtype.class);
-                        assetGroup.group_name = groupName.getString();
-                        Agtype assets = rs.getObject("asset_guids", Agtype.class);
-                        assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        Agtype users = rs.getObject("user_name", Agtype.class);
-                        assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
-                        assetGroup.groupCreator = groupCreator.getString();
-                        return assetGroup;
-                    })
-                    .list());
-        } else {
             return withHandle(handle -> {
                 AgtypeMap agParams = new AgtypeMapBuilder()
                         .add("user_name", user.username)
@@ -252,7 +226,6 @@ public interface AssetGroupRepository extends SqlObject {
                         })
                         .list();
             });
-        }
     }
 
     default List<AssetGroup> readOwnedListAssetGroupInternal(User user){

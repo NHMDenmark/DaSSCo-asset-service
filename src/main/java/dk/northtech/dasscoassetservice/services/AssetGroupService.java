@@ -13,6 +13,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
 import java.awt.color.ICC_ColorSpace;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -82,7 +83,8 @@ public class AssetGroupService {
                 }
             }
             // This gives read access to the Assets in the group:
-            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+            Instant now = Instant.now();
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user, now);
             Optional<AssetGroup> optAssetGroup =  jdbi.onDemand(AssetGroupRepository.class).grantAccessToAssetGroup(assetGroup.hasAccess, assetGroup.group_name);
             if (optAssetGroup.isEmpty()){
                 throw new IllegalArgumentException("There has been an error creating the asset group");
@@ -101,7 +103,8 @@ public class AssetGroupService {
                 throw new DasscoIllegalActionException("FORBIDDEN, User does not have read access to all assets.", assetsWithoutPermission.toString());
             }
             // Then:
-            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user);
+            Instant now = Instant.now();
+            jdbi.onDemand(AssetGroupRepository.class).createAssetGroup(assetGroup, user, now);
         }
         return jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(assetGroup.group_name);
     }
@@ -118,17 +121,12 @@ public class AssetGroupService {
     }
 
     public List<AssetGroup> readListAssetGroup(User user){
-        if (user.roles.contains(SecurityRoles.ADMIN) || user.roles.contains(SecurityRoles.DEVELOPER) || user.roles.contains(SecurityRoles.SERVICE)){
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user);
-        }
-        else {
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(true, user);
-        }
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(user);
     }
 
     public List<AssetGroup> readOwnedAssetGroups(User user){
         if (user.roles.contains(SecurityRoles.ADMIN)){
-            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(false, user);
+            return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(user);
         }
         else {
             return jdbi.onDemand(AssetGroupRepository.class).readOwnedListAssetGroup(user);
