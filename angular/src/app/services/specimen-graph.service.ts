@@ -7,7 +7,7 @@ import {catchError, Observable, of, switchMap, timer} from "rxjs";
   providedIn: 'root'
 })
 export class SpecimenGraphService {
-  baseUrl = '/api/v1/graphdata';
+  baseUrl = 'api/v1/graphdata';
   fiveMinutes = 5 * 60 * 1000;
 
   constructor(

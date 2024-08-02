@@ -11,52 +11,52 @@
 
 @font-face {
   font-family: geomatrix-light;
-  src: url('/assets/fonts/Geomatrix Light.otf');
+  src: url('assets/fonts/Geomatrix Light.otf');
 }
 
 @font-face {
   font-family: geomatrix-medium;
-  src: url('/assets/fonts/Geomatrix.otf');
+  src: url('assets/fonts/Geomatrix.otf');
 }
 
 @font-face {
   font-family: geomatrix-bold;
-  src: url('/assets/fonts/Geomatrix Medium.otf');
+  src: url('assets/fonts/Geomatrix Medium.otf');
 }
 
 @font-face {
   font-family: lemonmilk;
-  src: url('/assets/fonts/LEMONMILK-Light.otf');
+  src: url('assets/fonts/LEMONMILK-Light.otf');
 }
 
 @font-face {
   font-family: lemonmilk-medium;
-  src: url('/assets/fonts/LEMONMILK-Medium.otf');
+  src: url('assets/fonts/LEMONMILK-Medium.otf');
 }
 
 @font-face {
   font-family: rocksalt;
-  src: url('/assets/fonts/RockSalt-Regular.ttf');
+  src: url('assets/fonts/RockSalt-Regular.ttf');
 }
 
 @font-face {
   font-family: graphik-black;
-  src: url('/assets/fonts/GraphikBlack.otf');
+  src: url('assets/fonts/GraphikBlack.otf');
 }
 
 @font-face {
   font-family: graphik-regular;
-  src: url('/assets/fonts/GraphikRegular.otf');
+  src: url('assets/fonts/GraphikRegular.otf');
 }
 
 @font-face {
   font-family: graphikBold;
-  src: url('/assets/fonts/GraphikBold.otf');
+  src: url('assets/fonts/GraphikBold.otf');
 }
 
 @font-face {
   font-family: graphikRegular;
-  src: url('/assets/fonts/GraphikRegular.otf');
+  src: url('assets/fonts/GraphikRegular.otf');
 }
 
 @include mat.all-component-themes($dassco-asset-service-theme);

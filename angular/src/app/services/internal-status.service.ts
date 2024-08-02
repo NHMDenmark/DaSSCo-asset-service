@@ -7,7 +7,7 @@ import {catchError, Observable, of, switchMap} from "rxjs";
   providedIn: 'root'
 })
 export class InternalStatusService {
-  baseUrl = '/api/v1/assets';
+  baseUrl = 'api/v1/assets';
   fiveMinutes = 5 * 60 * 1000;
 
   constructor(
