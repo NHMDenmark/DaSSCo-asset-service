@@ -148,7 +148,7 @@
     </div>
 
     <div class="icons">
-      <mat-icon *ngIf="assetList.length > 0"
+      <mat-icon *ngIf="assetList.length > 1"
                 fontIcon="arrow_back"
                 class="icon-display"
                 (click)="showPreviousAsset()"
@@ -161,7 +161,7 @@
       -->
       <button (click)="downloadCsv()">Download CSV File</button>
       <button (click)="downloadZip()">Create and Download Complete Asset</button>
-      <mat-icon *ngIf="assetList.length > 0"
+      <mat-icon *ngIf="assetList.length > 1"
                 fontIcon="arrow_forward"
                 class="icon-display"
                 (click)="showNextAsset()"

@@ -184,6 +184,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.assetCount = undefined;
     this.cacheService.clearQueryCache();
     this.newSelect(undefined);
+    this.queryToDetailedView.setDataSource(new MatTableDataSource<Asset>());
   }
 
   saveSearch() {
