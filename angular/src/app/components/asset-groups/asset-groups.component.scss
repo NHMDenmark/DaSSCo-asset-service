@@ -73,6 +73,21 @@
       margin-bottom: .5rem;
     }
   }
+
+  .download-actions {
+    .download-btns {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .download-btn-editing-false {
+      visibility: hidden;
+    }
+
+    button {
+      margin-bottom: .5rem;
+    }
+  }
 }
 
 .list-option-digitiser-false:hover { // i know this is messy, but until we get an acutal layout i'm not gonna spend more time on it lol

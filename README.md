@@ -21,7 +21,8 @@
   * _port:_ 5432
   * _dbname, user & pass_: dassco_file_proxy
 * For seeing the entire schema with all the relations, the query that can be used is:
-`SELECT * FROM cypher('citation_graph', $$
+
+`SELECT * FROM ag_catalog.cypher('dassco', $$
   MATCH (a)
   OPTIONAL MATCH (a)-[e]->(b)
   RETURN a, e, b

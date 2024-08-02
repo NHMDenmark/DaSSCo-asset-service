@@ -14,9 +14,11 @@ import {MatDialog} from "@angular/material/dialog";
 import {Router} from "@angular/router";
 import {MatCheckbox} from "@angular/material/checkbox";
 import {combineLatest} from "rxjs";
+import {MatSnackBar} from "@angular/material/snack-bar";
 import {
   IllegalAssetGroupDialogComponent
 } from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
+import {DetailedViewService} from "../../services/detailed-view.service";
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -39,6 +41,7 @@ export class AssetGroupsComponent implements OnInit {
   displayedColumnsExpanded = [...this.displayedColumns, 'expand'];
   groupSelection = new SelectionModel<AssetGroup>(true, []);
   editing = false;
+  downloadingCompleteAssets = false;
   digitiserFormControl = new FormControl<string[] | null>(null);
 
   username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
@@ -62,7 +65,9 @@ export class AssetGroupsComponent implements OnInit {
             , private cacheService: CacheService
             , private router: Router
             , public dialog: MatDialog
-            , private authService: AuthService) { }
+            , private _snackBar: MatSnackBar
+            , private authService: AuthService
+            , private detailedViewService : DetailedViewService) { }
 
   ngOnInit(): void {
   }
@@ -86,6 +91,10 @@ export class AssetGroupsComponent implements OnInit {
     this.editing = !this.editing;
   }
 
+  downloadCompleteAssets(){
+    this.downloadingCompleteAssets = !this.downloadingCompleteAssets;
+  }
+
   removeMatListOptionAssets(assets: MatListOption[], group: AssetGroup) {
     const selectedAssets: string[] = assets.map(option => option.value);
     this.removeAssets(selectedAssets, group);
@@ -97,6 +106,99 @@ export class AssetGroupsComponent implements OnInit {
       .subscribe(updatedGroup => {
         if (updatedGroup) {
           this.updateDataSourceGroup(group, updatedGroup, false);
+        }
+      });
+  }
+
+  downloadCSV(assets: MatListOption[]){
+    const selectedAssets: string[] = assets.map(option => option.value);
+    this.detailedViewService.postCsv(selectedAssets)
+      .subscribe({
+        next: (response) => {
+          if (response.status == 200){
+            this.detailedViewService.getFile("assets.csv")
+              .subscribe(
+                {
+                  next: (data) => {
+                    const url = window.URL.createObjectURL(data);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = "assets.csv";
+
+                    document.body.appendChild(link);
+                    link.click();
+
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    this.detailedViewService.deleteFile()
+                      .subscribe({
+                        next: () => {
+                        },
+                        error: () => {
+                          this.openSnackBar("There's been an error deleting the CSV file", "There's been an error deleting the CSV file")
+                        }
+                      })
+                  },
+                  error: () => {
+                    this.openSnackBar("There has been an error downloading the CSV file.", "There has been an error downloading the CSV file.");
+                  }
+                })
+          }
+        },
+        error: (error) => {
+          this.openSnackBar(error.error, error.error);
+        }
+      });
+  }
+
+  downloadZip(assets: MatListOption[]){
+    const selectedAssets: string[] = assets.map(option => option.value);
+    this.detailedViewService.postCsv(selectedAssets)
+      .subscribe({
+        next: (response) => {
+          if (response.status == 200){
+            this.detailedViewService.postZip(selectedAssets)
+              .subscribe({
+                next: (response) => {
+                  if (response.status == 200){
+                    this.detailedViewService.getFile("assets.zip").subscribe(
+                      {
+                        next: (data) => {
+                          const url = window.URL.createObjectURL(data);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = "assets.zip";
+
+                          document.body.appendChild(link);
+                          link.click();
+
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(url);
+
+                          this.detailedViewService.deleteFile()
+                            .subscribe({
+                              next: () => {
+                              },
+                              error: () => {
+                                this.openSnackBar("There has been an error deleting the files", "Close")
+                              }
+                            })
+                        },
+                        error: () => {
+                          this.openSnackBar("There has been an error downloading the ZIP file.", "Close");
+                        }
+                      })
+                  }
+                },
+                error: () => {
+                  this.openSnackBar("There has been an error saving the files to the Temp Folder", "Close");
+                }
+              })
+          }
+        },
+        error: () => {
+          this.openSnackBar("There has been an error saving the CSV File", "Close");
         }
       });
   }
@@ -164,6 +266,14 @@ export class AssetGroupsComponent implements OnInit {
         this.assetGroupService.deleteGroup(group.group_name)
           .subscribe(() => this.updateDataSourceGroup(group, null, true))
       })
+    }
+  }
+
+  openSnackBar(object: any | undefined, success: string) {
+    if (object) {
+      this._snackBar.open(success, 'OK');
+    } else {
+      this._snackBar.open('An error occurred. Try again.', 'OK');
     }
   }
 

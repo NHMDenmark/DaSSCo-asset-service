@@ -371,7 +371,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
           }
         },
         error: (error) => {
-          console.log(error.error)
           this.openSnackBar(error.error, error.error);
         }
       });

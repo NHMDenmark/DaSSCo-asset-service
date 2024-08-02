@@ -54,9 +54,9 @@
               <div mat-subheader>Assets</div>
               <mat-list-option [checkboxPosition]="'before'"
                                *ngFor="let asset of element.assets"
-                               class="list-option-{{editing}}"
+                               class="list-option-{{editing || downloadingCompleteAssets}}"
                                [value]="asset"
-                               (click)="!editing && goToAsset(asset)">{{asset}}</mat-list-option>
+                               (click)="!editing && !downloadingCompleteAssets && goToAsset(asset)">{{asset}}</mat-list-option>
             </mat-selection-list>
           </div>
 
@@ -105,6 +105,21 @@
                   Give Access
                 </button>
               </div>
+            </div>
+          </div>
+          <div class="download-actions">
+            <button mat-mini-fab (click)="downloadCompleteAssets(); assets.deselectAll(); digitisers.deselectAll();"
+                    matTooltip="Download Complete Assets"
+                    [matTooltipPosition]="'below'">
+              <mat-icon>download</mat-icon>
+            </button>
+            <div class="download-btn-editing-{{downloadingCompleteAssets}} download-btns">
+              <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="downloadCSV(assets.selectedOptions.selected)">
+                Download CSV
+              </button>
+              <button mat-raised-button [disabled]="assets.selectedOptions.isEmpty()" (click)="downloadZip(assets.selectedOptions.selected)">
+                Download ZIP
+              </button>
             </div>
           </div>
         </div>
