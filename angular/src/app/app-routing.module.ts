@@ -7,11 +7,11 @@ import {GraphComponent} from './components/graph/graph.component';
 import {StatisticsComponent} from './components/statistics/statistics.component';
 
 const routes: Routes = [
-  {path: 'ars/statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'ars/graphs', component: GraphComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'ars/user', component: UserComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'ars/docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
-  {path: '**', redirectTo: 'ars/statistics', pathMatch: 'full'}
+  {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'graphs', component: GraphComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'user', component: UserComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
+  {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 
 ];
 

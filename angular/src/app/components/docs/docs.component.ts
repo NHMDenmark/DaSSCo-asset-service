@@ -20,7 +20,7 @@ export class DocsComponent implements OnInit, OnDestroy {
         const headers = new Headers({
           'Authorization': 'Bearer ' + token
         });
-        fetch('/api/openapi.json', { headers: headers })
+        fetch('api/openapi.json', { headers: headers })
           .then(response => response.json())
           .then(data => {
             if (docEl) {
