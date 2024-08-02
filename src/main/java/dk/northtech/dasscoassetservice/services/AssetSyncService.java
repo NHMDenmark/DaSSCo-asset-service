@@ -17,17 +17,15 @@ public class AssetSyncService {
         this.jdbi = jdbi;
     }
 
-    public List<Asset> synchroniseAllAssets() {
+    public List<Asset> getAllCompletedAssets() {
         return jdbi.onDemand(AssetSyncRepository.class).getAllCompletedAssets(false);
     }
 
-    public List<Asset> synchroniseUnsyncedAssets() {
+    public List<Asset> getAllUnsyncedCompletedAssets() {
         return jdbi.onDemand(AssetSyncRepository.class).getAllCompletedAssets(true);
     }
 
-    public List<String> setAssetsSynced(List<Asset> assetGuids) {
-        String formattedAssetGuids = assetGuids.stream().map(s -> "'" + s + "'").toList().toString();
-
-        return jdbi.onDemand(AssetSyncRepository.class).setAssetsSynced(formattedAssetGuids);
+    public List<String> setAssetsSynced(List<String> assetGuids) {
+        return jdbi.onDemand(AssetSyncRepository.class).setAssetsSynced(assetGuids);
     }
 }

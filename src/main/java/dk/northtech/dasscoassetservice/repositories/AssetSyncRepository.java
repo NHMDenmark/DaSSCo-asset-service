@@ -1,25 +1,21 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.NodeProperty;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
+import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.apache.commons.text.StringSubstitutor;
-import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 public interface AssetSyncRepository extends SqlObject {
     String completedAssetsSql =
@@ -63,6 +59,7 @@ public interface AssetSyncRepository extends SqlObject {
                            , u.name AS user_name
                            , a.date_metadata_taken
                            , a.date_asset_taken
+                           , false
                            , a.synced
                    $$)
                AS (asset_guid agtype
@@ -91,6 +88,7 @@ public interface AssetSyncRepository extends SqlObject {
              , user_name agtype
              , date_metadata_taken agtype
              , date_asset_taken agtype
+             , write_access agtype
              , synced agtype);
             """;
 
@@ -113,7 +111,7 @@ public interface AssetSyncRepository extends SqlObject {
 
         Map<String, String> substitutionMap = new HashMap<>();
         if (filterSynced) { // if we want to filter on synced assets only
-            substitutionMap.put("synced", "false");
+            substitutionMap.put("synced", "WHERE a.synced = false");
         }
         StringSubstitutor substitutor = new StringSubstitutor(substitutionMap);
 
@@ -124,13 +122,13 @@ public interface AssetSyncRepository extends SqlObject {
                 .list());
     }
 
-    default List<String> setAssetsSynced(String assetGuids) {
+    default List<String> setAssetsSynced(List<String> assetGuids) {
         String sql = """
                 SELECT * FROM ag_catalog.cypher(
                           'dassco'
                       , $$
                             MATCH (a:Asset)
-                            WHERE a.asset_guid IN $asset_guids}
+                            WHERE a.asset_guid IN $asset_guids
                             SET a.synced = true
                             RETURN a.asset_guid
                        $$
@@ -139,8 +137,10 @@ public interface AssetSyncRepository extends SqlObject {
                 """;
 
         return withHandle(handle -> {
+            AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+            assetGuids.forEach(agtypeListBuilder::add);
             AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guids", assetGuids)
+                    .add("asset_guids", agtypeListBuilder)
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)

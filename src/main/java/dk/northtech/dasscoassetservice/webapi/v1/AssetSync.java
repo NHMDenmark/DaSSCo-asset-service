@@ -39,7 +39,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAllAssets() {
-        assetSyncService.synchroniseAllAssets();
+        assetSyncService.getAllCompletedAssets();
         return "hej";
     }
 
@@ -50,7 +50,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAssets() {
-        assetSyncService.synchroniseUnsyncedAssets();
+        assetSyncService.getAllUnsyncedCompletedAssets();
         return "hej";
     }
 
