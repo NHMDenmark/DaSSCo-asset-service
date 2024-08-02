@@ -123,6 +123,11 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype writeAccess = rs.getObject("write_access", Agtype.class);
             asset.writeAccess = writeAccess.getBoolean();
         }
+        rs.getString("synced");
+        if (!rs.wasNull()) {
+            Agtype synced = rs.getObject("synced", Agtype.class);
+            asset.synced = synced.getBoolean();
+        }
         return asset;
     }
 

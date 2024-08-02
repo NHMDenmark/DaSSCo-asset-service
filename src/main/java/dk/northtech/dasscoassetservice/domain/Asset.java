@@ -81,6 +81,8 @@ public class Asset {
     public DasscoEvent event_name;
     @Schema(description = "Whether the current user has write access. Used in frontend operations.", example = "TRUE")
     public boolean writeAccess;
+    @Schema(description = "Whether the asset is synced to Specify.", example = "TRUE")
+    public boolean synced;
 
     public String getAsset_guid() {
         return asset_guid;
@@ -120,6 +122,7 @@ public class Asset {
                 ", pipeline='" + pipeline + '\'' +
                 ", error_message='" + error_message + '\'' +
                 ", error_timestamp=" + error_timestamp +
+                ", synced=" + synced +
                 '}';
     }
 

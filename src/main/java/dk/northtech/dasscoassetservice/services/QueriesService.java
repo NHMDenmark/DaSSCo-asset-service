@@ -79,6 +79,7 @@ public class QueriesService {
                               , a.date_metadata_taken
                               , a.date_asset_taken
                               , ${writeAccess:-null}
+                              , a.synced
                          LIMIT ${limit:-200}
                       $$)
                     AS (asset_guid agtype
@@ -107,7 +108,8 @@ public class QueriesService {
                     , user_name agtype
                     , date_metadata_taken agtype
                     , date_asset_taken agtype
-                    , write_access agtype);
+                    , write_access agtype
+                    , synced agtype);
                   """;
 
     String assetCountSql = """
@@ -278,7 +280,7 @@ public class QueriesService {
             whereMap.put("writeAccess", "true");
         }
 
-        StringSubstitutor substitutor = new StringSubstitutor(whereMap);
+        StringSubstitutor substitutor = new  StringSubstitutor(whereMap);
         if (count) finalQuery = substitutor.replace(assetCountSql);
         else finalQuery = substitutor.replace(assetSql);
         return finalQuery;

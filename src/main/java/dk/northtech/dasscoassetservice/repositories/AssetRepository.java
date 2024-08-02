@@ -174,6 +174,7 @@ public interface AssetRepository extends SqlObject {
                          , a.date_metadata_taken
                          , a.date_asset_taken
                          , null
+                         , a.synced
                       $$
                     , #params)
                     as (asset_guid agtype
@@ -202,7 +203,8 @@ public interface AssetRepository extends SqlObject {
                     , user_name agtype
                     , date_metadata_taken agtype
                     , date_asset_taken agtype
-                    , write_access agtype);
+                    , write_access agtype
+                    , synced agtype);
                   """;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
@@ -264,6 +266,7 @@ public interface AssetRepository extends SqlObject {
                          , a.date_metadata_taken
                          , a.date_asset_taken
                          , null
+                         , a.synced
                       $$
                     )
                     as (asset_guid agtype
@@ -292,7 +295,8 @@ public interface AssetRepository extends SqlObject {
                     , user_name agtype
                     , date_metadata_taken agtype
                     , date_asset_taken agtype
-                    , write_access agtype);
+                    , write_access agtype
+                    , synced agtype);
                   """.formatted(assetListAsString);
 
         return withHandle(handle -> handle.createQuery(sql)
@@ -395,6 +399,7 @@ public interface AssetRepository extends SqlObject {
                                 , tags: $tags
                                 , asset_locked: $asset_locked
                                 , date_metadata_taken: $date_metadata_taken
+                                , synced: false
                             })
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET_METADATA', name: 'CREATE_ASSET_METADATA'})
@@ -528,6 +533,7 @@ public interface AssetRepository extends SqlObject {
                             , a.date_metadata_taken = $date_metadata_taken
                             , a.date_asset_taken = $date_asset_taken
                             , a.digitiser = $digitiser
+                            , a.synced = $synced
                         $$
                         , #params) as (a agtype);
                         """;
@@ -555,6 +561,7 @@ public interface AssetRepository extends SqlObject {
                         .add("user", asset.updateUser)
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
+                        .add("synced", asset.synced)
                         .add("restricted_access", restrictedAcces.build());
                 if (asset.date_metadata_taken != null) {
                     builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
