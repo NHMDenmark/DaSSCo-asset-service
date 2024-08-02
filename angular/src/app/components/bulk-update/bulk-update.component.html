@@ -97,7 +97,7 @@
       </mat-form-field>
     </mat-expansion-panel>
     <br>
-    <button (click)="openConfirmationDialog()">Update Assets</button>
+    <button (click)="openConfirmationDialog()" [disabled]="assetList.length == 0">Update Assets</button>
   </mat-accordion>
   <ng-template #confirmationDialog let-data>
     <h2 mat-dialog-title>Confirm</h2>
