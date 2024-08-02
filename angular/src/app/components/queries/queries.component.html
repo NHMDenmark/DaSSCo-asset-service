@@ -75,7 +75,7 @@
 -->
       <ng-container matColumnDef="asset_guid">
         <mat-header-cell *matHeaderCellDef mat-sort-header>Guid</mat-header-cell>
-        <mat-cell *matCellDef="let element">{{element.asset_guid}}</mat-cell>
+        <mat-cell *matCellDef="let element" (click)="assetClick(element.asset_guid)">{{element.asset_guid}}</mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="institution">

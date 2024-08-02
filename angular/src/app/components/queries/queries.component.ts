@@ -22,6 +22,8 @@ import {DetailedViewService} from "../../services/detailed-view.service";
 import {
   IllegalAssetGroupDialogComponent
 } from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
+import {QueryToDetailedViewService} from "../../services/query-to-detailed-view.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'dassco-queries',
@@ -81,7 +83,9 @@ export class QueriesComponent implements OnInit, AfterViewInit {
               , public dialog: MatDialog
               , private _snackBar: MatSnackBar
               , private cacheService: CacheService
-              , private assetGroupService: AssetGroupService,
+              , private assetGroupService: AssetGroupService
+              , private queryToDetailedView : QueryToDetailedViewService
+              , private router : Router,
               private detailedViewService : DetailedViewService
   ) { }
 
@@ -99,6 +103,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
           this.newSelect(undefined);
         }
       })
+
+    if (this.queryToDetailedView.getDataSource().filteredData.length > 0){
+      this.dataSource = this.queryToDetailedView.getDataSource();
+    }
   }
 
   ngAfterViewInit(): void {
@@ -429,5 +437,15 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   areAssetsSelected() {
     return this.selection.hasValue();
+  }
+
+  assetClick(asset : string){
+    // TODO: I need to get the clicked asset AND the entire list, so I can pass it to detailed view (in order!)
+    const assetGuids : string[] = this.dataSource.filteredData.map(asset => asset.asset_guid!);
+
+    this.queryToDetailedView.setAssets(assetGuids);
+    this.queryToDetailedView.setDataSource(this.dataSource)
+
+    this.router.navigate(['detailed-view/', asset])
   }
 }

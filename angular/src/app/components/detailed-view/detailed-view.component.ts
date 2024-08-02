@@ -4,6 +4,7 @@ import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {ActivatedRoute, Params} from "@angular/router";
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset} from "../../types/types";
+import {QueryToDetailedViewService} from "../../services/query-to-detailed-view.service";
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -18,10 +19,12 @@ export class DetailedViewComponent implements OnInit {
   assetGuid: string = "";
   currentIndex : number = -1;
   // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
-  assetList: string[] = ['test-asset-1', 'test-asset-2', 'test-asset-3']
+  assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
 
-  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute, private _snackBar: MatSnackBar) { }
+  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer,
+              private route: ActivatedRoute, private _snackBar: MatSnackBar,
+              private queryToDetailedViewService : QueryToDetailedViewService) { }
 
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
