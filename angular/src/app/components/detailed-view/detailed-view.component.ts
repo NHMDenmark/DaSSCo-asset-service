@@ -4,7 +4,7 @@ import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {ActivatedRoute, Params} from "@angular/router";
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset} from "../../types/types";
-import {QueryToDetailedViewService} from "../../services/query-to-detailed-view.service";
+import {QueryToOtherPages} from "../../services/query-to-other-pages";
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -24,7 +24,7 @@ export class DetailedViewComponent implements OnInit {
 
   constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer,
               private route: ActivatedRoute, private _snackBar: MatSnackBar,
-              private queryToDetailedViewService : QueryToDetailedViewService) { }
+              private queryToDetailedViewService : QueryToOtherPages) { }
 
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {

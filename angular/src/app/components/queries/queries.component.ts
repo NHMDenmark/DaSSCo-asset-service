@@ -22,7 +22,7 @@ import {DetailedViewService} from "../../services/detailed-view.service";
 import {
   IllegalAssetGroupDialogComponent
 } from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
-import {QueryToDetailedViewService} from "../../services/query-to-detailed-view.service";
+import {QueryToOtherPages} from "../../services/query-to-other-pages";
 import {Router} from "@angular/router";
 
 @Component({
@@ -84,7 +84,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
               , private _snackBar: MatSnackBar
               , private cacheService: CacheService
               , private assetGroupService: AssetGroupService
-              , private queryToDetailedView : QueryToDetailedViewService
+              , private queryToOtherPages : QueryToOtherPages
               , private router : Router,
               private detailedViewService : DetailedViewService
   ) { }
@@ -104,8 +104,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         }
       })
 
-    if (this.queryToDetailedView.getDataSource().filteredData.length > 0){
-      this.dataSource = this.queryToDetailedView.getDataSource();
+    if (this.queryToOtherPages.getDataSource().filteredData.length > 0){
+      this.dataSource = this.queryToOtherPages.getDataSource();
     }
   }
 
@@ -184,7 +184,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     this.assetCount = undefined;
     this.cacheService.clearQueryCache();
     this.newSelect(undefined);
-    this.queryToDetailedView.setDataSource(new MatTableDataSource<Asset>());
+    this.queryToOtherPages.setDataSource(new MatTableDataSource<Asset>());
   }
 
   saveSearch() {
@@ -436,16 +436,22 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       });
   }
 
+  bulkUpdate(){
+    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
+    this.queryToOtherPages.setAssets(assetGuids)
+    this.queryToOtherPages.setDataSource(this.dataSource);
+    this.router.navigate(['bulk-update'])
+  }
+
   areAssetsSelected() {
     return this.selection.hasValue();
   }
 
   assetClick(asset : string){
-    // TODO: I need to get the clicked asset AND the entire list, so I can pass it to detailed view (in order!)
     const assetGuids : string[] = this.dataSource.filteredData.map(asset => asset.asset_guid!);
 
-    this.queryToDetailedView.setAssets(assetGuids);
-    this.queryToDetailedView.setDataSource(this.dataSource)
+    this.queryToOtherPages.setAssets(assetGuids);
+    this.queryToOtherPages.setDataSource(this.dataSource)
 
     this.router.navigate(['detailed-view/', asset])
   }

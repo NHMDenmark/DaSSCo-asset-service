@@ -4,6 +4,7 @@ import {MatSnackBar, MatSnackBarDismiss} from "@angular/material/snack-bar";
 import {HttpErrorResponse, HttpResponse} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
+import {QueryToOtherPages} from "../../services/query-to-other-pages";
 
 
 @Component({
@@ -18,7 +19,8 @@ export class BulkUpdateComponent implements OnInit {
 
   constructor(private bulkUpdateService: BulkUpdateService,
               private _snackBar: MatSnackBar,
-              private dialog : MatDialog) { }
+              private dialog : MatDialog,
+              private queryToOtherPages : QueryToOtherPages) { }
 
   ngOnInit(): void {
   }
@@ -34,8 +36,8 @@ export class BulkUpdateComponent implements OnInit {
   statusList = ["WORKING_COPY", "ARCHIVE", "BEING_PROCESSED", "PROCESSING_HALTED", "ISSUE_WITH_MEDIA", "ISSUE_WITH_METADATA", "FOR_DELETION"];
   status: string = "";
 
-  // Asset List (TODO: Get from the Frontend)
-  assetList : string[] = ["test-bulk-update-1", "test-bulk-update-2"];
+  // Asset List
+  assetList : string[] = this.queryToOtherPages.getAssets();
 
   // ASSET_LOCKED:
   assetLocked: string = "";
@@ -89,7 +91,7 @@ export class BulkUpdateComponent implements OnInit {
         const assetGuid: string[] = assets.map(asset => asset.asset_guid);
         this.showSuccessSnackBar(`Assets have been updated: ${assetGuid.join(", ")}`)
           .subscribe(() => {
-            window.location.reload();
+            this.resetForm();
           })
       },
       error: (error: HttpErrorResponse) => {
@@ -156,6 +158,16 @@ export class BulkUpdateComponent implements OnInit {
 
   onDialogProceed(){
     this.dialogRef.close('proceed');
+  }
+
+  resetForm(){
+    this.status = "";
+    this.assetLocked = "";
+    this.subject = "";
+    this.funding = "";
+    this.payloadType = "";
+    this.parentGuid = "";
+    this.digitiser = "";
   }
 
 }

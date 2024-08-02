@@ -5,7 +5,7 @@ import {Asset} from "../types/types";
 @Injectable({
   providedIn: 'root'
 })
-export class QueryToDetailedViewService {
+export class QueryToOtherPages {
 
   private assets : string[] = [];
   private dataSource : MatTableDataSource<Asset> = new MatTableDataSource<Asset>();

@@ -160,5 +160,6 @@
   <div class="button-container">
     <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected()">Download Asset CSV</button>
     <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">Download Asset ZIP</button>
+    <button mat-raised-button color="primary" (click)="bulkUpdate()" [disabled]="!areAssetsSelected()">Bulk Update Assets</button>
   </div>
 </div>
