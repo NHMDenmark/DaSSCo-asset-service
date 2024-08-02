@@ -5,7 +5,7 @@ services:
   #    service: keycloak
   #database:
   #  extends:
-  #    file: ./docker-compose-postgres.yaml
+  #    file: ./docker-compose-rabbit-mq.yaml
   #    service: database
   #age-viewer:
   #  extends:
