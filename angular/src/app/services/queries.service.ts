@@ -8,7 +8,7 @@ import {Asset, Query} from "../types";
   providedIn: 'root'
 })
 export class QueriesService {
-  baseUrl = '/api/v1/queries';
+  baseUrl = 'api/v1/queries';
 
   constructor(public oidcSecurityService: OidcSecurityService
             , private http: HttpClient) { }

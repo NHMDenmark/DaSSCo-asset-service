@@ -13,7 +13,7 @@ const routes: Routes = [
   {path: 'user', component: UserComponent, canActivate: [AuthenticatedGuard]},
   {path: 'docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
-  {path: '**', redirectTo: 'statistics', pathMatch: 'full'}
+  {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 
 ];
 

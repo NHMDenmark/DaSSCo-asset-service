@@ -32,6 +32,7 @@ import {MatTableModule} from "@angular/material/table";
 import { QueriesComponent } from './components/queries/queries.component';
 import {MatCardModule} from "@angular/material/card";
 import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
+import {NgOptimizedImage} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -70,7 +71,8 @@ import { QueryBuilderComponent } from './components/query-builder/query-builder.
     MatSnackBarModule,
     MatDividerModule,
     MatTableModule,
-    MatCardModule
+    MatCardModule,
+    NgOptimizedImage
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

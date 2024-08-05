@@ -8,7 +8,7 @@ import {Institute} from "../types";
   providedIn: 'root'
 })
 export class InstituteService {
-  baseUrl = '/api/v1/institutes';
+  baseUrl = 'api/v1/institutes';
 
   constructor(
     public oidcSecurityService: OidcSecurityService
