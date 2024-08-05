@@ -320,7 +320,7 @@ In this case: "/root/ars/postgres_data" has to exist on the host machine where t
 |----------------------|-----------------------------------------------------------------------------|----------|
 | POSTGRES_DB          | Set the name of the database. Example: "dassco_asset_service"               | TRUE     |
 | POSTGRES_USER        | Set the username of the database user. Example: "dassco_asset_service_user" | TRUE     |
-| POSTGRES_PASSWORD    | Set the passworn of the database used. Example: "PASSWORD"                  | TRUE     |
+| POSTGRES_PASSWORD    | Set the password of the database used. Example: "PASSWORD"                  | TRUE     |
 
 ## DaSSCo Nginx Load Balancer
 ### Prerequisite
