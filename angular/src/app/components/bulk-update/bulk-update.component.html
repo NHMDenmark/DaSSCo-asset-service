@@ -96,6 +96,18 @@
         <input matInput placeholder="Ex. Niels Nielsen" value="" [(ngModel)]="digitiser" name="digitiser">
       </mat-form-field>
     </mat-expansion-panel>
+    <mat-form-field appearance="fill">
+      <mat-label>Workstation</mat-label>
+      <mat-select name="workstation" [(ngModel)]="workstation">
+        <mat-option *ngFor="let workstation of workstationList" [value]="workstation">{{workstation}}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill">
+      <mat-label>Pipeline</mat-label>
+      <mat-select name="pipeline" [(ngModel)]="pipeline">
+        <mat-option *ngFor="let pipeline of pipelineList" [value]="pipeline">{{pipeline}}</mat-option>
+      </mat-select>
+    </mat-form-field>
     <br>
     <button (click)="openConfirmationDialog()" [disabled]="assetList.length == 0">Update Assets</button>
   </mat-accordion>
