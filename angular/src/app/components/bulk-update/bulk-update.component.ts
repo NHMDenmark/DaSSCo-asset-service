@@ -6,6 +6,7 @@ import {map, Observable} from "rxjs";
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {QueryToOtherPages} from "../../services/query-to-other-pages";
 import {CacheService} from "../../services/cache.service";
+import {Asset} from "../../types/types";
 
 
 @Component({
@@ -53,6 +54,12 @@ export class BulkUpdateComponent implements OnInit {
           })
         }
     });
+    this.assetList = this.queryToOtherPages.getFullAssets();
+
+    this.allAssetsLocked = this.assetList.every(asset => asset.asset_locked);
+    if (this.allAssetsLocked){
+      this.assetLocked = "true";
+    }
   }
 
   // TAGS:
@@ -67,9 +74,10 @@ export class BulkUpdateComponent implements OnInit {
   status: string = "";
 
   // Asset List
-  assetList : string[] = this.queryToOtherPages.getAssets();
+  assetList : Asset[] = [];
 
   // ASSET_LOCKED:
+  allAssetsLocked! : boolean;
   assetLocked: string = "";
 
   // SUBJECT:
@@ -114,12 +122,11 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   updateAssets(){
-
     // Creation of the JSON Body:
     const json = this.createJson();
 
     // Creation of the url:
-    const assets : string = this.assetList.map(item => `assets=${item}`).join('&');
+    const assets : string = this.assetList.map(item => `assets=${item.asset_guid}`).join('&');
 
     this.bulkUpdateService.updateAssets(json, assets).subscribe({
       next: (response: HttpResponse<any>) => {
@@ -176,7 +183,7 @@ export class BulkUpdateComponent implements OnInit {
   onSubmit(form : any) {
     if (form.valid) {
       this.dialogRef = this.dialog.open(this.confirmationDialog, {
-        data: { assets: this.assetList }
+        data: { assets: this.assetList.map(asset => asset.asset_guid) }
       });
 
       this.dialogRef.afterClosed().subscribe(result => {
@@ -203,6 +210,8 @@ export class BulkUpdateComponent implements OnInit {
     this.payloadType = "";
     this.parentGuid = "";
     this.digitiser = "";
+    this.workstation = "";
+    this.pipeline = "";
   }
 
 }

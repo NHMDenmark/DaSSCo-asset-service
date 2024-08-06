@@ -44,7 +44,7 @@
       </mat-expansion-panel-header>
       <mat-form-field appearance="fill">
         <mat-label>Asset Locked</mat-label>
-        <mat-select name="asset_locked" [(ngModel)]="assetLocked">
+        <mat-select name="asset_locked" [(ngModel)]="assetLocked" [disabled]="allAssetsLocked">
           <mat-option [value]="''"></mat-option>
           <mat-option [value]="false">False</mat-option>
           <mat-option [value]="true">True</mat-option>

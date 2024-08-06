@@ -437,8 +437,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   bulkUpdate(){
-    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
-    this.queryToOtherPages.setAssets(assetGuids)
+    const assets = this.selection.selected
+    this.queryToOtherPages.setFullAssets(assets)
     this.queryToOtherPages.setDataSource(this.dataSource);
     this.router.navigate(['bulk-update'])
   }
