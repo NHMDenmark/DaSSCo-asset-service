@@ -173,16 +173,18 @@ export class BulkUpdateComponent implements OnInit {
     return snackBarRef.afterDismissed();
   }
 
-  openConfirmationDialog() {
-    this.dialogRef = this.dialog.open(this.confirmationDialog, {
-      data: { assets: this.assetList }
-    });
+  onSubmit(form : any) {
+    if (form.valid) {
+      this.dialogRef = this.dialog.open(this.confirmationDialog, {
+        data: { assets: this.assetList }
+      });
 
-    this.dialogRef.afterClosed().subscribe(result => {
-      if (result === 'proceed') {
-        this.updateAssets();
-      }
-    });
+      this.dialogRef.afterClosed().subscribe(result => {
+        if (result === 'proceed') {
+          this.updateAssets();
+        }
+      });
+    }
   }
 
   onCancel(): void {
