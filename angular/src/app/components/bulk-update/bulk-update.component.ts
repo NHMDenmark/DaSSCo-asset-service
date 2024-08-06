@@ -60,6 +60,9 @@ export class BulkUpdateComponent implements OnInit {
     if (this.allAssetsLocked){
       this.assetLocked = "true";
     }
+    if (!this.allAssetsLocked){
+      this.someAssetsLocked = this.assetList.some(asset => asset.asset_locked);
+    }
   }
 
   // TAGS:
@@ -78,6 +81,7 @@ export class BulkUpdateComponent implements OnInit {
 
   // ASSET_LOCKED:
   allAssetsLocked! : boolean;
+  someAssetsLocked : boolean = false;
   assetLocked: string = "";
 
   // SUBJECT:

@@ -109,6 +109,9 @@
       </mat-select>
     </mat-form-field>
     <br>
+    <div *ngIf="someAssetsLocked">
+      <p>Some of the assets are locked. As unlocking is not possible from the Bulk Update endpoint, you must either choose "True" for "Asset Locked" or choose different assets. </p>
+    </div>
     <button type="submit" [disabled]="assetList.length == 0">Update Assets</button>
   </mat-accordion>
   <ng-template #confirmationDialog let-data>
