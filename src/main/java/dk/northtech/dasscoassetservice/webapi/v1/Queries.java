@@ -27,10 +27,9 @@ import java.util.Map;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Hidden
 @Component
 @Path("/v1/queries")
-@Tag(name = "Queries", description = "Endpoints related to queries of the nodes")
+@Tag(name = "Queries", description = "Endpoints related to querying function for statements")
 @SecurityRequirement(name = "dassco-idp")
 public class Queries {
     private QueriesService queriesService;
