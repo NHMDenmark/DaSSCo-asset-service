@@ -12,6 +12,8 @@ tags:
   description: Endpoints related to assets.
 - name: Asset Groups
   description: Endpoints related to Asset Groups
+- name: AMQP
+  description: Endpoints related to the rabbitmq and Specify synchronising.
 - name: Asset Metadata
   description: Endpoints related to asset's metadata
 - name: Caches
@@ -22,6 +24,8 @@ tags:
   description: Endpoints related to institutions
 - name: Pipelines
   description: Endpoints related to institution pipelines
+- name: Queries
+  description: Endpoints related to queries of the nodes
 - name: Specimens
   description: Endpoints related to collection specimens
 - name: Workstations
@@ -517,6 +521,51 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AssetGroup'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/amqp/sync/all:
+    post:
+      tags:
+      - AMQP
+      summary: Synchronises all completed assets to Specify.
+      description: Synchronises all completed assets to Specify regardless of 'synced'
+        property.
+      operationId: synchroniseAllAssets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/amqp/sync:
+    post:
+      tags:
+      - AMQP
+      summary: "Synchronises all un-synced, completed assets to Specify."
+      description: "Synchronises all un-synced, completed assets to Specify."
+      operationId: synchroniseAssets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
         "400-599":
           content:
             application/json:
@@ -1168,6 +1217,210 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/queries/saved/{title}:
+    delete:
+      tags:
+      - Queries
+      summary: Deletes a user's saved query
+      description: Deletes the user's query from the title.
+      operationId: deleteSavedQuery
+      parameters:
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/assetcount/{limit}:
+    post:
+      tags:
+      - Queries
+      summary: Get the number of assets for the query
+      description: Get the count for the number of assets matching the query
+      operationId: getAssetCount
+      parameters:
+      - name: limit
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/QueriesReceived'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/nodes:
+    get:
+      tags:
+      - Queries
+      summary: Get node properties
+      description: Collects all the properties of all the Nodes.
+      operationId: getNodeProperties
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/{limit}:
+    post:
+      tags:
+      - Queries
+      summary: Get assets from query
+      description: Selects all assets based on the received queries.
+      operationId: getNodeProperties_1
+      parameters:
+      - name: limit
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/QueriesReceived'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/saved:
+    get:
+      tags:
+      - Queries
+      summary: Gets the user's saved queries
+      description: Gets the queries the user has saved.
+      operationId: getSavedQueries
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/save:
+    post:
+      tags:
+      - Queries
+      summary: Save query to user
+      description: Saves a query and links it to the user.
+      operationId: saveQuery
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SavedQuery'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/queries/saved/update/{title}:
+    post:
+      tags:
+      - Queries
+      summary: Updates a user's saved query
+      description: Updates a query the user has saved.
+      operationId: updateSavedQuery
+      parameters:
+      - name: title
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SavedQuery'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specimen'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/collections/{collectionName}/specimens/preparationTypes:
     get:
       tags:
@@ -1793,6 +2046,10 @@ components:
           description: Whether the current user has write access. Used in frontend
             operations.
           example: true
+        synced:
+          type: boolean
+          description: Whether the asset is synced to Specify.
+          example: true
     Event:
       type: object
       properties:
@@ -2007,6 +2264,88 @@ components:
           type: string
           description: The name of the institution which owns and digitised the specimen
           example: test-institution
+    QueriesReceived:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The id of the overall statement. String for ease of JSON parsing
+            in frontend.
+          example: "1"
+        query:
+          type: array
+          description: The statements of the entire query
+          example: Asset where xyz
+          items:
+            $ref: '#/components/schemas/Query'
+    Query:
+      type: object
+      properties:
+        select:
+          type: string
+          description: The selection of the statement
+          example: '"Institution"'
+        where:
+          type: array
+          description: The where statements of the query
+          example: or name = "test_name"
+          items:
+            $ref: '#/components/schemas/QueryWhere'
+      description: The statements of the entire query
+      example: Asset where xyz
+    QueryInner:
+      type: object
+      properties:
+        operator:
+          type: string
+          description: The operator type
+          example: =
+        value:
+          type: string
+          description: The field on the right-hand side of the statement
+          example: '"test_name"'
+        dataType:
+          type: string
+          description: The data type for the values of the inner where statements
+            of the queries.
+          example: date
+          enum:
+          - DATE
+          - NUMBER
+          - ENUM
+          - STRING
+          - LIST
+      description: The initial and possible "or" queries for this property
+      example: CONTAINS "nam" or ENDS WITH "e"
+    QueryWhere:
+      type: object
+      properties:
+        property:
+          type: string
+          description: The field on the left-hand side of the statement
+          example: name
+        fields:
+          type: array
+          description: The initial and possible "or" queries for this property
+          example: CONTAINS "nam" or ENDS WITH "e"
+          items:
+            $ref: '#/components/schemas/QueryInner'
+      description: The where statements of the query
+      example: or name = "test_name"
+    SavedQuery:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The title of the query
+          example: Get All Assets
+        query:
+          type: string
+          description: The query itself in JSON format
+          example: "\"select\": \"Asset\",\n\t\"where\": [{\n\t\t\"property\": \"\
+            name\",\n\t\t\"fields\": [{\n            \"operator\": \"CONTAINS\",\n\
+            \            \"value\": \"hjort\",\n            \"data_type\": \"STRING\"\
+            \n\t\t}]\n\t}]\n"
     Workstation:
       type: object
       properties:

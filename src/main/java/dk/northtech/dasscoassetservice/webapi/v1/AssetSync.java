@@ -18,13 +18,11 @@ import org.springframework.stereotype.Component;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Hidden
 @Component
 @Path("/v1/amqp")
 @Tag(name = "AMQP", description = "Endpoints related to the rabbitmq and Specify synchronising.")
 @SecurityRequirement(name = "dassco-idp")
 public class AssetSync {
-
     private AssetSyncService assetSyncService;
 
     @Inject
@@ -39,7 +37,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAllAssets() {
-        assetSyncService.getAllCompletedAssets();
+        assetSyncService.syncAssets(false);
         return "hej";
     }
 
@@ -50,7 +48,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAssets() {
-        assetSyncService.getAllUnsyncedCompletedAssets();
+        assetSyncService.syncAssets(true);
         return "hej";
     }
 

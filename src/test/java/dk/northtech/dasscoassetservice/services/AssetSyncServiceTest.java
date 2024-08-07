@@ -13,7 +13,28 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
     User user = new User("moogie-woogie");
 
     @Test
-    public void test() {
+    public void testQueueSynchronisation() {
+        Optional<Institution> institution = institutionService.getIfExists("FNOOP");
+        if (institution.isEmpty()) {
+            institutionService.createInstitution(new Institution("FNOOP"));
+            pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
+            collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+            collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
+        }
+        Asset asset1 = getTestAsset("queue_asset_1", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        Asset asset2 = getTestAsset("queue_asset_2_exit", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        assetService.persistAsset(asset1, user, 1);
+        assetService.persistAsset(asset2, user, 1);
+
+        assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_1", null, null, null), "i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_2_exit", null, null, null), "i2_w1", "i2_p1", "bob"));
+
+        assetSyncService.syncAssets(false);
+//        queueBroadcaster.sendMessage();
+    }
+
+    @Test
+    public void testCompletedAssets() {
         Optional<Institution> institution = institutionService.getIfExists("FNOOP");
         if (institution.isEmpty()) {
             institutionService.createInstitution(new Institution("FNOOP"));
@@ -43,7 +64,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         assertThat(completed.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(asset1.asset_guid))).isTrue();
         assertThat(completed.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(asset2.asset_guid))).isTrue();
 
-        assetSyncService.setAssetsSynced(Arrays.asList(asset1.asset_guid));
+        assetSyncService.setAssetsSynced(List.of(asset1.asset_guid));
 
         List<Asset> unsyncedCompleted = assetSyncService.getAllUnsyncedCompletedAssets();
 
