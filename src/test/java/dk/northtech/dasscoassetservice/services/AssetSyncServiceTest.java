@@ -1,7 +1,12 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -12,6 +17,39 @@ import static com.google.common.truth.Truth.assertThat;
 class AssetSyncServiceTest extends AbstractIntegrationTest {
     User user = new User("moogie-woogie");
 
+    @Test
+    public void adapter() {
+
+    }
+
+    @Disabled
+    @Test
+    public void specify() {
+        Optional<Institution> institution = institutionService.getIfExists("FNOOP");
+        if (institution.isEmpty()) {
+            institutionService.createInstitution(new Institution("FNOOP"));
+            pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
+            collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+            collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
+        }
+        Asset asset1 = getTestAsset("queue_asset_1", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        Asset asset2 = getTestAsset("queue_asset_2_exit", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        assetService.persistAsset(asset1, user, 1);
+        assetService.persistAsset(asset2, user, 1);
+        List<Asset> assets = new ArrayList<>();
+        assets.add(asset1);
+        assets.add(asset2);
+
+        ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
+        try {
+            String json = ow.writeValueAsString(assets);
+            int s = specifyAdapterClient.sendAssets(json, user);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("An error occurred when trying to turn the Assets into JSON for the queue.", e);
+        }
+    }
+
+    @Disabled
     @Test
     public void testQueueSynchronisation() {
         Optional<Institution> institution = institutionService.getIfExists("FNOOP");

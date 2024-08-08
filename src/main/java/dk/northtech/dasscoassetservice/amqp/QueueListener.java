@@ -7,35 +7,33 @@ import jakarta.inject.Inject;
 import jakarta.jms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.util.concurrent.Semaphore;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 
-@Service
-public class QueueListener extends AbstractExecutionThreadService {
+public abstract class QueueListener extends AbstractExecutionThreadService {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueListener.class);
     private static final int RABBIT_PORT = 5672;
     private static final int RABBIT_TLS_PORT = 5671;
     private int qbrMax;
     private KeycloakService keycloakService;
     private AMQPConfig amqpConfig;
+    String queueName;
     QueueReceiver receiver;
     QueueSession session;
     QueueConnection queueConnection;
 
-    @Inject
-    public QueueListener(KeycloakService keycloakService, AMQPConfig amqpConfig) {
+    public QueueListener(KeycloakService keycloakService, AMQPConfig amqpConfig, String queueName) {
         this.keycloakService = keycloakService;
         this.amqpConfig = amqpConfig;
+        this.queueName = queueName;
         this.qbrMax = 0;
     }
 
     private String queueName() {
-        return this.amqpConfig.queueName();
+        return this.queueName;
     }
 
     private String token() {
@@ -60,42 +58,9 @@ public class QueueListener extends AbstractExecutionThreadService {
             Queue queue = session.createQueue(queueName());
             this.receiver = session.createReceiver(queue);
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("QueueListener failed to setup the connection", e);
         }
-
     }
-
-//    public void subscribeQueue() {
-//        QueueConnection conn = null;
-//        try {
-//            conn = getQueueConnectionFactory().createQueueConnection("", token());
-//            try {
-//                conn.start();
-//                QueueSession session = conn.createQueueSession(false, Session.DUPS_OK_ACKNOWLEDGE);
-//                Queue queue = session.createQueue(queueName());
-//                QueueReceiver receiver = session.createReceiver(queue);
-//
-//                final Semaphore sem = new Semaphore(0);
-//                receiver.setMessageListener(message -> {
-//                    if (message instanceof TextMessage) {
-//                        try {
-//                            String msgBody = ((TextMessage) message).getText();
-//                            System.out.println(msgBody);
-//                            if (msgBody.contains("exit")) sem.release();
-//                        } catch (JMSException e) {
-//                            throw new RuntimeException("An error occurred when trying to read the received message.", e);
-//                        }
-//                    }
-//                });
-//                sem.acquire();
-//                session.close();
-//            } finally {
-//                conn.stop();
-//            }
-//        } catch (JMSException | InterruptedException e) {
-//            throw new RuntimeException("An error occurred when trying to connect to the queue.", e);
-//        }
-//    }
 
     private QueueConnectionFactory getQueueConnectionFactory(){
         return (QueueConnectionFactory)getConnectionFactory();
@@ -130,11 +95,12 @@ public class QueueListener extends AbstractExecutionThreadService {
     protected void run() {
         try {
             while (isRunning()) {
-//                final Semaphore sem = new Semaphore(0);
                 Message message = this.receiver.receive(Duration.of(1, MINUTES).toMillis());
+                if (message != null) {
+                    LOGGER.info("RECEIVED MESSAGES ON {}", this.getClass().getSimpleName());
+                }
                 if (message instanceof TextMessage) {
                     handleMessage(((TextMessage) message).getText());
-//                    sem.acquire();
                 }
             }
         } catch (Exception e) {
@@ -142,10 +108,7 @@ public class QueueListener extends AbstractExecutionThreadService {
         }
     }
 
-    public void handleMessage(String message) {
-        System.out.println("MESSAGE IN LISTENER:");
-        System.out.println(message);
-    }
+    public abstract void handleMessage(String message);
 
     @Override
     protected void shutDown() {
@@ -159,7 +122,7 @@ public class QueueListener extends AbstractExecutionThreadService {
                 this.session.close();
             }
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("An error occurred when trying to shut down " + this.getClass().getSimpleName(), e);
         }
         LOGGER.info("{} is shut down", this.getClass().getSimpleName());
     }

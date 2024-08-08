@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.amqp.QueueListener;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import jakarta.inject.Inject;
@@ -25,10 +24,6 @@ public class AssetSyncService {
         this.jdbi = jdbi;
         this.queueBroadcaster = queueBroadcaster;
     }
-
-//    public void subscribe() {
-//        this.queueListener.subscribeQueue();
-//    }
 
     public void send(Asset asset) {
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();

@@ -2,8 +2,9 @@ package dk.northtech.dasscoassetservice.configuration;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
+import dk.northtech.dasscoassetservice.amqp.AcknowledgeQueueListener;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.amqp.QueueListener;
+import dk.northtech.dasscoassetservice.amqp.AssetQueueListener;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -15,8 +16,8 @@ public class Services {
     private static final Logger LOGGER = LoggerFactory.getLogger(Services.class);
     private final ServiceManager serviceManager;
 
-    public Services(QueueBroadcaster queueBroadcaster, QueueListener queueListener) {
-        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, queueListener));
+    public Services(QueueBroadcaster queueBroadcaster, AssetQueueListener assetQueueListener, AcknowledgeQueueListener acknowledgeQueueListener) {
+        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, assetQueueListener, acknowledgeQueueListener));
     }
 
     @PostConstruct

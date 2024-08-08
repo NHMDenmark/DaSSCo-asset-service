@@ -31,7 +31,6 @@ public class FileProxyClient {
         this.assetService = assetService;
     }
 
-
     public HttpInfo prepareWorkDir(HttpShareRequest httpShareRequest, User user) {
         Gson gson = new Gson();
         try {
@@ -74,8 +73,6 @@ public class FileProxyClient {
             return new HttpInfo("Failed to prepare workdir due an internal error, metadata has not been persisted", HttpAllocationStatus.INTERNAL_ERROR);
         }
     }
-
-
 
     public HttpInfo openHttpShare(MinimalAsset asset1, User user, int allocation) {
         HttpShareRequest httpShareRequest = new HttpShareRequest();

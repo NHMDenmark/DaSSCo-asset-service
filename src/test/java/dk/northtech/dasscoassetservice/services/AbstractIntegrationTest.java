@@ -1,8 +1,5 @@
 package dk.northtech.dasscoassetservice.services;
 
-import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.amqp.QueueListener;
-import dk.northtech.dasscoassetservice.configuration.Services;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
@@ -42,6 +39,7 @@ public class AbstractIntegrationTest {
     @Inject InternalStatusService internalStatusService;
     AssetService assetService;
     @Inject FileProxyClient fileProxyClient;
+    @Inject SpecifyAdapterClient specifyAdapterClient;
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;

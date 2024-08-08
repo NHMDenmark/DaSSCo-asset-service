@@ -129,8 +129,6 @@ select * from cypher('dassco', $$
 	RETURN i
 $$) as (institute agtype);
 
-
-
 select * from cypher('dassco', $$
 	MERGE (u:User { name: "moogie-auditor", user_id: "moogie-auditor" })
 	RETURN u

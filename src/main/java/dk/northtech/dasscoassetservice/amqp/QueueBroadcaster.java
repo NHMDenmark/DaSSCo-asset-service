@@ -31,7 +31,7 @@ public class QueueBroadcaster extends AbstractIdleService {
     }
 
     private String queueName() {
-        return this.amqpConfig.queueName();
+        return this.amqpConfig.assetQueueName();
     }
 
     private String token() {
@@ -50,7 +50,6 @@ public class QueueBroadcaster extends AbstractIdleService {
     protected void startUp() {
         LOGGER.info("Initializing {}", this.getClass().getSimpleName());
         try {
-            System.out.println("IT'S ALL HAPPENING");
             queueConnection = getQueueConnectionFactory().createQueueConnection("", token());
             queueConnection.start();
             this.session = queueConnection.createQueueSession(false, Session.DUPS_OK_ACKNOWLEDGE);
@@ -58,7 +57,7 @@ public class QueueBroadcaster extends AbstractIdleService {
             sender = session.createSender(queue);
             sender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("QueueBroadcaster failed to connect to the queue", e);
         }
 
     }

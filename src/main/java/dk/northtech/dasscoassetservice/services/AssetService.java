@@ -178,6 +178,8 @@ public class AssetService {
             digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
 
+        // todo call sync asset to Specify
+
         return true;
     }
 
