@@ -8,6 +8,7 @@ import {Asset} from "../types/types";
 export class QueryToOtherPages {
 
   private assets : string[] = [];
+  private fullAsset : Asset[] = [];
   private dataSource : MatTableDataSource<Asset> = new MatTableDataSource<Asset>();
 
   setAssets(assets : string[]) : void{
@@ -18,12 +19,20 @@ export class QueryToOtherPages {
     this.dataSource = dataSource;
   }
 
+  setFullAssets(assets : Asset[]) : void {
+    this.fullAsset = assets;
+  }
+
   getAssets(): string[]{
     return this.assets;
   }
 
   getDataSource() : MatTableDataSource<Asset> {
     return this.dataSource;
+  }
+
+  getFullAssets() : Asset[] {
+    return this.fullAsset;
   }
 
   constructor() { }
