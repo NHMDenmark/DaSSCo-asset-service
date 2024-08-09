@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
+import dk.northtech.dasscoassetservice.domain.Acknowledge;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import jakarta.inject.Inject;
@@ -48,6 +49,10 @@ public class AssetSyncService {
             throw new RuntimeException("An error occurred when trying to turn the Assets into JSON for the queue.", e);
         }
         // todo handle return of queue and set synced property
+    }
+
+    public void handleAcknowledge(Acknowledge acknowledge) {
+        
     }
 
     public List<Asset> getAllCompletedAssets() {
