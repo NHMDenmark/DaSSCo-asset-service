@@ -38,6 +38,16 @@
 
 # DaSSCo Deployment
 
+## HealthChecks
+We've enabled HealthChecks in AssetService, FileProxy, Keycloak. The postgres status will be returned in the AssetService and FileProxy HealthCheck.
+
+*AssetService*
+https://${HOSTNAME}/ars/actuator/health
+*FileProxy*
+https://${HOSTNAME}/file_proxy/api/actuator/health
+*Keycloak*
+https://${HOSTNAME}/keycloak/health
+
 ## Cheatsheet
 Once you have signed into the manager node, and created the folder, files and docker-compose.yaml mentioned below. You can start the service like this:
 ```

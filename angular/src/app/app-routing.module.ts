@@ -20,7 +20,7 @@ const routes: Routes = [
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
   {path: 'asset-groups', component: AssetGroupsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'detailed-view/:asset_guid', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
-  {path: '**', redirectTo: 'statistics', pathMatch: 'full'}
+  {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 ];
 
 @NgModule({

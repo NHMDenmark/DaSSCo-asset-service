@@ -203,7 +203,7 @@
                                         <argument>build</argument>
                                         <argument>--</argument>
                                         <argument>--base-href</argument>
-                                        <argument>/</argument>
+                                        <argument>/ars/</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
