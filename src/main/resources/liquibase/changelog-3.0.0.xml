@@ -6,7 +6,7 @@
     <changeSet id="VERSION-3.0.0" author="Nicolas Jan" contextFilter="default">
         <sql>
             CREATE USER ${readonly.username} WITH PASSWORD '${readonly.password}';
-            GRANT CONNECT ON DATABASE dassco_file_proxy TO ${readonly.username};
+            GRANT CONNECT ON DATABASE ${readonly.database} TO ${readonly.username};
             GRANT USAGE ON SCHEMA public TO ${readonly.username};
             GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${readonly.username};
             GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO ${readonly.username};
