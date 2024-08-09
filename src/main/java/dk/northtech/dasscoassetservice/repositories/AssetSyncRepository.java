@@ -149,4 +149,30 @@ public interface AssetSyncRepository extends SqlObject {
                     .list();
         });
     }
+
+//    default String persistAcknowledge(List<String> assetGuids) {
+//        String sql = """
+//                SELECT * FROM ag_catalog.cypher(
+//                          'dassco'
+//                      , $$
+//                            MERGE (a:Acknowledge {asset_guids: $asset_guids, status: $status, body: $body, date: $date})
+//                            RETURN a.status
+//                       $$
+//                    , #params
+//                  ) as (asset_guid agtype);
+//                """;
+//
+////        return withHandle(handle -> {
+////            AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+////            assetGuids.forEach(agtypeListBuilder::add);
+////            AgtypeMap agParams = new AgtypeMapBuilder()
+////                    .add("asset_guids", agtypeListBuilder)
+////                    .build();
+////            Agtype agtype = AgtypeFactory.create(agParams);
+////            return handle.createQuery(sql)
+////                    .bind("params", agtype)
+////                    .mapTo(String.class)
+////                    .list();
+////        });
+//    }
 }
