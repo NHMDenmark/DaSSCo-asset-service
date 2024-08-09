@@ -260,22 +260,15 @@ public class QueriesService {
                 if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
             }
         }
-        if (collectionAccess != null && !collectionAccess.isEmpty()) {
-            String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
-            StringJoiner orJoiner = new StringJoiner(" or ");
 
-            if (!StringUtils.isBlank(instutionString)) {
-                orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
-            }
-            if (!StringUtils.isBlank(collectionString)) {
-                orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
-            }
-            if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
-                orJoiner.add("(c.name IN [" + collections + "])");
-            }
-            whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
-        } else if (fullAccess) {
+        if (fullAccess) {
             whereMap.put("writeAccess", "true");
+            if (!StringUtils.isBlank(instutionString) || !StringUtils.isBlank(collectionString)) {
+                whereMap.put("instCollAccess", "WHERE " + setInstitutionAndCollection(instutionString, collectionString, null));
+            }
+        } else {
+            String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
+            whereMap.put("instCollAccess", "WHERE " + setInstitutionAndCollection(instutionString, collectionString, collections));
         }
 
         StringSubstitutor substitutor = new StringSubstitutor(whereMap);
@@ -296,13 +289,32 @@ public class QueriesService {
         return orJoiner.toString();
     }
 
+    public String setInstitutionAndCollection(String instutionString, String collectionString, String accessString) {
+        StringJoiner orJoiner = new StringJoiner(" or ");
+
+        if (!StringUtils.isBlank(instutionString)) {
+            orJoiner.add("(" + instutionString + ")");
+        }
+        if (!StringUtils.isBlank(collectionString)) {
+            orJoiner.add("(" + collectionString + ")");
+        }
+
+        if (accessString != null) {
+            if (!StringUtils.isBlank(instutionString) || !StringUtils.isBlank(collectionString)) {
+                return orJoiner.toString().concat(" AND (c.name IN [" + accessString + "])");
+            } else { // access is limited
+                orJoiner.add("(c.name IN [" + accessString + "])");
+            }
+        }
+        return orJoiner.toString();
+    }
+
     public String checkForEventUserProperties(List<QueryWhere> wheres) {
         StringJoiner orJoiner = new StringJoiner(" or ");
         StringJoiner createdJoiner = new StringJoiner(" and ");
         StringJoiner updatedJoiner = new StringJoiner(" and ");
         StringJoiner auditedJoiner = new StringJoiner(" and ");
         List<QueryWhere> toRemove = new ArrayList<>();
-        
 
         for (QueryWhere where : wheres) {
             if (propertiesDigitiser.contains(where.property)) {
