@@ -118,6 +118,7 @@ services:
       ASSET_SERVICE_ROOT_URL: http://asset-service:8084/ars # Routed Internally
       SFTP_HOST: io.erda.dk
       SFTP_PORT: 22
+      ERDA_HTTP: https://sid.erda.dk/share_redirect/${USERNAME}
       SFTP_USERNAME: ${SHARE_USERNAME}
       SFTP_PRIVATE_KEY_LOCATION: /config/private.pem
       SFTP_PRIVATE_KEY_PASSPHRASE: ${PEM_PASSWORD}
