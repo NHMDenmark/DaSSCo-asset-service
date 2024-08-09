@@ -45,13 +45,7 @@ public class AssetSyncService {
         if (unsyncedOnly) completedAssets = getAllUnsyncedCompletedAssets();
         else completedAssets = getAllCompletedAssets();
 
-        ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
-        try {
-            String json = ow.writeValueAsString(completedAssets);
-            this.queueBroadcaster.sendMessage(json);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("An error occurred when trying to turn the Assets into JSON for the queue.", e);
-        }
+        this.queueBroadcaster.sendMessage(completedAssets);
     }
 
     public Optional<Acknowledge> handleAcknowledge(Acknowledge acknowledge, String username) {
