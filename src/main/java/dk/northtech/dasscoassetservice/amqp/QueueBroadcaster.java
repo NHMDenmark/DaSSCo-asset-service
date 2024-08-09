@@ -143,7 +143,7 @@ public class QueueBroadcaster extends AbstractIdleService {
                 this.session.close();
             }
         } catch (JMSException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("An error occurred when trying to shut down " + this.getClass().getSimpleName(), e);
         }
         LOGGER.info("{} is shut down", this.getClass().getSimpleName());
     }

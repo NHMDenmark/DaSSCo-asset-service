@@ -3,15 +3,11 @@ package dk.northtech.dasscoassetservice.amqp;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
 import dk.northtech.dasscoassetservice.services.KeycloakService;
-import jakarta.inject.Inject;
 import jakarta.jms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
-
-import static java.time.temporal.ChronoUnit.MINUTES;
 
 public abstract class QueueListener extends AbstractExecutionThreadService {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueueListener.class);
@@ -21,9 +17,8 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
     private KeycloakService keycloakService;
     private AMQPConfig amqpConfig;
     String queueName;
-    QueueReceiver receiver;
+    QueueConnection connection;
     QueueSession session;
-    QueueConnection queueConnection;
 
     public QueueListener(KeycloakService keycloakService, AMQPConfig amqpConfig, String queueName) {
         this.keycloakService = keycloakService;
@@ -52,11 +47,12 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
     protected void startUp() {
         LOGGER.info("Initializing {}", this.getClass().getSimpleName());
         try {
-            queueConnection = getQueueConnectionFactory().createQueueConnection("", token());
+            QueueConnection queueConnection = getQueueConnectionFactory().createQueueConnection("", token());
+            queueConnection.setExceptionListener(new MyExceptionListener());
             queueConnection.start();
+            connection = queueConnection;
+
             session = queueConnection.createQueueSession(false, Session.DUPS_OK_ACKNOWLEDGE);
-            Queue queue = session.createQueue(queueName());
-            this.receiver = session.createReceiver(queue);
         } catch (JMSException e) {
             throw new RuntimeException("QueueListener failed to setup the connection", e);
         }
@@ -92,19 +88,22 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
     }
 
     @Override
-    protected void run() {
-        try {
-            while (isRunning()) {
-                Message message = this.receiver.receive(Duration.of(1, MINUTES).toMillis());
+    protected void run() throws JMSException {
+        Queue queue = session.createQueue(queueName());
+        MessageConsumer messageConsumer = session.createConsumer(queue);
+
+        while (isRunning()) {
+            try {
+                Message message = messageConsumer.receive(2000L);
                 if (message != null) {
-                    LOGGER.info("RECEIVED MESSAGES ON {}", this.getClass().getSimpleName());
+                    LOGGER.info("Received a message on {}", this.getClass().getSimpleName());
                 }
                 if (message instanceof TextMessage) {
                     handleMessage(((TextMessage) message).getText());
                 }
+            } catch (Exception e) {
+                LOGGER.error("Error while receiving messages", e);
             }
-        } catch (Exception e) {
-            LOGGER.error("Error while receiving messages", e);
         }
     }
 
@@ -114,16 +113,26 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
     protected void shutDown() {
         LOGGER.info("Shutting down {}", this.getClass().getSimpleName());
         try {
-            if (this.receiver != null) {
-                this.receiver.close();
+            if (session != null) {
+                session.close();
+                session = null;
             }
-            if (this.queueConnection != null) {
-                this.queueConnection.stop();
-                this.session.close();
+            if (connection != null) {
+                connection.close();
+                connection = null;
             }
         } catch (JMSException e) {
             throw new RuntimeException("An error occurred when trying to shut down " + this.getClass().getSimpleName(), e);
         }
         LOGGER.info("{} is shut down", this.getClass().getSimpleName());
+    }
+
+    private static class MyExceptionListener implements ExceptionListener {
+        private Logger logger = LoggerFactory.getLogger(MyExceptionListener.class);
+        @Override
+        public void onException(JMSException exception) {
+            logger.info("Connection ExceptionListener fired, exiting");
+            logger.warn(exception.getMessage());
+        }
     }
 }

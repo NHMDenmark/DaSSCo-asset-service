@@ -1,22 +1,13 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.google.gson.Gson;
-import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.configuration.SpecifyAdapterConfiguration;
-import dk.northtech.dasscoassetservice.domain.AdapterReturnObj;
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpShareRequest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

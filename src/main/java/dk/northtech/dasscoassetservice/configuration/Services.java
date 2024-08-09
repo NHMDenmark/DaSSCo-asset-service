@@ -11,12 +11,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 @Component
 public class Services {
     private static final Logger LOGGER = LoggerFactory.getLogger(Services.class);
     private final ServiceManager serviceManager;
+    private final AcknowledgeQueueListener acknowledgeQueueListener;
+    private final AssetQueueListener assetQueueListener;
 
     public Services(QueueBroadcaster queueBroadcaster, AssetQueueListener assetQueueListener, AcknowledgeQueueListener acknowledgeQueueListener) {
+        this.acknowledgeQueueListener = acknowledgeQueueListener;
+        this.assetQueueListener = assetQueueListener;
         this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, assetQueueListener, acknowledgeQueueListener));
     }
 
@@ -32,6 +40,11 @@ public class Services {
     public void teardown() {
         LOGGER.info("Services teardown");
         serviceManager.stopAsync();
+//        try {
+//            serviceManager.awaitStopped(2, TimeUnit.SECONDS);
+//        } catch (TimeoutException e) {
+//            throw new RuntimeException(e);
+//        }
         serviceManager.awaitStopped();
         LOGGER.info("Services shut down");
     }

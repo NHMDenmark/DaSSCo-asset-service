@@ -25,7 +25,6 @@ public class AcknowledgeQueueListener extends QueueListener {
     public void handleMessage(String message) {
         System.out.println("MESSAGE IN ACKNOWLEDGE LISTENER:");
         System.out.println(message);
-
         try {
             ObjectReader or = new ObjectMapper().registerModule(new JavaTimeModule()).readerFor(Acknowledge.class);
             Acknowledge acknowledge = or.readValue(message);
