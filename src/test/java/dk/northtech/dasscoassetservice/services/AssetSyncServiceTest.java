@@ -18,8 +18,14 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
     User user = new User("moogie-woogie");
 
     @Test
-    public void adapter() {
+    public void acknowledgeTest() {
+        List<String> guids = new ArrayList<>();
+        guids.add("mw_asset_1");
+        guids.add("mw_asset_2");
+        Acknowledge ack = new Acknowledge(guids, AcknowledgeStatus.SUCCESS, "Neat!", Instant.now());
 
+        Optional<Acknowledge> acknowledge = assetSyncService.handleAcknowledge(ack, user.username);
+        assertThat(acknowledge.isPresent()).isTrue();
     }
 
     @Disabled

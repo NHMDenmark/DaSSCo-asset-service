@@ -174,6 +174,7 @@ public interface AssetSyncRepository extends SqlObject {
                                 MERGE (ack:Acknowledge {asset_guids: $guids, status: $status, body: $body, date: $timestamp})-[:CHANGED_BY]-(es)
                                 RETURN ack.asset_guids, ack.status, ack.body, ack.date
                            $$
+                    , #params
                   ) as (asset_guids agtype, status agtype, body agtype, date agtype);
                 """;
 

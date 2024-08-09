@@ -14,4 +14,14 @@ public record Acknowledge(
     String body,
     @Schema(description = "The date the object was created.", example = "2023-05-24T00:00:00.000Z")
     Instant date) {
+
+    @Override
+    public String toString() {
+        return "Acknowledge{" +
+                "assetGuids=" + assetGuids +
+                ", status=" + status +
+                ", body='" + body + '\'' +
+                ", date=" + date +
+                '}';
+    }
 }
