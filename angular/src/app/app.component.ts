@@ -45,7 +45,7 @@ export class AppComponent {
         this.authService.setCheckAuthComplete();
 
         if (redirect && loginResponse.isAuthenticated) {
-          document.location = redirect;
+          document.location = "/ars" + redirect;
         }
       },
       error: err => {
@@ -70,10 +70,10 @@ export class AppComponent {
   }
 
   navigateToSite(location: string): void {
-    this.router.navigate(['/' + location]).then(r =>{
+    this.router.navigate([location]).then(r =>{
       if (r) {
         this.activeMenu.next(location)
-        history.replaceState({}, '', '/' + location)
+        history.replaceState({}, '', location)
       }
     })
   }
