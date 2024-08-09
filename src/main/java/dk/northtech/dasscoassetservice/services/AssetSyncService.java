@@ -5,11 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.amqp.QueueListener;
 import dk.northtech.dasscoassetservice.domain.Acknowledge;
-import dk.northtech.dasscoassetservice.domain.AcknowledgeStatus;
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -43,7 +40,7 @@ public class AssetSyncService {
 //        }
 //    }
 
-    public void syncAssets(boolean unsyncedOnly) {
+    public void sendAssetsToQueue(boolean unsyncedOnly) {
         List<Asset> completedAssets = new ArrayList<>();
         if (unsyncedOnly) completedAssets = getAllUnsyncedCompletedAssets();
         else completedAssets = getAllCompletedAssets();

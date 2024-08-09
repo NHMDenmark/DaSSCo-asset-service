@@ -3,7 +3,6 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetSyncService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -37,7 +36,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAllAssets() {
-        assetSyncService.syncAssets(false);
+        assetSyncService.sendAssetsToQueue(false);
         return "hej";
     }
 
@@ -48,7 +47,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public String synchroniseAssets() {
-        assetSyncService.syncAssets(true);
+        assetSyncService.sendAssetsToQueue(true);
         return "hej";
     }
 

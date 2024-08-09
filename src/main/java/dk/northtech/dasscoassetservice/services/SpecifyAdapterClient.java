@@ -17,17 +17,19 @@ import java.net.http.HttpResponse;
 public class SpecifyAdapterClient {
     private static final Logger logger = LoggerFactory.getLogger(SpecifyAdapterClient.class);
     public SpecifyAdapterConfiguration specifyAdapterConfiguration;
+    private final KeycloakService keycloakService;
 
     @Inject
-    public SpecifyAdapterClient(SpecifyAdapterConfiguration specifyAdapterConfiguration) {
+    public SpecifyAdapterClient(SpecifyAdapterConfiguration specifyAdapterConfiguration, KeycloakService keycloakService) {
         this.specifyAdapterConfiguration = specifyAdapterConfiguration;
+        this.keycloakService = keycloakService;
     }
 
-    public int sendAssets(String jsonAsset, User user) {
+    public int sendAssets(String jsonAsset) {
         System.out.println("trying to send :0");
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .header("Authorization", "Bearer " + user.token)
+                    .header("Authorization", "Bearer " + this.keycloakService.getUserServiceToken())
                     .uri(new URI(specifyAdapterConfiguration.url() + "/assets/"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(jsonAsset))

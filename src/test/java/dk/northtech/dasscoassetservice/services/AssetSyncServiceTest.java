@@ -49,7 +49,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
         try {
             String json = ow.writeValueAsString(assets);
-            int s = specifyAdapterClient.sendAssets(json, user);
+            int s = specifyAdapterClient.sendAssets(json);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("An error occurred when trying to turn the Assets into JSON for the queue.", e);
         }
@@ -73,7 +73,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_1", null, null, null), "i2_w1", "i2_p1", "bob"));
         assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_2_exit", null, null, null), "i2_w1", "i2_p1", "bob"));
 
-        assetSyncService.syncAssets(false);
+        assetSyncService.sendAssetsToQueue(false);
 //        queueBroadcaster.sendMessage();
     }
 
