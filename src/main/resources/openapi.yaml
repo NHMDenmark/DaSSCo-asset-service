@@ -2041,6 +2041,7 @@ components:
           - DELETE_ASSET_METADATA
           - METADATA_TAKEN
           - ASSET_FINALISED
+          - ASSET_SYNCED
         writeAccess:
           type: boolean
           description: Whether the current user has write access. Used in frontend
@@ -2078,6 +2079,7 @@ components:
           - DELETE_ASSET_METADATA
           - METADATA_TAKEN
           - ASSET_FINALISED
+          - ASSET_SYNCED
         pipeline:
           type: string
           description: "The name of the pipeline that sent a create, update or delete\

@@ -26,6 +26,7 @@
 
             -- Relations
             SELECT create_elabel('dassco','INITIATED_BY');
+            SELECT create_elabel('dassco','SYNCED');
             SELECT create_elabel('dassco','STATIONED_AT');
             SELECT create_elabel('dassco','USED_BY');
             SELECT create_elabel('dassco','CREATED_BY');

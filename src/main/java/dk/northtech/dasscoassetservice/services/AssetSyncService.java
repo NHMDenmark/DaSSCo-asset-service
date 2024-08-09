@@ -9,6 +9,7 @@ import dk.northtech.dasscoassetservice.amqp.QueueListener;
 import dk.northtech.dasscoassetservice.domain.Acknowledge;
 import dk.northtech.dasscoassetservice.domain.AcknowledgeStatus;
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AssetSyncService {
@@ -55,12 +57,8 @@ public class AssetSyncService {
         }
     }
 
-    public void handleAcknowledge(Acknowledge acknowledge) {
-        if (acknowledge.status().equals(AcknowledgeStatus.SUCCESS)) {
-            setAssetsSynced(acknowledge.assetGuids());
-        } else {
-            LOGGER.info("Acknowledge had status code {} and no assets were set as synced.", acknowledge.status());
-        }
+    public Optional<Acknowledge> handleAcknowledge(Acknowledge acknowledge, String username) {
+        return jdbi.onDemand(AssetSyncRepository.class).persistAcknowledge(acknowledge, username);
     }
 
     public List<Asset> getAllCompletedAssets() {

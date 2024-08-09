@@ -1,6 +1,9 @@
 package dk.northtech.dasscoassetservice.repositories;
 
+import dk.northtech.dasscoassetservice.domain.Acknowledge;
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.repositories.helpers.AcknowledgeMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -16,6 +19,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface AssetSyncRepository extends SqlObject {
     String completedAssetsSql =
@@ -150,29 +154,44 @@ public interface AssetSyncRepository extends SqlObject {
         });
     }
 
-//    default String persistAcknowledge(List<String> assetGuids) {
-//        String sql = """
-//                SELECT * FROM ag_catalog.cypher(
-//                          'dassco'
-//                      , $$
-//                            MERGE (a:Acknowledge {asset_guids: $asset_guids, status: $status, body: $body, date: $date})
-//                            RETURN a.status
-//                       $$
-//                    , #params
-//                  ) as (asset_guid agtype);
-//                """;
-//
-////        return withHandle(handle -> {
-////            AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-////            assetGuids.forEach(agtypeListBuilder::add);
-////            AgtypeMap agParams = new AgtypeMapBuilder()
-////                    .add("asset_guids", agtypeListBuilder)
-////                    .build();
-////            Agtype agtype = AgtypeFactory.create(agParams);
-////            return handle.createQuery(sql)
-////                    .bind("params", agtype)
-////                    .mapTo(String.class)
-////                    .list();
-////        });
-//    }
+    default Optional<Acknowledge> persistAcknowledge(Acknowledge acknowledge, String username) {
+        String sql = """
+            SELECT * FROM ag_catalog.cypher(
+                          'dassco'
+                      , $$
+                                MATCH (a:Asset)
+                                WHERE a.asset_guid IN $guids
+                                SET a.synced = true
+    
+                                MERGE (e:Event {timestamp: $timestamp, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
+                                MERGE (a)-[:CHANGED_BY]-(e)
+                                MERGE (e)-[:INITIATED_BY]->(u {name: $username})
+    
+                                MERGE (es:Event {timestamp: $timestamp, event: 'ASSET_SYNCED', name: 'ASSET_SYNCED'})
+                                MERGE (a)-[:SYNCED]-(es)
+    
+                                WITH DISTINCT e, es
+                                MERGE (ack:Acknowledge {asset_guids: $guids, status: $status, body: $body, date: $timestamp})-[:CHANGED_BY]-(es)
+                                RETURN ack.asset_guids, ack.status, ack.body, ack.date
+                           $$
+                  ) as (asset_guids agtype, status agtype, body agtype, date agtype);
+                """;
+
+        return withHandle(handle -> {
+            AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+            acknowledge.assetGuids().forEach(agtypeListBuilder::add);
+            AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                    .add("guids", agtypeListBuilder)
+                    .add("timestamp", acknowledge.date().toEpochMilli())
+                    .add("status", acknowledge.status().toString())
+                    .add("body", acknowledge.body())
+                    .add("username", username);
+
+            Agtype agtype = AgtypeFactory.create(builder.build());
+            return handle.createQuery(sql)
+                    .bind("params", agtype)
+                    .map(new AcknowledgeMapper())
+                    .findOne();
+        });
+    }
 }

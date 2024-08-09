@@ -124,7 +124,6 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
         } catch (JMSException e) {
             throw new RuntimeException("An error occurred when trying to shut down " + this.getClass().getSimpleName(), e);
         }
-        LOGGER.info("{} is shut down", this.getClass().getSimpleName());
     }
 
     private static class MyExceptionListener implements ExceptionListener {
