@@ -55,10 +55,10 @@ export class GraphDataComponent {
   constructor(public specimenGraphService: SpecimenGraphService
     , private snackBar: MatSnackBar, private route : ActivatedRoute,
               private router : Router) {
-    this.route.paramMap.subscribe(params => {
+    this.route.queryParamMap.subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
-      if (type?.toLowerCase() == "week") {
+      if (type?.toLowerCase() == "week" || type == null) {
         this.viewForm.setValue(ViewV2.WEEK);
       } else if (type?.toLowerCase() == "month") {
         this.viewForm.setValue(ViewV2.MONTH);
@@ -66,6 +66,15 @@ export class GraphDataComponent {
         this.viewForm.setValue(ViewV2.YEAR);
       } else if (type?.toLowerCase() == "exponential") {
         this.viewForm.setValue(ViewV2.EXPONENTIAL);
+      }
+
+      const statValue = params.get("statValue")
+      if (statValue?.toLowerCase() == "institution" || statValue == null){
+        this.statForm.setValue(0);
+      } else if (statValue?.toLowerCase() == "pipeline"){
+        this.statForm.setValue(1);
+      } else if (statValue?.toLowerCase() == "workstation"){
+        this.statForm.setValue(2);
       }
     })
 
@@ -102,20 +111,34 @@ export class GraphDataComponent {
         }
       });
 
-    this.statForm.valueChanges.pipe(filter(isNotNull))
-      .subscribe(val => this.setStatValue(val));
+      this.statForm.valueChanges.pipe(
+        filter(isNotNull),
+        distinctUntilChanged())
+        .subscribe(val => {
+          if (val == 0){
+            this.router.navigate([], {queryParams: { statValue: "institution"}, queryParamsHandling: 'merge'})
+          } else if (val == 1){
+            this.router.navigate([], {queryParams: { statValue: "pipeline"}, queryParamsHandling: 'merge'})
+          } else if (val == 2){
+            this.router.navigate([], {queryParams: { statValue: "workstation"}, queryParamsHandling: 'merge'})
+          }
+
+          this.setStatValue(val)
+        });
 
     this.viewForm.valueChanges
       .pipe(
         filter(isNotNull),
-        startWith(this.viewForm.value)
+        startWith(this.viewForm.value),
+        distinctUntilChanged()
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
+
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
 
         if (view === ViewV2.WEEK) {
-          this.router.navigate([`statistics/week`], { relativeTo: this.route.parent })
+          this.router.navigate([], { relativeTo: this.route, queryParams: {type : "week"}, queryParamsHandling: 'merge' })
           this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
             .pipe(
               filter(isNotUndefined),
@@ -127,7 +150,8 @@ export class GraphDataComponent {
             });
         }
         if (view === ViewV2.MONTH) {
-          this.router.navigate([`statistics/month`], { relativeTo: this.route.parent })
+          this.router.navigate([], { relativeTo: this.route, queryParams: {type : "month"}, queryParamsHandling: 'merge' })
+
           this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
             .pipe(
               filter(isNotUndefined),
@@ -140,9 +164,9 @@ export class GraphDataComponent {
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
           if (view === ViewV2.YEAR){
-            this.router.navigate([`statistics/year`], { relativeTo: this.route.parent })
+            this.router.navigate([], { relativeTo: this.route, queryParams: {type : "year"}, queryParamsHandling: 'merge' })
           } else {
-            this.router.navigate([`statistics/exponential`], { relativeTo: this.route.parent })
+            this.router.navigate([], { relativeTo: this.route, queryParams: {type : "exponential"}, queryParamsHandling: 'merge' })
           }
           this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
             .pipe(
