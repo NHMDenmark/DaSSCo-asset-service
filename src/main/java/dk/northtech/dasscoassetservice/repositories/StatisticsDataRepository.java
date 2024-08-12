@@ -31,13 +31,14 @@ public class StatisticsDataRepository {
         String sql =
             """
                 SELECT * from cypher('dassco', $$
-                       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})-[:CHANGED_BY]-(asset:Asset)-[:CREATED_BY]-(specimen)
-                        WHERE NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(asset))
+                       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})-[:CHANGED_BY]-(asset:Asset)-[r]-(specimen:Specimen)
+                         WHERE (type(r) IN ['CREATED_BY', 'USED_BY'])
+                            AND NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(asset))
                             AND event.timestamp >= $startDate
                             AND event.timestamp <= $endDate
                         MATCH (pipeline:Pipeline)<-[:USED]-(event)
                         MATCH (workstation:Workstation)<-[:USED]-(event)
-                        MATCH (institution)-[:BELONGS_TO]-(asset)
+                        MATCH (institution:Institution)-[:BELONGS_TO]-(asset)
                         RETURN event.timestamp, count(specimen), pipeline.name, workstation.name, institution.name
                     $$, #params) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
             """;
