@@ -13,7 +13,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/
 import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {HttpStatusCode} from "@angular/common/http";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'dassco-graph-data',
@@ -53,20 +53,20 @@ export class GraphDataComponent {
     );
 
   constructor(public specimenGraphService: SpecimenGraphService
-    , private snackBar: MatSnackBar, private route : ActivatedRoute) {
+    , private snackBar: MatSnackBar, private route : ActivatedRoute,
+              private router : Router) {
     this.route.paramMap.subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
-      if (type?.toLowerCase() == "week"){
+      if (type?.toLowerCase() == "week") {
         this.viewForm.setValue(ViewV2.WEEK);
-      } else if (type?.toLowerCase() == "month"){
+      } else if (type?.toLowerCase() == "month") {
         this.viewForm.setValue(ViewV2.MONTH);
-      } else if (type?.toLowerCase() == "year"){
+      } else if (type?.toLowerCase() == "year") {
         this.viewForm.setValue(ViewV2.YEAR);
-      } else if (type?.toLowerCase() == "exponential"){
+      } else if (type?.toLowerCase() == "exponential") {
         this.viewForm.setValue(ViewV2.EXPONENTIAL);
       }
-      // TODO: PUT it into the url
     })
 
     /*this.route.queryParamMap.subscribe(params => {
@@ -111,11 +111,11 @@ export class GraphDataComponent {
         startWith(this.viewForm.value)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
-        console.log(view)
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
 
         if (view === ViewV2.WEEK) {
+          this.router.navigate([`statistics/week`], { relativeTo: this.route.parent })
           this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
             .pipe(
               filter(isNotUndefined),
@@ -127,6 +127,7 @@ export class GraphDataComponent {
             });
         }
         if (view === ViewV2.MONTH) {
+          this.router.navigate([`statistics/month`], { relativeTo: this.route.parent })
           this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
             .pipe(
               filter(isNotUndefined),
@@ -138,6 +139,11 @@ export class GraphDataComponent {
             });
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
+          if (view === ViewV2.YEAR){
+            this.router.navigate([`statistics/year`], { relativeTo: this.route.parent })
+          } else {
+            this.router.navigate([`statistics/exponential`], { relativeTo: this.route.parent })
+          }
           this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
             .pipe(
               filter(isNotUndefined),
@@ -188,3 +194,4 @@ export class GraphDataComponent {
     this.snackBar.open(message, action, {duration: 3000});
   }
 }
+
