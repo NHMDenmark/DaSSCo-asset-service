@@ -13,8 +13,7 @@ import {DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE} from '@angular/material/
 import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/material-moment-adapter';
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {HttpStatusCode} from "@angular/common/http";
-import {ActivatedRoute, Router} from "@angular/router";
-import {Location} from "@angular/common";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'dassco-graph-data',
@@ -22,7 +21,7 @@ import {Location} from "@angular/common";
   styleUrls: ['./graph-data.component.scss'],
   providers: [
     { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE,
-      MAT_MOMENT_DATE_ADAPTER_OPTIONS] },
+        MAT_MOMENT_DATE_ADAPTER_OPTIONS] },
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
     {
       provide: MAT_DATE_FORMATS, useValue: CUSTOM_DATE_FORMAT
@@ -42,12 +41,6 @@ export class GraphDataComponent {
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
     end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
   });
-
-  startDate : moment.Moment = moment().subtract(7, 'days');
-  endDate : moment.Moment = moment();
-  statValueParam : String | null = "0"
-  selectedStat : number = 0;
-
   currentViewSubscription: Subscription | undefined; // we subscribe to the weekly/monthly/yearly data observable, and need to unsub when we change to avoid multiple subs at a time
 
   statsWeek$: Observable<Map<string, Map<string, GraphStatsV2>>> // <date, stats>. Is array if there's line and bar chart stats within
@@ -60,92 +53,44 @@ export class GraphDataComponent {
     );
 
   constructor(public specimenGraphService: SpecimenGraphService
-              , private snackBar: MatSnackBar, private route : ActivatedRoute, private router : Router, private location : Location) {
-
+    , private snackBar: MatSnackBar, private route : ActivatedRoute) {
     this.route.paramMap.subscribe(params => {
-
-      const startDateParam = params.get('startDate');
-      const endDateParam = params.get('endDate');
-      this.statValueParam = params.get('statValue');
-      this.selectedStat = Number(this.statValueParam);
-      this.statForm.setValue(this.selectedStat);
-
-      const isStartDateValid = startDateParam && moment(startDateParam, 'DD-MM-YYYY', true).isValid();
-      const isEndDateValid = endDateParam && moment(endDateParam, 'DD-MM-YYYY', true).isValid();
-      const isStatValueParamValid = this.statValueParam && !isNaN(Number(this.statValueParam)) && Number(this.statValueParam) >= 0 && Number(this.statValueParam) <= 2;
-
-      if (isStartDateValid) {
-        this.startDate = moment(startDateParam, 'DD-MM-YYYY', true);
+      // type can be week/month/total/total+fluctuation
+      const type = params.get("type");
+      if (type?.toLowerCase() == "week"){
+        this.viewForm.setValue(ViewV2.WEEK);
+      } else if (type?.toLowerCase() == "month"){
+        this.viewForm.setValue(ViewV2.MONTH);
+      } else if (type?.toLowerCase() == "year"){
+        this.viewForm.setValue(ViewV2.YEAR);
+      } else if (type?.toLowerCase() == "exponential"){
+        this.viewForm.setValue(ViewV2.EXPONENTIAL);
       }
+    })
 
-      if (isEndDateValid) {
-        this.endDate = moment(endDateParam, 'DD-MM-YYYY', true);
-      }
+    /*this.route.queryParamMap.subscribe(params => {
+      const startDate = params.get("startDate");
+      const endDate = params.get("endDate");
 
-      if (isStartDateValid && isEndDateValid && isStatValueParamValid) {
-        this.setStatValue(Number(this.statValueParam))
-        let view = "WEEK";
-        if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
-        if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
-        const endDateFormatted = moment(moment(this.endDate).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
-        this.specimenGraphService.getSpecimenDataCustom(view,
-          moment(this.startDate).valueOf(),
-          endDateFormatted.valueOf())
-          .pipe(filter(isNotUndefined))
-          .subscribe(customData => {
-            // Change the dates in the Custom Date Range:
-            this.timeFrameForm.patchValue({
-              start: this.startDate,
-              end: this.endDate
-            })
-            const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
-            this.statsV2Subject.next(mappedData);
-          });
-      } else {
-        this.timeFrameForm.patchValue({
-          start: moment().subtract(7, 'days'),
-          end: moment()
-        })
-        this.currentViewSubscription?.unsubscribe();
-        this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
-          .pipe(
-            filter(isNotUndefined),
-            distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
-          )
-          .subscribe(data => {
-            // Add dates to the date-picker
-            this.timeFrameForm.patchValue({
-              start: moment().subtract(7, 'days'),
-              end: moment()
-            })
-            const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
-            this.statsV2Subject.next(mappedData);
-          });
-
-      }})
+      console.log(startDate)
+      console.log(endDate)
+    })*/
 
     this.timeFrameForm.valueChanges
       .pipe(startWith(null))
       .subscribe(range => {
         if (range) {
           if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
-              && moment(range.end, 'DD-MM-YYYY ', true).isValid()
-              && this.timeFrameForm.valid) {
-            // Change start and end dates with the custom dates provided by the user:
-            this.startDate = moment(range.start, 'DD-MM-YYYY', true);
-            this.endDate = moment(range.end, 'DD-MM-YYYY', true);
-
-            // Change the URL.
-            this.router.navigate(['/statistics', this.startDate.format('DD-MM-YYYY'), this.endDate.format('DD-MM-YYYY'), this.statValue]);
-
-            let view = 'WEEK';
+            && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+            && this.timeFrameForm.valid) {
+            let view = "WEEK";
             if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
             if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
             // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
             const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
 
             this.specimenGraphService.getSpecimenDataCustom(view,
-                moment(range.start).valueOf(),
+              moment(range.start).valueOf(),
               endDateFormatted.valueOf())
               .pipe(filter(isNotUndefined))
               .subscribe(customData => {
@@ -157,15 +102,15 @@ export class GraphDataComponent {
       });
 
     this.statForm.valueChanges.pipe(filter(isNotNull))
-      .subscribe(val => {
-        this.setStatValue(val)
-        this.statValueParam = String(this.statValue);
-        this.router.navigate(['/statistics', this.startDate.format('DD-MM-YYYY'), this.endDate.format('DD-MM-YYYY'), this.statValue]);
-      });
+      .subscribe(val => this.setStatValue(val));
 
     this.viewForm.valueChanges
-      .pipe()
+      .pipe(
+        filter(isNotNull),
+        startWith(this.viewForm.value)
+      )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
+        console.log(view)
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
 
@@ -176,11 +121,6 @@ export class GraphDataComponent {
               distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
             )
             .subscribe(data => {
-              // Add dates to the date-picker
-              this.timeFrameForm.patchValue({
-                start: moment().subtract(7, 'days'),
-                end: moment()
-              })
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
@@ -192,10 +132,6 @@ export class GraphDataComponent {
               distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
             )
             .subscribe(data => {
-              this.timeFrameForm.patchValue({
-                start: moment().subtract(1, 'month'),
-                end: moment()
-              })
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               this.statsV2Subject.next(mappedData);
             });
@@ -207,10 +143,6 @@ export class GraphDataComponent {
               distinctUntilChanged((prev, curr) => JSON.stringify(prev.body) === JSON.stringify(curr.body))
             )
             .subscribe(data => {
-              this.timeFrameForm.patchValue({
-                start: moment().subtract(1, 'year'),
-                end: moment()
-              })
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
                 mappedData.delete(ChartDataTypes.EXPONENTIAL);
@@ -249,11 +181,6 @@ export class GraphDataComponent {
           this.openSnackBar("An error occurred and cache was not refreshed", "OK")
         }
       })
-  }
-
-  refreshPage(){
-    this.location.go(this.location.path());
-    window.location.reload();
   }
 
   openSnackBar(message: string, action: string) {

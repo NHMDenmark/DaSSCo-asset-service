@@ -25,6 +25,7 @@ export class DetailedViewComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
       this.assetGuid = params['asset_guid'];
+      console.log(this.assetGuid)
       this.initializeCurrentAsset(this.assetGuid);
     })
   }

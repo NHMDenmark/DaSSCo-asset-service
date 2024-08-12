@@ -12,7 +12,7 @@ import {AssetGroupsComponent} from "./components/asset-groups/asset-groups.compo
 
 const routes: Routes = [
   {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'statistics/:startDate/:endDate/:statValue', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'statistics/:type', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'graphs', component: GraphComponent, canActivate: [AuthenticatedGuard]},
   {path: 'user', component: UserComponent, canActivate: [AuthenticatedGuard]},
   {path: 'docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
