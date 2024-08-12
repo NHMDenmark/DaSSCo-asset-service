@@ -66,6 +66,7 @@ export class GraphDataComponent {
       } else if (type?.toLowerCase() == "exponential"){
         this.viewForm.setValue(ViewV2.EXPONENTIAL);
       }
+      // TODO: PUT it into the url
     })
 
     /*this.route.queryParamMap.subscribe(params => {
