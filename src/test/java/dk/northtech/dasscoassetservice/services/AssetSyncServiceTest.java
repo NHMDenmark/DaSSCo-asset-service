@@ -73,7 +73,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_1", null, null, null), "i2_w1", "i2_p1", "bob"));
         assetService.completeAsset(new AssetUpdateRequest("share1", new MinimalAsset("queue_asset_2_exit", null, null, null), "i2_w1", "i2_p1", "bob"));
 
-        assetSyncService.sendAssetsToQueue(false);
+        assetSyncService.sendAllAssetsToQueue(false);
 //        queueBroadcaster.sendMessage();
     }
 

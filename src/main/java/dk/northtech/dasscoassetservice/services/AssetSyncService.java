@@ -1,9 +1,5 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
 import dk.northtech.dasscoassetservice.domain.Acknowledge;
 import dk.northtech.dasscoassetservice.domain.Asset;
@@ -15,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,12 +37,16 @@ public class AssetSyncService {
 //        }
 //    }
 
-    public void sendAssetsToQueue(boolean unsyncedOnly) {
+    public void sendAllAssetsToQueue(boolean unsyncedOnly) {
         List<Asset> completedAssets = new ArrayList<>();
         if (unsyncedOnly) completedAssets = getAllUnsyncedCompletedAssets();
         else completedAssets = getAllCompletedAssets();
 
-        this.queueBroadcaster.sendMessage(completedAssets);
+        this.queueBroadcaster.sendAssets(completedAssets);
+    }
+
+    public void sendAssetToQueue(Asset asset) {
+        this.queueBroadcaster.sendAssets(Arrays.asList(asset));
     }
 
     public Optional<Acknowledge> handleAcknowledge(Acknowledge acknowledge, String username) {

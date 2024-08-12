@@ -9,13 +9,11 @@ import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.*;
@@ -36,6 +34,7 @@ public class AssetService {
     private PayloadTypeCache payloadTypeCache;
     private StatusCache statusCache;
     private PreparationTypeCache preparationTypeCache;
+    private AssetSyncService assetSyncService;
     private RestrictedAccessCache restrictedAccessCache;
 
     @Inject
@@ -52,6 +51,7 @@ public class AssetService {
                         PayloadTypeCache payloadTypeCache,
                         StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
+                        AssetSyncService assetSyncService,
                         RestrictedAccessCache restrictedAccessCache) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
@@ -66,6 +66,7 @@ public class AssetService {
         this.statusCache = statusCache;
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
+        this.assetSyncService = assetSyncService;
         this.restrictedAccessCache = restrictedAccessCache;
     }
 
@@ -171,15 +172,13 @@ public class AssetService {
         asset.error_timestamp = null;
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
+        assetSyncService.sendAssetToQueue(asset); // when asset is completed, it's gonna be synced to Specify
 
         statisticsDataService.refreshCachedData();
 
         if (!digitiserCache.getDigitiserMap().containsKey(assetUpdateRequest.digitiser())){
             digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
-
-        // todo call sync asset to Specify
-
         return true;
     }
 

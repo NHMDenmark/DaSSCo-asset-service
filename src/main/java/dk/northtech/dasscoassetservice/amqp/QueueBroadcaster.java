@@ -97,7 +97,7 @@ public class QueueBroadcaster extends AbstractIdleService {
         return rmqCF;
     }
 
-    public void sendMessage(List<Asset> assets) {
+    public void sendAssets(List<Asset> assets) {
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
         try {
             String json = ow.writeValueAsString(assets);
