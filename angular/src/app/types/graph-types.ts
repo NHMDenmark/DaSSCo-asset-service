@@ -22,7 +22,8 @@ export enum ViewV2 {
   WEEK = 1,
   MONTH = 2,
   YEAR = 3,
-  EXPONENTIAL = 4
+  EXPONENTIAL = 4,
+  CUSTOM = 5
 }
 
 export enum StatValue {

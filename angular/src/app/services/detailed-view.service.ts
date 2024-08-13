@@ -2,7 +2,7 @@ import {inject, Injectable} from '@angular/core';
 import {catchError, Observable, of, switchMap, throwError} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
-import {AssetService, FileProxy} from "../utility";
+import { FileProxy} from "../utility";
 import {Asset} from "../types/types";
 
 @Injectable({
@@ -12,10 +12,9 @@ export class DetailedViewService {
 
   constructor(private oidcSecurityService : OidcSecurityService, private http : HttpClient) { }
 
-  private readonly assetUrl = inject(AssetService)
   private readonly proxyUrl = inject(FileProxy)
 
-  private getMetadataUrl = this.assetUrl + "/api/v1/assetmetadata/";
+  private getMetadataUrl = "api/v1/assetmetadata/";
   private createCsvFile = this.proxyUrl + "/file_proxy/api/assetfiles/createCsvFile";
   private createZipFile = this.proxyUrl + "/file_proxy/api/assetfiles/createZipFile";
   private assetFiles = this.proxyUrl + "/file_proxy/api/assetfiles/listfiles/";
