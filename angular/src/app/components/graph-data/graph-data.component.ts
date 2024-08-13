@@ -1,6 +1,16 @@
-import {Component} from '@angular/core';
+import {AfterViewInit, Component, OnDestroy} from '@angular/core';
 import {SpecimenGraphService} from '../../services/specimen-graph.service';
-import {BehaviorSubject, distinctUntilChanged, filter, map, Observable, startWith, Subscription} from 'rxjs';
+import {
+  BehaviorSubject,
+  distinctUntilChanged,
+  filter,
+  map,
+  Observable,
+  of,
+  startWith, Subject,
+  Subscription,
+  switchMap, take, takeUntil,
+} from 'rxjs';
 import {
   defaultView,
   StatValue,
@@ -14,6 +24,8 @@ import {MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter} from '@angular/mater
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {HttpStatusCode} from "@angular/common/http";
 import {ActivatedRoute, Router} from "@angular/router";
+import {Location} from "@angular/common";
+
 
 @Component({
   selector: 'dassco-graph-data',
@@ -28,13 +40,14 @@ import {ActivatedRoute, Router} from "@angular/router";
     }
   ]
 })
-export class GraphDataComponent {
+export class GraphDataComponent implements AfterViewInit, OnDestroy {
   chart: any;
   viewForm = new FormControl(defaultView);
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
   statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
   statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
+  private destroy = new Subject<boolean>()
   statValue = StatValue.INSTITUTE; // the statistics chosen -> institute, pipeline, workstation
   statForm = new FormControl(0);
   timeFrameForm = new FormGroup({
@@ -52,44 +65,17 @@ export class GraphDataComponent {
       })
     );
 
+  startDate: string | null = null;
+  endDate: string | null = null;
+
   constructor(public specimenGraphService: SpecimenGraphService
     , private snackBar: MatSnackBar, private route : ActivatedRoute,
-              private router : Router) {
-    this.route.queryParamMap.subscribe(params => {
-      // type can be week/month/total/total+fluctuation
-      const type = params.get("type");
-      if (type?.toLowerCase() == "week" || type == null) {
-        this.viewForm.setValue(ViewV2.WEEK);
-      } else if (type?.toLowerCase() == "month") {
-        this.viewForm.setValue(ViewV2.MONTH);
-      } else if (type?.toLowerCase() == "year") {
-        this.viewForm.setValue(ViewV2.YEAR);
-      } else if (type?.toLowerCase() == "exponential") {
-        this.viewForm.setValue(ViewV2.EXPONENTIAL);
-      }
+              private router : Router, private location : Location) {
 
-      const statValue = params.get("statValue")
-      if (statValue?.toLowerCase() == "institution" || statValue == null){
-        this.statForm.setValue(0);
-      } else if (statValue?.toLowerCase() == "pipeline"){
-        this.statForm.setValue(1);
-      } else if (statValue?.toLowerCase() == "workstation"){
-        this.statForm.setValue(2);
-      }
-    })
 
-    /*this.route.queryParamMap.subscribe(params => {
-      const startDate = params.get("startDate");
-      const endDate = params.get("endDate");
-
-      console.log(startDate)
-      console.log(endDate)
-    })*/
-
-    this.timeFrameForm.valueChanges
-      .pipe(startWith(null))
-      .subscribe(range => {
+     this.timeFrameForm.valueChanges.pipe(startWith(null), distinctUntilChanged(), filter((range) => !!range?.start && !!range?.end), switchMap((range) => {
         if (range) {
+          console.log(moment(range.start).format('DD-MM-YYYY') + " " + moment(range.end).format('DD-MM-YYYY'))
           if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
             && moment(range.end, 'DD-MM-YYYY ', true).isValid()
             && this.timeFrameForm.valid) {
@@ -99,30 +85,60 @@ export class GraphDataComponent {
             // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
             const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
 
-            this.specimenGraphService.getSpecimenDataCustom(view,
+            this.router.navigate([], {
+              queryParamsHandling: 'merge',
+              queryParams: {
+                startDate: range.start!.format('DD-MM-YYYY'),
+                endDate: range.end!.format('DD-MM-YYYY'),
+                type: 'custom'
+              }
+            })
+            return this.specimenGraphService.getSpecimenDataCustom(view,
               moment(range.start).valueOf(),
               endDateFormatted.valueOf())
               .pipe(filter(isNotUndefined))
-              .subscribe(customData => {
-                const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData.body));
-                this.statsV2Subject.next(mappedData);
-              });
           }
+          return of(null)
+        } else {
+          return of(null);
         }
+      }), takeUntil(this.destroy))
+      .subscribe(customData => {
+        console.log(customData)
+        if (!customData) {
+          this.statsV2Subject.next(undefined)
+        }
+        if (!customData?.ok) {
+          this.statsV2Subject.next(undefined)
+        }
+        const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(customData!.body));
+        this.statsV2Subject.next(mappedData);
       });
 
       this.statForm.valueChanges.pipe(
         filter(isNotNull),
-        distinctUntilChanged())
+        distinctUntilChanged(), takeUntil(this.destroy))
         .subscribe(val => {
+          let queryParams = { ... this.route.snapshot.queryParams };
           if (val == 0){
-            this.router.navigate([], {queryParams: { statValue: "institution"}, queryParamsHandling: 'merge'})
+            queryParams['statValue'] = 'institution';
+            const newQueryString = Object.keys(queryParams)
+              .map(key => `${key}=${queryParams[key]}`)
+              .join("&");
+            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else if (val == 1){
-            this.router.navigate([], {queryParams: { statValue: "pipeline"}, queryParamsHandling: 'merge'})
+            queryParams['statValue'] = 'pipeline';
+            const newQueryString = Object.keys(queryParams)
+              .map(key => `${key}=${queryParams[key]}`)
+              .join("&");
+            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else if (val == 2){
-            this.router.navigate([], {queryParams: { statValue: "workstation"}, queryParamsHandling: 'merge'})
+            queryParams['statValue'] = 'collection';
+            const newQueryString = Object.keys(queryParams)
+              .map(key => `${key}=${queryParams[key]}`)
+              .join("&");
+            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           }
-
           this.setStatValue(val)
         });
 
@@ -130,15 +146,22 @@ export class GraphDataComponent {
       .pipe(
         filter(isNotNull),
         startWith(this.viewForm.value),
-        distinctUntilChanged()
+        distinctUntilChanged(),
+        takeUntil(this.destroy)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
 
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
 
+        let queryParams = { ... this.route.snapshot.queryParams };
+
         if (view === ViewV2.WEEK) {
-          this.router.navigate([], { relativeTo: this.route, queryParams: {type : "week"}, queryParamsHandling: 'merge' })
+          queryParams['type'] = 'week';
+          const newQueryString = Object.keys(queryParams)
+            .map(key => `${key}=${queryParams[key]}`)
+            .join("&");
+          this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
             .pipe(
               filter(isNotUndefined),
@@ -150,7 +173,11 @@ export class GraphDataComponent {
             });
         }
         if (view === ViewV2.MONTH) {
-          this.router.navigate([], { relativeTo: this.route, queryParams: {type : "month"}, queryParamsHandling: 'merge' })
+          queryParams['type'] = 'month';
+          const newQueryString = Object.keys(queryParams)
+            .map(key => `${key}=${queryParams[key]}`)
+            .join("&");
+          this.location.replaceState(this.router.url.split('?')[0], newQueryString);
 
           this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
             .pipe(
@@ -164,9 +191,17 @@ export class GraphDataComponent {
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
           if (view === ViewV2.YEAR){
-            this.router.navigate([], { relativeTo: this.route, queryParams: {type : "year"}, queryParamsHandling: 'merge' })
+            queryParams['type'] = 'year';
+            const newQueryString = Object.keys(queryParams)
+              .map(key => `${key}=${queryParams[key]}`)
+              .join("&");
+            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else {
-            this.router.navigate([], { relativeTo: this.route, queryParams: {type : "exponential"}, queryParamsHandling: 'merge' })
+            queryParams['type'] = 'exponential';
+            const newQueryString = Object.keys(queryParams)
+              .map(key => `${key}=${queryParams[key]}`)
+              .join("&");
+            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           }
           this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
             .pipe(
@@ -181,8 +216,57 @@ export class GraphDataComponent {
               this.statsV2Subject.next(mappedData);
             });
         }
+        if (view === ViewV2.CUSTOM){
+          queryParams['type'] = 'custom';
+          const newQueryString = Object.keys(queryParams)
+            .map(key => `${key}=${queryParams[key]}`)
+            .join("&");
+          this.location.replaceState(this.router.url.split('?')[0], newQueryString);
+          this.timeFrameForm.patchValue({
+            start: moment(this.startDate, 'DD-MM-YYYY'),
+            end: moment(this.endDate, 'DD-MM-YYYY')
+          })
+        }
       });
   }
+
+  ngOnDestroy(): void {
+        this.destroy.next(true)
+    this.currentViewSubscription?.unsubscribe()
+    }
+
+  ngAfterViewInit(): void {
+    this.route.queryParamMap.pipe(take(1)).subscribe(params => {
+      // type can be week/month/total/total+fluctuation
+      const type = params.get("type");
+
+      if (type?.toLowerCase() == "week" || type == null) {
+        this.viewForm.setValue(ViewV2.WEEK);
+      } else if (type?.toLowerCase() == "month") {
+        this.viewForm.setValue(ViewV2.MONTH);
+      } else if (type?.toLowerCase() == "year") {
+        this.viewForm.setValue(ViewV2.YEAR);
+      } else if (type?.toLowerCase() == "exponential") {
+        this.viewForm.setValue(ViewV2.EXPONENTIAL);
+      } else if (type?.toLowerCase() == "custom"){
+        this.startDate = params.get("startDate");
+        this.endDate = params.get("endDate");
+        if (moment(this.startDate, 'DD-MM-YYYY').isValid() && moment(this.endDate, 'DD-MM-YYYY').isValid()){
+          this.viewForm.setValue(ViewV2.CUSTOM);
+        }
+      }
+
+      const statValue = params.get("statValue")
+      if (statValue?.toLowerCase() == "institution" || statValue == null){
+        this.statForm.setValue(0);
+      } else if (statValue?.toLowerCase() == "pipeline"){
+        this.statForm.setValue(1);
+      } else if (statValue?.toLowerCase() == "workstation"){
+        this.statForm.setValue(2);
+      }
+    })
+    }
+
 
   setStatValue(statValue: StatValue) {
     this.statValueSubject.next(statValue);
@@ -212,6 +296,11 @@ export class GraphDataComponent {
           this.openSnackBar("An error occurred and cache was not refreshed", "OK")
         }
       })
+  }
+
+  refreshPage(){
+    this.location.go(this.location.path());
+    window.location.reload();
   }
 
   openSnackBar(message: string, action: string) {
