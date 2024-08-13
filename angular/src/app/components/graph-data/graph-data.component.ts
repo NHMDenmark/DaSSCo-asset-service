@@ -133,7 +133,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               .join("&");
             this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else if (val == 2){
-            queryParams['statValue'] = 'collection';
+            queryParams['statValue'] = 'workstation';
             const newQueryString = Object.keys(queryParams)
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
