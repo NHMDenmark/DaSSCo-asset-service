@@ -105,7 +105,12 @@ public class StatisticsDataApi {
 
         if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
             DateTimeFormatter dateFormatter = statisticsDataService.getDateFormatter("dd-MMM-yyyy");
+
+            long startTime = System.nanoTime();
             customData = statisticsDataService.generateIncrData(start, end, dateFormatter, GraphView.WEEK);
+            long endTime = System.nanoTime();
+
+            System.out.println("custom data has been generated in : " + (endTime - startTime) + " nanoseconds");
 
             if (customData.isEmpty()) {
                 logger.warn("No data available within the selected time frame.");

@@ -22,6 +22,15 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     User user = new User();
 
     @Test
+    public void temp() {
+        Instant startDate = Instant.now().minus(30, ChronoUnit.DAYS);
+        System.out.println(startDate.toEpochMilli());
+        System.out.println(Instant.now().toEpochMilli());
+
+//        statisticsDataService.testOfNewSQL(startDate, Instant.now());
+    }
+
+    @Test
     public void calculcateWeek() {
         Asset createAsset = getTestAsset("week-asset", "institution_1", 0);
         assetService.persistAsset(createAsset, user,11);

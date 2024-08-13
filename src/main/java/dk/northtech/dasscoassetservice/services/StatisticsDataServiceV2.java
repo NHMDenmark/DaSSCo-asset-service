@@ -8,7 +8,6 @@ import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.StatisticsDataRepository;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
 import joptsimple.internal.Strings;
 import org.apache.commons.collections4.MapIterator;
 import org.apache.commons.collections4.map.ListOrderedMap;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
-import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -33,8 +31,8 @@ import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 
 @Service
-public class StatisticsDataService {
-    private static final Logger logger = LoggerFactory.getLogger(StatisticsDataService.class);
+public class StatisticsDataServiceV2 {
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsDataServiceV2.class);
     private final StatisticsDataRepository statisticsDataRepository;
     private final InternalStatusService internalStatusService;
 
@@ -50,20 +48,20 @@ public class StatisticsDataService {
                             if (key.equals(GraphView.WEEK)) {
                                 logger.info("Generating and caching daily data for the past week.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
-                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
+                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.WEEK);
 
                                 finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.MONTH)) {
                                 logger.info("Generating and caching daily data for the past month.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
-                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("dd-MMM-yyyy"), GraphView.MONTH);
+                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.MONTH);
 
                                 finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating and caching monthly data for the past year.");
                                 DateTimeFormatter dtf = getDateFormatter("MMM yyyy");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-                                incrData = generateIncrData(startDate, Instant.now(), getDateFormatter("MMM yyyy"), GraphView.YEAR);
+                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.YEAR);
                                 Map<String, GraphData> totalData = generateTotalIncrData(incrData, dtf);
                                 Map<String, GraphData> exponData = generateExponData(incrData, dtf);
 
@@ -76,7 +74,7 @@ public class StatisticsDataService {
                     });
 
     @Inject
-    public StatisticsDataService(StatisticsDataRepository statisticsDataRepository, InternalStatusService internalStatusService) {
+    public StatisticsDataServiceV2(StatisticsDataRepository statisticsDataRepository, InternalStatusService internalStatusService) {
         this.statisticsDataRepository = statisticsDataRepository;
         this.internalStatusService = internalStatusService;
     }
@@ -109,69 +107,89 @@ public class StatisticsDataService {
         }
     }
 
-    public List<StatisticsData> getGraphData(long timeFrame) {
-        return this.statisticsDataRepository.getGraphData(timeFrame, Instant.now().toEpochMilli());
+    public void testing(Instant startDate, Instant endDate) {
+        // Create the map
+        Map<String, GraphData> resultMap = generateIncrDataV2(startDate, endDate, GraphView.WEEK);
+
+        // Print the result
+        resultMap.forEach((date, graphData) -> System.out.println(date + " = " + graphData));
     }
 
-//    public void testOfNewSQL(Instant startDate, Instant endDate) {
-//
-//        long startTime2 = System.nanoTime();
-//        List<StatisticsData> statisticsData2 = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
-//        long endTime2 = System.nanoTime();
-//        System.out.println(statisticsData2);
-//        System.out.println("statistics data old has been generated in : " + (endTime2 - startTime2) + " nanoseconds");
-//
-//        // Define the start and end date range
-////        LocalDate start = LocalDate.of(2024, 7, 18);
-////        LocalDate end = LocalDate.of(2024, 8, 13);
-//
-//        // Create the map
-////        Map<String, GraphData> resultMap = testingGraphData(statisticsData2, startDate, endDate);
-//
-//        // Print the result
-////        resultMap.forEach((date, graphData) -> System.out.println(date + " = " + graphData));
-//
-//
-////        long startTime = System.nanoTime();
-////        List<StatisticsData> statisticsData = this.statisticsDataRepository.testNewSql(startDate.toEpochMilli(), endDate.toEpochMilli());
-////        long endTime = System.nanoTime();
-////        System.out.println(statisticsData);
-////        System.out.println("statistics data new has been generated in : " + (endTime - startTime) + " nanoseconds");
-//
-//        Map<String, GraphData> result = generateIncrData(startDate, endDate, getDateFormatter("dd-MMM-yyyy"), GraphView.WEEK);
-//        result.forEach((date, graphData) -> System.out.println(date + " = " + graphData));
-//
-//    }
+    public Map<String, GraphData> generateIncrDataV2(Instant startDate, Instant endDate, GraphView graphView) {
+        List<StatisticsData> stats = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
 
-    public Map<String, GraphData> generateIncrData(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, GraphView timeFrame) {
-        long startTime = System.nanoTime();
-        List<StatisticsData> statisticsData = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
-        long endTime = System.nanoTime();
-        System.out.println("statistics data has been generated in : " + (endTime - startTime) + " nanoseconds");
+        Map<String, GraphData> graphDataMap = new LinkedHashMap<>();
+        Instant currentDate = startDate;
 
-        Map<String, GraphData> incrData = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
+        if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+            formatter = DateTimeFormatter.ofPattern("MMM-yyyy").withZone(ZoneId.of("UTC"));
+        }
 
-        long startTime2 = System.nanoTime();
-        statisticsData.forEach(data -> {
-            Instant createdDate = Instant.ofEpochMilli(data.createdDate());
-            String dateString = dateTimeFormatter.format(createdDate);
+        while (!currentDate.isAfter(endDate)) {
+            String dateKey = formatter.format(currentDate);
+            graphDataMap.put(dateKey, new GraphData());
 
-            updateOnKey(incrData, dateString,
-                    data.instituteName(), data.specimens(),
-                    data.workstationName(), data.specimens(),
-                    data.pipelineName(), data.specimens());
+            if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+                currentDate = currentDate.plus(1, ChronoUnit.MONTHS).with(TemporalAdjusters.firstDayOfMonth()); // Move to next month
+            } else {
+                currentDate = currentDate.plusSeconds(86400); // Add one day in seconds
+            }
+        }
 
-        });
-        long endTime2 = System.nanoTime();
-        System.out.println("foreach ran for has been generated in : " + (endTime2 - startTime2) + " nanoseconds");
+        for (StatisticsData stat : stats) {
+            String dateKey = formatter.format(Instant.ofEpochMilli(stat.createdDate()));
+            GraphData graphData = graphDataMap.getOrDefault(dateKey, new GraphData());
 
-        long startTime3 = System.nanoTime();
-        addRemainingDates(startDate, endDate, dateTimeFormatter, incrData, timeFrame);
-        long endTime3 = System.nanoTime();
-        System.out.println("remaining dates been added and took : " + (endTime3 - startTime3) + " nanoseconds");
+            // Update institutions
+            graphData.getInstitutes().merge(stat.instituteName(), stat.specimens(), Integer::sum);
+            // Update pipelines
+            graphData.getPipelines().merge(stat.pipelineName(), stat.specimens(), Integer::sum);
+            // Update workstations
+            graphData.getWorkstations().merge(stat.workstationName(), stat.specimens(), Integer::sum);
 
-        return sortMapOnDateKeys(incrData, dateTimeFormatter);
+            graphDataMap.put(dateKey, graphData);
+        }
+
+        return graphDataMap;
     }
+
+    public Map<String, GraphData> accumulateData(Map<String, GraphData> graphDataMap) {
+        Map<String, GraphData> accumulatedDataMap = new LinkedHashMap<>();
+        GraphData accumulatedData = new GraphData();
+
+        for (Map.Entry<String, GraphData> entry : graphDataMap.entrySet()) {
+            String date = entry.getKey();
+            GraphData dailyData = entry.getValue();
+
+            // Accumulate institutions
+            if (dailyData.getInstitutes() != null) {
+                dailyData.getInstitutes().forEach((key, value) ->
+                        accumulatedData.getInstitutes().merge(key, value, Integer::sum)
+                );
+            }
+
+            // Accumulate pipelines
+            if (dailyData.getPipelines() != null) {
+                dailyData.getPipelines().forEach((key, value) ->
+                        accumulatedData.getPipelines().merge(key, value, Integer::sum)
+                );
+            }
+
+            // Accumulate workstations
+            if (dailyData.getWorkstations() != null) {
+                dailyData.getWorkstations().forEach((key, value) ->
+                        accumulatedData.getWorkstations().merge(key, value, Integer::sum)
+                );
+            }
+
+            accumulatedDataMap.put(date, accumulatedData);
+        }
+
+        return accumulatedDataMap;
+    }
+
+    // *** OLD *** //
 
     public Map<String, GraphData> generateTotalIncrData(Map<String, GraphData> incrData, DateTimeFormatter dateTimeFormatter) {
         Map<String, GraphData> totalData = new HashMap<>();;

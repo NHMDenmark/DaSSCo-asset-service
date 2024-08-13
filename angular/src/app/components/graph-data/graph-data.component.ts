@@ -55,6 +55,7 @@ export class GraphDataComponent {
     .pipe(
       filter(isNotUndefined),
       map((data: Map<string, Map<string, GraphStatsV2>>) => {
+        console.log('data', data)
         return data;
       })
     );
@@ -214,6 +215,7 @@ export class GraphDataComponent {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
                 mappedData.delete(ChartDataTypes.EXPONENTIAL);
+                console.log('mapped', mappedData)
               }
               this.statsV2Subject.next(mappedData);
             });

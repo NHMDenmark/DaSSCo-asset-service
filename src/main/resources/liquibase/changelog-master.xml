@@ -14,4 +14,6 @@
     <include file="/liquibase/changelog-2.0.0.xml"/>
     <include file="/liquibase/changelog-2.0.0-test.xml"/>
     <include file="/liquibase/changelog-3.0.0.xml"/>
+    <include file="/liquibase/changelog-4.0.0.xml"/>
+    <include file="/liquibase/changelog-4.0.0-test.xml"/>
 </databaseChangeLog>
