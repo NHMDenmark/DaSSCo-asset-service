@@ -33,7 +33,8 @@ public class AbstractIntegrationTest {
     @Inject InstitutionService institutionService;
     @Inject CollectionService collectionService;
     @Inject PipelineService pipelineService;
-    @Inject StatisticsDataService statisticsDataService;
+//    @Inject StatisticsDataService statisticsDataService;
+    @Inject StatisticsDataServiceV2 statisticsDataServicev2;
     @Inject
     WorkstationService workstationService;
     @Inject InternalStatusService internalStatusService;

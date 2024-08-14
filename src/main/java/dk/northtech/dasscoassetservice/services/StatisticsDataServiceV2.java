@@ -59,16 +59,14 @@ public class StatisticsDataServiceV2 {
                                 finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating and caching monthly data for the past year.");
-                                DateTimeFormatter dtf = getDateFormatter("MMM yyyy");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
                                 incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.YEAR);
-                                Map<String, GraphData> totalData = generateTotalIncrData(incrData, dtf);
-                                Map<String, GraphData> exponData = generateExponData(incrData, dtf);
+                                Map<String, GraphData> totalData = totalValues(incrData);
+                                Map<String, GraphData> exponData = accumulatedData(incrData);
 
                                 finalData.put(incremental, totalData);
                                 finalData.put(exponential, exponData);
                             }
-
                             return finalData;
                         }
                     });
@@ -107,12 +105,8 @@ public class StatisticsDataServiceV2 {
         }
     }
 
-    public void testing(Instant startDate, Instant endDate) {
-        // Create the map
-        Map<String, GraphData> resultMap = generateIncrDataV2(startDate, endDate, GraphView.WEEK);
-
-        // Print the result
-        resultMap.forEach((date, graphData) -> System.out.println(date + " = " + graphData));
+    public List<StatisticsData> getGraphData(long timeFrame) {
+        return this.statisticsDataRepository.getGraphData(timeFrame, Instant.now().toEpochMilli());
     }
 
     public Map<String, GraphData> generateIncrDataV2(Instant startDate, Instant endDate, GraphView graphView) {
@@ -123,7 +117,7 @@ public class StatisticsDataServiceV2 {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
         if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
-            formatter = DateTimeFormatter.ofPattern("MMM-yyyy").withZone(ZoneId.of("UTC"));
+            formatter = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
         }
 
         while (!currentDate.isAfter(endDate)) {
@@ -131,9 +125,11 @@ public class StatisticsDataServiceV2 {
             graphDataMap.put(dateKey, new GraphData());
 
             if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
-                currentDate = currentDate.plus(1, ChronoUnit.MONTHS).with(TemporalAdjusters.firstDayOfMonth()); // Move to next month
+                LocalDate currentDateLocal = currentDate.atZone(ZoneId.of("UTC")).toLocalDate();
+                currentDateLocal = currentDateLocal.plusMonths(1).with(TemporalAdjusters.firstDayOfMonth());
+                currentDate = currentDateLocal.atStartOfDay(ZoneId.of("UTC")).toInstant();
             } else {
-                currentDate = currentDate.plusSeconds(86400); // Add one day in seconds
+                currentDate = currentDate.plus(1, ChronoUnit.DAYS);
             }
         }
 
@@ -141,173 +137,72 @@ public class StatisticsDataServiceV2 {
             String dateKey = formatter.format(Instant.ofEpochMilli(stat.createdDate()));
             GraphData graphData = graphDataMap.getOrDefault(dateKey, new GraphData());
 
-            // Update institutions
             graphData.getInstitutes().merge(stat.instituteName(), stat.specimens(), Integer::sum);
-            // Update pipelines
             graphData.getPipelines().merge(stat.pipelineName(), stat.specimens(), Integer::sum);
-            // Update workstations
             graphData.getWorkstations().merge(stat.workstationName(), stat.specimens(), Integer::sum);
 
             graphDataMap.put(dateKey, graphData);
         }
-
         return graphDataMap;
     }
 
-    public Map<String, GraphData> accumulateData(Map<String, GraphData> graphDataMap) {
-        Map<String, GraphData> accumulatedDataMap = new LinkedHashMap<>();
-        GraphData accumulatedData = new GraphData();
+    public Map<String, GraphData> accumulatedData(Map<String, GraphData> graphDataMap) {
+        Map<String, GraphData> sortedData = new LinkedHashMap<>(graphDataMap);
+
+        GraphData previousData = new GraphData();
+
+        for (Map.Entry<String, GraphData> entry : sortedData.entrySet()) {
+            String month = entry.getKey();
+            GraphData currentData = entry.getValue();
+
+            accumulateValues(previousData, currentData);
+            sortedData.put(month, currentData);
+
+            previousData = currentData;
+        }
+        return sortedData;
+    }
+
+    private void accumulateValues(GraphData previous, GraphData current) {
+        current.getInstitutes().forEach((key, value) ->
+                current.getInstitutes().put(key, value + previous.getInstitutes().getOrDefault(key, 0))
+        );
+
+        current.getPipelines().forEach((key, value) ->
+                current.getPipelines().put(key, value + previous.getPipelines().getOrDefault(key, 0))
+        );
+
+        current.getWorkstations().forEach((key, value) ->
+                current.getWorkstations().put(key, value + previous.getWorkstations().getOrDefault(key, 0))
+        );
+    }
+
+    public Map<String, GraphData> totalValues(Map<String, GraphData> graphDataMap) {
+        Map<String, GraphData> summarizedMap = new LinkedHashMap<>();
 
         for (Map.Entry<String, GraphData> entry : graphDataMap.entrySet()) {
-            String date = entry.getKey();
-            GraphData dailyData = entry.getValue();
+            String dateKey = entry.getKey();
+            GraphData originalData = entry.getValue();
 
-            // Accumulate institutions
-            if (dailyData.getInstitutes() != null) {
-                dailyData.getInstitutes().forEach((key, value) ->
-                        accumulatedData.getInstitutes().merge(key, value, Integer::sum)
-                );
-            }
+            // Sum up the counts for institutions, pipelines, and workstations
+            int totalInstitutions = originalData.getInstitutes().values().stream().mapToInt(Integer::intValue).sum();
+            int totalPipelines = originalData.getPipelines().values().stream().mapToInt(Integer::intValue).sum();
+            int totalWorkstations = originalData.getWorkstations().values().stream().mapToInt(Integer::intValue).sum();
 
-            // Accumulate pipelines
-            if (dailyData.getPipelines() != null) {
-                dailyData.getPipelines().forEach((key, value) ->
-                        accumulatedData.getPipelines().merge(key, value, Integer::sum)
-                );
-            }
+            // Create a new GraphData object with these summed values
+            Map<String, Integer> summarizedInstitutions = Collections.singletonMap("Institutes", totalInstitutions);
+            Map<String, Integer> summarizedPipelines = Collections.singletonMap("Pipelines", totalPipelines);
+            Map<String, Integer> summarizedWorkstations = Collections.singletonMap("Workstations", totalWorkstations);
 
-            // Accumulate workstations
-            if (dailyData.getWorkstations() != null) {
-                dailyData.getWorkstations().forEach((key, value) ->
-                        accumulatedData.getWorkstations().merge(key, value, Integer::sum)
-                );
-            }
+            GraphData summarizedData = new GraphData();
+            summarizedData.setInstitutes(summarizedInstitutions);
+            summarizedData.setPipelines(summarizedPipelines);
+            summarizedData.setWorkstations(summarizedWorkstations);
 
-            accumulatedDataMap.put(date, accumulatedData);
+            // Put the new GraphData into the summarized map
+            summarizedMap.put(dateKey, summarizedData);
         }
 
-        return accumulatedDataMap;
+        return summarizedMap;
     }
-
-    // *** OLD *** //
-
-    public Map<String, GraphData> generateTotalIncrData(Map<String, GraphData> incrData, DateTimeFormatter dateTimeFormatter) {
-        Map<String, GraphData> totalData = new HashMap<>();;
-
-        incrData.forEach((dateKey, value) -> {
-            // gets all the values from all institues on each date and adds them
-            Integer instituteSum = value.getInstitutes().values().stream().reduce(0, Integer::sum);
-            Integer pipelineSum = value.getPipelines().values().stream().reduce(0, Integer::sum);
-            Integer workstationSum = value.getWorkstations().values().stream().reduce(0, Integer::sum);
-
-            updateOnKey(totalData, dateKey,
-                    "Institutes", instituteSum,
-                    "Workstations", workstationSum,
-                    "Pipelines", pipelineSum);
-        });
-
-        return sortMapOnDateKeys(totalData, dateTimeFormatter);
-    }
-
-    public void updateOnKey(Map<String, GraphData> dataMap, String key,
-                            String institute, Integer instituteAmount,
-                            String workstation, Integer workstationAmount,
-                            String pipeline, Integer pipelineAmount) {
-        if (!dataMap.containsKey(key)) {
-            dataMap.put(key, new GraphData(
-                    new HashMap<>() {{put(institute, instituteAmount);}},
-                    new HashMap<>() {{put(pipeline, pipelineAmount);}},
-                    new HashMap<>() {{put(workstation, workstationAmount);}}
-            ));
-        } else {
-            updateData(dataMap.get(key).getInstitutes(), institute, instituteAmount);
-            updateData(dataMap.get(key).getPipelines(), pipeline, pipelineAmount);
-            updateData(dataMap.get(key).getWorkstations(), workstation, workstationAmount);
-        }
-    }
-
-    public Map<String, GraphData> generateExponData(Map<String, GraphData> originalData, DateTimeFormatter dateFormatter) {
-//    Map<String, Map<String, GraphData>> finalData = new HashMap<>(); // linechart: data, barchart: data
-        Gson gson = new Gson(); // not a huge fan of this, but is the only way I can see - for now - to deep clone the map.
-        String jsonString = gson.toJson(originalData);
-        Type type = new TypeToken<HashMap<String, GraphData>>(){}.getType();
-        HashMap<String, GraphData> deepClonedData = gson.fromJson(jsonString, type);
-
-        // I know, but for some reason the deepcloning messes up the order pft
-        ListOrderedMap<String, GraphData> exponData = sortMapOnDateKeys(deepClonedData, dateFormatter);
-
-        // then adds the values to the next map entry to get the exponential values
-        MapIterator<String, GraphData> it = exponData.mapIterator();
-        while (it.hasNext()) {
-            String key = it.next();
-            GraphData currvalue = it.getValue();
-            if (!Strings.isNullOrEmpty(exponData.nextKey(key))) { // if there's a next
-                GraphData nextVal = deepClonedData.get(exponData.nextKey(key));
-
-                // gets all institute names of current data, runs through, adds their value to the next data object
-                currvalue.getInstitutes().keySet().forEach(instituteName -> nextVal.addInstituteAmts(instituteName, currvalue.getInstitutes().get(instituteName)));
-                currvalue.getPipelines().keySet().forEach(pipelineName -> nextVal.addPipelineAmts(pipelineName, currvalue.getPipelines().get(pipelineName)));
-                currvalue.getWorkstations().keySet().forEach(workstationName -> nextVal.addWorkstationAmts(workstationName, currvalue.getWorkstations().get(workstationName)));
-            }
-        }
-
-        return exponData;
-    }
-
-    public void updateData(Map<String, Integer> existing, String key, Integer specimens) {
-        if (existing.containsKey(key)) {
-            int existingVal = existing.get(key);
-            existing.put(key, existingVal + specimens);
-        } else {
-            existing.put(key, specimens);
-        }
-    }
-
-    public void addRemainingDates(Instant startDate, Instant endDate, DateTimeFormatter dateTimeFormatter, Map<String, GraphData> data, GraphView timeFrame) {
-        List<String> dates = new ArrayList<>(); // dates = labels aka. x-axis
-        ChronoUnit unit = null;
-
-        if (timeFrame.equals(GraphView.WEEK) || timeFrame.equals(GraphView.MONTH)) {
-            unit = ChronoUnit.DAYS;
-        } else if (timeFrame.equals(GraphView.YEAR) || timeFrame.equals(GraphView.EXPONENTIAL)) { // we want the labels as jan, feb, march, etc. if year
-            unit = ChronoUnit.MONTHS;
-        }
-
-        long difference = unit.between(LocalDateTime.ofInstant(startDate, dateTimeFormatter.getZone()), LocalDateTime.ofInstant(endDate, dateTimeFormatter.getZone()));
-
-        for (long i = difference; i >= 0; i--) { // adds all labels/dates between the dates
-            dates.add(dateTimeFormatter.format(LocalDateTime.ofInstant(endDate, dateTimeFormatter.getZone()).minus(i, unit)));
-        }
-
-        // Adds the dates from start- to end date, on which there are no data (for the sake of the js graph)
-        dates.forEach(date -> { if (!data.containsKey(date)) data.put(date, new GraphData(new HashMap<>(), new HashMap<>(), new HashMap<>())); });
-    }
-
-    public ListOrderedMap<String, GraphData> sortMapOnDateKeys(Map<String, GraphData> unsortedMap, DateTimeFormatter dateFormatter) {
-        long startTime2 = System.nanoTime();
-
-        ListOrderedMap<String, GraphData> sortedMap = unsortedMap.entrySet()
-                .stream()
-                .sorted(Comparator.comparing(e -> dateFormatter.parse(e.getKey(), Instant::from)))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, ListOrderedMap::new));
-        System.out.println("map has been sorted on date keys: " + System.currentTimeMillis() % 1000);
-
-        long endTime2 = System.nanoTime();
-        System.out.println("foreach ran for has been generated in : " + (endTime2 - startTime2) + " nanoseconds");
-
-        return sortedMap;
-    }
-
-    public DateTimeFormatter getDateFormatter(String pattern) { // need this as the pattern varies >.>
-        return new DateTimeFormatterBuilder() // default day and hour as the pattern is only month and year
-                .appendPattern(pattern)
-                .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
-                .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-                .toFormatter(Locale.ENGLISH)
-                .withZone(ZoneId.of("UTC"));
-    }
-
 }

@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.services.StatisticsDataService;
+import dk.northtech.dasscoassetservice.services.StatisticsDataServiceV2;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,11 +41,12 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 @SecurityRequirement(name = "dassco-idp")
 public class StatisticsDataApi {
     private static final Logger logger = LoggerFactory.getLogger(StatisticsDataApi.class);
-    private final StatisticsDataService statisticsDataService;
+//    private final StatisticsDataService statisticsDataService;
+    private final StatisticsDataServiceV2 statisticsDataServiceV2;
 
     @Inject
-    public StatisticsDataApi(StatisticsDataService statisticsDataService) {
-        this.statisticsDataService = statisticsDataService;
+    public StatisticsDataApi(StatisticsDataServiceV2 statisticsDataServiceV2) {
+        this.statisticsDataServiceV2 = statisticsDataServiceV2;
     }
 
     // TODO: I need access to some documentation to be able to understand these endpoints.
@@ -59,7 +60,8 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<StatisticsData> getSpecimenData() {
         long year = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toEpochSecond();
-        return statisticsDataService.getGraphData(year);
+        return statisticsDataServiceV2.getGraphData(year);
+//        return statisticsDataService.getGraphData(year);
     }
 
     @GET
@@ -75,7 +77,7 @@ public class StatisticsDataApi {
 
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
             logger.info("Getting data for time frame {}.", timeFrame);
-            finalData = statisticsDataService.getCachedGraphData(GraphView.valueOf(timeFrame));
+            finalData = statisticsDataServiceV2.getCachedGraphData(GraphView.valueOf(timeFrame));
         } else {
             logger.warn("Received time frame {} is invalid.", timeFrame);
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -104,13 +106,7 @@ public class StatisticsDataApi {
         Instant end = Instant.ofEpochMilli(endDate);
 
         if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
-            DateTimeFormatter dateFormatter = statisticsDataService.getDateFormatter("dd-MMM-yyyy");
-
-            long startTime = System.nanoTime();
-            customData = statisticsDataService.generateIncrData(start, end, dateFormatter, GraphView.WEEK);
-            long endTime = System.nanoTime();
-
-            System.out.println("custom data has been generated in : " + (endTime - startTime) + " nanoseconds");
+            customData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.WEEK);
 
             if (customData.isEmpty()) {
                 logger.warn("No data available within the selected time frame.");
@@ -121,13 +117,13 @@ public class StatisticsDataApi {
 
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
-            DateTimeFormatter yearFormatter = statisticsDataService.getDateFormatter("MMM yyyy");
-            Map<String, GraphData> incrData = statisticsDataService.generateIncrData(start, end, yearFormatter, GraphView.YEAR);
+            Map<String, GraphData> incrData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.YEAR);
+            Map<String, GraphData> totalValues = statisticsDataServiceV2.totalValues(incrData);
 
             if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
-                Map<String, GraphData> exponData = statisticsDataService.generateExponData(incrData, yearFormatter);
+                Map<String, GraphData> exponData = statisticsDataServiceV2.accumulatedData(incrData);
 
-                finalData.put(incremental, incrData);
+                finalData.put(incremental, totalValues); // this was once incrData, but pr. the cache, it def looks like the incremental is TOTAL values when it's year.
                 finalData.put(exponential, exponData);
                 return Response.status(Response.Status.OK).entity(finalData).build();
             }
@@ -152,7 +148,7 @@ public class StatisticsDataApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = TEXT_PLAIN))
     public Response refreshGraphCache() {
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
         return Response.status(Response.Status.OK).entity("Cache has been refreshed").build();
     }
 
