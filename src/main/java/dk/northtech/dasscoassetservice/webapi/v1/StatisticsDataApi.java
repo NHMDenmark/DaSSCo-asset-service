@@ -106,7 +106,10 @@ public class StatisticsDataApi {
         Instant end = Instant.ofEpochMilli(endDate);
 
         if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
+            long startTime = System.nanoTime();
             customData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.WEEK);
+            long endTime = System.nanoTime();
+            System.out.println("custom data for WEEK/MONTH has been generated in : " + (endTime - startTime) + " nanoseconds");
 
             if (customData.isEmpty()) {
                 logger.warn("No data available within the selected time frame.");
@@ -117,11 +120,21 @@ public class StatisticsDataApi {
 
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
+            long startTime = System.nanoTime();
             Map<String, GraphData> incrData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.YEAR);
+            long endTime = System.nanoTime();
+            System.out.println("incr (custom data) for YEAR/EXPONENTIAL has been generated in : " + (endTime - startTime) + " nanoseconds");
+
+            long startTime2 = System.nanoTime();
             Map<String, GraphData> totalValues = statisticsDataServiceV2.totalValues(incrData);
+            long endTime2 = System.nanoTime();
+            System.out.println("total data for YEAR/EXPONENTIAL has been generated in : " + (endTime2 - startTime2) + " nanoseconds");
 
             if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
+                long startTime3 = System.nanoTime();
                 Map<String, GraphData> exponData = statisticsDataServiceV2.accumulatedData(incrData);
+                long endTime3 = System.nanoTime();
+                System.out.println("accumulated/expon data for YEAR/EXPONENTIAL has been generated in : " + (endTime3 - startTime3) + " nanoseconds");
 
                 finalData.put(incremental, totalValues); // this was once incrData, but pr. the cache, it def looks like the incremental is TOTAL values when it's year.
                 finalData.put(exponential, exponData);

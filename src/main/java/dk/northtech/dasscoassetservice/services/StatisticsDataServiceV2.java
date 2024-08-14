@@ -110,7 +110,10 @@ public class StatisticsDataServiceV2 {
     }
 
     public Map<String, GraphData> generateIncrDataV2(Instant startDate, Instant endDate, GraphView graphView) {
+        long startTime = System.nanoTime();
         List<StatisticsData> stats = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
+        long endTime = System.nanoTime();
+        System.out.println("graph data has been generated (sql query) in : " + (endTime - startTime) + " nanoseconds");
 
         Map<String, GraphData> graphDataMap = new LinkedHashMap<>();
         Instant currentDate = startDate;
