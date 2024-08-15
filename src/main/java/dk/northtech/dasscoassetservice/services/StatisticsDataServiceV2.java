@@ -112,8 +112,11 @@ public class StatisticsDataServiceV2 {
             finalData.put(incremental, totalValues);
 
             if (graphView.equals(GraphView.EXPONENTIAL)) {
-                Map<String, GraphData> exponData = accumulatedData(incrData);
-                finalData.put(exponential, exponData);
+                // OBS: this is commented atm, as I spoke to Pip and we realised that it didn't make sense to show the data like this.
+                    // It's not deleted in case we will need it again at a later date.
+//                Map<String, GraphData> exponData = accumulatedData(incrData);
+//                finalData.put(exponential, exponData);
+                finalData.put(exponential, incrData);
             }
         }
 
@@ -121,10 +124,7 @@ public class StatisticsDataServiceV2 {
     }
 
     public Map<String, GraphData> generateIncrDataV2(Instant startDate, Instant endDate, GraphView graphView) {
-        long startTime = System.nanoTime();
         List<StatisticsData> stats = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
-        long endTime = System.nanoTime();
-        System.out.println("graph data has been generated (sql query) in : " + (endTime - startTime) + " nanoseconds");
 
         Map<String, GraphData> graphDataMap = new LinkedHashMap<>();
         Instant currentDate = startDate;
@@ -138,7 +138,7 @@ public class StatisticsDataServiceV2 {
             String dateKey = formatter.format(currentDate);
             graphDataMap.put(dateKey, new GraphData());
 
-            if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+            if (graphView.equals(GraphView.YEAR) || graphView.equals(GraphView.EXPONENTIAL)) { // to be shown pr month instead of pr day
                 LocalDate currentDateLocal = currentDate.atZone(ZoneId.of("UTC")).toLocalDate();
                 currentDateLocal = currentDateLocal.plusMonths(1).with(TemporalAdjusters.firstDayOfMonth());
                 currentDate = currentDateLocal.atStartOfDay(ZoneId.of("UTC")).toInstant();
