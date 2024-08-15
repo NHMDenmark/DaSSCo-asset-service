@@ -37,7 +37,7 @@ public class StatisticsDataRepository {
                             AND event.timestamp <= $endDate
                         MATCH (pipeline:Pipeline)<-[:USED]-(event)
                         MATCH (workstation:Workstation)<-[:USED]-(event)
-                        MATCH (institution:Institution)-[:BELONGS_TO]-(asset)
+                        MATCH (institution:Institution)<-[:BELONGS_TO]-(asset)
                         RETURN event.timestamp, count(DISTINCT specimen), pipeline.name, workstation.name, institution.name
                     $$, #params) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
             """;
