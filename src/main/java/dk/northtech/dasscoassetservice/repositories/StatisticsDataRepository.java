@@ -31,8 +31,8 @@ public class StatisticsDataRepository {
         String sql =
             """
                 SELECT * from cypher('dassco', $$
-                       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})-[:CHANGED_BY]-(asset:Asset)-[:CREATED_BY]-(specimen:Specimen)
-                        WHERE NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(asset))
+                       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset:Asset)<-[:CREATED_BY]-(specimen:Specimen)
+                        WHERE NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset))
                             AND event.timestamp >= $startDate
                             AND event.timestamp <= $endDate
                         MATCH (pipeline:Pipeline)<-[:USED]-(event)

@@ -32,6 +32,7 @@ import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
+import static java.util.Map.entry;
 
 // Hidden for now
 @Hidden
@@ -41,7 +42,6 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 @SecurityRequirement(name = "dassco-idp")
 public class StatisticsDataApi {
     private static final Logger logger = LoggerFactory.getLogger(StatisticsDataApi.class);
-//    private final StatisticsDataService statisticsDataService;
     private final StatisticsDataServiceV2 statisticsDataServiceV2;
 
     @Inject
@@ -61,7 +61,6 @@ public class StatisticsDataApi {
     public List<StatisticsData> getSpecimenData() {
         long year = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toEpochSecond();
         return statisticsDataServiceV2.getGraphData(year);
-//        return statisticsDataService.getGraphData(year);
     }
 
     @GET
@@ -84,7 +83,6 @@ public class StatisticsDataApi {
         }
 
         if (finalData.isEmpty()) {
-            logger.info("No data available within the selected time frame.");
             return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
         }
 
@@ -92,61 +90,33 @@ public class StatisticsDataApi {
     }
 
     @GET
-    @Operation(summary = "Get Custom Graph Data", description = "")
+    @Operation(summary = "Get Custom Graph Data", description = "Custom start and end date with either daily or monthly view")
     @Path("/custom")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = List.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response getGraphDataCustomTimeframe(@QueryParam("view") String view, @QueryParam("start") long startDate, @QueryParam("end") long endDate) {
-        // Custom start and end date with either daily or monthly view
-        Map<String, GraphData> customData;
-        Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>(); // incremental data: data, exponential data: data
         Instant start = Instant.ofEpochMilli(startDate);
         Instant end = Instant.ofEpochMilli(endDate);
 
         if (GraphView.valueOf(view).equals(GraphView.WEEK) || GraphView.valueOf(view).equals(GraphView.MONTH)) { // every date is shown along x-axis
-            long startTime = System.nanoTime();
-            customData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.WEEK);
-            long endTime = System.nanoTime();
-            System.out.println("custom data for WEEK/MONTH has been generated in : " + (endTime - startTime) + " nanoseconds");
+            Map<String, GraphData> incrData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.WEEK);
 
-            if (customData.isEmpty()) {
-                logger.warn("No data available within the selected time frame.");
+            if (incrData.isEmpty()) {
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
+
             logger.info("Data has been gathered for time frame {} to {}.", start, end);
-            finalData.put(incremental, customData);
+            Map<GraphType, Map<String, GraphData>> finalData = Map.ofEntries(entry(incremental, incrData));
 
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else if (GraphView.valueOf(view).equals(GraphView.YEAR) || GraphView.valueOf(view).equals(GraphView.EXPONENTIAL) ) { // every month is shown along x-axis
-            long startTime = System.nanoTime();
-            Map<String, GraphData> incrData = statisticsDataServiceV2.generateIncrDataV2(start, end, GraphView.YEAR);
-            long endTime = System.nanoTime();
-            System.out.println("incr (custom data) for YEAR/EXPONENTIAL has been generated in : " + (endTime - startTime) + " nanoseconds");
+            Map<GraphType, Map<String, GraphData>> finalData = statisticsDataServiceV2.getYearlyData(start, end, GraphView.valueOf(view));
 
-            long startTime2 = System.nanoTime();
-            Map<String, GraphData> totalValues = statisticsDataServiceV2.totalValues(incrData);
-            long endTime2 = System.nanoTime();
-            System.out.println("total data for YEAR/EXPONENTIAL has been generated in : " + (endTime2 - startTime2) + " nanoseconds");
-
-            if (GraphView.valueOf(view).equals(GraphView.EXPONENTIAL)) { // if they want the line + bar
-                long startTime3 = System.nanoTime();
-                Map<String, GraphData> exponData = statisticsDataServiceV2.accumulatedData(incrData);
-                long endTime3 = System.nanoTime();
-                System.out.println("accumulated/expon data for YEAR/EXPONENTIAL has been generated in : " + (endTime3 - startTime3) + " nanoseconds");
-
-                finalData.put(incremental, totalValues); // this was once incrData, but pr. the cache, it def looks like the incremental is TOTAL values when it's year.
-                finalData.put(exponential, exponData);
-                return Response.status(Response.Status.OK).entity(finalData).build();
-            }
-
-            if (incrData.isEmpty()) {
-                logger.warn("No data available within the selected time frame.");
+            if (finalData.isEmpty() || finalData.get(incremental).isEmpty()) {
                 return Response.status(Response.Status.NO_CONTENT).entity("No data available within the selected time frame.").build();
             }
-
-            finalData.put(incremental, incrData);
             return Response.status(Response.Status.OK).entity(finalData).build();
         } else {
             logger.warn("View {} is invalid. It has to be either \"daily\" or \"monthly\".", view);
