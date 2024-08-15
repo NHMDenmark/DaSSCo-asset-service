@@ -130,7 +130,7 @@ public class StatisticsDataServiceV2 {
         Instant currentDate = startDate;
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
-        if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+        if (graphView.equals(GraphView.YEAR) || graphView.equals(GraphView.EXPONENTIAL)) { // to be shown pr month instead of pr day
             formatter = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
         }
 
