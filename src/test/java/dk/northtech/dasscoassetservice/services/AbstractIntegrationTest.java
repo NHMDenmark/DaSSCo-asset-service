@@ -43,6 +43,7 @@ public class AbstractIntegrationTest {
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
+    @Inject SpecifyUserService specifyUserService;
 
     User user = new User();
     @Inject

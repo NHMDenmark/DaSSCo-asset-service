@@ -18,11 +18,11 @@ SELECT create_vlabel('dassco','Specimen');
 -- Relations
 SELECT create_elabel('dassco','INITIATED_BY');  --# Event -> User
 SELECT create_elabel('dassco','STATIONED_AT');	--# Workstation -> Institution
-SELECT create_elabel('dassco','USED_BY');     	--# Specimen -> Asset, Collection -> Institution, Pipeline -> Institution,
+SELECT create_elabel('dassco','USED_BY');     	--# Specimen -> Asset, Collection -> Institution, Pipeline -> Institution
 SELECT create_elabel('dassco','CREATED_BY');    --# Specimen -> Asset
 SELECT create_elabel('dassco','CHANGED_BY');    --# Asset -> Event
 SELECT create_elabel('dassco','CHILD_OF');		--# Asset -> Asset
-SELECT create_elabel('dassco','BELONGS_TO');    --# Specimen -> Asset, Asset -> Institution
+SELECT create_elabel('dassco','BELONGS_TO');    --# Specimen -> Asset, Asset -> Institution, Specify_User -> Institution
 SELECT create_elabel('dassco','IS_PART_OF');	--# Asset -> Collection
 SELECT create_elabel('dassco','USED');			--# Event -> Workstation, Event -> Pipeline
 

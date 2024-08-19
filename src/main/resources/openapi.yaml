@@ -1374,6 +1374,112 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/specify-users/{institutionName}:
+    get:
+      tags:
+      - Pipelines
+      summary: Get credentials
+      description: Gets the Specify credentials for an institution.
+      operationId: getSpecifyUser
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    put:
+      tags:
+      - Pipelines
+      summary: Update Specify User
+      description: Updates the Specify User connected to the institution.
+      operationId: updateSpecifyUser
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SpecifyUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+    delete:
+      tags:
+      - Pipelines
+      summary: Delete Specify User
+      description: Removes the Specify User connected to the institution.
+      operationId: deleteSpecifyUser
+      parameters:
+      - name: institutionName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/specify-users:
+    post:
+      tags:
+      - Pipelines
+      summary: Create Specify User
+      description: Creates a new Specify User connected to an institution.
+      operationId: newSpecifyUser
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SpecifyUser'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
   /v1/collections/{collectionName}/specimens/preparationTypes:
     get:
       tags:
@@ -2295,6 +2401,21 @@ components:
             name\",\n\t\t\"fields\": [{\n            \"operator\": \"CONTAINS\",\n\
             \            \"value\": \"hjort\",\n            \"data_type\": \"STRING\"\
             \n\t\t}]\n\t}]\n"
+    SpecifyUser:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Username
+          example: moogie
+        url:
+          type: string
+          description: URL to the Specify instance belonging to the institution
+          example: https://specify-url.net
+        institution:
+          type: string
+          description: Institution the user is linked to
+          example: NNAD
     Workstation:
       type: object
       properties:

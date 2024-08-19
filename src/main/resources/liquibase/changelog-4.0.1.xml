@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="VERSION-4.0.1:CREATE_SPECIFY_USER" author="Mathilde Vinther" contextFilter="default">
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS age;
+            LOAD 'age';
+            SET search_path = ag_catalog, "$user", public;
+
+            SELECT create_vlabel('dassco', 'Specify_User');
+        </sql>
+    </changeSet>
+
+    <changeSet id="VERSION-4.0.0-TAG-DATABASE" author="Mathilde Vinther" context="default">
+        <tagDatabase tag="VERSION-4.0.0"/>
+    </changeSet>
+</databaseChangeLog>
