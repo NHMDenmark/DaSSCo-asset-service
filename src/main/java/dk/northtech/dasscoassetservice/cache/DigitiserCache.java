@@ -25,6 +25,6 @@ public class DigitiserCache {
     }
 
     public void putDigitiserInCache(Digitiser digitiser){
-        digitiserMap.put(digitiser.userId, digitiser);
+        digitiserMap.put(digitiser.userId(), digitiser);
     }
 }

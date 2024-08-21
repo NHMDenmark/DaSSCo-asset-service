@@ -43,29 +43,23 @@ public class StatisticsDataServiceV2 {
                         public Map<GraphType, Map<String, GraphData>> load(GraphView key) {
                             // {incremental (pr day data): data, exponential (continually adding pr day): data}
                             Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>();
-                            Map<String, GraphData> incrData;
 
                             if (key.equals(GraphView.WEEK)) {
                                 logger.info("Generating and caching daily data for the past week.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
-                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.WEEK);
+                                Map<String, GraphData> incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.WEEK);
 
                                 finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.MONTH)) {
                                 logger.info("Generating and caching daily data for the past month.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusMonths(1).toInstant();
-                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.MONTH);
+                                Map<String, GraphData> incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.MONTH);
 
                                 finalData.put(incremental, incrData);
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating and caching monthly data for the past year.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-                                incrData = generateIncrDataV2(startDate, Instant.now(), GraphView.YEAR);
-                                Map<String, GraphData> totalData = totalValues(incrData);
-                                Map<String, GraphData> exponData = accumulatedData(incrData);
-
-                                finalData.put(incremental, totalData);
-                                finalData.put(exponential, exponData);
+                                finalData = getYearlyData(startDate, Instant.now(), GraphView.EXPONENTIAL); // exponential as we wanna cache both kinds of graphs.
                             }
                             return finalData;
                         }
@@ -109,17 +103,34 @@ public class StatisticsDataServiceV2 {
         return this.statisticsDataRepository.getGraphData(timeFrame, Instant.now().toEpochMilli());
     }
 
+    public Map<GraphType, Map<String, GraphData>> getYearlyData(Instant startDate, Instant endDate, GraphView graphView) {
+        Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>();
+
+        Map<String, GraphData> incrData = generateIncrDataV2(startDate, endDate, graphView);
+        if (!incrData.isEmpty()) {
+            Map<String, GraphData> totalValues = totalValues(incrData);
+            finalData.put(incremental, totalValues);
+
+            if (graphView.equals(GraphView.EXPONENTIAL)) {
+                // OBS: this is commented atm, as I spoke to Pip and we realised that it didn't make sense to show the data like this.
+                    // It's not deleted in case we will need it again at a later date.
+//                Map<String, GraphData> exponData = accumulatedData(incrData);
+//                finalData.put(exponential, exponData);
+                finalData.put(exponential, incrData);
+            }
+        }
+
+        return finalData;
+    }
+
     public Map<String, GraphData> generateIncrDataV2(Instant startDate, Instant endDate, GraphView graphView) {
-        long startTime = System.nanoTime();
         List<StatisticsData> stats = this.statisticsDataRepository.getGraphData(startDate.toEpochMilli(), endDate.toEpochMilli());
-        long endTime = System.nanoTime();
-        System.out.println("graph data has been generated (sql query) in : " + (endTime - startTime) + " nanoseconds");
 
         Map<String, GraphData> graphDataMap = new LinkedHashMap<>();
         Instant currentDate = startDate;
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
-        if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+        if (graphView.equals(GraphView.YEAR) || graphView.equals(GraphView.EXPONENTIAL)) { // to be shown pr month instead of pr day
             formatter = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
         }
 
@@ -127,7 +138,7 @@ public class StatisticsDataServiceV2 {
             String dateKey = formatter.format(currentDate);
             graphDataMap.put(dateKey, new GraphData());
 
-            if (graphView.equals(GraphView.YEAR)) { // to be shown pr month instead of pr day
+            if (graphView.equals(GraphView.YEAR) || graphView.equals(GraphView.EXPONENTIAL)) { // to be shown pr month instead of pr day
                 LocalDate currentDateLocal = currentDate.atZone(ZoneId.of("UTC")).toLocalDate();
                 currentDateLocal = currentDateLocal.plusMonths(1).with(TemporalAdjusters.firstDayOfMonth());
                 currentDate = currentDateLocal.atStartOfDay(ZoneId.of("UTC")).toInstant();

@@ -48,11 +48,11 @@ export class DetailedViewService {
       );
   }
 
-  postZip(assets : string[]) : Observable<any> {
+  postZip(guid: string, assets : string[]) : Observable<any> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.post<string>(`${this.createZipFile}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
+          return this.http.post<string>(`${this.createZipFile}/${guid}`, assets, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text' as 'json', observe: "response" })
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error);
@@ -62,11 +62,11 @@ export class DetailedViewService {
       );
   }
 
-  getFile(file : string) : Observable<Blob> {
+  getFile(guid: string, file : string) : Observable<Blob> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.get(`${this.tempFiles}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
+          return this.http.get(`${this.tempFiles}/${guid}/${file}`, { headers: {'Authorization': 'Bearer ' + token}, responseType: "blob"})
             .pipe(
               catchError((error: any) => {
                 return throwError(() => error)}))
@@ -74,11 +74,11 @@ export class DetailedViewService {
       )
   }
 
-  deleteFile() {
+  deleteFile(guid : string) {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
-          return this.http.delete(`${this.deleteTempFolder}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
+          return this.http.delete(`${this.deleteTempFolder}/${guid}`, {headers: {'Authorization': 'Bearer ' + token}, observe: "response"})
             .pipe(
               catchError((error) => {
                 return throwError(() => error)

@@ -4,6 +4,8 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import jakarta.inject.Inject;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -29,6 +31,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private RestrictedAccessCache restrictedAccessCache;
     private boolean initialized = false;
     Jdbi jdbi;
+    private static final Logger logger = LoggerFactory.getLogger(CacheInitializer.class);
 
     @Inject
     public CacheInitializer(InstitutionCache institutionCache,
@@ -56,6 +59,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.statusCache = statusCache;
         this.restrictedAccessCache = restrictedAccessCache;
         this.jdbi = jdbi;
+
+        logInitialization();
     }
 
     @Override
@@ -90,12 +95,22 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                         }
                     }
                 }
+
+                logger.info("Institution Cache " + institutionCache.getInstitutionMap());
+                logger.info("Collection Cache " + collectionCache.getCollectionMap());
+                logger.info("Workstation Cache " + workstationCache.getWorkstationMap());
+                logger.info("Pipeline Cache " + pipelineCache.getPipelineCache());
+
                 List<Digitiser> digitiserList = digitiserRepository.listDigitisers();
                 if (!digitiserList.isEmpty()){
                     for (Digitiser digitiser : digitiserList){
                         this.digitiserCache.putDigitiserInCache(digitiser);
                     }
                 }
+
+                logger.info("Digitiser List: " + digitiserList);
+                logger.info("Digitiser Cache: " + digitiserCache.getDigitiserMap());
+
                 List<String> subjectList = jdbi.withHandle(handle -> {
                     AssetRepository assetRepository = handle.attach(AssetRepository.class);
                     return assetRepository.listSubjects();
@@ -105,6 +120,10 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                         this.subjectCache.putSubjectsInCache(subject);
                     }
                 }
+
+                logger.info("Subject List: " + subjectList);
+                logger.info("Subject Cache: " + subjectCache.getSubjectMap());
+
                 List<String> payloadTypeList = jdbi.withHandle(handle -> {
                     AssetRepository assetRepository = handle.attach(AssetRepository.class);
                     return assetRepository.listPayloadTypes();
@@ -144,5 +163,19 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
             }
             initialized = true;
         }
+    }
+
+    private void logInitialization() {
+        logger.info("CacheInitializer initialized with the following caches:");
+        logger.info("InstitutionCache: {}", institutionCache != null ? "Present" : "Not present");
+        logger.info("CollectionCache: {}", collectionCache != null ? "Present" : "Not present");
+        logger.info("PipelineCache: {}", pipelineCache != null ? "Present" : "Not present");
+        logger.info("DigitiserCache: {}", digitiserCache != null ? "Present" : "Not present");
+        logger.info("SubjectCache: {}", subjectCache != null ? "Present" : "Not present");
+        logger.info("PayloadTypeCache: {}", payloadTypeCache != null ? "Present" : "Not present");
+        logger.info("PreparationTypeCache: {}", preparationTypeCache != null ? "Present" : "Not present");
+        logger.info("StatusCache: {}", statusCache != null ? "Present" : "Not present");
+        logger.info("RestrictedAccessCache: {}", restrictedAccessCache != null ? "Present" : "Not present");
+        logger.info("WorkstationCache: {}", restrictedAccessCache != null ? "Present" : "Not present");
     }
 }
