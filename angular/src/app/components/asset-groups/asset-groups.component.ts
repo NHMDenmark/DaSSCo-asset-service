@@ -115,8 +115,9 @@ export class AssetGroupsComponent implements OnInit {
     this.detailedViewService.postCsv(selectedAssets)
       .subscribe({
         next: (response) => {
+          let guid : string = response.body;
           if (response.status == 200){
-            this.detailedViewService.getFile("assets.csv")
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
                 {
                   next: (data) => {
@@ -131,7 +132,7 @@ export class AssetGroupsComponent implements OnInit {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    this.detailedViewService.deleteFile()
+                    this.detailedViewService.deleteFile(guid)
                       .subscribe({
                         next: () => {
                         },
@@ -158,11 +159,12 @@ export class AssetGroupsComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.postZip(selectedAssets)
+            let guid : string = response.body;
+            this.detailedViewService.postZip(guid, selectedAssets)
               .subscribe({
                 next: (response) => {
                   if (response.status == 200){
-                    this.detailedViewService.getFile("assets.zip").subscribe(
+                    this.detailedViewService.getFile(guid, "assets.zip").subscribe(
                       {
                         next: (data) => {
                           const url = window.URL.createObjectURL(data);
@@ -176,7 +178,7 @@ export class AssetGroupsComponent implements OnInit {
                           document.body.removeChild(link);
                           window.URL.revokeObjectURL(url);
 
-                          this.detailedViewService.deleteFile()
+                          this.detailedViewService.deleteFile(guid)
                             .subscribe({
                               next: () => {
                               },

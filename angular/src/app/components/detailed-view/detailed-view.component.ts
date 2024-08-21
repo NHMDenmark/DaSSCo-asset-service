@@ -121,7 +121,8 @@ export class DetailedViewComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.status === 200){
-            this.detailedViewService.getFile("assets.csv")
+            let guid : string = response.body;
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
                 {
                   next: (data) => {
@@ -136,7 +137,7 @@ export class DetailedViewComponent implements OnInit {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    this.detailedViewService.deleteFile()
+                    this.detailedViewService.deleteFile(guid)
                       .subscribe({
                         next: () => {
                         },
@@ -162,12 +163,13 @@ export class DetailedViewComponent implements OnInit {
       this.detailedViewService.postCsv(currentAsset)
         .subscribe({
           next: (response) => {
+            let guid: string = response.body
             if (response.status === 200){
-              this.detailedViewService.postZip(currentAsset)
+              this.detailedViewService.postZip(guid, currentAsset)
                 .subscribe({
                   next: (response) => {
                     if (response.status === 200){
-                      this.detailedViewService.getFile("assets.zip")
+                    this.detailedViewService.getFile(guid, "assets.zip")
                         .subscribe({
                           next: (data) => {
                             const url = window.URL.createObjectURL(data);
@@ -181,7 +183,7 @@ export class DetailedViewComponent implements OnInit {
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
 
-                            this.detailedViewService.deleteFile()
+                            this.detailedViewService.deleteFile(guid)
                               .subscribe({
                                 error: () => {
                                   this.openSnackBar("There has been an error deleting the ZIP file", "Close");
