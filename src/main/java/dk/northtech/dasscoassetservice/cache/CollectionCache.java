@@ -21,6 +21,10 @@ public class CollectionCache {
         this.collectionMap.putIfAbsent(institutionName + "." + collectionName, collection);
     }
 
+    public void put(String institutionName, String collectionName, Collection collection){
+        this.collectionMap.put(institutionName + "." + collectionName, collection);
+    }
+
     public List<Collection> getCollections(String institution){
         return collectionMap.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith(institution + "."))

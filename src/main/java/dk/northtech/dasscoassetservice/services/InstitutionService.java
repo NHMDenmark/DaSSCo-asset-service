@@ -13,6 +13,7 @@ import joptsimple.internal.Strings;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,7 +93,8 @@ public class InstitutionService {
 
 
     public Institution updateInstitution(Institution institution) {
-        jdbi.withHandle(h -> {
+
+                jdbi.withHandle(h -> {
             InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
             Optional<Institution> existing = institutionRepository.findInstitution(institution.name());
             if (existing.isEmpty()) {
@@ -100,9 +102,10 @@ public class InstitutionService {
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
+            institutionCache.put(institution.name(), institution);
             return h;
         });
-        institutionCache.putInstitutionInCacheIfAbsent(institution.name(), institution);
+
         //cache.put(institution.name(),institution);
         return institution;
     }

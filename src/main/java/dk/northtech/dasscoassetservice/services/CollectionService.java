@@ -125,7 +125,7 @@ public class CollectionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
             return h;
         });
-        collectionCache.putCollectionInCacheIfAbsent(collection.institution(), collection.name(), collection);
+        collectionCache.put(collection.institution(), collection.name(), collection);
         return collection;
     }
 }

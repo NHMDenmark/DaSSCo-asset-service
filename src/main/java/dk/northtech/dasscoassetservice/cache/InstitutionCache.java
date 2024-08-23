@@ -32,4 +32,8 @@ public class InstitutionCache {
     public Institution getInstitution(String institutionName) {
         return this.institutionMap.get(institutionName);
     }
+
+    public void put (String institutionName, Institution institution){
+        institutionMap.put(institutionName, institution);
+    }
 }
