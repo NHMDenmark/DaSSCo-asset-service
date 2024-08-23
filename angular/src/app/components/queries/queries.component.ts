@@ -349,7 +349,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.getFile("assets.csv")
+            let guid : string = response.body;
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
               {
                 next: (data) => {
@@ -364,7 +365,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
                   document.body.removeChild(link);
                   window.URL.revokeObjectURL(url);
 
-                  this.detailedViewService.deleteFile()
+                  this.detailedViewService.deleteFile(guid)
                     .subscribe({
                       next: () => {
                       },
@@ -391,11 +392,12 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.postZip(assetGuids)
+            let guid : string = response.body;
+            this.detailedViewService.postZip(guid, assetGuids)
               .subscribe({
                 next: (response) => {
                   if (response.status == 200){
-                    this.detailedViewService.getFile("assets.zip").subscribe(
+                    this.detailedViewService.getFile(guid, "assets.zip").subscribe(
                       {
                         next: (data) => {
                           const url = window.URL.createObjectURL(data);
@@ -409,7 +411,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
                           document.body.removeChild(link);
                           window.URL.revokeObjectURL(url);
 
-                          this.detailedViewService.deleteFile()
+                          this.detailedViewService.deleteFile(guid)
                             .subscribe({
                               next: () => {
                               },

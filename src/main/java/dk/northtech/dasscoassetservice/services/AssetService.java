@@ -28,7 +28,8 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
-    private final StatisticsDataService statisticsDataService;
+//    private final StatisticsDataService statisticsDataService;
+    private final StatisticsDataServiceV2 statisticsDataServiceV2;
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
@@ -47,7 +48,7 @@ public class AssetService {
             , WorkstationService workstationService
             , @Lazy FileProxyClient fileProxyClient
             , Jdbi jdbi
-            , StatisticsDataService statisticsDataService
+            , StatisticsDataServiceV2 statisticsDataServiceV2
             , PipelineService pipelineService
             , RightsValidationService rightsValidationService,
                         DigitiserCache digitiserCache,
@@ -60,7 +61,7 @@ public class AssetService {
         this.collectionService = collectionService;
         this.workstationService = workstationService;
         this.fileProxyClient = fileProxyClient;
-        this.statisticsDataService = statisticsDataService;
+        this.statisticsDataServiceV2 = statisticsDataServiceV2;
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
         this.digitiserCache = digitiserCache;
@@ -118,7 +119,7 @@ public class AssetService {
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
@@ -173,7 +174,7 @@ public class AssetService {
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
@@ -204,7 +205,7 @@ public class AssetService {
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
@@ -235,7 +236,7 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
         return true;
     }
 
@@ -275,7 +276,7 @@ public class AssetService {
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
@@ -687,6 +688,11 @@ public class AssetService {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
 
+        statisticsDataServiceV2.refreshCachedData();
+
+//        this.statisticsDataService.addAssetToCache(asset);
+
+
             if (asset.digitiser != null && !asset.digitiser.isEmpty()){
 
                 logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
@@ -725,7 +731,7 @@ public class AssetService {
             return asset;
         }
 
-        statisticsDataService.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataService.addAssetToCache(asset);
 
         return asset;

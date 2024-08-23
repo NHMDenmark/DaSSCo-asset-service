@@ -2,6 +2,8 @@ package dk.northtech.dasscoassetservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.Instant;
+
 public record StatisticsData(
         @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
         String instituteName,
@@ -9,7 +11,7 @@ public record StatisticsData(
         String pipelineName,
         @Schema(description = "The name of the workstation used to do the imaging", example = "ti-ws1")
         String workstationName,
-        @Schema(description = "Date and time", example = "2023-05-24T00:00:00.000Z")
+        @Schema(description = "Date and time in milliseconds", example = "19489324209000")
         Long createdDate, // event's error_timestamp in millis
         @Schema(description = "Number of specimens in the specific asset", example = "42")
         Integer specimens // number of specimens in the specific asset

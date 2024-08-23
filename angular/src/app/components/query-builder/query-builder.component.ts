@@ -192,8 +192,8 @@ export class QueryBuilderComponent implements OnInit {
       operator: new FormControl(where.operator, Validators.required),
       value: new FormControl(!isDate ? where.value : null, Validators.required),
       date: new FormControl<Date | null>(isDate && !rangedDate ? new Date(where.value) : null),
-      dateStart: new FormControl<Date | null>(rangedDate ? new Date(where.value.split('#')[0]) : null),
-      dateEnd: new FormControl<Date | null>(rangedDate ? new Date(where.value.split('#')[1]) : null)
+      dateStart: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[0]) : null),
+      dateEnd: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[1]) : null)
     }));
   }
 

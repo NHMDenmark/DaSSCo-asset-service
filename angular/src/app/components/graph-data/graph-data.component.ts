@@ -75,7 +75,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
 
      this.timeFrameForm.valueChanges.pipe(startWith(null), distinctUntilChanged(), filter((range) => !!range?.start && !!range?.end), switchMap((range) => {
         if (range) {
-          console.log(moment(range.start).format('DD-MM-YYYY') + " " + moment(range.end).format('DD-MM-YYYY'))
           if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
             && moment(range.end, 'DD-MM-YYYY ', true).isValid()
             && this.timeFrameForm.valid) {
@@ -104,7 +103,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         }
       }), takeUntil(this.destroy))
       .subscribe(customData => {
-        console.log(customData)
         if (!customData) {
           this.statsV2Subject.next(undefined)
         }
@@ -212,6 +210,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
                 mappedData.delete(ChartDataTypes.EXPONENTIAL);
+                console.log('mapped', mappedData)
               }
               this.statsV2Subject.next(mappedData);
             });

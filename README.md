@@ -43,8 +43,10 @@ We've enabled HealthChecks in AssetService, FileProxy, Keycloak. The postgres st
 
 *AssetService*
 https://${HOSTNAME}/ars/actuator/health
+
 *FileProxy*
 https://${HOSTNAME}/file_proxy/api/actuator/health
+
 *Keycloak*
 https://${HOSTNAME}/keycloak/health
 
