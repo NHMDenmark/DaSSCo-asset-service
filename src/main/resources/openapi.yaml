@@ -20,6 +20,8 @@ tags:
   description: Endpoints related to collections.
 - name: Institutions
   description: Endpoints related to institutions
+- name: Log Files
+  description: Endpoints for getting log files
 - name: Pipelines
   description: Endpoints related to institution pipelines
 - name: Queries
@@ -1107,6 +1109,46 @@ paths:
                 $ref: '#/components/schemas/Institution'
         "204":
           description: No Content. Institution does not exist.
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /logs/{fileName}:
+    get:
+      tags:
+      - Log Files
+      summary: Get a log file
+      description: "Get a log file by name, use list endpoint to see names."
+      operationId: getFile
+      parameters:
+      - name: fileName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Returns the file.
+        "400-599":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /logs:
+    get:
+      tags:
+      - Log Files
+      summary: List logfiles
+      description: List all logfiles in the log directory
+      operationId: listLogs
+      responses:
+        "200":
+          description: Returns the file.
         "400-599":
           content:
             application/json:

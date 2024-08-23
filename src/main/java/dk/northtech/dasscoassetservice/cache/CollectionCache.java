@@ -6,22 +6,19 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
 public class CollectionCache {
-    private Map<String, Collection> collectionMap = new HashMap<>();
+    private final ConcurrentHashMap<String, Collection> collectionMap = new ConcurrentHashMap<>();
 
-    public Map<String, Collection> getCollectionMap() {
+    public ConcurrentHashMap<String, Collection> getCollectionMap() {
         return collectionMap;
     }
 
-    public void setCollectionMap(Map<String, Collection> collectionMap) {
-        this.collectionMap = collectionMap;
-    }
-
-    public void putCollectionInCache(String institutionName, String collectionName, Collection collection){
-        this.collectionMap.put(institutionName + "." + collectionName, collection);
+    public void putCollectionInCacheIfAbsent(String institutionName, String collectionName, Collection collection){
+        this.collectionMap.putIfAbsent(institutionName + "." + collectionName, collection);
     }
 
     public List<Collection> getCollections(String institution){

@@ -69,7 +69,7 @@ public class WorkstationService {
 
         Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
         workstationRepository.persistWorkstation(newWs);
-        workstationCache.putWorkstationInCache(workstation);
+        workstationCache.putWorkstationInCacheIfAbsent(workstation);
 
         return workstation;
     }
@@ -96,6 +96,6 @@ public class WorkstationService {
 
         workstationRepository.updateWorkstation(newWs);
         // "Put" will replace the existing workstation with the new one, keeping the key.
-        workstationCache.putWorkstationInCache(newWs);
+        workstationCache.putWorkstationInCacheIfAbsent(newWs);
     }
 }

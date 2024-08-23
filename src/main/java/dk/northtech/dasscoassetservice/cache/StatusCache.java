@@ -7,25 +7,22 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class StatusCache {
-    private Map<String, AssetStatus> statusMap = new HashMap<>();
+    private final ConcurrentHashMap<String, AssetStatus> statusMap = new ConcurrentHashMap<>();
 
-    public Map<String, AssetStatus> getStatusMap() {
+    public ConcurrentHashMap<String, AssetStatus> getStatusMap() {
         return statusMap;
-    }
-
-    public void setStatusMap(Map<String, AssetStatus> statusMap) {
-        this.statusMap = statusMap;
     }
 
     public List<AssetStatus> getStatus() {
         return statusMap.values().stream().toList();
     }
 
-    public void putStatusInCache(AssetStatus assetStatus){
-        statusMap.put(assetStatus.name(), assetStatus);
+    public void putStatusInCacheIfAbsent(AssetStatus assetStatus){
+        statusMap.putIfAbsent(assetStatus.name(), assetStatus);
     }
 
     public void clearCache(){

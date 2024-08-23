@@ -68,7 +68,7 @@ public class InstitutionService {
             //institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
-        this.institutionCache.putInstitutionInCache(institution.name(), institution);
+        this.institutionCache.putInstitutionInCacheIfAbsent(institution.name(), institution);
         //this.cache.put(institution.name(),institution);
         return institution;
     }
@@ -102,7 +102,7 @@ public class InstitutionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
             return h;
         });
-        institutionCache.putInstitutionInCache(institution.name(), institution);
+        institutionCache.putInstitutionInCacheIfAbsent(institution.name(), institution);
         //cache.put(institution.name(),institution);
         return institution;
     }

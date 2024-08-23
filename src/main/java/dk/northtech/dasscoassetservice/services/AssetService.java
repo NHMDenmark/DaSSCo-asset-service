@@ -12,6 +12,8 @@ import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -31,12 +33,13 @@ public class AssetService {
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
-    private DigitiserCache digitiserCache;
-    private SubjectCache subjectCache;
-    private PayloadTypeCache payloadTypeCache;
-    private StatusCache statusCache;
-    private PreparationTypeCache preparationTypeCache;
-    private RestrictedAccessCache restrictedAccessCache;
+    private final DigitiserCache digitiserCache;
+    private final SubjectCache subjectCache;
+    private final PayloadTypeCache payloadTypeCache;
+    private final StatusCache statusCache;
+    private final PreparationTypeCache preparationTypeCache;
+    private final RestrictedAccessCache restrictedAccessCache;
+    private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -88,9 +91,8 @@ public class AssetService {
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
 
-        if (!digitiserCache.getDigitiserMap().containsKey(audit.user())){
-            digitiserCache.putDigitiserInCache(new Digitiser(audit.user(), audit.user()));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
 
         return true;
     }
@@ -118,9 +120,8 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
-            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
 
         return true;
     }
@@ -174,9 +175,9 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(assetUpdateRequest.digitiser())){
-            digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+
 
         return true;
     }
@@ -205,9 +206,8 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
-            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
 
         return true;
     }
@@ -277,9 +277,9 @@ public class AssetService {
 
         statisticsDataService.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
-            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
@@ -290,7 +290,7 @@ public class AssetService {
                 });
                 if (!subjectList.isEmpty()){
                     for (String subject : subjectList){
-                        this.subjectCache.putSubjectsInCache(subject);
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
                     }
                 }
             }
@@ -305,7 +305,7 @@ public class AssetService {
                 });
                 if (!payloadTypeList.isEmpty()){
                     for (String payloadType : payloadTypeList){
-                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
                     }
                 }
             }
@@ -320,7 +320,7 @@ public class AssetService {
                 });
                 if (!statusList.isEmpty()){
                     for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCache(status);
+                        this.statusCache.putStatusInCacheIfAbsent(status);
                     }
                 }
             }
@@ -329,7 +329,7 @@ public class AssetService {
         boolean prepTypeExists = true;
         if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
             for (Specimen specimen : updatedAsset.specimens){
-                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
+                if (!preparationTypeCache.getPreparationTypeMap().containsKey(specimen.preparation_type())){
                     prepTypeExists = false;
                 }
             }
@@ -341,7 +341,7 @@ public class AssetService {
                 });
                 if (!preparationTypeList.isEmpty()){
                     for (String preparationType : preparationTypeList){
-                        this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                        this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
                     }
                 }
             }
@@ -362,7 +362,7 @@ public class AssetService {
                 });
                 if (!restrictedAccessList.isEmpty()){
                     for (String internalRole : restrictedAccessList){
-                        this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+                        this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
                     }
                 }
             }
@@ -459,9 +459,8 @@ public class AssetService {
 
         List<Asset> bulkUpdateSuccess = jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
 
-        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
-            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
@@ -472,7 +471,7 @@ public class AssetService {
                 });
                 if (!subjectList.isEmpty()){
                     for (String subject : subjectList){
-                        this.subjectCache.putSubjectsInCache(subject);
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
                     }
                 }
             }
@@ -487,7 +486,7 @@ public class AssetService {
                 });
                 if (!payloadTypeList.isEmpty()){
                     for (String payloadType : payloadTypeList){
-                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
                     }
                 }
             }
@@ -502,7 +501,7 @@ public class AssetService {
                 });
                 if (!statusList.isEmpty()){
                     for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCache(status);
+                        this.statusCache.putStatusInCacheIfAbsent(status);
                     }
                 }
             }
@@ -687,53 +686,47 @@ public class AssetService {
         if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
+
+            if (asset.digitiser != null && !asset.digitiser.isEmpty()){
+
+                logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
+                digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser, asset.digitiser));
+            }
+
+            if (asset.specimens != null && !asset.specimens.isEmpty()){
+                for (Specimen specimen : asset.specimens){
+
+                    preparationTypeCache.putPreparationTypesInCacheIfAbsent(specimen.preparation_type());
+
+                }
+            }
+
+            if (asset.subject != null && !asset.subject.isEmpty()){
+
+                subjectCache.putSubjectsInCacheIfAbsent(asset.subject);
+
+            }
+
+            if (asset.payload_type != null && !asset.payload_type.isEmpty()){
+                    payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
+
+            }
+
+            statusCache.putStatusInCacheIfAbsent(asset.status);
+
+            if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
+                for (InternalRole internalRole : asset.restricted_access){
+                    restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
+                }
+            }
+
         } else {
             //Do not persist azzet if share wasnt created
             return asset;
         }
 
         statisticsDataService.refreshCachedData();
-
 //        this.statisticsDataService.addAssetToCache(asset);
-
-
-        if (asset.digitiser != null && !asset.digitiser.isEmpty()){
-            if (!digitiserCache.getDigitiserMap().containsKey(asset.digitiser)){
-                digitiserCache.putDigitiserInCache(new Digitiser(asset.digitiser, asset.digitiser));
-            }
-        }
-
-        if (asset.specimens != null && !asset.specimens.isEmpty()){
-            for (Specimen specimen : asset.specimens){
-                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
-                    preparationTypeCache.putPreparationTypesInCache(specimen.preparation_type());
-                }
-            }
-        }
-
-        if (asset.subject != null && !asset.subject.isEmpty()){
-            if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
-                subjectCache.putSubjectsInCache(asset.subject);
-            }
-        }
-
-        if (asset.payload_type != null && !asset.payload_type.isEmpty()){
-            if (!payloadTypeCache.getPayloadTypeMap().containsKey(asset.payload_type)){
-                payloadTypeCache.putPayloadTypesInCache(asset.payload_type);
-            }
-        }
-
-        if (!statusCache.getStatusMap().containsKey(asset.status.toString())){
-            statusCache.putStatusInCache(asset.status);
-        }
-
-        if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
-            for (InternalRole internalRole : asset.restricted_access){
-                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
-                    restrictedAccessCache.putRestrictedAccessInCache(internalRole.toString());
-                }
-            }
-        }
 
         return asset;
     }
@@ -759,49 +752,54 @@ public class AssetService {
     }
 
     public void reloadAssetCache(){
+        subjectCache.clearCache();
         List<String> subjectList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listSubjects();
         });
         if (!subjectList.isEmpty()){
             for (String subject : subjectList){
-                this.subjectCache.putSubjectsInCache(subject);
+                this.subjectCache.putSubjectsInCacheIfAbsent(subject);
             }
         }
+        payloadTypeCache.clearCache();
         List<String> payloadTypeList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listPayloadTypes();
         });
         if (!payloadTypeList.isEmpty()){
             for (String payloadType : payloadTypeList){
-                this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
             }
         }
+        preparationTypeCache.clearCache();
         List<String> preparationTypeList = jdbi.withHandle(handle -> {
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
             return specimenRepository.listPreparationTypes();
         });
         if (!preparationTypeList.isEmpty()){
             for (String preparationType : preparationTypeList){
-                this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
             }
         }
+        statusCache.clearCache();
         List<AssetStatus> statusList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listStatus();
         });
         if (!statusList.isEmpty()){
             for(AssetStatus status : statusList){
-                this.statusCache.putStatusInCache(status);
+                this.statusCache.putStatusInCacheIfAbsent(status);
             }
         }
+        restrictedAccessCache.clearCache();
         List<String> restrictedAccessList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listRestrictedAccess();
         });
         if (!restrictedAccessList.isEmpty()){
             for (String internalRole : restrictedAccessList){
-                this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+                this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
             }
         }
     }
