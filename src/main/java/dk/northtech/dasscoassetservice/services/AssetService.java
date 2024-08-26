@@ -176,8 +176,9 @@ public class AssetService {
 
         statisticsDataServiceV2.refreshCachedData();
 
-        logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+
         if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()){
+            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
             digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
 
