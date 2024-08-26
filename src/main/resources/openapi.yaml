@@ -22,6 +22,10 @@ tags:
   description: Endpoints related to institutions
 - name: Log Files
   description: Endpoints for getting log files
+- name: Mappings
+  description: Institutions and Collections may have many names in ARS. They need
+    to be mapped to the names used in Specify. These endpoints save and retrieve the
+    mappings for the Specify Adapter.
 - name: Pipelines
   description: Endpoints related to institution pipelines
 - name: Queries
@@ -1154,6 +1158,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DaSSCoError'
+      security:
+      - dassco-idp: []
+  /v1/mappings/institutions/add:
+    post:
+      tags:
+      - Mappings
+      summary: Add Institutions to Mappings
+      description: "Adds Institutions to the mappings table. Takes a JSON Object,\
+        \ the Key should be the Specify Institution name, and the values is an array\
+        \ of Strings representing the different names that that institution has in\
+        \ the ARS."
+      operationId: addInstitutionsToMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
       security:
       - dassco-idp: []
   /v1/institutions/{institutionName}/pipelines:

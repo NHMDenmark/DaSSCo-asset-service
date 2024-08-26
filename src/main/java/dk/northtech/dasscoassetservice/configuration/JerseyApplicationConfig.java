@@ -32,5 +32,6 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(Caches.class);
     register(AssetGroups.class);
     register(Logs.class);
+    register(Mappings.class);
   }
 }
