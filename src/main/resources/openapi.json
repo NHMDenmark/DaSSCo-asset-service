@@ -1713,6 +1713,38 @@
         "security" : [ {
           "dassco-idp" : [ ]
         } ]
+      },
+      "delete" : {
+        "tags" : [ "Mappings" ],
+        "summary" : "Delete Institution Mapping",
+        "description" : "Deletes Institution Mappings. Takes a JSON Object. Keys are Specify Institutions, values are the ARS Institutions that the user wants to remove from the mapping.",
+        "operationId" : "deleteInstitutionMapping",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
       }
     },
     "/v1/mappings/institutions/{arsInstitution}" : {

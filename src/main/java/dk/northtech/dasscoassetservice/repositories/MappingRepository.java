@@ -65,4 +65,16 @@ public interface MappingRepository {
 
     @SqlUpdate("UPDATE mappings.institutions_ars SET name = ? WHERE id = ?")
     void updateArsInstitutionName(String name, Integer id);
+
+    @SqlUpdate("DELETE FROM mappings.institutions_mapping WHERE institution_specify_id = ? AND institution_ars_id = ?")
+    void deleteMapping(Integer specifyId, Integer arsId);
+
+    @SqlUpdate("DELETE FROM mappings.institutions_ars WHERE id = ?")
+    void deleteArsInstitution(Integer arsId);
+
+    @SqlUpdate("DELETE FROM mappings.institutions_specify WHERE id = ?")
+    void deleteSpecifyInstitution(Integer specifyId);
+
+    @SqlQuery("SELECT COUNT(*) FROM mappings.institutions_mapping WHERE institution_specify_id = ?")
+    int countMappings(Integer specifyInstitutionId);
 }

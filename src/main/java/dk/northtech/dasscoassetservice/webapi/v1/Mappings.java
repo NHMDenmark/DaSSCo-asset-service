@@ -70,8 +70,8 @@ public class Mappings {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Delete Institution Mapping", description = "Deletes Institution Mappings. Takes a JSON Object. Keys are Specify Institutions, values are the ARS Institutions that the user wants to remove from the mapping.")
-    public void deleteInstitutionMapping(@RequestBody Map<String, List<String>> mappings){
-
+    public Response deleteInstitutionMapping(@RequestBody Map<String, List<String>> mappings){
+        return mappingService.deleteMappings(mappings);
     }
 
     // CREATE DELETE:

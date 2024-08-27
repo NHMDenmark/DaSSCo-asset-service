@@ -111,4 +111,32 @@ public class MappingService {
 
         return Response.status(200).entity("ARS Institutions have been updated").build();
     }
+
+    public Response deleteMappings(Map<String, List<String>> mappings){
+        jdbi.useTransaction(handle -> {
+            for (Map.Entry<String, List<String>> entry : mappings.entrySet()){
+                String specifyInstitution = entry.getKey();
+                List<String> arsNames = entry.getValue();
+                // Get Specify Institution ID:
+                Optional<Integer> specifyId = jdbi.onDemand(MappingRepository.class).findInstitution(specifyInstitution);
+                if (specifyId.isPresent()){
+                    for (String arsInstitution : arsNames){
+                        // Get ARS Institution ID:
+                        Optional<Integer> arsId = jdbi.onDemand(MappingRepository.class).findArsInstitution(arsInstitution);
+                        if (arsId.isPresent()){
+                            jdbi.onDemand(MappingRepository.class).deleteMapping(specifyId.get(), arsId.get());
+                            jdbi.onDemand(MappingRepository.class).deleteArsInstitution(arsId.get());
+                        }
+                    }
+                    // check if institutions has any more mappings:
+                    int mappingsLeft = jdbi.onDemand(MappingRepository.class).countMappings(specifyId.get());
+                    if (mappingsLeft == 0){
+                        jdbi.onDemand(MappingRepository.class).deleteSpecifyInstitution(specifyId.get());
+                    }
+                }
+            }
+
+        });
+        return Response.status(200).entity("Mappings have been deleted").build();
+    }
 }
