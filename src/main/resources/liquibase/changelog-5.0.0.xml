@@ -65,6 +65,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        
+        <addUniqueConstraint schemaName="mappings" tableName="institutions_mapping" columnNames="institution_ars_id" constraintName="unique_ars_id" />
+        
         <addForeignKeyConstraint
                 baseTableName="institutions_mapping"
                 baseTableSchemaName="mappings"

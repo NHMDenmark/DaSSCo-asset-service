@@ -1681,7 +1681,7 @@
         } ]
       }
     },
-    "/v1/mappings/institutions/add" : {
+    "/v1/mappings/institutions" : {
       "post" : {
         "tags" : [ "Mappings" ],
         "summary" : "Add Institutions to Mappings",
@@ -1697,6 +1697,95 @@
                   "items" : {
                     "type" : "string"
                   }
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/mappings/institutions/{arsInstitution}" : {
+      "get" : {
+        "tags" : [ "Mappings" ],
+        "summary" : "Get ARS Institution Mapping",
+        "description" : "Gets the Specify equivalent of the ARS Institution passed.",
+        "operationId" : "getInstitutionMapping",
+        "parameters" : [ {
+          "name" : "arsInstitution",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/mappings/institutions/ars" : {
+      "put" : {
+        "tags" : [ "Mappings" ],
+        "summary" : "Modify ARS Institution",
+        "description" : "Changes the name for one or more ARS Institutions. Takes a JSON Object. Keys are the old names, values are the new ones",
+        "operationId" : "updateArsInstitutions",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/mappings/institutions/specify" : {
+      "put" : {
+        "tags" : [ "Mappings" ],
+        "summary" : "Modify Specify Institution",
+        "description" : "Changes the name for one or more Specify Institutions. Takes a Json Object. Keys are the old names, values are the new ones.",
+        "operationId" : "updateSpecifyInstitutions",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
                 }
               }
             }
