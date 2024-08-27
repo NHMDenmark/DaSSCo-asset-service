@@ -139,4 +139,35 @@ public class MappingService {
         });
         return Response.status(200).entity("Mappings have been deleted").build();
     }
+
+    public Response addCollectionsToMapping(Map<String, List<String>> collectionsMapping){
+
+        if (collectionsMapping.keySet().stream().anyMatch(key -> key == null || key.isEmpty())){
+            return Response.status(400).entity("One or more Specify Collections are empty strings.").build();
+        }
+
+        if (collectionsMapping.values().stream().flatMap(List::stream).anyMatch(value -> value == null || value.isEmpty())){
+            return Response.status(400).entity("One or more ARS Collections are empty strings.").build();
+        }
+
+        return jdbi.inTransaction(handle -> {
+            try {
+                for (String specifyName : collectionsMapping.keySet()){
+                    List<String> arsNames = collectionsMapping.get(specifyName);
+                    // Get Collection ID: Create or Get
+                    int collectionId = jdbi.onDemand(MappingRepository.class).addCollectionMapping(specifyName);
+                    for (String arsName : arsNames){
+                        // Get ARS Collection ID: Create or Get
+                        int arsID = jdbi.onDemand(MappingRepository.class).addArsCollectionMapping(arsName);
+                        // Add Mapping:
+                        jdbi.onDemand(MappingRepository.class).addCollectionMapping(collectionId, arsID);
+                    }
+                }
+                return Response.status(200).entity("Mappings have been saved").build();
+            } catch (Exception e){
+                handle.rollback();
+                return Response.status(500).entity("There has been an error with the mapping. Error: " + e.getMessage()).build();
+            }
+        });
+    }
 }

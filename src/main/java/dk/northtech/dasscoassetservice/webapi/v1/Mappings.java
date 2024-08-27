@@ -74,7 +74,12 @@ public class Mappings {
         return mappingService.deleteMappings(mappings);
     }
 
-    // CREATE DELETE:
-    // Takes key, values.
-    // uncouples the mapping for those institutions.
+    @POST
+    @Path("/collections")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Add Collections to Mappings", description = "Adds Collections to the mappings table. Takes a JSON Object, the Key should be the Specify Collection name, and the value is an array of Strings representing the different names that that collection has in the ARS.")
+    public Response addCollectionsToMapping(@RequestBody Map<String, List<String>> collectionMappings){
+        return mappingService.addCollectionsToMapping(collectionMappings);
+    }
 }

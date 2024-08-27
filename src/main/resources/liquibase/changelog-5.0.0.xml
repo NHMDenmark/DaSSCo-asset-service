@@ -66,7 +66,7 @@
             </column>
         </createTable>
         
-        <addUniqueConstraint schemaName="mappings" tableName="institutions_mapping" columnNames="institution_ars_id" constraintName="unique_ars_id" />
+        <addUniqueConstraint schemaName="mappings" tableName="institutions_mapping" columnNames="institution_ars_id" constraintName="unique_institution_ars_id" />
         
         <addForeignKeyConstraint
                 baseTableName="institutions_mapping"
@@ -98,6 +98,9 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+
+        <addUniqueConstraint schemaName="mappings" tableName="collections_mapping" columnNames="collection_ars_id" constraintName="unique_collection_ars_id" />
+
         <addForeignKeyConstraint
                 baseTableName="collections_mapping"
                 baseColumnNames="collection_specify_id"

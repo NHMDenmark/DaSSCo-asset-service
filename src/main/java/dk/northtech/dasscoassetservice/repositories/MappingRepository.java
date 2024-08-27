@@ -32,6 +32,24 @@ public interface MappingRepository {
         return getSpecifyInstitution(institution);
     }
 
+    @Transaction
+    default int addCollectionMapping(String specifyName){
+        Optional<Integer> collection = findCollection(specifyName);
+        return collection.orElseGet(() -> addCollection(specifyName));
+    }
+
+    @Transaction
+    default int addArsCollectionMapping(String arsName){
+        Optional<Integer> collection = findArsCollection(arsName);
+        return collection.orElseGet(() -> addArsCollection(arsName));
+    }
+
+    @Transaction
+    default void addCollectionMapping(int collectionId, int arsId){
+        Optional<Integer> mapping = findCollectionMapping(collectionId, arsId);
+        mapping.orElseGet(() -> addCollectionSpecifyArsMapping(collectionId, arsId));
+    }
+
     @SqlQuery("SELECT id FROM mappings.institutions_specify WHERE name = ?")
     Optional<Integer> findInstitution(String specifyName);
 
@@ -77,4 +95,26 @@ public interface MappingRepository {
 
     @SqlQuery("SELECT COUNT(*) FROM mappings.institutions_mapping WHERE institution_specify_id = ?")
     int countMappings(Integer specifyInstitutionId);
+
+    // Collection SQL
+    @SqlQuery("SELECT id FROM mappings.collections_specify WHERE name = ?")
+    Optional<Integer> findCollection(String specifyName);
+
+    @SqlQuery("SELECT id FROM mappings.collections_mapping WHERE collection_specify_id = ? AND collection_ars_id = ?")
+    Optional<Integer> findCollectionMapping(int institutionId, int arsId);
+
+    @SqlQuery("SELECT id FROM mappings.collections_ars WHERE name = ?")
+    Optional<Integer> findArsCollection(String arsName);
+
+    @SqlUpdate("INSERT INTO mappings.collections_ars (name) VALUES (?)")
+    @GetGeneratedKeys
+    int addArsCollection(String arsName);
+
+    @SqlUpdate("INSERT INTO mappings.collections_mapping (collection_specify_id, collection_ars_id) VALUES (?, ?)")
+    @GetGeneratedKeys
+    int addCollectionSpecifyArsMapping(int collectionId, int arsId);
+
+    @SqlUpdate("INSERT INTO mappings.collections_specify (name) VALUES (?)")
+    @GetGeneratedKeys
+    int addCollection(String specifyName);
 }

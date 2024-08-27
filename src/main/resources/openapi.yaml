@@ -1160,6 +1160,32 @@ paths:
                 $ref: '#/components/schemas/DaSSCoError'
       security:
       - dassco-idp: []
+  /v1/mappings/collections:
+    post:
+      tags:
+      - Mappings
+      summary: Add Collections to Mappings
+      description: "Adds Collections to the mappings table. Takes a JSON Object, the\
+        \ Key should be the Specify Collection name, and the value is an array of\
+        \ Strings representing the different names that that collection has in the\
+        \ ARS."
+      operationId: addCollectionsToMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
   /v1/mappings/institutions:
     post:
       tags:
