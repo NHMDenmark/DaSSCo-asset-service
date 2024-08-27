@@ -45,6 +45,11 @@ public interface MappingRepository {
     }
 
     @Transaction
+    default String getArsCollectionMapping(String collection){
+        return getSpecifyCollection(collection);
+    }
+
+    @Transaction
     default void addCollectionMapping(int collectionId, int arsId){
         Optional<Integer> mapping = findCollectionMapping(collectionId, arsId);
         mapping.orElseGet(() -> addCollectionSpecifyArsMapping(collectionId, arsId));
@@ -117,4 +122,11 @@ public interface MappingRepository {
     @SqlUpdate("INSERT INTO mappings.collections_specify (name) VALUES (?)")
     @GetGeneratedKeys
     int addCollection(String specifyName);
+
+    @SqlQuery("SELECT spec.name " +
+            "FROM mappings.collections_specify spec " +
+            "JOIN mappings.collections_mapping map ON spec.id = map.collection_specify_id " +
+            "JOIN mappings.collections_ars ars ON map.collection_ars_id = ars.id " +
+            "WHERE ars.name = ?")
+    String getSpecifyCollection(String arsCollection);
 }

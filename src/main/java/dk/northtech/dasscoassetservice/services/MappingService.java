@@ -113,6 +113,15 @@ public class MappingService {
     }
 
     public Response deleteMappings(Map<String, List<String>> mappings){
+
+        if (mappings.keySet().stream().anyMatch(key -> key == null || key.isEmpty())){
+            return Response.status(400).entity("One or more Specify Institutions are empty strings.").build();
+        }
+
+        if (mappings.values().stream().flatMap(List::stream).anyMatch(value -> value == null || value.isEmpty())){
+            return Response.status(400).entity("One or more ARS Institutions are empty strings.").build();
+        }
+
         jdbi.useTransaction(handle -> {
             for (Map.Entry<String, List<String>> entry : mappings.entrySet()){
                 String specifyInstitution = entry.getKey();
@@ -169,5 +178,18 @@ public class MappingService {
                 return Response.status(500).entity("There has been an error with the mapping. Error: " + e.getMessage()).build();
             }
         });
+    }
+
+    public Response getCollectionMapping(String arsCollection){
+        if (arsCollection == null || arsCollection.isEmpty()){
+            return Response.status(400).entity("Institution is null or empty").build();
+        }
+        String found = jdbi.onDemand(MappingRepository.class).getArsCollectionMapping(arsCollection);
+
+        if (found == null){
+            return Response.status(500).entity("There was no mapping for this ARS Collection").build();
+        } else {
+            return Response.status(200).entity(found).build();
+        }
     }
 }

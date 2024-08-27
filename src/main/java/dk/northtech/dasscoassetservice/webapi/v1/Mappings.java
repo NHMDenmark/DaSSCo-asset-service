@@ -82,4 +82,12 @@ public class Mappings {
     public Response addCollectionsToMapping(@RequestBody Map<String, List<String>> collectionMappings){
         return mappingService.addCollectionsToMapping(collectionMappings);
     }
+
+    @GET
+    @Path("/collections/{arsCollection}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get ARS Collection Mapping", description = "Gets the Specify equivalent of the ARS Collection passed.")
+    public Response getCollectionMapping(@PathParam("arsCollection") String arsCollection){
+        return mappingService.getCollectionMapping(arsCollection);
+    }
 }

@@ -1781,6 +1781,33 @@
         } ]
       }
     },
+    "/v1/mappings/collections/{arsCollection}" : {
+      "get" : {
+        "tags" : [ "Mappings" ],
+        "summary" : "Get ARS Collection Mapping",
+        "description" : "Gets the Specify equivalent of the ARS Collection passed.",
+        "operationId" : "getCollectionMapping",
+        "parameters" : [ {
+          "name" : "arsCollection",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/mappings/institutions/{arsInstitution}" : {
       "get" : {
         "tags" : [ "Mappings" ],
