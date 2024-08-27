@@ -129,4 +129,22 @@ public interface MappingRepository {
             "JOIN mappings.collections_ars ars ON map.collection_ars_id = ars.id " +
             "WHERE ars.name = ?")
     String getSpecifyCollection(String arsCollection);
+
+    @SqlUpdate("UPDATE mappings.collections_specify SET name = ? WHERE id = ?")
+    void updateSpecifyCollectionName(String name, Integer id);
+
+    @SqlUpdate("UPDATE mappings.collections_ars SET name = ? WHERE id = ?")
+    void updateArsCollectionName(String name, Integer id);
+
+    @SqlUpdate("DELETE FROM mappings.collections_mapping WHERE collection_specify_id = ? AND collection_ars_id = ?")
+    void deleteCollectionMapping(Integer specifyId, Integer arsId);
+
+    @SqlUpdate("DELETE FROM mappings.collections_ars WHERE id = ?")
+    void deleteArsCollection(Integer arsId);
+
+    @SqlQuery("SELECT COUNT(*) FROM mappings.collections_mapping WHERE collection_specify_id = ?")
+    int countCollectionMappings(Integer specifyCollectionId);
+
+    @SqlUpdate("DELETE FROM mappings.collections_specify WHERE id = ?")
+    void deleteSpecifyCollection(Integer specifyId);
 }

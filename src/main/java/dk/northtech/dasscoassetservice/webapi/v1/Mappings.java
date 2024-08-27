@@ -90,4 +90,31 @@ public class Mappings {
     public Response getCollectionMapping(@PathParam("arsCollection") String arsCollection){
         return mappingService.getCollectionMapping(arsCollection);
     }
+
+    @PUT
+    @Path("/collections/specify")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Modify Specify Collection", description = "Changes the name for one or more Specify Collections. Takes a Json Object. Keys are the old names, values are the new ones.")
+    public Response updateSpecifyCollections(@RequestBody Map<String, String> collections){
+        return mappingService.updateSpecifyCollections(collections);
+    }
+
+    @PUT
+    @Path("/collections/ars")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Modify ARS Collection", description = "Changes the name for one or more ARS Collections. Takes a JSON Object. Keys are the old names, values are the new ones")
+    public Response updateArsCollections(@RequestBody Map<String, String> collections){
+        return mappingService.updateArsCollections(collections);
+    }
+
+    @DELETE
+    @Path("/collections")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Delete Collection Mapping", description = "Deletes Collection Mappings. Takes a JSON Object. Keys are Specify Collections, values are the ARS Collections that the user wants to remove from the mapping.")
+    public Response deleteCollectionMapping(@RequestBody Map<String, List<String>> mappings){
+        return mappingService.deleteCollectionMappings(mappings);
+    }
 }

@@ -192,4 +192,88 @@ public class MappingService {
             return Response.status(200).entity(found).build();
         }
     }
+
+    public Response updateSpecifyCollections(Map<String, String> collections){
+
+        if (collections.keySet().stream().anyMatch(key -> key == null || key.isEmpty())){
+            return Response.status(400).entity("One or more Keys are null or empty").build();
+        }
+
+        if (collections.values().stream().anyMatch(value -> value == null || value.isEmpty())){
+            return Response.status(400).entity("One or more values are null or empty").build();
+        }
+
+        jdbi.useTransaction(handle -> {
+            for (Map.Entry<String, String> entry : collections.entrySet()){
+                String oldName = entry.getKey();
+                String newName = entry.getValue();
+
+                Optional<Integer> collectionId = jdbi.onDemand(MappingRepository.class).findCollection(oldName);
+
+                collectionId.ifPresent(integer -> jdbi.onDemand(MappingRepository.class).updateSpecifyCollectionName(newName, integer));
+            }
+        });
+
+        return Response.status(200).entity("Specify Collections have been updated").build();
+    }
+
+    public Response updateArsCollections(Map<String, String> collections){
+
+        if (collections.keySet().stream().anyMatch(key -> key == null || key.isEmpty())){
+            return Response.status(400).entity("One or more Keys are null or empty").build();
+        }
+
+        if (collections.values().stream().anyMatch(value -> value == null || value.isEmpty())){
+            return Response.status(400).entity("One or more values are null or empty").build();
+        }
+
+        jdbi.useTransaction(handle -> {
+            for (Map.Entry<String, String> entry : collections.entrySet()){
+                String oldName = entry.getKey();
+                String newName = entry.getValue();
+
+                Optional<Integer> collectionId = jdbi.onDemand(MappingRepository.class).findArsCollection(oldName);
+                collectionId.ifPresent(integer -> jdbi.onDemand(MappingRepository.class).updateArsCollectionName(newName, integer));
+            }
+        });
+
+        return Response.status(200).entity("ARS Collections have been updated").build();
+    }
+
+    public Response deleteCollectionMappings(Map<String, List<String>> mappings){
+
+        if (mappings.keySet().stream().anyMatch(key -> key == null || key.isEmpty())){
+            return Response.status(400).entity("One or more Specify Collections are empty strings.").build();
+        }
+
+        if (mappings.values().stream().flatMap(List::stream).anyMatch(value -> value == null || value.isEmpty())){
+            return Response.status(400).entity("One or more ARS Collections are empty strings.").build();
+        }
+
+        jdbi.useTransaction(handle -> {
+            for (Map.Entry<String, List<String>> entry : mappings.entrySet()){
+                String specifyCollection = entry.getKey();
+                List<String> arsNames = entry.getValue();
+                // Get Specify Collection ID:
+                Optional<Integer> specifyId = jdbi.onDemand(MappingRepository.class).findCollection(specifyCollection);
+                if (specifyId.isPresent()){
+                    for (String arsCollection : arsNames){
+                        // Get ARS Collection ID:
+                        Optional<Integer> arsId = jdbi.onDemand(MappingRepository.class).findArsCollection(arsCollection);
+                        if (arsId.isPresent()){
+                            jdbi.onDemand(MappingRepository.class).deleteCollectionMapping(specifyId.get(), arsId.get());
+                            jdbi.onDemand(MappingRepository.class).deleteArsCollection(arsId.get());
+                        }
+                    }
+                    // check if institutions has any more mappings:
+                    int mappingsLeft = jdbi.onDemand(MappingRepository.class).countCollectionMappings(specifyId.get());
+                    if (mappingsLeft == 0){
+                        jdbi.onDemand(MappingRepository.class).deleteSpecifyCollection(specifyId.get());
+                    }
+                }
+            }
+
+        });
+        return Response.status(200).entity("Mappings have been deleted").build();
+    }
 }

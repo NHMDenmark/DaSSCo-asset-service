@@ -1186,6 +1186,30 @@ paths:
             application/json: {}
       security:
       - dassco-idp: []
+    delete:
+      tags:
+      - Mappings
+      summary: Delete Collection Mapping
+      description: "Deletes Collection Mappings. Takes a JSON Object. Keys are Specify\
+        \ Collections, values are the ARS Collections that the user wants to remove\
+        \ from the mapping."
+      operationId: deleteCollectionMapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
   /v1/mappings/institutions:
     post:
       tags:
@@ -1276,6 +1300,28 @@ paths:
             application/json: {}
       security:
       - dassco-idp: []
+  /v1/mappings/collections/ars:
+    put:
+      tags:
+      - Mappings
+      summary: Modify ARS Collection
+      description: "Changes the name for one or more ARS Collections. Takes a JSON\
+        \ Object. Keys are the old names, values are the new ones"
+      operationId: updateArsCollections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
   /v1/mappings/institutions/ars:
     put:
       tags:
@@ -1284,6 +1330,28 @@ paths:
       description: "Changes the name for one or more ARS Institutions. Takes a JSON\
         \ Object. Keys are the old names, values are the new ones"
       operationId: updateArsInstitutions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+      security:
+      - dassco-idp: []
+  /v1/mappings/collections/specify:
+    put:
+      tags:
+      - Mappings
+      summary: Modify Specify Collection
+      description: "Changes the name for one or more Specify Collections. Takes a\
+        \ Json Object. Keys are the old names, values are the new ones."
+      operationId: updateSpecifyCollections
       requestBody:
         content:
           application/json:
