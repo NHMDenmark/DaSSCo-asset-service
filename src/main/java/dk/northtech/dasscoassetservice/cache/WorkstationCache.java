@@ -28,6 +28,10 @@ public class WorkstationCache {
         this.workstationMap.putIfAbsent(workstation.name(), workstation);
     }
 
+    public void putWorkstationInCache(Workstation workstation){
+        this.workstationMap.put(workstation.name(), workstation);
+    }
+
     public Workstation workstationExists(String workstationName) {
         return workstationMap.get(workstationName);
     }

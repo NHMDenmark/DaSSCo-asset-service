@@ -96,6 +96,6 @@ public class WorkstationService {
 
         workstationRepository.updateWorkstation(newWs);
         // "Put" will replace the existing workstation with the new one, keeping the key.
-        workstationCache.putWorkstationInCacheIfAbsent(newWs);
+        workstationCache.putWorkstationInCache(newWs);
     }
 }
