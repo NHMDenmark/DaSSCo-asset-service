@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.*;
+import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -19,6 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,6 +45,7 @@ public class AssetService {
     private final PreparationTypeCache preparationTypeCache;
     private final RestrictedAccessCache restrictedAccessCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
+    private final FileProxyConfiguration fileProxyConfiguration;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -56,7 +61,8 @@ public class AssetService {
                         PayloadTypeCache payloadTypeCache,
                         StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
-                        RestrictedAccessCache restrictedAccessCache) {
+                        RestrictedAccessCache restrictedAccessCache,
+                        FileProxyConfiguration fileProxyConfiguration) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -71,6 +77,7 @@ public class AssetService {
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
         this.restrictedAccessCache = restrictedAccessCache;
+        this.fileProxyConfiguration = fileProxyConfiguration;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -133,6 +140,16 @@ public class AssetService {
         if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
+
+        // Close the share if open:
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(fileProxyConfiguration.url() + "/shares/assets/" + assetGuid + "/deleteShare"))
+                .header("Authorization", "Bearer " + user.token)
+                .DELETE()
+                .build();
+
+        HttpClient httpClient = HttpClient.newHttpClient();
+
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
