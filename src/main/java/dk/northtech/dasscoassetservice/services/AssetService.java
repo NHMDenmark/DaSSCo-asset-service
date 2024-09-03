@@ -19,10 +19,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -149,13 +151,19 @@ public class AssetService {
                 .build();
 
         HttpClient httpClient = HttpClient.newHttpClient();
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200 || response.statusCode() == 404){
+                Asset asset = optAsset.get();
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
 
-        Asset asset = optAsset.get();
-        rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
-        jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
-
-        // Refresh cache:
-        reloadAssetCache();
+                // Refresh cache:
+                reloadAssetCache();
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean unlockAsset(String assetGuid) {
