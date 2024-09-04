@@ -17,13 +17,16 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.print.attribute.standard.Media;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -34,6 +37,8 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class Assetupdates {
 
     private final AssetService assetService;
+
+    private static final Logger logger = LoggerFactory.getLogger(Assetupdates.class);
 
     @Inject
     public Assetupdates(AssetService assetService) {
@@ -141,12 +146,19 @@ public class Assetupdates {
             , @Context SecurityContext securityContext
             , @QueryParam("allocation_mb") int allocation
             ) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime startTime = LocalDateTime.now();
+        logger.info("POST call to assetmetadata for asset " + asset.asset_guid + " at {}", startTime.format(formatter));
+
         // Added so if the example is empty "", in the Docs the example will appear as the type "string". This converts it to null.
         if (asset.parent_guid != null && asset.parent_guid.equals("string")){
             asset.parent_guid = null;
         }
         Asset createdAsset = this.assetService.persistAsset(asset, UserMapper.from(securityContext), allocation);
         int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
+
+        LocalDateTime endTime = LocalDateTime.now();
+        logger.info("API call completed at: {}. Total time: {} ms", endTime.format(formatter), java.time.Duration.between(startTime, endTime).toMillis());
         return Response.status(httpCode).entity(createdAsset).build();
     }
 

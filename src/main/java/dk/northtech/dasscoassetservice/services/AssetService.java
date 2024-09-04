@@ -26,6 +26,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -696,6 +699,8 @@ public class AssetService {
 
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime databaseCheckStart = LocalDateTime.now();
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if (assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
@@ -703,16 +708,24 @@ public class AssetService {
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
+        LocalDateTime databaseCheckEnd = LocalDateTime.now();
+        logger.info("Database call to check if Asset existed took {}", java.time.Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
+
+        LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateAssetFields(asset);
         validateAsset(asset);
+        LocalDateTime validationEnd = LocalDateTime.now();
+        logger.info("Validation took {}", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
+        LocalDateTime httpInfoStart = LocalDateTime.now();
         asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
-
+        LocalDateTime httpInfoEnd = LocalDateTime.now();
+        logger.info("HTTPInfo creation took {}", java.time.Duration.between(httpInfoStart, httpInfoEnd).toMillis());
         if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);

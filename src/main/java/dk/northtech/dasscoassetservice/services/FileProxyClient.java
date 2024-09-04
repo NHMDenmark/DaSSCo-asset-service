@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,6 +36,7 @@ public class FileProxyClient {
     public HttpInfo prepareWorkDir(HttpShareRequest httpShareRequest, User user) {
         Gson gson = new Gson();
         try {
+            LocalDateTime fileProxyCallStart = LocalDateTime.now();
             httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
             HttpRequest request = HttpRequest.newBuilder()
@@ -44,6 +46,8 @@ public class FileProxyClient {
                     .build();
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            LocalDateTime fileProxyCallEnd = LocalDateTime.now();
+            logger.info("File Proxy call took: {}", java.time.Duration.between(fileProxyCallStart, fileProxyCallEnd).toMillis());
             String body = send.body();
             if (send.statusCode() > 199 && send.statusCode() < 300) {
                 return gson.fromJson(body, HttpInfo.class);
