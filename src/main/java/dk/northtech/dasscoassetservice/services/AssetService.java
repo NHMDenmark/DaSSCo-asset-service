@@ -709,14 +709,14 @@ public class AssetService {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
         LocalDateTime databaseCheckEnd = LocalDateTime.now();
-        logger.info("Database call to check if Asset existed took {}", java.time.Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
+        logger.info("#2: Database call to check if Asset existed took {} ms", java.time.Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
 
         LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateAssetFields(asset);
         validateAsset(asset);
         LocalDateTime validationEnd = LocalDateTime.now();
-        logger.info("Validation took {}", java.time.Duration.between(validationStart, validationEnd).toMillis());
+        logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
@@ -725,16 +725,23 @@ public class AssetService {
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
         LocalDateTime httpInfoEnd = LocalDateTime.now();
-        logger.info("HTTPInfo creation took {}", java.time.Duration.between(httpInfoStart, httpInfoEnd).toMillis());
+        logger.info("#4 HTTPInfo creation took {} ms in total.", java.time.Duration.between(httpInfoStart, httpInfoEnd).toMillis());
         if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
+            LocalDateTime createAssetStart = LocalDateTime.now();
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
 
-        statisticsDataServiceV2.refreshCachedData();
+            LocalDateTime createAssetEnd = LocalDateTime.now();
+            logger.info("#5 Creating the asset took {} ms", java.time.Duration.between(createAssetStart, createAssetEnd).toMillis());
+
+            LocalDateTime refreshCachedDataStart = LocalDateTime.now();
+            statisticsDataServiceV2.refreshCachedData();
+            LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
+            logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 
 //        this.statisticsDataService.addAssetToCache(asset);
 
-
+            LocalDateTime cacheStart = LocalDateTime.now();
             if (asset.digitiser != null && !asset.digitiser.isEmpty()){
                 logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
                 digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser, asset.digitiser));
@@ -766,6 +773,8 @@ public class AssetService {
                     restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
                 }
             }
+            LocalDateTime cacheEnd = LocalDateTime.now();
+            logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
 
         } else {
             //Do not persist azzet if share wasnt created
@@ -861,10 +870,16 @@ public class AssetService {
     }
 
     public Optional<Asset> checkUserRights(String assetGuid, User user){
+        LocalDateTime getAssetStart = LocalDateTime.now();
         Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+        LocalDateTime getAssetEnd = LocalDateTime.now();
+        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", java.time.Duration.between(getAssetStart, getAssetEnd).toMillis());
         if (optionalAsset.isPresent()){
             Asset found = optionalAsset.get();
+            LocalDateTime checkValidationStart = LocalDateTime.now();
             rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+            LocalDateTime checkValidationEnd = LocalDateTime.now();
+            logger.info("#4.1.3 Validating Asset took {} ms", java.time.Duration.between(checkValidationStart, checkValidationEnd).toMillis());
         }
         return optionalAsset;
     }

@@ -148,7 +148,7 @@ public class Assetupdates {
             ) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime startTime = LocalDateTime.now();
-        logger.info("POST call to assetmetadata for asset " + asset.asset_guid + " at {}", startTime.format(formatter));
+        logger.info("#1: POST call to assetmetadata for asset " + asset.asset_guid + " at {}", startTime.format(formatter));
 
         // Added so if the example is empty "", in the Docs the example will appear as the type "string". This converts it to null.
         if (asset.parent_guid != null && asset.parent_guid.equals("string")){
