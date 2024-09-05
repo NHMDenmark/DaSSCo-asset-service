@@ -45,7 +45,6 @@ public class FileProxyClient {
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json));
             HttpRequest request = requestBuilder.build();
-            System.out.println(request.headers());
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             LocalDateTime fileProxyCallEnd = LocalDateTime.now();

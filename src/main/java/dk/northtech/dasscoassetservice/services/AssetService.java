@@ -153,7 +153,7 @@ public class AssetService {
                 .DELETE()
                 .build();
 
-        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpClient httpClient = createHttpClient();
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 404){
@@ -919,6 +919,11 @@ public class AssetService {
             value = "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    // For Mocking.
+    public HttpClient createHttpClient() {
+        return HttpClient.newHttpClient();
     }
 
 }
