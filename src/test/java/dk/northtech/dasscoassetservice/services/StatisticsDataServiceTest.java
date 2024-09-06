@@ -141,7 +141,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void calucalateYearTotal() {
-        String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
+        DateTimeFormatter nf = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
+        String currentDate = nf.format(Instant.now());
 
         Asset createAsset = getTestAsset("year-total-asset", "institution_1", 6);
         assetService.persistAsset(createAsset, user,11);
