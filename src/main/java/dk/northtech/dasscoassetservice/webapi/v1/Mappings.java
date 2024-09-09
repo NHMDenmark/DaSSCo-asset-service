@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.services.MappingService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Hidden
 @Component
 @Path("/v1/mappings")
 @Tag(name = "Mappings", description = "Institutions and Collections may have many names in ARS. They need to be mapped to the names used in Specify. These endpoints save and retrieve the mappings for the Specify Adapter.")

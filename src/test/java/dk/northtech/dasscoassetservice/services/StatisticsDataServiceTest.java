@@ -46,6 +46,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
         DateTimeFormatter nf = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
         String currentDate = nf.format(Instant.now());
+        System.out.println(currentDate);
         long duration = ChronoUnit.DAYS.between(startDate, Instant.now()) + 1; // plus 1 as it doesn't count the first date as "between"
 
         Map<GraphType, Map<String, GraphData>> finalData = statisticsDataServicev2.getCachedGraphData(GraphView.WEEK);
@@ -57,7 +58,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assertThat(finalData.get(incremental).size()).isEqualTo(duration);
 
         Map.Entry<String, GraphData> firstEntry = finalData.get(incremental).entrySet().iterator().next();
-        assertThat(firstEntry.getKey()).isEqualTo(getDateFormatter("dd-MMM-yyyy").format(startDate));
+        assertThat(firstEntry.getKey()).isEqualTo(nf.format(startDate));
     }
 
     @Test
