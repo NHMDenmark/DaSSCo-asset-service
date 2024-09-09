@@ -44,7 +44,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(createAsset, user,11);
 
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
-        String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
+        DateTimeFormatter nf = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
+        String currentDate = nf.format(Instant.now());
         long duration = ChronoUnit.DAYS.between(startDate, Instant.now()) + 1; // plus 1 as it doesn't count the first date as "between"
 
         Map<GraphType, Map<String, GraphData>> finalData = statisticsDataServicev2.getCachedGraphData(GraphView.WEEK);
@@ -83,7 +84,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void calculcateCachedWeekWithNewAsset() {
-        String currentDate = getDateFormatter("dd-MMM-yyyy").format(Instant.now());
+        DateTimeFormatter nf = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
+        String currentDate = nf.format(Instant.now());
         Asset createAsset = getTestAsset("week-cached-asset", "institution_1", 2);
             assetService.persistAsset(createAsset, user,11);
 
@@ -107,7 +109,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void calculcateCachedYearWithNewAsset() {
-        String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
+        DateTimeFormatter nf = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
+        String currentDate = nf.format(Instant.now());
 
         Asset createAsset = getTestAsset("year-cached-asset", "institution_1", 4);
         assetService.persistAsset(createAsset,user,11);
@@ -138,7 +141,8 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
 
     @Test
     public void calucalateYearTotal() {
-        String currentDate = getDateFormatter("MMM yyyy").format(Instant.now());
+        DateTimeFormatter nf = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
+        String currentDate = nf.format(Instant.now());
 
         Asset createAsset = getTestAsset("year-total-asset", "institution_1", 6);
         assetService.persistAsset(createAsset, user,11);

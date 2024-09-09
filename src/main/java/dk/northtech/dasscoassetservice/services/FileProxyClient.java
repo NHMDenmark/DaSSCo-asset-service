@@ -40,11 +40,11 @@ public class FileProxyClient {
             logger.info("#4: Call to FileProxy (CreateShareInternal)");
             httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/"+httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
+                    .POST(HttpRequest.BodyPublishers.ofString(json));
+            HttpRequest request = requestBuilder.build();
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             LocalDateTime fileProxyCallEnd = LocalDateTime.now();

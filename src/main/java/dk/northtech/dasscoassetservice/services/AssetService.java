@@ -9,8 +9,9 @@ import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -26,9 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,6 +49,7 @@ public class AssetService {
     private final RestrictedAccessCache restrictedAccessCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
+    private final ObservationRegistry observationRegistry;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -67,7 +66,8 @@ public class AssetService {
                         StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
                         RestrictedAccessCache restrictedAccessCache,
-                        FileProxyConfiguration fileProxyConfiguration) {
+                        FileProxyConfiguration fileProxyConfiguration,
+                        ObservationRegistry observationRegistry) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -83,6 +83,7 @@ public class AssetService {
         this.preparationTypeCache = preparationTypeCache;
         this.restrictedAccessCache = restrictedAccessCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
+        this.observationRegistry = observationRegistry;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -153,7 +154,7 @@ public class AssetService {
                 .DELETE()
                 .build();
 
-        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpClient httpClient = createHttpClient();
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 404){
@@ -701,10 +702,13 @@ public class AssetService {
     public Asset persistAsset(Asset asset, User user, int allocation) {
         //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime databaseCheckStart = LocalDateTime.now();
-        Optional<Asset> assetOpt = getAsset(asset.asset_guid);
-        if (assetOpt.isPresent()) {
-            throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
-        }
+        Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
+            Optional<Asset> assetOpt = getAsset(asset.asset_guid);
+            if (assetOpt.isPresent()) {
+                throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
+            }
+        });
+
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
@@ -719,7 +723,9 @@ public class AssetService {
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
-        asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+        Observation.createNotStarted("persist:openShareOnFP", observationRegistry).observe(()->{
+            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+        });
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
@@ -728,9 +734,10 @@ public class AssetService {
         logger.info("#4 HTTPInfo creation took {} ms in total.", java.time.Duration.between(httpInfoStart, httpInfoEnd).toMillis());
         if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
             LocalDateTime createAssetStart = LocalDateTime.now();
-            jdbi.onDemand(AssetRepository.class)
-                    .createAsset(asset);
-
+            Observation.createNotStarted("persist:create-asset", observationRegistry).observe(() -> {
+                jdbi.onDemand(AssetRepository.class)
+                        .createAsset(asset);
+            });
             LocalDateTime createAssetEnd = LocalDateTime.now();
             logger.info("#5 Creating the asset took {} ms", java.time.Duration.between(createAssetStart, createAssetEnd).toMillis());
 
@@ -919,6 +926,11 @@ public class AssetService {
             value = "\"" + value.replace("\"", "\"\"") + "\"";
         }
         return value;
+    }
+
+    // For Mocking.
+    public HttpClient createHttpClient() {
+        return HttpClient.newHttpClient();
     }
 
 }

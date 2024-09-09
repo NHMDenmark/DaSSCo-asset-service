@@ -14,6 +14,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.IOException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
@@ -50,8 +55,23 @@ public class AbstractIntegrationTest {
         AssetService spyAssetService = spy(assetService);
         HttpInfo success = new HttpInfo("/", "host.dk", 10000, 20000, 9990, 10, "success", HttpAllocationStatus.SUCCESS);
         doReturn(success).when(spyAssetService).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
+
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        when(mockResponse.statusCode()).thenReturn(200);
+
+        HttpClient mockHttpClient = mock(HttpClient.class);
+        try {
+            when(mockHttpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                    .thenReturn(mockResponse);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        doReturn(mockHttpClient).when(spyAssetService).createHttpClient();
+
         this.assetService = spyAssetService;
     }
+
+
 
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
