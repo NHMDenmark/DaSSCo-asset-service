@@ -742,7 +742,7 @@ public class AssetService {
             logger.info("#5 Creating the asset took {} ms", java.time.Duration.between(createAssetStart, createAssetEnd).toMillis());
 
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-            statisticsDataServiceV2.refreshCachedData();
+//            statisticsDataServiceV2.refreshCachedData();
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
             logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 
@@ -788,7 +788,7 @@ public class AssetService {
             return asset;
         }
 
-        statisticsDataServiceV2.refreshCachedData();
+//        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataService.addAssetToCache(asset);
 
         return asset;
