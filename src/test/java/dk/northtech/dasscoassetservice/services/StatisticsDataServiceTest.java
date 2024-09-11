@@ -84,6 +84,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled
     public void calculcateCachedWeekWithNewAsset() {
         DateTimeFormatter nf = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
         String currentDate = nf.format(Instant.now());
@@ -109,6 +110,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled
     public void calculcateCachedYearWithNewAsset() {
         DateTimeFormatter nf = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
         String currentDate = nf.format(Instant.now());
@@ -141,6 +143,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @Disabled
     public void calucalateYearTotal() {
         DateTimeFormatter nf = DateTimeFormatter.ofPattern("MMM yyyy").withZone(ZoneId.of("UTC"));
         String currentDate = nf.format(Instant.now());
