@@ -11,6 +11,8 @@ import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -26,8 +28,9 @@ public class StatisticsDataRepository {
     public StatisticsDataRepository(Jdbi jdbi) {
         this.jdbi = jdbi;
     }
-
+    private static final Logger logger = LoggerFactory.getLogger(StatisticsDataRepository.class);
     public List<StatisticsData> getGraphData(long startDate, long endDate) {
+        logger.info("Start getting statistics from database");
         String sql =
             """
                 SELECT * from cypher('dassco', $$
@@ -42,7 +45,7 @@ public class StatisticsDataRepository {
                     $$, #params) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
             """;
 
-        return jdbi.withHandle(handle -> {
+        List<StatisticsData> graphData = jdbi.withHandle(handle -> {
             AgtypeMap dateParam = new AgtypeMapBuilder()
                     .add("startDate", startDate)
                     .add("endDate", endDate)
@@ -50,16 +53,18 @@ public class StatisticsDataRepository {
             Agtype agtype = AgtypeFactory.create(dateParam);
             handle.execute(DBConstants.AGE_BOILERPLATE);
             return handle.createQuery(sql)
-                .bind("params", agtype)
-                .map((rs, ctx) -> new StatisticsData(
-                        rs.getString("institute_name"),
-                        rs.getString("pipeline_name"),
-                        rs.getString("workstation_name"),
-                        rs.getLong("created_date"),
-                        rs.getInt("specimens")
-                ))
-                .list();
+                    .bind("params", agtype)
+                    .map((rs, ctx) -> new StatisticsData(
+                            rs.getString("institute_name"),
+                            rs.getString("pipeline_name"),
+                            rs.getString("workstation_name"),
+                            rs.getLong("created_date"),
+                            rs.getInt("specimens")
+                    ))
+                    .list();
         });
+        logger.info("End getting statistics from database");
+        return graphData;
     }
 
     public List<StatisticsData> testNewSql(long startDate, long endDate) {
