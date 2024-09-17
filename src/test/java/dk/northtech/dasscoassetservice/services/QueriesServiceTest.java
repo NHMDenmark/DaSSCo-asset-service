@@ -92,6 +92,47 @@ class QueriesServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    public void testParentGuidQuery() {
+        Optional<Institution> institution = institutionService.getIfExists("FNOOP");
+        if (institution.isEmpty()) {
+            institutionService.createInstitution(new Institution("FNOOP"));
+            pipelineService.persistPipeline(new Pipeline("fnoopyline", "FNOOP"), "FNOOP");
+            collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
+            collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
+        }
+
+        Asset parentAsset = getTestAsset("asset_parent", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        assetService.persistAsset(parentAsset, user, 11);
+        Asset childAsset = getTestAsset("asset_child", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        childAsset.parent_guid = parentAsset.asset_guid;
+        assetService.persistAsset(childAsset, user, 11);
+        Asset normalAsset = getTestAsset("asset_standard", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        assetService.persistAsset(normalAsset, user, 11);
+
+        List<QueriesReceived> queries = new LinkedList<QueriesReceived>(Arrays.asList(
+            new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
+                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+                    new QueryWhere("asset_guid", Arrays.asList(
+                            new QueryInner("CONTAINS", "standard", QueryDataType.STRING)
+                    )),
+                    new QueryWhere("parent_guid", Arrays.asList(
+                            new QueryInner("CONTAINS", "parent", QueryDataType.STRING)
+                    ))
+                )))
+            )))
+        ));
+
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200, user);
+        assertThat(assets.size()).isAtLeast(2);
+        boolean parentFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(parentAsset.asset_guid));
+        boolean childFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(childAsset.asset_guid));
+        boolean standardFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(normalAsset.asset_guid));
+        assertThat(parentFound).isFalse();
+        assertThat(childFound).isTrue();
+        assertThat(standardFound).isTrue();
+    }
+
+    @Test
     public void testingUserEvents() {
         Optional<Institution> institution = institutionService.getIfExists("FNOOP");
         if (institution.isEmpty()) {

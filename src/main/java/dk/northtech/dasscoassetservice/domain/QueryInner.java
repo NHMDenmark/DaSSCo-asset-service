@@ -53,6 +53,10 @@ public class QueryInner {
             }
         }
 
+        if (property.equalsIgnoreCase("parent_guid")) {
+            return "toLower(parent.asset_guid" + ") " + operator + " toLower('" + value + "')";
+        }
+
         return "toLower(" + match + property + ") " + operator + " toLower('" + value + "')";
     }
 }

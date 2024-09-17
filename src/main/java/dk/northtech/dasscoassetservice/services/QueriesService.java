@@ -40,18 +40,19 @@ public class QueriesService {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                     , $$
-                         MATCH (a:Asset) ${asset:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                         MATCH (e:Event)<-[:CHANGED_BY]-(a)
-                         MATCH (u:User)<-[:INITIATED_BY]-(e)
-                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         ${instCollAccess:-}
-                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
-                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-
+                        MATCH (a:Asset)
+                        ${asset:-}
+                        MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                        MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                        MATCH (u:User)<-[:INITIATED_BY]-(e)
+                        ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                        MATCH (i:Institution)<-[:BELONGS_TO]-(a)
+                        ${instCollAccess:-}
+                        OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
+                        OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
+                        OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
+                        ${childOf:-OPTIONAL MATCH (a)-[:CHILD_OF]->(parent:Asset)}
+                      
                           RETURN a.asset_guid
                               , a.asset_pid
                               , a.status
@@ -63,7 +64,7 @@ public class QueriesService {
                               , a.asset_taken_date
                               , a.internal_status
                               , a.asset_locked
-                              , pa.asset_guid AS parent_guid
+                              , parent.asset_guid AS parent_guid
                               , a.restricted_access
                               , a.tags
                               , a.error_message
@@ -124,7 +125,7 @@ public class QueriesService {
                          OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
                          OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         ${childOf:-OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)}
                          RETURN count(DISTINCT a) as count
                          LIMIT ${limit:-200}
                       $$)
@@ -140,6 +141,7 @@ public class QueriesService {
 
     public Map<String, List<String>> getNodeProperties() {
         Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        properties.get("Asset").add("parent_guid");
         properties.get("Asset").addAll(propertiesTimestamps);
         properties.get("Asset").addAll(propertiesDigitiser);
         return properties;
@@ -235,11 +237,25 @@ public class QueriesService {
         for (Query query: queryReceived.query) {
             if (query.select.equalsIgnoreCase("Asset")) { // a
                 String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
+
                 if (!StringUtils.isBlank(eventTimestamps)) {
                     whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
                 }
+
                 String where = joinFields(query.where, "a");
-                if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
+                Optional<QueryWhere> parentGuid = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).findFirst();
+
+                if (parentGuid.isPresent()) { // Asset query has to look very different if we're querying the parent_guid
+                    String optionalMatch = "OPTIONAL MATCH (a)-[:CHILD_OF]->(parent:Asset)";
+                    String with = "WITH a, parent";
+                    String finalWhere = String.join("\n", optionalMatch, with, "WHERE (" + where + ")");
+                    if (!StringUtils.isBlank(where)) {
+                        whereMap.put("asset", finalWhere);
+                        whereMap.put("childOf", "");
+                    }
+                } else {
+                    if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
+                }
             }
             if (query.select.equalsIgnoreCase("Institution")) { // i
                 instutionString = joinFields(query.where, "i");
