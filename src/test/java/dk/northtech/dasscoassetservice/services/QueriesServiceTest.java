@@ -109,7 +109,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         Asset normalAsset = getTestAsset("asset_standard", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(normalAsset, user, 11);
 
-        List<QueriesReceived> queries = new LinkedList<QueriesReceived>(Arrays.asList(
+        List<QueriesReceived> emptyChildQuery = new LinkedList<QueriesReceived>(Arrays.asList(
             new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
                 new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
                     new QueryWhere("asset_guid", Arrays.asList(
@@ -122,14 +122,30 @@ class QueriesServiceTest extends AbstractIntegrationTest {
             )))
         ));
 
-        List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200, user);
-        assertThat(assets.size()).isAtLeast(2);
+        List<Asset> assets = this.queriesService.getAssetsFromQuery(emptyChildQuery, 200, user);
+        assertThat(assets.size()).isEqualTo(0);
+
+        List<QueriesReceived> childQuery = new LinkedList<QueriesReceived>(Arrays.asList(
+                new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
+                        new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
+                                new QueryWhere("asset_guid", Arrays.asList(
+                                        new QueryInner("CONTAINS", "child", QueryDataType.STRING)
+                                )),
+                                new QueryWhere("parent_guid", Arrays.asList(
+                                        new QueryInner("CONTAINS", "parent", QueryDataType.STRING)
+                                ))
+                        )))
+                )))
+        ));
+
+        List<Asset> childAssets = this.queriesService.getAssetsFromQuery(childQuery, 200, user);
+        assertThat(childAssets.size()).isAtLeast(1);
         boolean parentFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(parentAsset.asset_guid));
         boolean childFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(childAsset.asset_guid));
         boolean standardFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase(normalAsset.asset_guid));
         assertThat(parentFound).isFalse();
+        assertThat(standardFound).isFalse();
         assertThat(childFound).isTrue();
-        assertThat(standardFound).isTrue();
     }
 
     @Test

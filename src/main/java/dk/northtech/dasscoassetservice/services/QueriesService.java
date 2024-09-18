@@ -48,10 +48,11 @@ public class QueriesService {
                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                         ${instCollAccess:-}
+                        ${childOfOptional:-OPTIONAL} MATCH (a)-[:CHILD_OF]->(parent:Asset)
+                        ${childOf:-}
                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                        ${childOf:-OPTIONAL MATCH (a)-[:CHILD_OF]->(parent:Asset)}
                       
                           RETURN a.asset_guid
                               , a.asset_pid
@@ -122,10 +123,11 @@ public class QueriesService {
                          ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
                          ${instCollAccess:-}
+                        ${childOfOptional:-OPTIONAL} MATCH (a)-[:CHILD_OF]->(parent:Asset)
+                        ${childOf:-}
                          OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
                          OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
                          OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                         ${childOf:-OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)}
                          RETURN count(DISTINCT a) as count
                          LIMIT ${limit:-200}
                       $$)
@@ -242,20 +244,16 @@ public class QueriesService {
                     whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
                 }
 
-                String where = joinFields(query.where, "a");
-                Optional<QueryWhere> parentGuid = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).findFirst();
+                List<QueryWhere> parentGuid = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).toList();
 
-                if (parentGuid.isPresent()) { // Asset query has to look very different if we're querying the parent_guid
-                    String optionalMatch = "OPTIONAL MATCH (a)-[:CHILD_OF]->(parent:Asset)";
-                    String with = "WITH a, parent";
-                    String finalWhere = String.join("\n", optionalMatch, with, "WHERE (" + where + ")");
-                    if (!StringUtils.isBlank(where)) {
-                        whereMap.put("asset", finalWhere);
-                        whereMap.put("childOf", "");
-                    }
-                } else {
-                    if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
+                if (!parentGuid.isEmpty()) { // Asset query has to look very different if we're querying the parent_guid
+                    whereMap.put("childOfOptional", ""); // no longer optional
+                    String childOfWhere = joinFields(parentGuid, "parent");
+                    whereMap.put("childOf", "WHERE (" + childOfWhere + ")");
+                    query.where.removeAll(parentGuid);
                 }
+                String where = joinFields(query.where, "a");
+                if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
             }
             if (query.select.equalsIgnoreCase("Institution")) { // i
                 instutionString = joinFields(query.where, "i");
