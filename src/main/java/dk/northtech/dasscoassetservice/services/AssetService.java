@@ -743,7 +743,7 @@ public class AssetService {
 
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
             Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
-            statisticsDataServiceV2.refreshCachedData();
+                //statisticsDataServiceV2.refreshCachedData();
             });
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
             logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
