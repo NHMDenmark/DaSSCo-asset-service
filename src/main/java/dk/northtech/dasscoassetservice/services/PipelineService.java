@@ -52,7 +52,7 @@ public class PipelineService {
         Pipeline pipe = new Pipeline(pipeline.name(), institutionName);
 
         pipelineRepository.persistPipeline(pipe);
-        pipelineCache.putPipelineInCache(pipe);
+        pipelineCache.putPipelineInCacheIfAbsent(pipe);
 
         return pipeline;
     }

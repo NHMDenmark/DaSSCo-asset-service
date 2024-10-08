@@ -24,5 +24,10 @@ export class AuthService {
     this.oidcSecurityService.authorize();
   }
 
+  username$: Observable<string | undefined>
+    = this.oidcSecurityService.userData$.pipe(
+      map(data => data.userData.preferred_username)
+    )
+
 }
 

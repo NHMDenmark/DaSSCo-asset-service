@@ -30,6 +30,14 @@ public class QueryInner {
 
     public String toBasicQueryString(String match, String property, QueryDataType dataType) {
         match = match.concat(".");
+
+        if (match.contains("c")) { // is collection name, which means the value is sent as "inst_name.coll_name"
+            String[] splitValue = value.split("\\.");
+            if (splitValue.length > 1) {
+                value = splitValue[1];
+            }
+        }
+
         if (dataType.equals(LIST)) {
              return value + "'" + " IN " + match + property;
         }
@@ -44,6 +52,11 @@ public class QueryInner {
                 return  match + property + " " + operator + " " + value; // no '' on timestamps
             }
         }
+
+        if (match.contains("parent")) {
+            return "toLower(" + match + "asset_guid" + ") " + operator + " toLower('" + value + "')";
+        }
+
         return "toLower(" + match + property + ") " + operator + " toLower('" + value + "')";
     }
 }

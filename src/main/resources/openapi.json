@@ -28,8 +28,14 @@
     "name" : "Institutions",
     "description" : "Endpoints related to institutions"
   }, {
+    "name" : "Log Files",
+    "description" : "Endpoints for getting log files"
+  }, {
     "name" : "Pipelines",
     "description" : "Endpoints related to institution pipelines"
+  }, {
+    "name" : "Queries",
+    "description" : "Endpoints related to querying function for statements"
   }, {
     "name" : "Specimens",
     "description" : "Endpoints related to collection specimens"
@@ -38,6 +44,94 @@
     "description" : "Endpoints related to institutions workstations"
   } ],
   "paths" : {
+    "/v1/assets/readaccessforcsv" : {
+      "post" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Create CSV String for Multiple Assets",
+        "description" : "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.",
+        "operationId" : "CsvMultipleAssets",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/readaccessforzip" : {
+      "post" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Check Read Access For Zip File Creation",
+        "description" : "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.",
+        "operationId" : "ZipMultipleAssets",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assets/readaccess" : {
+      "post" : {
+        "tags" : [ "Assets" ],
+        "summary" : "Get Access Permission",
+        "description" : "Checks if User has access or not to certain assets.",
+        "operationId" : "checkAccess",
+        "parameters" : [ {
+          "name" : "assetGuid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assets/statusList" : {
       "get" : {
         "tags" : [ "Assets" ],
@@ -281,11 +375,65 @@
         } ]
       }
     },
+    "/v1/assetgroups/updategroup/{groupName}/addAssets" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Add Assets to Asset Group",
+        "description" : "Adds assets to the asset group.",
+        "operationId" : "addAssetsToAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/assetgroups/createassetgroup" : {
       "post" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Create Asset Group",
-        "description" : "Takes a Group Name and a List of Assets",
+        "description" : "Takes a Group Name and a List of Assets. User needs at least read role on the assets to create an asset_group",
         "operationId" : "createAssetGroup",
         "requestBody" : {
           "content" : {
@@ -319,7 +467,7 @@
       "delete" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Delete Asset Groups",
-        "description" : "Deletes an Asset Group, takes the group name.",
+        "description" : "Deletes an Asset Group, using the Asset Group name. Only the user that created the group can delete it.",
         "operationId" : "deleteAssetGroup",
         "parameters" : [ {
           "name" : "groupName",
@@ -352,7 +500,7 @@
       "get" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "Get Asset Group",
-        "description" : "Takes a Group Name and returns the asset metadata of assets in that group",
+        "description" : "Takes a Group Name and returns the asset metadata of assets in that group. User needs to have access to the Asset Group.",
         "operationId" : "getAssetGroup",
         "parameters" : [ {
           "name" : "groupName",
@@ -394,7 +542,7 @@
       "get" : {
         "tags" : [ "Asset Groups" ],
         "summary" : "List Asset Groups",
-        "description" : "Returns a list of the existing Asset Groups",
+        "description" : "Returns a list of the existing Asset Groups, only those the user has permission to see.",
         "operationId" : "getListAssetGroup",
         "responses" : {
           "200" : {
@@ -424,12 +572,154 @@
         } ]
       }
     },
-    "/v1/assetgroups/updategroup/{groupName}" : {
+    "/v1/assetgroups/owned" : {
+      "get" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "List Asset Groups",
+        "description" : "Returns a list of the existing Asset Groups, only those the user has permission to see.",
+        "operationId" : "getOwnListAssetGroup",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/grantAccess/{groupName}" : {
       "put" : {
         "tags" : [ "Asset Groups" ],
-        "summary" : "Update Asset Group",
-        "description" : "Updates the assets in an asset group.",
-        "operationId" : "updateAssetGroup",
+        "summary" : "Grant Access to Asset Group",
+        "description" : "Gives access to other users to the Asset Group. Users have to have permission to see the assets in the Asset Group",
+        "operationId" : "grantAccessToAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/updategroup/{groupName}/removeAssets" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Remove Assets from Asset Group",
+        "description" : "Removes assets from the asset group.",
+        "operationId" : "removeAssetFromAssetGroup",
+        "parameters" : [ {
+          "name" : "groupName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssetGroup"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/assetgroups/revokeAccess/{groupName}" : {
+      "put" : {
+        "tags" : [ "Asset Groups" ],
+        "summary" : "Revoke Access to Asset Group",
+        "description" : "Revokes access to other users to the Asset Group.",
+        "operationId" : "revokeAccessToAssetGroup",
         "parameters" : [ {
           "name" : "groupName",
           "in" : "path",
@@ -991,6 +1281,39 @@
         } ]
       }
     },
+    "/v1/caches/digitisers" : {
+      "get" : {
+        "tags" : [ "Caches" ],
+        "summary" : "Get Digitiser Cache",
+        "description" : "Lists the cached digitisers",
+        "operationId" : "getDigitiserCache",
+        "responses" : {
+          "200" : {
+            "description" : "Successful operation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : true
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/collections" : {
       "get" : {
         "tags" : [ "Collections" ],
@@ -1297,6 +1620,64 @@
         } ]
       }
     },
+    "/logs/{fileName}" : {
+      "get" : {
+        "tags" : [ "Log Files" ],
+        "summary" : "Get a log file",
+        "description" : "Get a log file by name, use list endpoint to see names.",
+        "operationId" : "getFile",
+        "parameters" : [ {
+          "name" : "fileName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Returns the file."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/logs" : {
+      "get" : {
+        "tags" : [ "Log Files" ],
+        "summary" : "List logfiles",
+        "description" : "List all logfiles in the log directory",
+        "operationId" : "listLogs",
+        "responses" : {
+          "200" : {
+            "description" : "Returns the file."
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
     "/v1/institutions/{institutionName}/pipelines" : {
       "get" : {
         "tags" : [ "Pipelines" ],
@@ -1363,6 +1744,320 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Pipeline"
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/saved/{title}" : {
+      "delete" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Deletes a user's saved query",
+        "description" : "Deletes the user's query from the title.",
+        "operationId" : "deleteSavedQuery",
+        "parameters" : [ {
+          "name" : "title",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/assetcount/{limit}" : {
+      "post" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Get the number of assets for the query",
+        "description" : "Get the count for the number of assets matching the query",
+        "operationId" : "getAssetCount",
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/QueriesReceived"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/nodes" : {
+      "get" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Get node properties",
+        "description" : "Collects all the properties of all the Nodes.",
+        "operationId" : "getNodeProperties",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/{limit}" : {
+      "post" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Get assets from query",
+        "description" : "Selects all assets based on the received queries.",
+        "operationId" : "getNodeProperties_1",
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/components/schemas/QueriesReceived"
+                }
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/saved" : {
+      "get" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Gets the user's saved queries",
+        "description" : "Gets the queries the user has saved.",
+        "operationId" : "getSavedQueries",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/save" : {
+      "post" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Save query to user",
+        "description" : "Saves a query and links it to the user.",
+        "operationId" : "saveQuery",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SavedQuery"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
+                }
+              }
+            }
+          },
+          "400-599" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DaSSCoError"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "dassco-idp" : [ ]
+        } ]
+      }
+    },
+    "/v1/queries/saved/update/{title}" : {
+      "post" : {
+        "tags" : [ "Queries" ],
+        "summary" : "Updates a user's saved query",
+        "description" : "Updates a query the user has saved.",
+        "operationId" : "updateSavedQuery",
+        "parameters" : [ {
+          "name" : "title",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SavedQuery"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Specimen"
+                  }
                 }
               }
             }
@@ -1561,6 +2256,9 @@
             "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
           },
           "errorMessage" : {
+            "type" : "string"
+          },
+          "body" : {
             "type" : "string"
           }
         }
@@ -1908,6 +2606,18 @@
               "description" : "List of assets in the group",
               "example" : "[\"Asset_1\",\"Asset_2\"]"
             }
+          },
+          "hasAccess" : {
+            "type" : "array",
+            "description" : "Users with access to the Asset Group",
+            "items" : {
+              "type" : "string",
+              "description" : "Users with access to the Asset Group"
+            }
+          },
+          "groupCreator" : {
+            "type" : "string",
+            "description" : "User who created the Asset Group originially"
           }
         }
       },
@@ -2093,6 +2803,17 @@
             "description" : "Date and time that the error happened",
             "format" : "date-time",
             "example" : "2023-05-24T00:00:00Z"
+          },
+          "event_name" : {
+            "type" : "string",
+            "description" : "What happened to the asset",
+            "example" : "UPDATE_ASSET",
+            "enum" : [ "CREATE_ASSET", "UPDATE_ASSET", "AUDIT_ASSET", "DELETE_ASSET", "CREATE_ASSET_METADATA", "UPDATE_ASSET_METADATA", "BULK_UPDATE_ASSET_METADATA", "AUDIT_ASSET_METADATA", "DELETE_ASSET_METADATA", "METADATA_TAKEN", "ASSET_FINALISED" ]
+          },
+          "writeAccess" : {
+            "type" : "boolean",
+            "description" : "Whether the current user has write access. Used in frontend operations.",
+            "example" : true
           }
         }
       },
@@ -2334,6 +3055,102 @@
             "type" : "string",
             "description" : "The name of the institution which owns and digitised the specimen",
             "example" : "test-institution"
+          }
+        }
+      },
+      "QueriesReceived" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "The id of the overall statement. String for ease of JSON parsing in frontend.",
+            "example" : "1"
+          },
+          "query" : {
+            "type" : "array",
+            "description" : "The statements of the entire query",
+            "example" : "Asset where xyz",
+            "items" : {
+              "$ref" : "#/components/schemas/Query"
+            }
+          }
+        }
+      },
+      "Query" : {
+        "type" : "object",
+        "properties" : {
+          "select" : {
+            "type" : "string",
+            "description" : "The selection of the statement",
+            "example" : "\"Institution\""
+          },
+          "where" : {
+            "type" : "array",
+            "description" : "The where statements of the query",
+            "example" : "or name = \"test_name\"",
+            "items" : {
+              "$ref" : "#/components/schemas/QueryWhere"
+            }
+          }
+        },
+        "description" : "The statements of the entire query",
+        "example" : "Asset where xyz"
+      },
+      "QueryInner" : {
+        "type" : "object",
+        "properties" : {
+          "operator" : {
+            "type" : "string",
+            "description" : "The operator type",
+            "example" : "="
+          },
+          "value" : {
+            "type" : "string",
+            "description" : "The field on the right-hand side of the statement",
+            "example" : "\"test_name\""
+          },
+          "dataType" : {
+            "type" : "string",
+            "description" : "The data type for the values of the inner where statements of the queries.",
+            "example" : "date",
+            "enum" : [ "DATE", "NUMBER", "ENUM", "STRING", "LIST" ]
+          }
+        },
+        "description" : "The initial and possible \"or\" queries for this property",
+        "example" : "CONTAINS \"nam\" or ENDS WITH \"e\""
+      },
+      "QueryWhere" : {
+        "type" : "object",
+        "properties" : {
+          "property" : {
+            "type" : "string",
+            "description" : "The field on the left-hand side of the statement",
+            "example" : "name"
+          },
+          "fields" : {
+            "type" : "array",
+            "description" : "The initial and possible \"or\" queries for this property",
+            "example" : "CONTAINS \"nam\" or ENDS WITH \"e\"",
+            "items" : {
+              "$ref" : "#/components/schemas/QueryInner"
+            }
+          }
+        },
+        "description" : "The where statements of the query",
+        "example" : "or name = \"test_name\""
+      },
+      "SavedQuery" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The title of the query",
+            "example" : "Get All Assets"
+          },
+          "query" : {
+            "type" : "string",
+            "description" : "The query itself in JSON format",
+            "example" : "\"select\": \"Asset\",\n\t\"where\": [{\n\t\t\"property\": \"name\",\n\t\t\"fields\": [{\n            \"operator\": \"CONTAINS\",\n            \"value\": \"hjort\",\n            \"data_type\": \"STRING\"\n\t\t}]\n\t}]\n"
           }
         }
       },

@@ -7,28 +7,33 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class InstitutionCache {
-    private Map<String, Institution> institutionMap = new HashMap<>();
+    private final ConcurrentHashMap<String, Institution> institutionMap = new ConcurrentHashMap<>();
 
-    public Map<String, Institution> getInstitutionMap() {
+    public ConcurrentHashMap<String, Institution> getInstitutionMap() {
         return institutionMap;
     }
 
-    public void setInstitutionMap(Map<String, Institution> institutionCache) {
-        this.institutionMap = institutionCache;
+    public void putInstitutionInCacheIfAbsent(String institutionName, Institution institution) {
+        institutionMap.putIfAbsent(institutionName, institution);
     }
 
-    public void putInstitutionInCache(String institutionName, Institution institution) {
-        institutionMap.put(institutionName, institution);
-    }
-
-    public List<Institution> getInstitutions(){
+    public List<Institution> getInstitutions() {
         return institutionMap.values().stream().toList();
     }
 
-    public boolean institutionExists(String id){
+    public boolean institutionExists(String id) {
         return institutionMap.containsKey(id);
+    }
+
+    public Institution getInstitution(String institutionName) {
+        return this.institutionMap.get(institutionName);
+    }
+
+    public void put (String institutionName, Institution institution){
+        institutionMap.put(institutionName, institution);
     }
 }

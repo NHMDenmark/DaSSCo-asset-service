@@ -5,26 +5,22 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class PreparationTypeCache {
+    private final ConcurrentHashMap<String, String> preparationTypeMap = new ConcurrentHashMap<>();
 
-    private Map<String, String> preparationTypeMap = new HashMap<>();
-
-    public Map<String, String> getPreparationType() {
+    public ConcurrentHashMap<String, String> getPreparationTypeMap() {
         return preparationTypeMap;
-    }
-
-    public void setPreparationType(Map<String, String> preparationType) {
-        this.preparationTypeMap = preparationType;
     }
 
     public List<String> getPreparationTypes(){
         return preparationTypeMap.values().stream().toList();
     }
 
-    public void putPreparationTypesInCache(String preparationType){
-        preparationTypeMap.put(preparationType, preparationType);
+    public void putPreparationTypesInCacheIfAbsent(String preparationType){
+        preparationTypeMap.putIfAbsent(preparationType, preparationType);
     }
 
     public void clearCache(){

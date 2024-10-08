@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import {DetailedViewService} from "../../services/detailed-view.service";
-import {Asset} from "../../types/query-types";
 import {DomSanitizer, SafeUrl} from "@angular/platform-browser";
 import {ActivatedRoute, Params} from "@angular/router";
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {Asset} from "../../types/types";
+import {QueryToOtherPages} from "../../services/query-to-other-pages";
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -11,27 +12,20 @@ import {MatSnackBar} from '@angular/material/snack-bar';
   styleUrls: ['./detailed-view.component.scss']
 })
 export class DetailedViewComponent implements OnInit {
-
-  // Steps: 1. Get Asset Metadata
-  // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
-  // 3. Get Images. If Thumbnail, show thumbnail.
-  // TODO: CHECK that the User has permission to view the asset.
-  // TODO: Connection with Query page. The Query should pass the Asset[] from the search (in order!) so we can move back and forth between the assets.
-  // The URL remains the same (on the first asset clicked) so on Back Button press we go back to the query list.
-  // For this view to be seen you need to either have assets test-1, test-2 and test-3 in the DB or change the assetList for Assets you have.
-  // TODO: Files are now grabbed from the local machine. This is problematic, as an asset could be complete, therefore no local instance of the file would exist. We need to create an endpoint, get the API to call ERDA directly and get the file we want (for the thumbnail we can just get it directly, for the zip download we need to download it, zip it, send it, delete it).
-
+  // Asset Guid is retrieved from the URL:
   assetGuid: string = "";
   currentIndex : number = -1;
-  // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
-  assetList: string[] = ['test-1', 'test-2', 'test-3']
+  assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
 
-  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer, private route: ActivatedRoute, private _snackBar: MatSnackBar) { }
+  constructor(private detailedViewService: DetailedViewService, private sanitizer: DomSanitizer,
+              private route: ActivatedRoute, private _snackBar: MatSnackBar,
+              private queryToDetailedViewService : QueryToOtherPages) { }
 
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
       this.assetGuid = params['asset_guid'];
+      console.log(this.assetGuid)
       this.initializeCurrentAsset(this.assetGuid);
     })
   }
@@ -57,6 +51,7 @@ export class DetailedViewComponent implements OnInit {
   }
 
   fetchData(assetGuid : string){
+    // Steps: 1. Get Asset Metadata
     this.detailedViewService.getAssetMetadata(assetGuid).subscribe((response) => {
       if (response){
         this.asset = response;
@@ -70,13 +65,18 @@ export class DetailedViewComponent implements OnInit {
           return `Event: ${event.event}, Timestamp: ${event.timeStamp}`;
         }).join(", ");
         this.thumbnailUrl = "";
-        this.detailedViewService.getFileList(this.asset?.institution!, this.asset?.collection!, assetGuid).subscribe(response => {
+        // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
+        this.detailedViewService.getFileList(assetGuid).subscribe(response => {
           if (response){
-            this.assetFiles = response;
+            this.assetFiles = response.map(filePath =>{
+              let parts : string[] = filePath.split('/');
+              return parts[parts.length - 1];
+            })
             const thumbnail = this.assetFiles.find(file => file.includes('thumbnail') || "");
             if (thumbnail !== undefined){
               let lastSlashIndex = thumbnail.lastIndexOf("/");
               let fileName = thumbnail.substring(lastSlashIndex + 1);
+              // 3. Get Images. If Thumbnail, show thumbnail.
               this.detailedViewService.getThumbnail(this.asset?.institution!, this.asset?.collection!, assetGuid, fileName).subscribe(blob => {
                 if (blob){
                   const objectUrl = URL.createObjectURL(blob);
@@ -115,52 +115,21 @@ export class DetailedViewComponent implements OnInit {
     return this.currentIndex === 0;
   }
 
-
-  convertToCsv() {
-    const separatorLine = 'sep=,\r\n';
-    const headerRow = Object.keys(this.asset).join(",") + '\r\n';
-    const dataRow = Object.values(this.asset).map(value => {
-      if (value === null || value === undefined){
-        return "null";
-      }
-      if (Array.isArray(value)){
-        if (value.length !== 0){
-          const formattedArray = value.map(item => JSON.stringify(item).replace(/"/g, '""')).join(', ');
-          return `"${formattedArray}"`;
-        } else {
-          return "[]"
-        }
-      } else if (value instanceof Date) {
-        return value.toISOString();
-      } else if (value instanceof Object) {
-        if (Object.entries(value).length !== 0){
-          return Object.entries(value).map(([key, val]) => {
-            return `${key}: ${val}`;
-          })
-        } else {
-            return "{}"
-        }
-      } else {
-        return value.toString();
-      }
-    }).join(',') + "\r\n";
-    return separatorLine + headerRow + dataRow;
-  }
-
-
   downloadCsv(){
-    this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+    let currentAsset : string[] = [this.asset.asset_guid!];
+    this.detailedViewService.postCsv(currentAsset)
       .subscribe({
         next: (response) => {
           if (response.status === 200){
-            this.detailedViewService.getFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+            let guid : string = response.body;
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
                 {
                   next: (data) => {
                     const url = window.URL.createObjectURL(data);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = this.asset.asset_guid + ".csv";
+                    link.download = "assets.csv";
 
                     document.body.appendChild(link);
                     link.click();
@@ -168,7 +137,7 @@ export class DetailedViewComponent implements OnInit {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                    this.detailedViewService.deleteFile(guid)
                       .subscribe({
                         next: () => {
                         },
@@ -190,21 +159,23 @@ export class DetailedViewComponent implements OnInit {
     }
 
     downloadZip(){
-      this.detailedViewService.postCsv(this.convertToCsv(), this.asset.institution, this.asset.collection, this.asset.asset_guid)
+      let currentAsset : string[] = [this.asset.asset_guid!];
+      this.detailedViewService.postCsv(currentAsset)
         .subscribe({
           next: (response) => {
+            let guid: string = response.body
             if (response.status === 200){
-              this.detailedViewService.postZip(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+              this.detailedViewService.postZip(guid, currentAsset)
                 .subscribe({
                   next: (response) => {
                     if (response.status === 200){
-                      this.detailedViewService.getFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                    this.detailedViewService.getFile(guid, "assets.zip")
                         .subscribe({
                           next: (data) => {
                             const url = window.URL.createObjectURL(data);
                             const link = document.createElement('a');
                             link.href = url;
-                            link.download = this.asset.asset_guid + ".zip";
+                            link.download = "assets.zip";
 
                             document.body.appendChild(link);
                             link.click();
@@ -212,17 +183,8 @@ export class DetailedViewComponent implements OnInit {
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
 
-                            this.detailedViewService.deleteFile(this.asset.asset_guid + ".zip", this.asset.institution, this.asset.collection, this.asset.asset_guid)
+                            this.detailedViewService.deleteFile(guid)
                               .subscribe({
-                                next: () => {
-                                  this.detailedViewService.deleteFile(this.asset.asset_guid + ".csv", this.asset.institution, this.asset.collection, this.asset.asset_guid)
-                                    .subscribe({
-                                      next: () => {
-                                      }, error: () => {
-                                        this.openSnackBar("There has been an error deleting the CSV file", "Close");
-                                      }
-                                    })
-                                },
                                 error: () => {
                                   this.openSnackBar("There has been an error deleting the ZIP file", "Close");
                                 }

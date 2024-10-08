@@ -19,8 +19,8 @@ import java.util.Optional;
 
 @Service
 public class CollectionService {
-    private CollectionCache collectionCache;
-    private InstitutionCache institutionCache;
+    private final CollectionCache collectionCache;
+    private final InstitutionCache institutionCache;
     private final InstitutionService institutionService;
 
     private Jdbi jdbi;
@@ -55,7 +55,6 @@ public class CollectionService {
 
  */
         if (!institutionCache.institutionExists(collection.institution())){
-            System.out.println(institutionCache.getInstitutionMap());
             throw new IllegalArgumentException("Institute doesnt exist");
         } else {
             if (collectionCache.getCollections(collection.institution()).contains(collection)){
@@ -71,7 +70,7 @@ public class CollectionService {
              */
             Collection col = new Collection(collection.name(), collection.institution(), collection.roleRestrictions());
             co.persistCollection(col);
-            collectionCache.putCollectionInCache(collection.institution(), col.name(), col);
+            collectionCache.putCollectionInCacheIfAbsent(collection.institution(), col.name(), col);
             return h;
         });
         }
@@ -126,7 +125,7 @@ public class CollectionService {
             roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
             return h;
         });
-        collectionCache.putCollectionInCache(collection.institution(), collection.name(), collection);
+        collectionCache.put(collection.institution(), collection.name(), collection);
         return collection;
     }
 }

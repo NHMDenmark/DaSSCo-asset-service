@@ -69,7 +69,7 @@ public class WorkstationService {
 
         Workstation newWs = new Workstation(workstation.name(), workstation.status(), institutionName);
         workstationRepository.persistWorkstation(newWs);
-        workstationCache.putWorkstationInCache(workstation);
+        workstationCache.putWorkstationInCacheIfAbsent(workstation);
 
         return workstation;
     }

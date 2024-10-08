@@ -2,20 +2,31 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.*;
+import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,7 +35,8 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
-    private final StatisticsDataService statisticsDataService;
+//    private final StatisticsDataService statisticsDataService;
+    private final StatisticsDataServiceV2 statisticsDataServiceV2;
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
@@ -35,6 +47,9 @@ public class AssetService {
     private final StatusCache statusCache;
     private final PreparationTypeCache preparationTypeCache;
     private final RestrictedAccessCache restrictedAccessCache;
+    private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
+    private final FileProxyConfiguration fileProxyConfiguration;
+    private final ObservationRegistry observationRegistry;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -42,7 +57,7 @@ public class AssetService {
             , WorkstationService workstationService
             , @Lazy FileProxyClient fileProxyClient
             , Jdbi jdbi
-            , StatisticsDataService statisticsDataService
+            , StatisticsDataServiceV2 statisticsDataServiceV2
             , PipelineService pipelineService
             , RightsValidationService rightsValidationService,
                         DigitiserCache digitiserCache,
@@ -50,12 +65,14 @@ public class AssetService {
                         PayloadTypeCache payloadTypeCache,
                         StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
-                        RestrictedAccessCache restrictedAccessCache) {
+                        RestrictedAccessCache restrictedAccessCache,
+                        FileProxyConfiguration fileProxyConfiguration,
+                        ObservationRegistry observationRegistry) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
         this.fileProxyClient = fileProxyClient;
-        this.statisticsDataService = statisticsDataService;
+        this.statisticsDataServiceV2 = statisticsDataServiceV2;
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
         this.digitiserCache = digitiserCache;
@@ -65,6 +82,8 @@ public class AssetService {
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
         this.restrictedAccessCache = restrictedAccessCache;
+        this.fileProxyConfiguration = fileProxyConfiguration;
+        this.observationRegistry = observationRegistry;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -86,9 +105,8 @@ public class AssetService {
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
 
-        if (!digitiserCache.getDigitiserMap().containsKey(audit.user())){
-            digitiserCache.putDigitiserInCache(new Digitiser(audit.user(), audit.user()));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
 
         return true;
     }
@@ -114,11 +132,10 @@ public class AssetService {
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
-        statisticsDataService.refreshCachedData();
+        //statisticsDataServiceV2.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
-            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
 
         return true;
     }
@@ -129,12 +146,28 @@ public class AssetService {
         if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
-        Asset asset = optAsset.get();
-        rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
-        jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
 
-        // Refresh cache:
-        reloadAssetCache();
+        // Close the share if open:
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(fileProxyConfiguration.url() + "/shares/assets/" + assetGuid + "/deleteShare"))
+                .header("Authorization", "Bearer " + user.token)
+                .DELETE()
+                .build();
+
+        HttpClient httpClient = createHttpClient();
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200 || response.statusCode() == 404){
+                Asset asset = optAsset.get();
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
+
+                // Refresh cache:
+                reloadAssetCache();
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean unlockAsset(String assetGuid) {
@@ -170,11 +203,15 @@ public class AssetService {
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
 
-        statisticsDataService.refreshCachedData();
+        //statisticsDataServiceV2.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(assetUpdateRequest.digitiser())){
-            digitiserCache.putDigitiserInCache(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+
+        if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()){
+            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
+
+
 
         return true;
     }
@@ -200,11 +237,10 @@ public class AssetService {
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        //statisticsDataServiceV2.refreshCachedData();
 
-        statisticsDataService.refreshCachedData();
-        if (!digitiserCache.getDigitiserMap().containsKey(user.username)){
-            digitiserCache.putDigitiserInCache(new Digitiser(user.username, user.username));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
         return true;
     }
 
@@ -231,7 +267,7 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
 
-        statisticsDataService.refreshCachedData();
+        //statisticsDataServiceV2.refreshCachedData();
         return true;
     }
 
@@ -271,11 +307,11 @@ public class AssetService {
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
-        statisticsDataService.refreshCachedData();
+        //statisticsDataServiceV2.refreshCachedData();
 
-        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
-            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-        }
+        logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
@@ -286,7 +322,7 @@ public class AssetService {
                 });
                 if (!subjectList.isEmpty()){
                     for (String subject : subjectList){
-                        this.subjectCache.putSubjectsInCache(subject);
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
                     }
                 }
             }
@@ -301,7 +337,7 @@ public class AssetService {
                 });
                 if (!payloadTypeList.isEmpty()){
                     for (String payloadType : payloadTypeList){
-                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
                     }
                 }
             }
@@ -316,7 +352,7 @@ public class AssetService {
                 });
                 if (!statusList.isEmpty()){
                     for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCache(status);
+                        this.statusCache.putStatusInCacheIfAbsent(status);
                     }
                 }
             }
@@ -325,7 +361,7 @@ public class AssetService {
         boolean prepTypeExists = true;
         if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
             for (Specimen specimen : updatedAsset.specimens){
-                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())) {
+                if (!preparationTypeCache.getPreparationTypeMap().containsKey(specimen.preparation_type())){
                     prepTypeExists = false;
                     break;
                 }
@@ -338,7 +374,7 @@ public class AssetService {
                 });
                 if (!preparationTypeList.isEmpty()){
                     for (String preparationType : preparationTypeList){
-                        this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                        this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
                     }
                 }
             }
@@ -359,7 +395,7 @@ public class AssetService {
                 });
                 if (!restrictedAccessList.isEmpty()){
                     for (String internalRole : restrictedAccessList){
-                        this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+                        this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
                     }
                 }
             }
@@ -378,8 +414,6 @@ public class AssetService {
             Payload_Type
             Parent_Guid
             Digitiser
-            Institution?
-            Collection?
         */
 
         if (updatedAsset == null) {
@@ -398,7 +432,7 @@ public class AssetService {
         List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
 
         for (Asset asset : assets) {
-            rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+            rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
         }
 
         if (assets.size() != assetList.size()) {
@@ -456,9 +490,10 @@ public class AssetService {
             asset.tags = existingTags;
         });
 
-        if (!digitiserCache.getDigitiserMap().containsKey(updatedAsset.updateUser)){
-            digitiserCache.putDigitiserInCache(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-        }
+        List<Asset> bulkUpdateSuccess = jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
+
+        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()){
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)){
@@ -469,7 +504,7 @@ public class AssetService {
                 });
                 if (!subjectList.isEmpty()){
                     for (String subject : subjectList){
-                        this.subjectCache.putSubjectsInCache(subject);
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
                     }
                 }
             }
@@ -484,7 +519,7 @@ public class AssetService {
                 });
                 if (!payloadTypeList.isEmpty()){
                     for (String payloadType : payloadTypeList){
-                        this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
                     }
                 }
             }
@@ -499,13 +534,13 @@ public class AssetService {
                 });
                 if (!statusList.isEmpty()){
                     for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCache(status);
+                        this.statusCache.putStatusInCacheIfAbsent(status);
                     }
                 }
             }
         }
 
-        return jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
+        return bulkUpdateSuccess;
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {
@@ -664,73 +699,98 @@ public class AssetService {
 
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
-        Optional<Asset> assetOpt = getAsset(asset.asset_guid);
-        if (assetOpt.isPresent()) {
-            throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
-        }
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime databaseCheckStart = LocalDateTime.now();
+        Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
+            Optional<Asset> assetOpt = getAsset(asset.asset_guid);
+            if (assetOpt.isPresent()) {
+                throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
+            }
+        });
+
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
+        LocalDateTime databaseCheckEnd = LocalDateTime.now();
+        logger.info("#2: Database call to check if Asset existed took {} ms", java.time.Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
+
+        LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateAssetFields(asset);
         validateAsset(asset);
+        LocalDateTime validationEnd = LocalDateTime.now();
+        logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
-        asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+        LocalDateTime httpInfoStart = LocalDateTime.now();
+        Observation.createNotStarted("persist:openShareOnFP", observationRegistry).observe(()->{
+            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+        });
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
         asset.internal_status = InternalStatus.METADATA_RECEIVED;
-
+        LocalDateTime httpInfoEnd = LocalDateTime.now();
+        logger.info("#4 HTTPInfo creation took {} ms in total.", java.time.Duration.between(httpInfoStart, httpInfoEnd).toMillis());
         if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
-            jdbi.onDemand(AssetRepository.class)
-                    .createAsset(asset);
+            LocalDateTime createAssetStart = LocalDateTime.now();
+            Observation.createNotStarted("persist:create-asset", observationRegistry).observe(() -> {
+                jdbi.onDemand(AssetRepository.class)
+                        .createAsset(asset);
+            });
+            LocalDateTime createAssetEnd = LocalDateTime.now();
+            logger.info("#5 Creating the asset took {} ms", java.time.Duration.between(createAssetStart, createAssetEnd).toMillis());
+
+            LocalDateTime refreshCachedDataStart = LocalDateTime.now();
+            Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
+                //statisticsDataServiceV2.refreshCachedData();
+            });
+            LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
+            logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
+
+//        this.statisticsDataService.addAssetToCache(asset);
+
+            LocalDateTime cacheStart = LocalDateTime.now();
+            if (asset.digitiser != null && !asset.digitiser.isEmpty()){
+                logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
+                digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser, asset.digitiser));
+            }
+
+            if (asset.specimens != null && !asset.specimens.isEmpty()){
+                for (Specimen specimen : asset.specimens){
+
+                    preparationTypeCache.putPreparationTypesInCacheIfAbsent(specimen.preparation_type());
+
+                }
+            }
+
+            if (asset.subject != null && !asset.subject.isEmpty()){
+
+                subjectCache.putSubjectsInCacheIfAbsent(asset.subject);
+
+            }
+
+            if (asset.payload_type != null && !asset.payload_type.isEmpty()){
+                    payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
+
+            }
+
+            statusCache.putStatusInCacheIfAbsent(asset.status);
+
+            if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
+                for (InternalRole internalRole : asset.restricted_access){
+                    restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
+                }
+            }
+            LocalDateTime cacheEnd = LocalDateTime.now();
+            logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
+
         } else {
             //Do not persist azzet if share wasnt created
             return asset;
         }
 
-        statisticsDataService.refreshCachedData();
-
+//        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataService.addAssetToCache(asset);
-
-
-        if (asset.digitiser != null && !asset.digitiser.isEmpty()){
-            if (!digitiserCache.getDigitiserMap().containsKey(asset.digitiser)){
-                digitiserCache.putDigitiserInCache(new Digitiser(asset.digitiser, asset.digitiser));
-            }
-        }
-
-        if (asset.specimens != null && !asset.specimens.isEmpty()){
-            for (Specimen specimen : asset.specimens){
-                if (!preparationTypeCache.getPreparationType().containsKey(specimen.preparation_type())){
-                    preparationTypeCache.putPreparationTypesInCache(specimen.preparation_type());
-                }
-            }
-        }
-
-        if (asset.subject != null && !asset.subject.isEmpty()){
-            if (!subjectCache.getSubjectMap().containsKey(asset.subject)){
-                subjectCache.putSubjectsInCache(asset.subject);
-            }
-        }
-
-        if (asset.payload_type != null && !asset.payload_type.isEmpty()){
-            if (!payloadTypeCache.getPayloadTypeMap().containsKey(asset.payload_type)){
-                payloadTypeCache.putPayloadTypesInCache(asset.payload_type);
-            }
-        }
-
-        if (!statusCache.getStatusMap().containsKey(asset.status.toString())){
-            statusCache.putStatusInCache(asset.status);
-        }
-
-        if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
-            for (InternalRole internalRole : asset.restricted_access){
-                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
-                    restrictedAccessCache.putRestrictedAccessInCache(internalRole.toString());
-                }
-            }
-        }
 
         return asset;
     }
@@ -756,49 +816,54 @@ public class AssetService {
     }
 
     public void reloadAssetCache(){
+        subjectCache.clearCache();
         List<String> subjectList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listSubjects();
         });
         if (!subjectList.isEmpty()){
             for (String subject : subjectList){
-                this.subjectCache.putSubjectsInCache(subject);
+                this.subjectCache.putSubjectsInCacheIfAbsent(subject);
             }
         }
+        payloadTypeCache.clearCache();
         List<String> payloadTypeList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listPayloadTypes();
         });
         if (!payloadTypeList.isEmpty()){
             for (String payloadType : payloadTypeList){
-                this.payloadTypeCache.putPayloadTypesInCache(payloadType);
+                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
             }
         }
+        preparationTypeCache.clearCache();
         List<String> preparationTypeList = jdbi.withHandle(handle -> {
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
             return specimenRepository.listPreparationTypes();
         });
         if (!preparationTypeList.isEmpty()){
             for (String preparationType : preparationTypeList){
-                this.preparationTypeCache.putPreparationTypesInCache(preparationType);
+                this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
             }
         }
+        statusCache.clearCache();
         List<AssetStatus> statusList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listStatus();
         });
         if (!statusList.isEmpty()){
             for(AssetStatus status : statusList){
-                this.statusCache.putStatusInCache(status);
+                this.statusCache.putStatusInCacheIfAbsent(status);
             }
         }
+        restrictedAccessCache.clearCache();
         List<String> restrictedAccessList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             return assetRepository.listRestrictedAccess();
         });
         if (!restrictedAccessList.isEmpty()){
             for (String internalRole : restrictedAccessList){
-                this.restrictedAccessCache.putRestrictedAccessInCache(internalRole);
+                this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
             }
         }
     }
@@ -810,6 +875,63 @@ public class AssetService {
 
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+    }
+
+    public Optional<Asset> checkUserRights(String assetGuid, User user){
+        LocalDateTime getAssetStart = LocalDateTime.now();
+        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+        LocalDateTime getAssetEnd = LocalDateTime.now();
+        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", java.time.Duration.between(getAssetStart, getAssetEnd).toMillis());
+        if (optionalAsset.isPresent()){
+            Asset found = optionalAsset.get();
+            LocalDateTime checkValidationStart = LocalDateTime.now();
+            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+            LocalDateTime checkValidationEnd = LocalDateTime.now();
+            logger.info("#4.1.3 Validating Asset took {} ms", java.time.Duration.between(checkValidationStart, checkValidationEnd).toMillis());
+        }
+        return optionalAsset;
+    }
+
+    public List<Asset> readMultipleAssets(List<String> assets){
+        return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assets);
+    }
+
+    public String createCSVString(List<Asset> assets){
+        String csv = "";
+        if (assets.isEmpty()){
+            return "";
+        }
+        StringBuilder csvBuilder = new StringBuilder();
+        Field[] fields = Asset.class.getDeclaredFields();
+        String headers = String.join(",", Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
+        csvBuilder.append(headers).append("\n");
+        for (Asset asset : assets){
+            StringJoiner joiner = new StringJoiner(",");
+            for (Field field : fields){
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(asset);
+                    joiner.add(escapeCsvValue(value != null ? value.toString() : ""));
+                } catch (IllegalAccessException e) {
+                    joiner.add("");
+                }
+            }
+            csvBuilder.append(joiner).append("\n");
+        }
+        return csvBuilder.toString();
+    }
+
+    public String escapeCsvValue(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            value = "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    // For Mocking.
+    public HttpClient createHttpClient() {
+        return HttpClient.newHttpClient();
     }
 
 }

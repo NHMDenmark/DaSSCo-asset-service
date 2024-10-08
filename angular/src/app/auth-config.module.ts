@@ -6,8 +6,8 @@ import {AuthModule, LogLevel} from 'angular-auth-oidc-client';
     AuthModule.forRoot({
       config: {
         authority: (window as any).frontendProperties?.authenticationUrl,
-        redirectUrl: window.location.origin,
-        postLogoutRedirectUri: window.location.origin,
+        redirectUrl: window.location.origin + '/ars/',
+        postLogoutRedirectUri: window.location.origin + '/ars/',
         clientId: (window as any).frontendProperties?.clientId,
         scope: 'openid profile offline_access',
         responseType: 'code',
