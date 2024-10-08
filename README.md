@@ -35,7 +35,6 @@
 * As the name indicates, the application-local.properties file is where all the configurations exclusive to running the project locally should go, as to not mess with the existing configurations for the project.
 * For example, for adding test data to the database (useful locally, problematic when deploying) one can add: `spring.liquibase.contexts=default, development` to the local-application.properties file, and the project will run the liquibase scripts and add the test data.
 
-
 # DaSSCo Deployment
 
 ## HealthChecks
@@ -390,3 +389,9 @@ upstream idp {
     server keycloak:8080;
 }
 ```
+
+* ## Documentation
+* The documentation from confluence has been partly added to this repository in documentation/confluence-docs and documentation/diagrams. This is mainly the documentation that directly relates to the webapi and the diagrams.
+* Furthermore everything else that has to do with project description and agreements have been transferred to dasscos N drive.
+* All confluence documents have been converted to pdfs and can be found in N:/SCI-SNM-DigitalCollections/DaSSCo/IT_infrastructure/Storage%20solution/Confluence%20documentation.
+
