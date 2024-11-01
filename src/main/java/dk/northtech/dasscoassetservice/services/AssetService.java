@@ -618,6 +618,9 @@ public class AssetService {
         if (a.status == null) {
             throw new IllegalArgumentException("Status cannot be null");
         }
+        if("".equals(a.parent_guid)) {
+            throw new IllegalArgumentException("Parent may not be an empty string");
+        }
     }
 
     void validateAsset(Asset asset) {
@@ -685,7 +688,7 @@ public class AssetService {
             jdbi.onDemand(AssetRepository.class)
                     .createAsset(asset);
         } else {
-            //Do not persist azzet if share wasnt created
+            //Do not persist asset if share wasnt created
             return asset;
         }
 
