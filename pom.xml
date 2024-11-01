@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.5</version>
+        <version>3.1.12</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>dk.northtech</groupId>
     <artifactId>dassco-asset-service</artifactId>
-    <version>1.4.1</version>
+    <version>1.7.0</version>
     <name>dassco-asset-service</name>
     <description>dassco-asset-service</description>
     <properties>
@@ -47,6 +47,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
@@ -155,8 +159,20 @@
             <artifactId>caffeine</artifactId>
             <version>3.1.8</version>
         </dependency>
+        <dependency>
+            <groupId>com.rabbitmq.jms</groupId>
+            <artifactId>rabbitmq-jms</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
     </dependencies>
-
     <profiles>
         <profile>
             <id>angular</id>
@@ -198,7 +214,7 @@
                                         <argument>build</argument>
                                         <argument>--</argument>
                                         <argument>--base-href</argument>
-                                        <argument>/</argument>
+                                        <argument>/ars/</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -226,6 +242,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>install-ag-jdbc</id>

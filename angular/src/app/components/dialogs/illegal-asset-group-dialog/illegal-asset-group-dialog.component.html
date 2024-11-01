@@ -1,0 +1,16 @@
+<div class="container">
+  <div mat-dialog-content>
+    An error occurred as you're attempting to share assets you don't have write access to:
+    <ul *ngFor="let asset of assetList">
+      <li>{{asset}}</li>
+    </ul>
+    <div *ngIf="data.removable">
+      Would you like to remove these assets from the group?
+    </div>
+  </div>
+
+  <div mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-stroked-button (click)="remove(data.removable ? assetList : undefined)">OK</button>
+  </div>
+</div>

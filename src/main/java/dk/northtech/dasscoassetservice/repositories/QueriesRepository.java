@@ -31,7 +31,8 @@ public interface QueriesRepository extends SqlObject {
             try {
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
+                //handle.execute(DBConstants.AGE_BOILERPLATE);
+                handle.execute("set search_path TO ag_catalog;");
                 return handle;
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -46,7 +47,7 @@ public interface QueriesRepository extends SqlObject {
             """
                 SELECT * FROM ag_catalog.cypher('dassco', $$
                 MATCH (n)
-                WHERE NOT 'Event' IN labels(n)
+                WHERE NOT 'Event' IN labels(n) AND NOT 'User' IN labels(n)
                 WITH labels(n) AS lbl, keys(n) AS keys, size(keys(n)) AS key_count
                 UNWIND lbl AS label
                 WITH label, keys, key_count
@@ -81,12 +82,21 @@ public interface QueriesRepository extends SqlObject {
         });
     }
 
+    default int getAssetCountFromQuery(String query) {
+        boilerplate();
+        return withHandle(handle -> {
+            return handle.createQuery(query)
+                    .mapTo(Integer.class)
+                    .one();
+        });
+    }
+
     default SavedQuery saveQuery(SavedQuery savedQuery, String username) {
         boilerplate();
         String sql = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                   , $$
-                        MATCH (u:User {name: $username})
+                        MERGE (u:User {name: $username, user_id: $username})
                         MERGE (q:Query {name: $name, query: $query})
                         MERGE (u)<-[:SAVED_BY]-(q)
                         RETURN q.name, q.query

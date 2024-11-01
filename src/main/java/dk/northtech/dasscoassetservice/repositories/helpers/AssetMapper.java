@@ -22,12 +22,9 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype guid = rs.getObject("asset_guid", Agtype.class);
         Agtype pid = rs.getObject("asset_pid", Agtype.class);
         Agtype institutionName = rs.getObject("institution_name", Agtype.class);
-        Agtype collectionName = rs.getObject("collection_name", Agtype.class);
-        Agtype pipelineName = rs.getObject("pipeline_name", Agtype.class);
         Agtype status = rs.getObject("status", Agtype.class);
         Agtype fileFormats = rs.getObject("file_formats", Agtype.class);
         Agtype internalStatus = rs.getObject("internal_status", Agtype.class);
-        Agtype workstationName = rs.getObject("workstation_name", Agtype.class);
         Agtype restrictedAccess = rs.getObject("restricted_access", Agtype.class);
         Agtype tags = rs.getObject("tags", Agtype.class);
 
@@ -35,7 +32,6 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
 
         Agtype specimens = rs.getObject("specimens", Agtype.class);
-//        asset.specimens = specimenBarcodes.getList().stream().map(Object::toString).collect(Collectors.toList());
 
         asset.asset_guid = guid.getString();
         asset.asset_pid = pid.getString();
@@ -43,9 +39,22 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.file_formats = fileFormats.getList().stream().map(x -> FileFormat.valueOf(x.toString())).collect(Collectors.toList());
         asset.multi_specimen = asset.specimens.size() > 1;
         asset.institution = institutionName.getString();
-        asset.collection = collectionName.getString();
-        asset.pipeline = pipelineName.getString();
-        asset.workstation = workstationName.getString();
+        rs.getString("collection_name");
+        if (!rs.wasNull()) {
+            Agtype collection = rs.getObject("collection_name", Agtype.class);
+            asset.collection = collection.getString();
+        }
+        rs.getString("pipeline_name");
+        if (!rs.wasNull()) {
+            Agtype pipeline = rs.getObject("pipeline_name", Agtype.class);
+            asset.pipeline = pipeline.getString();
+        }
+        rs.getString("workstation_name");
+        if (!rs.wasNull()) {
+            Agtype workstation = rs.getObject("workstation_name", Agtype.class);
+            asset.workstation = workstation.getString();
+        }
+
         asset.asset_locked = assetLocked.getBoolean();
         asset.restricted_access = restrictedAccess.getList().stream().map(role -> InternalRole.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();
@@ -108,6 +117,11 @@ public class AssetMapper implements RowMapper<Asset> {
         if (!rs.wasNull()) {
             Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
             asset.parent_guid = parent_guid.getString();
+        }
+        rs.getString("write_access");
+        if (!rs.wasNull()) {
+            Agtype writeAccess = rs.getObject("write_access", Agtype.class);
+            asset.writeAccess = writeAccess.getBoolean();
         }
         return asset;
     }

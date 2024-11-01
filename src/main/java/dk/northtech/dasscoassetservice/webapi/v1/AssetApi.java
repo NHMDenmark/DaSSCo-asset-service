@@ -4,9 +4,9 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.services.StatisticsDataService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -26,12 +26,11 @@ import org.apache.commons.lang3.EnumUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -51,8 +50,6 @@ public class AssetApi {
         this.assetService = assetService;
         this.rightsValidationService = rightsValidationService;
     }
-
-
 
     @GET
     @Operation(summary = "Get Assets", description = "Returns a list of assets.")
@@ -166,18 +163,93 @@ public class AssetApi {
     @POST
     @Path("/readaccess")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
-    public Response checkAccess(@QueryParam("assetGuid") String asset_guid
+    @Operation(summary = "Get Access Permission", description = "Checks if User has access or not to certain assets.")
+    public void checkAccess(@QueryParam("assetGuid") String asset_guid
             , @Context SecurityContext securityContext) {
         Optional<Asset> assetOpt = assetService.getAsset(asset_guid);
         if(assetOpt.isEmpty()) {
-            logger.info("Cannot get read rights for asset {}, it doesnt exist", asset_guid);
-            return Response.status(404).build();
+            throw new IllegalArgumentException("There is no such asset");
         }
         Asset asset = assetOpt.get();
-        logger.info("start checking");
         rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
-        logger.info("end checking");
-        return Response.status(204).build();
+    }
+
+    @POST
+    @Path("/readaccessforcsv")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary =  "Create CSV String for Multiple Assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
+    public Response CsvMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
+        // Set: No repeated assets, just in case:
+        Set<String> assetSet = new HashSet<>(assets);
+        // Assets found in backend:
+        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        // If one or more assets don't exist, complain:
+        if (assetList.size() != assetSet.size()){
+            throw new IllegalArgumentException("One or more assets were not found");
+        }
+        // List of Assets that the User has access to:
+        List<Asset> hasReadAccessTo = new ArrayList<>();
+
+        for (Asset asset : assetList){
+            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            if(hasAccess){
+                hasReadAccessTo.add(asset);
+            }
+        }
+        // If assets that the user has access to is different to the assets got from backend, means that User does not have access to some assets:
+        if (hasReadAccessTo.size() != assetList.size()){
+            // Remove assets that User HAS access to get the ones he dont:
+            // Return that list to the frontend so User knows:
+            Set<String> guidsToRemove = hasReadAccessTo.stream()
+                    .map(Asset::getAsset_guid)
+                    .collect(Collectors.toSet());
+            assetSet.removeAll(guidsToRemove);
+
+            return Response.status(403).entity(new DaSSCoError("1.0", DaSSCoErrorCode.FORBIDDEN, "User does not have access to assets: " + assetSet)).build();
+        } else {
+            // Return the csv String:
+            return Response.status(200)
+                    .entity(assetService.createCSVString(hasReadAccessTo))
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/readaccessforzip")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary =  "Check Read Access For Zip File Creation", description = "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.")
+    public Response ZipMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
+        // Set: No repeated assets, just in case:
+        Set<String> assetSet = new HashSet<>(assets);
+        // Assets found in backend:
+        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        // If one or more assets don't exist, complain:
+        if (assetList.size() != assetSet.size()){
+            throw new IllegalArgumentException("One or more assets were not found");
+        }
+        // List of Assets that the User has access to:
+        List<Asset> hasReadAccessTo = new ArrayList<>();
+
+        for (Asset asset : assetList){
+            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            if(hasAccess){
+                hasReadAccessTo.add(asset);
+            }
+        }
+        // If assets that the user has access to is different to the assets got from backend, means that User does not have access to some assets:
+        if (hasReadAccessTo.size() != assetList.size()){
+            // Remove assets that User HAS access to get the ones he dont:
+            // Return that list to the frontend so User knows:
+            Set<String> guidsToRemove = hasReadAccessTo.stream()
+                    .map(Asset::getAsset_guid)
+                    .collect(Collectors.toSet());
+            assetSet.removeAll(guidsToRemove);
+
+            return Response.status(403).entity(new DaSSCoError("1.0", DaSSCoErrorCode.FORBIDDEN, "User does not have access to assets: " + assetSet)).build();
+        } else {
+            return Response.status(200)
+                    .entity(hasReadAccessTo.stream().map(Asset::getAsset_guid).collect(Collectors.toList()))
+                    .build();
+        }
     }
 }

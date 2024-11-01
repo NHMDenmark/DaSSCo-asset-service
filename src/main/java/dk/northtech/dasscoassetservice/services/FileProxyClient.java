@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,15 +36,19 @@ public class FileProxyClient {
     public HttpInfo prepareWorkDir(HttpShareRequest httpShareRequest, User user) {
         Gson gson = new Gson();
         try {
+            LocalDateTime fileProxyCallStart = LocalDateTime.now();
+            logger.info("#4: Call to FileProxy (CreateShareInternal)");
             httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/"+httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
+                    .POST(HttpRequest.BodyPublishers.ofString(json));
+            HttpRequest request = requestBuilder.build();
             HttpClient httpClient = HttpClient.newBuilder().build();
             HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            LocalDateTime fileProxyCallEnd = LocalDateTime.now();
+            logger.info("#4 took {} ms", java.time.Duration.between(fileProxyCallStart, fileProxyCallEnd).toMillis());
             String body = send.body();
             if (send.statusCode() > 199 && send.statusCode() < 300) {
                 return gson.fromJson(body, HttpInfo.class);

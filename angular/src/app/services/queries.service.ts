@@ -2,13 +2,14 @@ import { Injectable } from '@angular/core';
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
-import {Asset, QueryResponse, SavedQuery} from "../types/query-types";
+import {QueryResponse, SavedQuery} from "../types/query-types";
+import {Asset} from "../types/types";
 
 @Injectable({
   providedIn: 'root'
 })
 export class QueriesService {
-  baseUrl = '/api/v1/queries';
+  baseUrl = 'api/v1/queries';
 
   constructor(public oidcSecurityService: OidcSecurityService
             , private http: HttpClient) { }
@@ -48,7 +49,6 @@ export class QueriesService {
   }
 
   updateSavedSearch(savedQuery: SavedQuery, title: string): Observable<SavedQuery | undefined> {
-    console.log(JSON.stringify(savedQuery))
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
@@ -60,13 +60,25 @@ export class QueriesService {
       );
   }
 
-  getNodesFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
+  getAssetsFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
     return this.oidcSecurityService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
             .pipe(
               catchError(this.handleError(`get ${this.baseUrl}/${limit}`, undefined))
+            );
+        })
+      );
+  }
+
+  getAssetCountFromQuery(queries: QueryResponse[], limit: number): Observable<number | undefined> {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => {
+          return this.http.post<number>(`${this.baseUrl}/assetcount/${limit}`, JSON.stringify(queries), {headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}})
+            .pipe(
+              catchError(this.handleError(`get ${this.baseUrl}/assetcount${limit}`, undefined))
             );
         })
       );

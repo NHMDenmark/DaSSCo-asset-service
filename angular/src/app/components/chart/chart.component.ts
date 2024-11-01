@@ -1,7 +1,14 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import Chart, {ChartDataset, ChartEvent, ChartOptions, LegendElement, LegendItem} from 'chart.js/auto';
+import Chart, {
+  ChartConfiguration,
+  ChartDataset,
+  ChartEvent,
+  ChartOptions, ChartTypeRegistry,
+  LegendElement,
+  LegendItem
+} from 'chart.js/auto';
 import {BehaviorSubject, combineLatest, filter, map} from 'rxjs';
-import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types/types';
+import {ChartDataTypes, GraphStatsV2, StatValue} from '../../types/graph-types';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {isNotUndefined} from '@northtech/ginnungagap';
 
@@ -121,7 +128,7 @@ export class ChartComponent {
         datasets: dataset
       },
       options: this.getOptions(yaxis, title)
-    });
+    } as ChartConfiguration<keyof ChartTypeRegistry, (number | [number, number] | null)[]>);
   }
 
   getOptions(yaxis: string, title: string): ChartOptions { // only way to specify the type so I don't get annoying errors ¯\_(ツ)_/¯

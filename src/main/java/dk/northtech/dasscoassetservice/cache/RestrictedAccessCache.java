@@ -6,21 +6,18 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RestrictedAccessCache {
-    private Map<String, InternalRole> restrictedAccessMap = new HashMap<>();
+    private final ConcurrentHashMap<String, InternalRole> restrictedAccessMap = new ConcurrentHashMap<>();
 
-    public Map<String, InternalRole> getRestrictedAccessMap() {
+    public ConcurrentHashMap<String, InternalRole> getRestrictedAccessMap() {
         return restrictedAccessMap;
     }
 
-    public void setRestrictedAccessMap(Map<String, InternalRole> restrictedAccessMap) {
-        this.restrictedAccessMap = restrictedAccessMap;
-    }
-
-    public void putRestrictedAccessInCache(String restrictedAccess){
-        this.restrictedAccessMap.put(restrictedAccess, InternalRole.valueOf(restrictedAccess));
+    public void putRestrictedAccessInCacheIfAbsent(String restrictedAccess){
+        this.restrictedAccessMap.putIfAbsent(restrictedAccess, InternalRole.valueOf(restrictedAccess));
     }
 
     public List<InternalRole> getRestrictedAccessList(){

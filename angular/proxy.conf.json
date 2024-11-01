@@ -1,10 +1,10 @@
 {
-  "/api": {
+  "/ars/api": {
     "target": "http://localhost:8084",
     "secure": false,
     "changeOrigin": false
   },
-  "/assets": {
+  "/ars/assets": {
     "target": "http://localhost:8084",
     "secure": false,
     "changeOrigin": false

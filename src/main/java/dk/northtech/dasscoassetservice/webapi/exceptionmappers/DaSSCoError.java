@@ -10,6 +10,19 @@ public class DaSSCoError {
     public final String protocolVersion;
     public final DaSSCoErrorCode errorCode;
     public final String errorMessage;
+    public String body;
+
+    public DaSSCoError(
+            @Nonnull String protocolVersion,
+            @Nonnull DaSSCoErrorCode errorCode,
+            String errorMessage,
+            String body
+    ) {
+        this.protocolVersion = protocolVersion;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
+        this.body = body;
+    }
 
     public DaSSCoError(
             @Nonnull String protocolVersion,
@@ -19,6 +32,15 @@ public class DaSSCoError {
         this.protocolVersion = protocolVersion;
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
+    }
+
+    public DaSSCoError(
+            @Nonnull String protocolVersion,
+            @Nonnull DaSSCoErrorCode errorCode,
+            Throwable t,
+            String body
+    ) {
+        this(protocolVersion, errorCode, getCauseMessage(t), body);
     }
 
     public DaSSCoError(

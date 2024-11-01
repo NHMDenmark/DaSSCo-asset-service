@@ -18,7 +18,7 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {DocsComponent} from './components/docs/docs.component';
 import {ChartComponent} from './components/chart/chart.component';
 import {GraphDataComponent} from './components/graph-data/graph-data.component';
-import {MatNativeDateModule, MatOptionModule} from '@angular/material/core';
+import {MatNativeDateModule, MatOptionModule, MatRippleModule} from '@angular/material/core';
 import {MatSelectModule} from '@angular/material/select';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -42,6 +42,16 @@ import { QueryHandlerComponent } from './components/query-handler/query-handler.
 import {MatDialogModule} from "@angular/material/dialog";
 import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
 import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
+import {MatPaginatorModule} from "@angular/material/paginator";
+import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {MatMenuModule} from "@angular/material/menu";
+import {MatSortModule} from "@angular/material/sort";
+import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
+import { AssetGroupsComponent } from './components/asset-groups/asset-groups.component';
+import { NewGroupDialogComponent } from './components/dialogs/new-group-dialog/new-group-dialog.component';
+import { IllegalAssetGroupDialogComponent } from './components/dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
+import {NgOptimizedImage} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -62,7 +72,11 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     QueryHandlerComponent,
     SavedSearchesDialogComponent,
     SaveSearchDialogComponent,
-    DetailedViewComponent
+    DetailedViewComponent,
+    AssetGroupDialogComponent,
+    AssetGroupsComponent,
+    NewGroupDialogComponent,
+    IllegalAssetGroupDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -92,7 +106,14 @@ import { SaveSearchDialogComponent } from './components/dialogs/save-search-dial
     MatCheckboxModule,
     MatExpansionModule,
     MatCardModule,
-    MatListModule
+    MatListModule,
+    MatPaginatorModule,
+    MatProgressSpinnerModule,
+    MatAutocompleteModule,
+    MatMenuModule,
+    MatSortModule,
+    MatRippleModule,
+    NgOptimizedImage
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

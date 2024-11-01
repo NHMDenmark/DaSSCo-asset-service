@@ -1,51 +1,93 @@
-export interface GraphStatsV2 {
-  institutes: Map<string, number>;
-  pipelines: Map<string, number>;
-  workstations: Map<string, number>;
+import {Moment} from "moment-timezone";
+
+export enum AssetStatus {
+  WORKING_COPY
+  , ARCHIVE
+  , BEING_PROCESSED
+  , PROCESSING_HALTED
+  , ISSUE_WITH_MEDIA
+  , ISSUE_WITH_METADATA
+  , FOR_DELETION
 }
 
-export interface Institute {
-  id: number;
-  label: string;
-  name: string;
-  ocrText: string;
-  taxonName?: string;
-  geographicRegion?: string;
+export interface Asset {
+  asset_pid: string | undefined;
+  asset_guid: string | undefined;
+  status: AssetStatus | undefined;
+  multi_specimen: boolean | undefined;
+  specimens: Specimen[] | undefined;
+  funding: string | undefined;
+  subject: string | undefined;
+  payload_type: string | undefined;
+  file_formats: FileFormat[] | undefined;
+  asset_locked: boolean | undefined;
+  restricted_access: string[] | undefined;
+  tags: Map<string, string> | undefined;
+  audited: boolean | undefined;
+  created_date: Moment | undefined;
+  date_metadata_updated: Moment | undefined;
+  date_asset_taken: Moment | undefined;
+  date_asset_deleted: Moment | undefined;
+  date_asset_finalised: Moment | undefined;
+  date_metadata_taken: Moment | undefined;
+  institution: string | undefined;
+  parent_guid: string | undefined;
+  collection: string | undefined;
+  httpInfo: string | undefined;
+  internal_status: string | undefined;
+  updateUser: string | undefined;
+  events: Event[] | undefined;
+  digitiser: string | undefined;
+  workstation: string | undefined;
+  pipeline: string | undefined;
+  error_message: string | undefined;
+  error_timestamp: Moment | undefined;
+  writeAccess: boolean | undefined;
 }
 
-export interface InternalStatusDataSource {
-  status: 'COMPLETED' | 'PENDING' | 'FAILED';
-  no: number;
+export interface Specimen {
+  institution: string | undefined;
+  collection: string | undefined;
+  barcode: string | undefined;
+  specimen_pid: string | undefined;
+  preparation_type: string | undefined;
 }
 
-export enum ViewV2 {
-  WEEK = 1,
-  MONTH = 2,
-  YEAR = 3,
-  EXPONENTIAL = 4
+export interface Event {
+  user: string | undefined;
+  timeStamp: Moment | undefined;
+  event: string | undefined;
+  pipeline: string | undefined;
+  workstation: string | undefined;
 }
 
-export enum StatValue {
-  INSTITUTE,
-  PIPELINE,
-  WORKSTATION
+export interface AssetGroup {
+  group_name: string | undefined;
+  assets: string[] | undefined;
+  hasAccess: string[] | undefined;
+  groupCreator: string | undefined;
+  isCreator: boolean | undefined;
 }
 
-export enum ChartDataTypes {
-  INCREMENTAL = 'incremental',
-  EXPONENTIAL = 'exponential'
+export interface Digitiser {
+  userId: string | undefined;
+  name: string | undefined;
 }
 
-export const defaultView = 1; // Weekly fluctuation.
+export interface DasscoError {
+  type: string | undefined;
+  protocolVersion: string | undefined;
+  errorCode: string | undefined;
+  errorMessage: string | undefined;
+  body: string | undefined;
+}
 
-export const CUSTOM_DATE_FORMAT = {
-  parse: {
-    dateInput: 'DD-MM-YYYY'
-  },
-  display: {
-    dateInput: 'DD-MM-YYYY',
-    monthYearLabel: 'MMM YYYY',
-    dateA11yLabel: 'DD-MM-YYYY',
-    monthYearA11yLabel: 'MMM YYYY'
-  }
-};
+export enum FileFormat {
+  TIF
+  , JPEG
+  , RAW
+  , RAF
+  , CR3
+  , DNG
+  , TXT
+}

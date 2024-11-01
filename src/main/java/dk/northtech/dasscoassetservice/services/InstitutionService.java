@@ -13,6 +13,7 @@ import joptsimple.internal.Strings;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -65,11 +66,11 @@ public class InstitutionService {
 //        }
             repository.persistInstitution(institution);
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestriction());
-            institutionCache.putInstitutionInCache(institution.name(), institution);
+            //institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
-        //this.institutionCache.putInstitutionInCache(institution.name(), institution);
-        this.cache.put(institution.name(),institution);
+        this.institutionCache.putInstitutionInCacheIfAbsent(institution.name(), institution);
+        //this.cache.put(institution.name(),institution);
         return institution;
     }
 
@@ -81,7 +82,8 @@ public class InstitutionService {
         if(institutionName == null) {
             return Optional.empty();
         }
-        Institution institution = this.cache.get(institutionName);
+        //Institution institution = this.cache.get(institutionName);
+        Institution institution = institutionCache.getInstitution(institutionName);
         if(institution == null) {
             return Optional.empty();
         } else  {
@@ -91,7 +93,8 @@ public class InstitutionService {
 
 
     public Institution updateInstitution(Institution institution) {
-        jdbi.withHandle(h -> {
+
+                jdbi.withHandle(h -> {
             InstitutionRepository institutionRepository = h.attach(InstitutionRepository.class);
             Optional<Institution> existing = institutionRepository.findInstitution(institution.name());
             if (existing.isEmpty()) {
@@ -99,10 +102,11 @@ public class InstitutionService {
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
+            institutionCache.put(institution.name(), institution);
             return h;
         });
-        institutionCache.putInstitutionInCache(institution.name(), institution);
-        cache.put(institution.name(),institution);
+
+        //cache.put(institution.name(),institution);
         return institution;
     }
 }
