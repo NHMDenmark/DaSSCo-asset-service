@@ -725,6 +725,7 @@ public class AssetService {
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
+        logger.info("POSTing asset {} with parent {} to file-proxy",asset.asset_guid, asset.parent_guid);
         Observation.createNotStarted("persist:openShareOnFP", observationRegistry).observe(()->{
             asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
         });
