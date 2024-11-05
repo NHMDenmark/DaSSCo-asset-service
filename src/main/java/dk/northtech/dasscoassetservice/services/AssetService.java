@@ -683,11 +683,11 @@ public class AssetService {
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
 
-//        if(asset.parent_guid != null) {
-//            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
-//            if(parentOpt.isEmpty()) {
-//                throw new IllegalArgumentException("Parent doesnt exist");
-//            }
+        if(asset.parent_guid != null) {
+            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
+            if(parentOpt.isEmpty()) {
+                throw new IllegalArgumentException("Parent doesnt exist");
+            }
 //            Asset parent = parentOpt.get();
 //            if(!parent.restricted_access.isEmpty()) {
 //                parent.restricted_access.stream()
@@ -695,8 +695,8 @@ public class AssetService {
 //                        .findAny()
 //                        .orElseThrow(() -> new DasscoIllegalActionException("Parent is restricted"));
 //            }
-//
-//        }
+
+        }
 
     }
 
