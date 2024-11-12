@@ -746,6 +746,7 @@ public class AssetService {
 
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
             Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
+                //TEZT
                 //statisticsDataServiceV2.refreshCachedData();
             });
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();

@@ -58,6 +58,12 @@ public class InternalStatusRepository {
     String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");
     String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
 
+    /**
+     * get a map with asset status for current day with keys "failed", "pending" and "completed" and their respective count as values.
+     * @param currMillisecs
+     * @return
+     */
+
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
             AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();

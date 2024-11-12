@@ -44,73 +44,11 @@
     "description" : "Endpoints related to institutions workstations"
   } ],
   "paths" : {
-    "/v1/assets/readaccessforcsv" : {
-      "post" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Create CSV String for Multiple Assets",
-        "description" : "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.",
-        "operationId" : "CsvMultipleAssets",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets/readaccessforzip" : {
-      "post" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Check Read Access For Zip File Creation",
-        "description" : "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.",
-        "operationId" : "ZipMultipleAssets",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/assets/readaccess" : {
       "post" : {
         "tags" : [ "Assets" ],
-        "summary" : "Get Access Permission",
-        "description" : "Checks if User has access or not to certain assets.",
+        "summary" : "Get Restricted Access List",
+        "description" : "Returns a list of the restricted access that the Assets in the system have",
         "operationId" : "checkAccess",
         "parameters" : [ {
           "name" : "assetGuid",
