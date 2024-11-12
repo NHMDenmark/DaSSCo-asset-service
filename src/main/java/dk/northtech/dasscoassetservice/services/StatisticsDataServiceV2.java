@@ -39,7 +39,7 @@ public class StatisticsDataServiceV2 {
     LoadingCache<GraphView, Map<GraphType, Map<String, GraphData>>> cachedGraphData = CacheBuilder.newBuilder()
             .expireAfterAccess(24, TimeUnit.HOURS)
             .build(
-                    new CacheLoader<GraphView, Map<GraphType, Map<String, GraphData>>>() {
+                    new CacheLoader<>() {
                         public Map<GraphType, Map<String, GraphData>> load(GraphView key) {
                             // {incremental (pr day data): data, exponential (continually adding pr day): data}
                             Map<GraphType, Map<String, GraphData>> finalData = new ListOrderedMap<>();

@@ -4,11 +4,7 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import org.junit.jupiter.api.Test;
 
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -16,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
@@ -662,6 +657,21 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_guid = "persistAssetAllocationCannotBe0";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 0));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
+    }
+
+    @Test
+    void testPersistAssetParentMustExist(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "testPersistAssetParentMustExist";
+        asset.asset_pid = "pid_testPersistAssetParentMustExist";
+        asset.parent_guid = "does_not_exist";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 10));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Parent doesnt exist");
     }
 
     @Test

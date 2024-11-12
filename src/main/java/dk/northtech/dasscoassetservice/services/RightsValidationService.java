@@ -189,7 +189,6 @@ public class RightsValidationService {
         }
         Set<String> allUserRoles = getUserRoles(user.roles);
         Collection collection = collectionOpt.get();
-        allUserRoles.forEach(System.out::println);
         if (!collection.roleRestrictions().isEmpty()) {
             for (Role r : collection.roleRestrictions()) {
                 System.out.println((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name());

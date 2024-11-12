@@ -653,6 +653,9 @@ public class AssetService {
         if (a.status == null) {
             throw new IllegalArgumentException("Status cannot be null");
         }
+        if("".equals(a.parent_guid)) {
+            throw new IllegalArgumentException("Parent may not be an empty string");
+        }
     }
 
     void validateAsset(Asset asset) {
@@ -680,11 +683,11 @@ public class AssetService {
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
 
-//        if(asset.parent_guid != null) {
-//            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
-//            if(parentOpt.isEmpty()) {
-//                throw new IllegalArgumentException("Parent doesnt exist");
-//            }
+        if(asset.parent_guid != null) {
+            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
+            if(parentOpt.isEmpty()) {
+                throw new IllegalArgumentException("Parent doesnt exist");
+            }
 //            Asset parent = parentOpt.get();
 //            if(!parent.restricted_access.isEmpty()) {
 //                parent.restricted_access.stream()
@@ -692,8 +695,8 @@ public class AssetService {
 //                        .findAny()
 //                        .orElseThrow(() -> new DasscoIllegalActionException("Parent is restricted"));
 //            }
-//
-//        }
+
+        }
 
     }
 
@@ -722,6 +725,7 @@ public class AssetService {
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
+        logger.info("POSTing asset {} with parent {} to file-proxy",asset.asset_guid, asset.parent_guid);
         Observation.createNotStarted("persist:openShareOnFP", observationRegistry).observe(()->{
             asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
         });
@@ -742,6 +746,7 @@ public class AssetService {
 
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
             Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
+                //TEZT
                 //statisticsDataServiceV2.refreshCachedData();
             });
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
@@ -785,7 +790,7 @@ public class AssetService {
             logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
 
         } else {
-            //Do not persist azzet if share wasnt created
+            //Do not persist asset if share wasnt created
             return asset;
         }
 

@@ -431,7 +431,6 @@ public interface AssetRepository extends SqlObject {
                         .add("file_formats", agtypeListBuilder.build())
                         .add("created_date", asset.created_date.toEpochMilli())
                         .add("internal_status", asset.internal_status.name())
-                        .add("parent_id", asset.parent_guid)
                         .add("user", asset.digitiser)
                         .add("tags", tags.build())
                         .add("restricted_access", restrictedAcces.build())
