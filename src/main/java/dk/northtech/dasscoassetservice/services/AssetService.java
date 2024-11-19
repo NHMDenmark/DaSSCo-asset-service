@@ -710,7 +710,9 @@ public class AssetService {
                 throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
             }
         });
-
+        if (Strings.isNullOrEmpty(asset.digitiser)) {
+            throw new IllegalArgumentException("digitiser cannot be null when creating asset");
+        }
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
