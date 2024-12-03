@@ -37,22 +37,19 @@ public class InternalStatusRepository {
 
     String statusBaseSql = // I know this looks insane but I'm not good enough at neo4j to find a better way yet :C
             """
-                SELECT * from cypher('dassco', $$
-                    OPTIONAL MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
-                        WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']
-                        AND NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(a)) #and#
-            
-                        WITH
-                            count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] THEN 1 END) as pending,
-                            count(CASE WHEN a.internal_status = 'COMPLETED' THEN 1 END) as completed,
-                            count(CASE WHEN a.internal_status IN ['SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED'] THEN 1 END) as failed
-
-                        RETURN
-                            pending,
-                            completed,
-                            failed
-
-                $$, #params) as (pending agtype, completed agtype, failed agtype);
+               SELECT * from cypher('dassco', $$
+                    MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
+               	 WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']  #and# 	 \s
+               	 OPTIONAL MATCH (a)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})
+                    WITH
+                        count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] AND ed is null THEN 1 END) as pending,
+                        count(CASE WHEN a.internal_status = 'COMPLETED'  AND ed is null THEN 1 END) as completed,
+                        count(CASE WHEN a.internal_status IN ['SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']  AND ed is null THEN 1 END) as failed
+                    RETURN
+                        pending,
+                        completed,
+                        failed
+               $$, #params) as (pending agtype, completed agtype, failed agtype);
             """;
 
     String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");

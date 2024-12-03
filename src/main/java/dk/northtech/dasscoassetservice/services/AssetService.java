@@ -1,5 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.*;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
@@ -28,6 +30,7 @@ import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +53,8 @@ public class AssetService {
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
     private final ObservationRegistry observationRegistry;
+
+    Cache<String, Instant> guids;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -84,6 +89,8 @@ public class AssetService {
         this.restrictedAccessCache = restrictedAccessCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
         this.observationRegistry = observationRegistry;
+        this.guids = Caffeine.newBuilder()
+                .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
@@ -703,6 +710,12 @@ public class AssetService {
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
         //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        validateAssetFields(asset);
+        if(guids.getIfPresent(asset.asset_guid) != null) {
+            logger.warn("Same asset uploaded in short time frame, guid: {}",asset.asset_guid);
+            throw new DasscoIllegalActionException("Asset " + asset.asset_guid + " is already being processed");
+        }
+        guids.put(asset.asset_guid, Instant.now());
         LocalDateTime databaseCheckStart = LocalDateTime.now();
         Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
             Optional<Asset> assetOpt = getAsset(asset.asset_guid);
@@ -721,7 +734,6 @@ public class AssetService {
 
         LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        validateAssetFields(asset);
         validateAsset(asset);
         LocalDateTime validationEnd = LocalDateTime.now();
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
@@ -749,7 +761,7 @@ public class AssetService {
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
             Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
                 //TEZT
-                //statisticsDataServiceV2.refreshCachedData();
+//                statisticsDataServiceV2.refreshCachedData();
             });
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
             logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
@@ -764,25 +776,19 @@ public class AssetService {
 
             if (asset.specimens != null && !asset.specimens.isEmpty()){
                 for (Specimen specimen : asset.specimens){
-
                     preparationTypeCache.putPreparationTypesInCacheIfAbsent(specimen.preparation_type());
-
                 }
             }
 
             if (asset.subject != null && !asset.subject.isEmpty()){
-
                 subjectCache.putSubjectsInCacheIfAbsent(asset.subject);
-
             }
 
             if (asset.payload_type != null && !asset.payload_type.isEmpty()){
                     payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
-
             }
 
             statusCache.putStatusInCacheIfAbsent(asset.status);
-
             if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
                 for (InternalRole internalRole : asset.restricted_access){
                     restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
@@ -792,13 +798,14 @@ public class AssetService {
             logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
 
         } else {
+            guids.invalidate(asset.asset_guid);
             //Do not persist asset if share wasnt created
             return asset;
         }
 
 //        statisticsDataServiceV2.refreshCachedData();
-//        this.statisticsDataService.addAssetToCache(asset);
-
+//        this.statisticsDataServiceV2.addAssetToCache(asset);
+        guids.invalidate(asset.asset_guid);
         return asset;
     }
 

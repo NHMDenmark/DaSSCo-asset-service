@@ -33,16 +33,20 @@ public class StatisticsDataRepository {
         logger.info("Start getting statistics from database");
         String sql =
             """
-                SELECT * from cypher('dassco', $$
-                       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset:Asset)<-[:CREATED_BY]-(specimen:Specimen)
-                        WHERE NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset))
-                            AND event.timestamp >= $startDate
-                            AND event.timestamp <= $endDate
-                        MATCH (pipeline:Pipeline)<-[:USED]-(event)
-                        MATCH (workstation:Workstation)<-[:USED]-(event)
-                        MATCH (institution:Institution)<-[:BELONGS_TO]-(asset)
-                        RETURN event.timestamp, count(DISTINCT specimen), pipeline.name, workstation.name, institution.name
-                    $$, #params) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
+SELECT * from cypher('dassco', $$
+       MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset:Asset)<-[:CREATED_BY]-(specimen:Specimen)
+        	WHERE event.timestamp >= $startDate
+            	AND event.timestamp <=  $endDate
+	   OPTIONAL MATCH (asset)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})	
+       MATCH (pipeline:Pipeline)<-[:USED]-(event)
+       MATCH (workstation:Workstation)<-[:USED]-(event)
+       MATCH (institution:Institution)<-[:BELONGS_TO]-(asset)
+       RETURN event.timestamp
+		, count(DISTINCT (CASE WHEN ed IS NULL THEN specimen ELSE NULL END))
+		, pipeline.name
+		, workstation.name
+		, institution.name
+    $$, #params) as (created_date agtype, specimens agtype, pipeline_name agtype, workstation_name agtype, institute_name agtype)
             """;
 
         List<StatisticsData> graphData = jdbi.withHandle(handle -> {
