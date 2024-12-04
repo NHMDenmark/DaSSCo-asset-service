@@ -139,7 +139,7 @@ public class AssetService {
         Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
         jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
 
-        //statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
@@ -210,7 +210,7 @@ public class AssetService {
         Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
 
-        //statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
 
         if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()){
@@ -244,7 +244,7 @@ public class AssetService {
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         // Close samba and sync ERDA;
         jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
-        //statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
