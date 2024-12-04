@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import dk.northtech.dasscoassetservice.domain.Collection;
@@ -11,9 +12,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Map.entry;
-
+import com.github.benmanes.caffeine.cache.Cache;
 @Service
 public class RightsValidationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(RightsValidationService.class);
@@ -32,6 +34,8 @@ public class RightsValidationService {
         this.collectionService = collectionService;
         this.assetGroupService = assetGroupService;
         this.jdbi = jdbi;
+
+
     }
 
     public boolean checkReadRights(User user, String institutionName) {

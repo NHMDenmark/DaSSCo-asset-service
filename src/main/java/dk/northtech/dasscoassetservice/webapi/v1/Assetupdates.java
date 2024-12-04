@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -174,7 +175,9 @@ public class Assetupdates {
     public Asset updateAsset(Asset asset
             , @PathParam("assetGuid") String assetGuid
             , @Context SecurityContext securityContext) {
-        asset.asset_guid = assetGuid;
+        if(!Objects.equals(assetGuid, asset.asset_guid)) {
+            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-body");
+        }
         return this.assetService.updateAsset(asset, UserMapper.from(securityContext));
     }
 

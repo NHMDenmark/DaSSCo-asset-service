@@ -59,7 +59,7 @@ public class StatisticsDataServiceV2 {
                             } else if (key.equals(GraphView.YEAR)) {
                                 logger.info("Generating and caching monthly data for the past year.");
                                 Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusYears(1).toInstant();
-                                finalData = getYearlyData(startDate, Instant.now(), GraphView.EXPONENTIAL); // exponential as we wanna cache both kinds of graphs.
+                                finalData = getYearlyData(startDate, Instant.now(), GraphView.EXPONENTIAL); // exponential as we want to cache both kinds of graphs.
                             }
                             return finalData;
                         }
@@ -84,6 +84,7 @@ public class StatisticsDataServiceV2 {
         refreshGraphDataCache();
         if (internalStatusService.cachedInternalStatus != null && !internalStatusService.cachedInternalStatus.asMap().isEmpty()) {
             for (InternalStatusTimeFrame view : InternalStatusTimeFrame.values()) {
+                logger.info("Refreshing {}",view);
                 internalStatusService.cachedInternalStatus.refresh(view); // refresh only "refreshes" next time .get() is called
             }
         }
