@@ -274,7 +274,7 @@ public class AssetService {
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
 
-        //statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
         return true;
     }
 
@@ -314,7 +314,7 @@ public class AssetService {
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
 
-        //statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
@@ -761,12 +761,12 @@ public class AssetService {
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
             Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
                 //TEZT
-//                statisticsDataServiceV2.refreshCachedData();
+                statisticsDataServiceV2.refreshCachedData();
             });
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
             logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 
-//        this.statisticsDataService.addAssetToCache(asset);
+//            this.statisticsDataService.addAssetToCache(asset);
 
             LocalDateTime cacheStart = LocalDateTime.now();
             if (asset.digitiser != null && !asset.digitiser.isEmpty()){
@@ -803,7 +803,7 @@ public class AssetService {
             return asset;
         }
 
-//        statisticsDataServiceV2.refreshCachedData();
+        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataServiceV2.addAssetToCache(asset);
         guids.invalidate(asset.asset_guid);
         return asset;
