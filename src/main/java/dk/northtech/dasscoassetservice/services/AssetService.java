@@ -715,7 +715,6 @@ public class AssetService {
             logger.warn("Same asset uploaded in short time frame, guid: {}",asset.asset_guid);
             throw new DasscoIllegalActionException("Asset " + asset.asset_guid + " is already being processed");
         }
-        guids.put(asset.asset_guid, Instant.now());
         LocalDateTime databaseCheckStart = LocalDateTime.now();
         Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
             Optional<Asset> assetOpt = getAsset(asset.asset_guid);
@@ -723,9 +722,10 @@ public class AssetService {
                 throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
             }
         });
-        if (Strings.isNullOrEmpty(asset.digitiser)) {
-            throw new IllegalArgumentException("digitiser cannot be null when creating asset");
-        }
+        //TODO We need to know how the digitiser field is going to be used
+//        if (Strings.isNullOrEmpty(asset.digitiser)) {
+//            throw new IllegalArgumentException("digitiser cannot be null when creating asset");
+//        }
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
@@ -735,6 +735,7 @@ public class AssetService {
         LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateAsset(asset);
+        guids.put(asset.asset_guid, Instant.now());
         LocalDateTime validationEnd = LocalDateTime.now();
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
