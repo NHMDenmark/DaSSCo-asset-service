@@ -505,7 +505,7 @@ public interface AssetRepository extends SqlObject {
                             MATCH (w:Workstation {name: $workstation_name})
                             MATCH (p:Pipeline {name: $pipeline_name})                        
                             MATCH (a:Asset {name: $asset_guid})
-                            OPTIONAL MATCH (a)-[co:CHILD_OF]-(parent:Asset)
+                            OPTIONAL MATCH (a)-[co:CHILD_OF]->(parent:Asset)
                             DELETE co
                             MERGE (u:User{user_id: $user, name: $user})
                             MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
