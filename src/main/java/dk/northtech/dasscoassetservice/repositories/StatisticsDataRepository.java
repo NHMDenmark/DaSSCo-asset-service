@@ -37,10 +37,10 @@ SELECT * from cypher('dassco', $$
        MATCH (event:Event {name: 'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset:Asset)<-[:CREATED_BY]-(specimen:Specimen)
         	WHERE event.timestamp >= $startDate
             	AND event.timestamp <=  $endDate
-	   OPTIONAL MATCH (asset)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})	
-       MATCH (pipeline:Pipeline)<-[:USED]-(event)
+	   MATCH (pipeline:Pipeline)<-[:USED]-(event)
        MATCH (workstation:Workstation)<-[:USED]-(event)
        MATCH (institution:Institution)<-[:BELONGS_TO]-(asset)
+	   OPTIONAL MATCH (asset)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})	
        RETURN event.timestamp
 		, count(DISTINCT (CASE WHEN ed IS NULL THEN specimen ELSE NULL END))
 		, pipeline.name

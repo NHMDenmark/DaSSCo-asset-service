@@ -723,9 +723,9 @@ public class AssetService {
             }
         });
         //TODO We need to know how the digitiser field is going to be used
-//        if (Strings.isNullOrEmpty(asset.digitiser)) {
-//            throw new IllegalArgumentException("digitiser cannot be null when creating asset");
-//        }
+        if (Strings.isNullOrEmpty(asset.digitiser)) {
+            throw new IllegalArgumentException("digitiser cannot be null when creating asset");
+        }
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
@@ -760,10 +760,8 @@ public class AssetService {
             logger.info("#5 Creating the asset took {} ms", java.time.Duration.between(createAssetStart, createAssetEnd).toMillis());
 
             LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-            Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(() -> {
-                //TEZT
-                statisticsDataServiceV2.refreshCachedData();
-            });
+            //TEZT
+            Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry).observe(statisticsDataServiceV2::refreshCachedData);
             LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
             logger.info("#6 Refreshing the cached data took {} ms", java.time.Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 

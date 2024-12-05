@@ -654,7 +654,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i2_w1";
         asset.pipeline = "i2_p1";
         asset.collection = "i2_c1";
+        asset.digitiser = "Dan Digitiser";
         asset.asset_guid = "persistAssetAllocationCannotBe0";
+        asset.asset_pid = "pdididid";
+        asset.status = AssetStatus.BEING_PROCESSED;
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 0));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
     }
@@ -669,6 +672,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_guid = "testPersistAssetParentMustExist";
         asset.asset_pid = "pid_testPersistAssetParentMustExist";
         asset.parent_guid = "does_not_exist";
+        asset.digitiser = "Bob";
         asset.status = AssetStatus.BEING_PROCESSED;
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 10));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Parent doesnt exist");
@@ -683,6 +687,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i2_c1";
         asset.asset_guid = "persistAssetCannotSaveSameAssetTwice";
         asset.asset_pid = "pid-persistAssetCannotSaveSameAssetTwice";
+        asset.digitiser = "Karl-Børge";
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user, 1);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 1));
@@ -726,6 +731,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "createAssetMaxNulls_pid";
         createAsset.asset_guid = "createAssetMaxNulls";
+        createAsset.digitiser = "Basviola";
         createAsset.updateUser = "thbo";
         createAsset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(createAsset, user,10);
@@ -766,6 +772,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i2_c1";
         asset.asset_guid = "testGetAsset";
         asset.asset_pid = "pid-testGetAsset";
+        asset.digitiser = "digigigizzzer";
         asset.status = AssetStatus.BEING_PROCESSED;
         assetService.persistAsset(asset, user, 1);
         Optional<Asset> optionalAsset = assetService.getAsset("testGetAsset");
