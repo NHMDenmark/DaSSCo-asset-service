@@ -2,12 +2,14 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -679,6 +681,72 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testParentChildRelationIsNotDeletedWhenUpdatingParent(){
+        Asset asset = new Asset();
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_p";
+        asset.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_p";
+//        asset.parent_guid = "does_not_exist";
+        asset.digitiser = "Bob";
+        asset.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset, user, 10);
+        Asset asset2 = new Asset();
+        asset2.institution = "institution_2";
+        asset2.workstation = "i2_w1";
+        asset2.pipeline = "i2_p1";
+        asset2.collection = "i2_c1";
+        asset2.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_c";
+        asset2.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_c";
+        asset2.parent_guid = asset.asset_guid;
+        asset2.digitiser = "Bob";
+        asset2.status = AssetStatus.BEING_PROCESSED;
+        assetService.persistAsset(asset2, user, 10);
+        Asset parent = assetService.getAsset(asset.asset_guid).get();
+        parent.updateUser = "Bob";
+        parent.funding = "Hundredetusindvis af dollar, jeg er stadig i chok";
+        assetService.updateAsset(parent, user);
+        Asset child = assetService.getAsset(asset2.asset_guid).get();
+        assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
+    }
+
+    @Test
+    void testChangeParent(){
+        Asset p1 = getTestAsset("testChangeParent_p1");
+        Asset p2 = getTestAsset("testChangeParent_p2");
+        Asset c = getTestAsset("testChangeParent_c");
+
+        assetService.persistAsset(p1, user, 10);
+        assetService.persistAsset(p2, user, 10);
+        c.parent_guid = p1.asset_guid;
+        assetService.persistAsset(c, user, 10);
+        Asset cToUpdate = assetService.getAsset(c.asset_guid).get();
+        cToUpdate.parent_guid = p2.asset_guid;
+        cToUpdate.updateUser = user.username;
+        assetService.updateAsset(cToUpdate,user);
+        Asset cUpdated = assetService.getAsset(c.asset_guid).get();
+        assertThat(cUpdated.parent_guid).isEqualTo(p2.asset_guid);
+    }
+
+    @Test
+    void removeParentRelation(){
+        Asset p1 = getTestAsset("removeParentRelation_p1");
+        Asset c = getTestAsset("removeParentRelation_c");
+        assetService.persistAsset(p1, user, 10);
+        c.parent_guid = p1.asset_guid;
+        assetService.persistAsset(c, user, 10);
+        Asset cToUpdate = assetService.getAsset(c.asset_guid).get();
+        assertThat(cToUpdate.parent_guid).isEqualTo(p1.asset_guid);
+        cToUpdate.parent_guid = null;
+        cToUpdate.updateUser = user.username;
+        assetService.updateAsset(cToUpdate,user);
+        Asset cUpdated = assetService.getAsset(c.asset_guid).get();
+        assertThat(cUpdated.parent_guid).isNull();
+    }
+
+    @Test
     void testPersistAssetCannotSaveSameAssetTwice(){
         Asset asset = new Asset();
         asset.institution = "institution_2";
@@ -811,14 +879,20 @@ class AssetServiceTest extends AbstractIntegrationTest {
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
+        asset.status = AssetStatus.BEING_PROCESSED;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
+        asset.asset_pid = guid + "_pid";
         asset.funding = "Hundredetusindvis af dollars";
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList(FileFormat.JPEG);
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
         return asset;
     }
 
@@ -1001,6 +1075,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         updatedAsset.pipeline = "i2_p1";
         updatedAsset.workstation = "i2_w1";
         updatedAsset.collection = "i2_c1";
+
         updatedAsset.status = AssetStatus.BEING_PROCESSED;
         updatedAsset.asset_locked = true;
         updatedAsset.tags.put("Tag 3", "Value 3");
