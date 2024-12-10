@@ -6,10 +6,13 @@ import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +23,7 @@ import jakarta.ws.rs.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 
 import javax.print.attribute.standard.Media;
 import java.time.LocalDateTime;
@@ -170,9 +174,38 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+            {
+              "asset_guid": "ti-a01-202305241657",
+              "institution": "test-institution",
+              "parent_guid":  null,
+              "status": "BEING_PROCESSED",
+              "specimens": [
+                    {
+                        "barcode": "bc123456",
+                        "specimen_pid": "spcpid-123",
+                        "preparation_type": "slide"
+                    }
+                ],
+              "funding": "hundredetusindvis af dollars",
+              "subject": "folder",
+              "payload_type": "ct scan",
+              "file_formats": [
+                "TIF"
+              ],
+              "asset_locked": false,
+              "restricted_access": [],
+              "pipeline": "ti-p1",
+              "workstation": "ti-ws1",
+              "digitiser" : "thbo",
+              "updateUser": "thbo",
+              "tags": {
+                  "testtag2": "test-tag"
+              }
+            }
+            """)}))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(Asset asset
+    public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema =  ))Asset asset
             , @PathParam("assetGuid") String assetGuid
             , @Context SecurityContext securityContext) {
         if(!Objects.equals(assetGuid, asset.asset_guid)) {
