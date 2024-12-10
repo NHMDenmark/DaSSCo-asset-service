@@ -14,6 +14,8 @@ import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 public interface AssetRepository extends SqlObject {
 //    private Jdbi jdbi;
 //    private DataSource dataSource;
-
+    static final Logger logger = LoggerFactory.getLogger(AssetRepository.class);
     @CreateSqlObject
     SpecimenRepository createSpecimenRepository();
 
@@ -717,7 +719,7 @@ public interface AssetRepository extends SqlObject {
         sql +=
                 """
                         MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
-                        MERGE (a)-[ca:CHANGED_BY]-(e)
+                        MERGE (a)-[ca:CHANGED_BY]->(e)
                         """;
         if (event.user != null) {
             sql += " MERGE (e)-[pb:INITIATED_BY]->(u) ";
