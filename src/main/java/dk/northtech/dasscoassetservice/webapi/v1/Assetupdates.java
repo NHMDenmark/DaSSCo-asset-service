@@ -174,7 +174,9 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class) ))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
             {
               "asset_guid": "ti-a01-202305241657",
               "institution": "test-institution",
@@ -203,9 +205,7 @@ public class Assetupdates {
                   "testtag2": "test-tag"
               }
             }
-            """)}))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema =  ))Asset asset
+            """)}))Asset asset
             , @PathParam("assetGuid") String assetGuid
             , @Context SecurityContext securityContext) {
         if(!Objects.equals(assetGuid, asset.asset_guid)) {
@@ -244,7 +244,10 @@ public class Assetupdates {
     }
 
     @DELETE
-    @Operation(summary = "Delete Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).")
+    @Operation(summary = "Mark asset as deleted", description = """
+    Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA). 
+    Assets marked as deleted are not included in statistics but metadata and assets files are not deleted.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
