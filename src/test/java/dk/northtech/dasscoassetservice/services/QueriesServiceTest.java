@@ -173,7 +173,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         auditedAsset.status = AssetStatus.BEING_PROCESSED;
 
         assetService.persistAsset(auditedAsset, user, 11);
-        assetService.completeAsset(new AssetUpdateRequest("audited", new MinimalAsset("audited", null, "NNAD", "i_c1")
+        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("audited", null, "NNAD", "i_c1")
                 , "i2_w1", "pl-01", user.username));
         assetService.auditAsset(auditingUser, new Audit(auditingUser.username), "audited");
 

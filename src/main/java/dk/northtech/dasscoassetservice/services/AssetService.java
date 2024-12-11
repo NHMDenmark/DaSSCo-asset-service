@@ -223,19 +223,18 @@ public class AssetService {
         return true;
     }
 
+    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
+    // TODO  is this used
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
-        }
-        if (assetSmbRequest.shareName() == null) {
-            throw new IllegalArgumentException("Share id cannot be null");
         }
         Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
         if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
 
-        //Mark as asset received
+        // Mark as asset received
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         if (asset.asset_locked) {

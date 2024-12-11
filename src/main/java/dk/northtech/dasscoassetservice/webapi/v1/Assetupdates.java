@@ -7,6 +7,7 @@ import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -86,6 +87,7 @@ public class Assetupdates {
             "Required information is: shareName and a MinimalAsset with asset_guid.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Hidden
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -218,11 +220,26 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @PUT
     @Path("/bulkUpdate")
-    @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
+    @Operation(summary = "Bulk Update Assets", description = """
+    Update metadata in many assets at the same time. Takes a list of asse_guid and a body of properties to be updated.
+    All assets in the list will have their properties overwritten by the values in the postbody. 
+    """)
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset>  bulkUpdate(Asset asset
+    public List<Asset>  bulkUpdate(@RequestBody(description = "The fields to update", required = true, content = @Content(schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+            {
+              "status": "BEING_PROCESSED",
+              "asset_locked": false,
+              "subject": "Folder",
+              "funding": "Hundredetusindvis af dollars",
+              "payload_type": "CT scan",
+              "digitiser": "Doris Digitiser",
+              "pipeline": "tb-pipeline-10",
+              "workstation": "tb-workstation-101",
+              "updateUser": "thomas@northtech.dk"
+            }
+            """)})) Asset asset
             , @QueryParam("assets") List<String> assetGuids
             , @Context SecurityContext securityContext){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
