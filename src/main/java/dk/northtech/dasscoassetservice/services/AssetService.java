@@ -695,14 +695,6 @@ public class AssetService {
             if(parentOpt.isEmpty()) {
                 throw new IllegalArgumentException("Parent doesnt exist");
             }
-//            Asset parent = parentOpt.get();
-//            if(!parent.restricted_access.isEmpty()) {
-//                parent.restricted_access.stream()
-//                        .filter(role -> user.roles.contains(role.roleName))
-//                        .findAny()
-//                        .orElseThrow(() -> new DasscoIllegalActionException("Parent is restricted"));
-//            }
-
         }
 
     }

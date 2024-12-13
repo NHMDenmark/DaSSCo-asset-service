@@ -1547,6 +1547,7 @@ components:
           - UPSTREAM_ERROR
           - INTERNAL_ERROR
           - FORBIDDEN
+          - NOT_FOUND
         errorMessage:
           type: string
         body:

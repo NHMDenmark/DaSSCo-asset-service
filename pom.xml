@@ -10,7 +10,7 @@
     </parent>
     <groupId>dk.northtech</groupId>
     <artifactId>dassco-asset-service</artifactId>
-    <version>1.7.2</version>
+    <version>1.7.3</version>
     <name>dassco-asset-service</name>
     <description>dassco-asset-service</description>
     <properties>
