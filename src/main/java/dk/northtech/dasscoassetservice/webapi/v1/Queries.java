@@ -51,7 +51,10 @@ public class Queries {
 
     @POST
     @Path("/{limit}")
-    @Operation(summary = "Get assets from query", description = "Selects all assets based on the received queries.")
+    @Operation(summary = "Get assets from query", description = """
+    Selects all assets based on the received queries.
+    This is API is accessed through the Query page in the frontend.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -62,7 +65,7 @@ public class Queries {
 
     @POST
     @Path("/assetcount/{limit}")
-    @Operation(summary = "Get the number of assets for the query", description = "Get the count for the number of assets matching the query")
+    @Operation(summary = "Get the number of assets for the query", description = "Internal API used to get the count for the number of assets matching a query made on the query page")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -74,7 +77,10 @@ public class Queries {
 
     @POST
     @Path("/save")
-    @Operation(summary = "Save query to user", description = "Saves a query and links it to the user.")
+    @Operation(summary = "Save query to user", description = """
+        Saves a query and links it to the user.
+        This is used through the frontend to save custom queries.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))

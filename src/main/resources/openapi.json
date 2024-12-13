@@ -44,99 +44,11 @@
     "description" : "Endpoints related to institutions workstations"
   } ],
   "paths" : {
-    "/v1/assets/readaccessforcsv" : {
-      "post" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Create CSV String for Multiple Assets",
-        "description" : "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.",
-        "operationId" : "CsvMultipleAssets",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets/readaccessforzip" : {
-      "post" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Check Read Access For Zip File Creation",
-        "description" : "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.",
-        "operationId" : "ZipMultipleAssets",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "array",
-                "items" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets/readaccess" : {
-      "post" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Get Access Permission",
-        "description" : "Checks if User has access or not to certain assets.",
-        "operationId" : "checkAccess",
-        "parameters" : [ {
-          "name" : "assetGuid",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/assets/statusList" : {
       "get" : {
         "tags" : [ "Assets" ],
-        "summary" : "Get Asset Status List",
-        "description" : "Returns a list of the existing asset status in the system",
+        "summary" : "Get enumeration AssetStatus",
+        "description" : "Get List of status that can be set in the status field in asset metadata",
         "operationId" : "getAssetStatus",
         "responses" : {
           "200" : {
@@ -189,37 +101,6 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/AssetStatusInfo"
-                }
-              }
-            }
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
-    "/v1/assets" : {
-      "get" : {
-        "tags" : [ "Assets" ],
-        "summary" : "Get Assets",
-        "description" : "Returns a list of assets.",
-        "operationId" : "getAssets",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/AssetV1"
                 }
               }
             }
@@ -310,8 +191,8 @@
     "/v1/assets/restricted_access" : {
       "get" : {
         "tags" : [ "Assets" ],
-        "summary" : "Get Restricted Access List",
-        "description" : "Returns a list of the restricted access that the Assets in the system have",
+        "summary" : "Get enum of default Dassco roles",
+        "description" : "Returns list of roles, values are USER, ADMIN, SERVICE, DEVELOPER additional roles can be created by adding restrictions to institutions and collections",
         "operationId" : "getRestrictedAccess",
         "responses" : {
           "200" : {
@@ -768,40 +649,6 @@
         } ]
       }
     },
-    "/v1/assetmetadata/{assetGuid}/assetreceived" : {
-      "post" : {
-        "tags" : [ "Asset Metadata" ],
-        "summary" : "Receive Asset",
-        "description" : "Changes the internal status of an asset to ASSET_RECEIVED. \n\nRequired information is: shareName and a MinimalAsset with asset_guid.",
-        "operationId" : "assetReceived",
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AssetUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "204" : {
-            "description" : "No Content"
-          },
-          "400-599" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/DaSSCoError"
-                }
-              }
-            }
-          }
-        },
-        "security" : [ {
-          "dassco-idp" : [ ]
-        } ]
-      }
-    },
     "/v1/assetmetadata/{assetGuid}/audit" : {
       "post" : {
         "tags" : [ "Asset Metadata" ],
@@ -848,7 +695,7 @@
       "put" : {
         "tags" : [ "Asset Metadata" ],
         "summary" : "Bulk Update Assets",
-        "description" : "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.",
+        "description" : "Update metadata in many assets at the same time. Takes a list of asse_guid and a body of properties to be updated.\nAll assets in the list will have their properties overwritten by the values in the postbody.\n",
         "operationId" : "bulkUpdate",
         "parameters" : [ {
           "name" : "assets",
@@ -861,13 +708,26 @@
           }
         } ],
         "requestBody" : {
+          "description" : "The fields to update",
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Asset"
+              },
+              "example" : {
+                "status" : "BEING_PROCESSED",
+                "asset_locked" : false,
+                "subject" : "Folder",
+                "funding" : "Hundredetusindvis af dollars",
+                "payload_type" : "CT scan",
+                "digitiser" : "Doris Digitiser",
+                "pipeline" : "tb-pipeline-10",
+                "workstation" : "tb-workstation-101",
+                "updateUser" : "thomas@northtech.dk"
               }
             }
-          }
+          },
+          "required" : true
         },
         "responses" : {
           "200" : {
@@ -1038,9 +898,34 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/Asset"
+              },
+              "example" : {
+                "asset_guid" : "ti-a01-202305241657",
+                "institution" : "test-institution",
+                "parent_guid" : null,
+                "status" : "BEING_PROCESSED",
+                "specimens" : [ {
+                  "barcode" : "bc123456",
+                  "specimen_pid" : "spcpid-123",
+                  "preparation_type" : "slide"
+                } ],
+                "funding" : "hundredetusindvis af dollars",
+                "subject" : "folder",
+                "payload_type" : "ct scan",
+                "file_formats" : [ "TIF" ],
+                "asset_locked" : false,
+                "restricted_access" : [ ],
+                "pipeline" : "ti-p1",
+                "workstation" : "ti-ws1",
+                "digitiser" : "thbo",
+                "updateUser" : "thbo",
+                "tags" : {
+                  "testtag2" : "test-tag"
+                }
               }
             }
-          }
+          },
+          "required" : true
         },
         "responses" : {
           "200" : {
@@ -1068,8 +953,8 @@
       },
       "delete" : {
         "tags" : [ "Asset Metadata" ],
-        "summary" : "Delete Asset",
-        "description" : "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).",
+        "summary" : "Mark asset as deleted",
+        "description" : "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).\nAssets marked as deleted are not included in statistics but metadata and assets files are not deleted.\n",
         "operationId" : "deleteAsset",
         "parameters" : [ {
           "name" : "assetGuid",
@@ -2253,7 +2138,7 @@
           },
           "errorCode" : {
             "type" : "string",
-            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
+            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN", "NOT_FOUND" ]
           },
           "errorMessage" : {
             "type" : "string"
@@ -2298,281 +2183,6 @@
             "description" : "Number of MB allocated for the asset",
             "format" : "int32",
             "example" : 10
-          }
-        }
-      },
-      "AssetV1" : {
-        "type" : "object",
-        "properties" : {
-          "originalMedia" : {
-            "type" : "string",
-            "example" : "CP0002637_L_selago_Fuji_ICC"
-          },
-          "originalMediaTaken" : {
-            "type" : "string",
-            "description" : "Date and time when the media was taken",
-            "format" : "date-time",
-            "example" : "1970-01-01T00:00:00Z"
-          },
-          "digitiser" : {
-            "type" : "string",
-            "description" : "The name of the person who imaged the specimens (creating the assets)",
-            "example" : "Justin Hungerford"
-          },
-          "workstationName" : {
-            "type" : "string",
-            "description" : "The name of the workstation used to do the imaging",
-            "example" : "ti-ws1"
-          },
-          "pipelineName" : {
-            "type" : "string",
-            "description" : "The name of the pipeline that sent a create, update or delete request to the storage service",
-            "example" : "ti-p1"
-          },
-          "institution" : {
-            "type" : "string",
-            "description" : "The name of the institution which owns and digitised the specimen",
-            "example" : "test-institution"
-          },
-          "collection" : {
-            "type" : "string",
-            "description" : "The collection name within the institution that holds the specimen",
-            "example" : "test-collection"
-          },
-          "dateMediaCreated" : {
-            "type" : "string",
-            "description" : "Date and time when the media was created",
-            "format" : "date-time",
-            "example" : "1970-01-01T00:00:00Z"
-          },
-          "mediaCreatedBy" : {
-            "type" : "string",
-            "description" : "Pipeline used for creating the media",
-            "example" : "PIPEHERB0001"
-          },
-          "dateMediaUpdated" : {
-            "type" : "array",
-            "description" : "Date and time when the media was updated",
-            "example" : [ "1970-01-01T00:00:00.000Z" ],
-            "items" : {
-              "type" : "string",
-              "description" : "Date and time when the media was updated",
-              "format" : "date-time"
-            }
-          },
-          "mediaUpdatedBy" : {
-            "type" : "array",
-            "description" : "Pipeline used for updating the media",
-            "example" : [ "PIPEHERB0001" ],
-            "items" : {
-              "type" : "string",
-              "description" : "Pipeline used for updating the media",
-              "example" : "[\"PIPEHERB0001\"]"
-            }
-          },
-          "dateMediaDeleted" : {
-            "type" : "string",
-            "description" : "Date and time when the media was deleted",
-            "example" : "1970-01-01T00:00:00.000Z"
-          },
-          "mediaDeletedBy" : {
-            "type" : "string",
-            "description" : "Pipeline used for deleting the media",
-            "example" : "PIPEHERB0001"
-          },
-          "dateMetadataCreated" : {
-            "type" : "string",
-            "description" : "Date and time when the metadata was created",
-            "format" : "date-time",
-            "example" : "1970-01-01T00:00:00Z"
-          },
-          "metadataCreatedBy" : {
-            "type" : "array",
-            "example" : [ "PIPEHERB0001" ],
-            "items" : {
-              "type" : "string",
-              "example" : "[\"PIPEHERB0001\"]"
-            }
-          },
-          "dateMetadataUpdated" : {
-            "type" : "array",
-            "example" : [ "1970-01-01T00:00:00.000Z" ],
-            "items" : {
-              "type" : "string",
-              "format" : "date-time"
-            }
-          },
-          "metadataUpdatedBy" : {
-            "type" : "array",
-            "example" : [ "PIPEHERB0001" ],
-            "items" : {
-              "type" : "string",
-              "example" : "[\"PIPEHERB0001\"]"
-            }
-          },
-          "audited" : {
-            "type" : "string",
-            "description" : "Records if the asset has been manually audited",
-            "example" : "yes"
-          },
-          "auditedBy" : {
-            "type" : "string",
-            "example" : "Chelsea Graham"
-          },
-          "auditedDate" : {
-            "type" : "string",
-            "format" : "date-time",
-            "example" : "1970-01-01T00:00:00Z"
-          },
-          "status" : {
-            "type" : "string",
-            "example" : "archive"
-          },
-          "storageLocation" : {
-            "type" : "string"
-          },
-          "parent" : {
-            "type" : "string"
-          },
-          "originalParent" : {
-            "type" : "string"
-          },
-          "relatedMedia" : {
-            "type" : "string",
-            "example" : "7e7-1-02-11-21-25-1-01-001-05a8c7-00000000"
-          },
-          "mutispecimenStatus" : {
-            "type" : "string",
-            "example" : "no"
-          },
-          "otherMultispecimen" : {
-            "type" : "string"
-          },
-          "barcode" : {
-            "type" : "string",
-            "example" : "CP0002637"
-          },
-          "specimenPid" : {
-            "type" : "string"
-          },
-          "specifySpecimenId" : {
-            "type" : "string",
-            "example" : "ae1fcf25-7e94-4506-8d64-5c54d69fa900"
-          },
-          "specifyAttachmentId" : {
-            "type" : "string",
-            "example" : "b33ea887-11ab-43b9-a562-44fdfe32af8e"
-          },
-          "mediaGuid" : {
-            "type" : "string",
-            "example" : "7e7-1-02-11-21-25-1-01-001-05a8cb-00000000"
-          },
-          "mediaPid" : {
-            "type" : "string"
-          },
-          "externalLink" : {
-            "type" : "string"
-          },
-          "payloadType" : {
-            "type" : "string",
-            "example" : "image"
-          },
-          "fileFormat" : {
-            "type" : "string",
-            "description" : "The format of the asset",
-            "example" : "tif"
-          },
-          "fileInfo" : {
-            "type" : "string"
-          },
-          "accessLevel" : {
-            "type" : "string"
-          },
-          "preparationType" : {
-            "type" : "string",
-            "description" : "The way that the specimen has been prepared (pinned insect or mounted on a slide)"
-          },
-          "ocrText" : {
-            "type" : "string",
-            "example" : "FLORA DANICA EXSICCATA Lycopodium selago L. Jyll Silkeborg Vesterskov YII 1904 leg. M. Lorenzen."
-          },
-          "geographicRegion" : {
-            "type" : "string"
-          },
-          "taxonName" : {
-            "type" : "string"
-          },
-          "typeStatus" : {
-            "type" : "string"
-          },
-          "specimenStorageLocation" : {
-            "type" : "string"
-          },
-          "funding" : {
-            "type" : "string",
-            "description" : "A short description of funding source used to create the asset",
-            "example" : "Hundredetusindvis af dollars"
-          },
-          "copyrightOwner" : {
-            "type" : "string",
-            "example" : "NHMD"
-          },
-          "license" : {
-            "type" : "string",
-            "example" : "Attribution 4.0 International (CC BY 4.0)"
-          },
-          "embargoType" : {
-            "type" : "string"
-          },
-          "embargoNotes" : {
-            "type" : "string"
-          },
-          "equipmentDetails" : {
-            "type" : "array",
-            "example" : [ ],
-            "items" : {
-              "type" : "string",
-              "example" : "[]"
-            }
-          },
-          "exposureTime" : {
-            "type" : "string"
-          },
-          "fNumber" : {
-            "type" : "string"
-          },
-          "focalLength" : {
-            "type" : "string"
-          },
-          "isoSetting" : {
-            "type" : "string"
-          },
-          "whiteBalance" : {
-            "type" : "string"
-          },
-          "originalSpecifyMediaName" : {
-            "type" : "string",
-            "example" : "https://specify-attachments.science.ku.dk/fileget?coll=NHMD+Vascular+Plants&type=O&filename=sp68923230029256349442.att.jpg&downloadname=NHMD-679283.jpg&token=d545c06844d5b1fae60be67316374bce%3A1674817928"
-          },
-          "mediaSubject" : {
-            "type" : "string",
-            "example" : "specimen"
-          },
-          "notes" : {
-            "type" : "array",
-            "example" : [ ],
-            "items" : {
-              "type" : "string",
-              "example" : "[]"
-            }
-          },
-          "pushAssetToSpecify" : {
-            "type" : "string",
-            "example" : "no"
-          },
-          "pushMetadataToSpecify" : {
-            "type" : "string",
-            "example" : "yes"
           }
         }
       },
@@ -2931,12 +2541,19 @@
         },
         "description" : "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen"
       },
+      "Audit" : {
+        "type" : "object",
+        "properties" : {
+          "user" : {
+            "type" : "string",
+            "description" : "The user doing the audit",
+            "example" : "THBO"
+          }
+        }
+      },
       "AssetUpdateRequest" : {
         "type" : "object",
         "properties" : {
-          "shareName" : {
-            "type" : "string"
-          },
           "minimalAsset" : {
             "$ref" : "#/components/schemas/MinimalAsset"
           },
@@ -2982,16 +2599,6 @@
           }
         },
         "description" : "Asset information consisting only on asset_guid, parent_guid, institution and collection."
-      },
-      "Audit" : {
-        "type" : "object",
-        "properties" : {
-          "user" : {
-            "type" : "string",
-            "description" : "The user doing the audit",
-            "example" : "THBO"
-          }
-        }
       },
       "Collection" : {
         "type" : "object",
