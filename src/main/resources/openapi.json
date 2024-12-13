@@ -2253,7 +2253,7 @@
           },
           "errorCode" : {
             "type" : "string",
-            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN" ]
+            "enum" : [ "BAD_REQUEST", "UPSTREAM_ERROR", "INTERNAL_ERROR", "FORBIDDEN", "NOT_FOUND" ]
           },
           "errorMessage" : {
             "type" : "string"
