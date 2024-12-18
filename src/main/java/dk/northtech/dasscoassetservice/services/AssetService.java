@@ -223,19 +223,18 @@ public class AssetService {
         return true;
     }
 
+    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
+    // TODO  is this used
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
-        }
-        if (assetSmbRequest.shareName() == null) {
-            throw new IllegalArgumentException("Share id cannot be null");
         }
         Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
         if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
 
-        //Mark as asset received
+        // Mark as asset received
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         if (asset.asset_locked) {
@@ -312,7 +311,8 @@ public class AssetService {
         existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         validateAssetFields(existing);
-        jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
+        jdbi.onDemand(AssetRepository.class)
+                .updateAsset(existing, specimensToDetach);
 
         statisticsDataServiceV2.refreshCachedData();
 
@@ -665,7 +665,13 @@ public class AssetService {
         }
     }
 
-    void validateAsset(Asset asset) {
+    void validateNewAsset(Asset asset) {
+        if(Strings.isNullOrEmpty(asset.institution)) {
+            throw new IllegalArgumentException("Institution cannot be null");
+        }
+        if(Strings.isNullOrEmpty(asset.collection)) {
+            throw new IllegalArgumentException("Collection cannot be null");
+        }
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institution doesnt exist");
@@ -674,6 +680,8 @@ public class AssetService {
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
+    }
+    void validateAsset(Asset asset) {
         Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
         if (pipelineOpt.isEmpty()) {
             throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
@@ -726,6 +734,7 @@ public class AssetService {
 
         LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        validateNewAsset(asset);
         validateAsset(asset);
         guids.put(asset.asset_guid, Instant.now());
         LocalDateTime validationEnd = LocalDateTime.now();
@@ -817,6 +826,7 @@ public class AssetService {
     }
 
     public List<InternalRole>  listRestrictedAccess(){
+        //TODO this seems to be overly complicated. need cleanup
         return restrictedAccessCache.getRestrictedAccessList();
     }
 

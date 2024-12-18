@@ -51,18 +51,6 @@ public class AssetApi {
         this.rightsValidationService = rightsValidationService;
     }
 
-    @GET
-    @Operation(summary = "Get Assets", description = "Returns a list of assets.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetV1> getAssets() {
-        List<AssetV1> list = new ArrayList<>();
-        list.add(new AssetV1("",Instant.now(),"","","","","",Instant.now(),"",new ArrayList<>(),new ArrayList<>(),"","",Instant.now(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),"","", Instant.now(),"","","","","","","","","","","","","","","","","","","","","","","","","","","","","",new ArrayList<>(),"","","","","","","",new ArrayList<>(),"",""));
-        return list;
-    }
-
     // TODO: Hidden for now.
     @Hidden
     @GET
@@ -142,7 +130,7 @@ public class AssetApi {
 
     @GET
     @Path("/statusList")
-    @Operation(summary = "Get Asset Status List", description = "Returns a list of the existing asset status in the system")
+    @Operation(summary = "Get enumeration AssetStatus", description = "Get List of status that can be set in the status field in asset metadata")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetStatus.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -152,16 +140,17 @@ public class AssetApi {
 
     @GET
     @Path("/restricted_access")
-    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
+    @Operation(summary = "Get enum of default Dassco roles", description = "Returns list of roles, values are USER, ADMIN, SERVICE, DEVELOPER additional roles can be created by adding restrictions to institutions and collections")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ArrayList.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<InternalRole> getRestrictedAccess(){
-        return assetService.listRestrictedAccess();
+        return new ArrayList<>(Arrays.asList(InternalRole.values()));
     }
 
     @POST
     @Path("/readaccess")
+    @Hidden
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Access Permission", description = "Checks if User has access or not to certain assets.")
     public void checkAccess(@QueryParam("assetGuid") String asset_guid
@@ -177,7 +166,8 @@ public class AssetApi {
     @POST
     @Path("/readaccessforcsv")
     @Produces(APPLICATION_JSON)
-    @Operation(summary =  "Create CSV String for Multiple Assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
+    @Hidden
+    @Operation(summary =  "Checks read access for multiple assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
     public Response CsvMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
@@ -216,6 +206,7 @@ public class AssetApi {
 
     @POST
     @Path("/readaccessforzip")
+    @Hidden
     @Produces(APPLICATION_JSON)
     @Operation(summary =  "Check Read Access For Zip File Creation", description = "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.")
     public Response ZipMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
