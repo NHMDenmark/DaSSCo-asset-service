@@ -17,33 +17,38 @@ export class QueryBuilderComponent implements OnInit {
     'EQUAL',
     'STARTS WITH',
     'ENDS WITH',
-    'CONTAINS'
+    'CONTAINS',
+    'EMPTY'
   ];
 
   operatorsMap: Map<QueryDataType, string[]>
     = new Map([
       [QueryDataType.STRING, this.operators_string],
       [QueryDataType.NUMBER, this.operators_string],
-      [QueryDataType.ENUM, ['EQUAL']],
+      [QueryDataType.ENUM, ['EQUAL', 'EMPTY']],
       [QueryDataType.DATE, ['AFTER', 'BEFORE', 'BETWEEN']],
       [QueryDataType.LIST, ['IN']],
-      [QueryDataType.BOOLEAN, ['EQUAL']]
+      [QueryDataType.BOOLEAN, ['EQUAL', 'EMPTY']]
     ]);
 
   operators: string[] = [];
 
-  enumOverview: {cacheName: string, node: NodeProperty}[] =
-    [{cacheName: 'institutions', node: {node: 'Institution', property: 'name'}},
+  enumOverview: {cacheName: string, node: NodeProperty}[] = [
+    {cacheName: 'institutions', node: {node: 'Institution', property: 'name'}},
     {cacheName: 'pipelines', node: {node: 'Pipeline', property: 'name'}},
     {cacheName: 'collections', node: {node: 'Collection', property: 'name'}},
     {cacheName: 'workstations', node: {node: 'Workstation', property: 'name'}},
     {cacheName: 'digitisers', node: {node: 'User', property: 'name'}},
+    {cacheName: 'digitisers', node: {node: 'Asset', property: 'asset_created_by'}},
+    {cacheName: 'digitisers', node: {node: 'Asset', property: 'asset_deleted_by'}},
+    {cacheName: 'digitisers', node: {node: 'Asset', property: 'asset_updated_by'}},
+    {cacheName: 'digitisers', node: {node: 'Asset', property: 'audited_by'}},
     {cacheName: 'payload_types', node: {node: 'Asset', property: 'payload_type'}},
     {cacheName: 'preparation_types', node: {node: 'Specimen', property: 'preparation_type'}},
     {cacheName: 'restricted_access', node: {node: 'Asset', property: 'restricted_access'}},
     {cacheName: 'status', node: {node: 'Asset', property: 'status'}},
-    // {cacheName: 'digitisers', node: {node: 'Asset', property: 'status'}},
-    {cacheName: 'subjects', node: {node: 'Asset', property: 'subject'}}];
+    {cacheName: 'subjects', node: {node: 'Asset', property: 'subject'}}
+  ];
 
   dropdownValueMap: Map<string, object[]> | undefined = new Map();
 
@@ -126,17 +131,17 @@ export class QueryBuilderComponent implements OnInit {
       let value;
       if (this.queryForm.get('dataType')?.value === QueryDataType.DATE) {
         if (where.get('operator')?.value === 'BETWEEN') {
-          const dateStart = <Moment> where.get('dateStart')?.value;
-          const dateEnd = <Moment> where.get('dateEnd')?.value;
+          const dateStart = where.get('dateStart')?.value as Moment;
+          const dateEnd = where.get('dateEnd')?.value as Moment;
           value = dateStart.valueOf() + '#' + dateEnd.valueOf();
         } else {
-          const date = <Moment> where.get('date')?.value;
+          const date = where.get('date')?.value as Moment;
           value = date.valueOf();
         }
       } else {
         value = where.get('value')?.value;
       }
-      if (this.queryForm.get('dataType')?.value == QueryDataType.ENUM) this.cacheService.setEnumValues(this.selectedEnumValues);
+      if (this.queryForm.get('dataType')?.value === QueryDataType.ENUM) this.cacheService.setEnumValues(this.selectedEnumValues);
 
       const newQueryField = {
         operator: where.get('operator')?.value,
@@ -144,8 +149,8 @@ export class QueryBuilderComponent implements OnInit {
         dataType: this.queryForm.get('dataType')?.value
       } as QueryInner;
       innerList.push(newQueryField);
-    })
-    if (childIdx != undefined) this.wheres.at(childIdx).markAsUntouched();
+    });
+    if (childIdx !== undefined) this.wheres.at(childIdx).markAsUntouched();
 
     this.saveQueryEvent.emit({
       node: this.chosenNode.value.node,
@@ -169,13 +174,14 @@ export class QueryBuilderComponent implements OnInit {
         }
       }
       this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
-      this.wheres.controls.forEach(where => where.get('operator')?.setValue(this.operatorsMap.get(QueryDataType.ENUM)![0]));
+      this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.ENUM) ?? [''])[0]));
     } else if (nodeProperty.property.includes('date') || nodeProperty.property.includes('timestamp')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
     } else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
     } else if (nodeProperty.property.includes('asset_locked')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
+      this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
     } else {
       this.queryForm.get('dataType')?.setValue(QueryDataType.STRING);
     }

@@ -34,6 +34,14 @@ public class QueryInner {
             operator = "=";
         }
 
+        if (operator.equalsIgnoreCase("empty")) {
+            if (property.equalsIgnoreCase("parent_guid")) {
+                return "NOT EXISTS ((a)-[:CHILD_OF]->(:Asset))";
+            }
+            operator = " IS NULL";
+            return match + property + operator;
+        }
+
         if (match.contains("c")) { // is collection name, which means the value is sent as "inst_name.coll_name"
             String[] splitValue = value.split("\\.");
             if (splitValue.length > 1) {

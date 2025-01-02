@@ -21,8 +21,6 @@ export class QueryHandlerComponent implements OnInit {
     this.nodeMap = nodes;
   }
 
-  constructor() { }
-
   ngOnInit(): void {
     if (this.savedQuery) {
       this.savedQuery.forEach(query => {

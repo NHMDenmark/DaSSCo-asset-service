@@ -110,6 +110,7 @@ public class QueriesService {
                 'dassco'
                     , $$
                          MATCH (a:Asset) ${asset:-}
+                         ${parentIsNull:-}
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event)<-[:CHANGED_BY]-(a)
                          MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
@@ -233,20 +234,31 @@ public class QueriesService {
                     whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
                 }
 
-                List<QueryWhere> parentGuid = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).toList();
+                List<QueryWhere> parentGuidWhere = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).toList();
 
-                if (!parentGuid.isEmpty()) { // Asset query has to look very different if we're querying the parent_guid
-                    whereMap.put("childOfOptional", ""); // no longer optional
-                    String childOfWhere = joinFields(parentGuid, "parent");
-                    whereMap.put("childOf", "WHERE (" + childOfWhere + ")");
-                    query.where.removeAll(parentGuid);
+                if (!parentGuidWhere.isEmpty()) { // Asset query has to look very different if we're querying the parent_guid
+                    boolean findNull = false;
+                    for (QueryWhere where : parentGuidWhere) {
+                        for (QueryInner inner : where.fields) {
+                            if (inner.operator.equalsIgnoreCase("empty")) {
+                                findNull = true;
+                            }
+                        }
+                    }
+                    String childOfWhere = joinFields(parentGuidWhere, "parent");
+
+                    if (!findNull) {
+                        whereMap.put("childOfOptional", ""); // no longer optional
+                        whereMap.put("childOf", "WHERE (" + childOfWhere + ")");
+                        query.where.removeAll(parentGuidWhere);
+                    }
                 }
                 String where = joinFields(query.where, "a");
                 if (!where.isBlank()) {
                     if (whereMap.containsKey("asset")) {
-                        whereMap.put("asset", whereMap.get("asset").replace(")\n", " ") + "and " + where + ")\n");
+                        whereMap.put("asset", whereMap.get("asset").replace(")\n", " ") + "and " + where + ")");
                     } else {
-                        whereMap.put("asset", "WHERE (" + where + ")\n");
+                        whereMap.put("asset", "WHERE (" + where + ")");
                     }
                 }
             }
@@ -257,7 +269,7 @@ public class QueriesService {
                 String where = joinFields(query.where, "w");
                 if (!where.isBlank()) {
                     whereMap.put("workstation", "WHERE (" + where + ")\n");
-                };
+                }
             }
             if (query.select.equalsIgnoreCase("Pipeline")) { // p
                 String where = joinFields(query.where, "p");
@@ -269,7 +281,7 @@ public class QueriesService {
                     optionals = reorderedOptionals;
                     whereMap.put("pipelineOptional", ""); // no longer optional
                     whereMap.put("pipeline", "WHERE (" + where + ")\n");
-                };
+                }
             }
             if (query.select.equalsIgnoreCase("Collection"))  { // c
                 collectionString = joinFields(query.where, "c");
@@ -278,7 +290,7 @@ public class QueriesService {
                 String where = joinFields(query.where, "s");
                 if (!where.isBlank()) {
                     whereMap.put("specimen", "WHERE (" + where + ")\n");
-                };
+                }
             }
         }
 

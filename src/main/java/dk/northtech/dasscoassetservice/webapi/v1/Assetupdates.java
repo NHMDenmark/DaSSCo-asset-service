@@ -2,11 +2,8 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
-import dk.northtech.dasscoassetservice.services.InternalStatusService;
-import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -26,13 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 
-import javax.print.attribute.standard.Media;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
