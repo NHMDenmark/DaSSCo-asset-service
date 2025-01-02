@@ -73,6 +73,22 @@ SELECT * FROM ag_catalog.cypher('dassco'
 SELECT * FROM ag_catalog.cypher('dassco'
                   , $$
                             MATCH (i:Institution {name: "WOOP"})
+                            MERGE (c:Collection {name: "WOOP_coll_open"})
+                            MERGE (i)<-[:USED_BY]-(c)
+                            RETURN i.name, c.name
+                        $$) as (institution_name agtype, collection_name agtype);
+
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "WOOP"})
+                            MERGE (c:Collection {name: "WOOP_coll_closed"})
+                            MERGE (i)<-[:USED_BY]-(c)
+                            RETURN i.name, c.name
+                        $$) as (institution_name agtype, collection_name agtype);
+
+SELECT * FROM ag_catalog.cypher('dassco'
+                  , $$
+                            MATCH (i:Institution {name: "WOOP"})
                             MERGE (w:Workstation {name: "woop-01", status: "IN_SERVICE"})
                             MERGE (i)<-[:STATIONED_AT]-(w)
                             RETURN i.name, w.name
@@ -96,11 +112,13 @@ select * from cypher('dassco', $$
 	MERGE (u:User { name: "moogie-woogie", user_id: "moogie-woogie" })
 	MERGE (a:Asset { asset_pid: "pidtime-2", asset_guid: "asset_2", name: "asset_2", tags:{}, asset_locked: "false", status: "WORKING_COPY", funding: "hundredetusindvis af dollars", subject: "folder", file_formats: ["TIF"], payload_type: "ct scan", internal_status: "METADATA_RECEIVED", asset_taken_date: 0, restricted_access: ["USER"] })
 	MERGE (e:Event { name: "CREATE_ASSET_METADATA", event: "CREATE_ASSET_METADATA", timestamp: 1683702804001})
+    MERGE (i)-[:RESTRICTED_TO]->(r:Role {name: "WOOP_USER"})
 	MERGE (e)-[:INITIATED_BY]->(u)
 	MERGE (e)-[:USED]->(w)
 	MERGE (e)-[:USED]->(p)
 	MERGE (s)-[:USED_BY]->(a)
 	MERGE (s)-[:BELONGS_TO]->(a)
+    MERGE (co)-[:RESTRICTED_TO]->(cr:Role {name: "WOOP_coll_USER"})
 	MERGE (s)-[:CREATED_BY]->(a)
 	MERGE (a)-[:CHANGED_BY]->(e)
 	MERGE (a)-[:BELONGS_TO]->(i)
@@ -112,15 +130,16 @@ $$) as (institute agtype);
 
 select * from cypher('dassco', $$
     MATCH (i:Institution { name: "WOOP" })
-	MATCH (w:Workstation { name: "woop-01", status: "IN_SERVICE" })
-	MATCH (p:Pipeline { name: "ploop-01" })
 	MATCH (co:Collection { name: "WOOP_coll_open" })
-	MATCH (s:Specimen { name: "specimen_2", barcode: "specimen_2" })
+	MATCH (w:Workstation { name: "woop-01"})
+	MATCH (p:Pipeline { name: "ploop-01" })
+	MATCH (s:Specimen { name: "specimen_2"})
 	MERGE (u:User { name: "moogie-woogie", user_id: "moogie-woogie" })
 	MERGE (a:Asset { asset_pid: "pidtime-3", asset_guid: "asset_5", name: "asset_5", tags:{}, asset_locked: "false", status: "WORKING_COPY", funding: "hundredetusindvis af dollars", subject: "folder", file_formats: ["TIF"], payload_type: "ct scan", internal_status: "METADATA_RECEIVED", asset_taken_date: 0, restricted_access: ["USER"] })
 	MERGE (e:Event { name: "CREATE_ASSET_METADATA", event: "CREATE_ASSET_METADATA", timestamp: 1683702804002})
 	MERGE (e)-[:INITIATED_BY]->(u)
 	MERGE (e)-[:USED]->(w)
+    MERGE (i)-[:RESTRICTED_TO]->(r:Role {name: "WOOP_USER"})
 	MERGE (e)-[:USED]->(p)
 	MERGE (s)-[:USED_BY]->(a)
 	MERGE (s)-[:BELONGS_TO]->(a)
@@ -135,17 +154,19 @@ $$) as (institute agtype);
 
 select * from cypher('dassco', $$
     MATCH (i:Institution { name: "WOOP" })
-	MATCH (w:Workstation { name: "woop-01", status: "IN_SERVICE" })
+	MATCH (w:Workstation { name: "woop-01"})
 	MATCH (p:Pipeline { name: "ploop-01" })
 	MATCH (co:Collection { name: "WOOP_coll_closed" })
 	MATCH (s:Specimen { name: "specimen_2", barcode: "specimen_2" })
 	MERGE (u:User { name: "moogie-woogie", user_id: "moogie-woogie" })
 	MERGE (a:Asset { asset_pid: "pidtime-4", asset_guid: "asset_3", name: "asset_3", tags:{}, asset_locked: "false", status: "WORKING_COPY", funding: "hundredetusindvis af dollars", subject: "folder", file_formats: ["TIF"], payload_type: "ct scan", internal_status: "METADATA_RECEIVED", asset_taken_date: 0, restricted_access: ["USER"] })
 	MERGE (e:Event { name: "CREATE_ASSET_METADATA", event: "CREATE_ASSET_METADATA", timestamp: 1683702804003})
+    MERGE (i)-[:RESTRICTED_TO]->(r:Role {name: "WOOP_USER"})
 	MERGE (e)-[:INITIATED_BY]->(u)
 	MERGE (e)-[:USED]->(w)
 	MERGE (e)-[:USED]->(p)
 	MERGE (s)-[:USED_BY]->(a)
+    MERGE (co)-[:RESTRICTED_TO]->(cr:Role {name: "WOOP_coll_closed_USER"})
 	MERGE (s)-[:BELONGS_TO]->(a)
 	MERGE (s)-[:CREATED_BY]->(a)
 	MERGE (a)-[:CHANGED_BY]->(e)
