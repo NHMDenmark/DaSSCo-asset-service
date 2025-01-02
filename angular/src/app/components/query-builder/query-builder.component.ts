@@ -1,9 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {NodeProperty, QueryDataType, QueryInner, QueryView} from "../../types/query-types";
-import {FormArray, FormBuilder, FormControl, Validators} from "@angular/forms";
-import {Moment} from "moment-timezone";
-import {BehaviorSubject, map, Observable} from "rxjs";
-import {CacheService} from "../../services/cache.service";
+import {NodeProperty, QueryDataType, QueryInner, QueryView} from '../../types/query-types';
+import {FormArray, FormBuilder, FormControl, Validators} from '@angular/forms';
+import {Moment} from 'moment-timezone';
+import {BehaviorSubject, map, Observable} from 'rxjs';
+import {CacheService} from '../../services/cache.service';
 
 @Component({
   selector: 'dassco-query-builder',
@@ -14,19 +14,20 @@ export class QueryBuilderComponent implements OnInit {
   @ViewChild('enumInput', {static: false}) enumInput: HTMLInputElement | undefined;
 
   operators_string = [
-    '=',
+    'EQUAL',
     'STARTS WITH',
     'ENDS WITH',
     'CONTAINS'
-  ]
+  ];
 
-  operatorsMap: Map<QueryDataType, string[]> =
-    new Map([
+  operatorsMap: Map<QueryDataType, string[]>
+    = new Map([
       [QueryDataType.STRING, this.operators_string],
       [QueryDataType.NUMBER, this.operators_string],
-      [QueryDataType.ENUM, ["="]],
-      [QueryDataType.DATE, ['>=', '<=', 'RANGE']],
-      [QueryDataType.LIST, ["IN"]]
+      [QueryDataType.ENUM, ['EQUAL']],
+      [QueryDataType.DATE, ['AFTER', 'BEFORE', 'BETWEEN']],
+      [QueryDataType.LIST, ['IN']],
+      [QueryDataType.BOOLEAN, ['EQUAL']]
     ]);
 
   operators: string[] = [];
@@ -123,13 +124,13 @@ export class QueryBuilderComponent implements OnInit {
 
     this.wheres.controls.forEach(where => {
       let value;
-      if (this.queryForm.get('dataType')?.value == QueryDataType.DATE) {
-        if (where.get('operator')?.value == 'RANGE') {
-          const dateStart = <Moment>where.get('dateStart')?.value;
-          const dateEnd = <Moment>where.get('dateEnd')?.value;
+      if (this.queryForm.get('dataType')?.value === QueryDataType.DATE) {
+        if (where.get('operator')?.value === 'BETWEEN') {
+          const dateStart = <Moment> where.get('dateStart')?.value;
+          const dateEnd = <Moment> where.get('dateEnd')?.value;
           value = dateStart.valueOf() + '#' + dateEnd.valueOf();
         } else {
-          const date = <Moment>where.get('date')?.value;
+          const date = <Moment> where.get('date')?.value;
           value = date.valueOf();
         }
       } else {
@@ -158,34 +159,33 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   setOperatorsAndDataType(nodeProperty: NodeProperty) {
-    const isEnum = this.enumOverview.find(enumNode => enumNode.node.node == nodeProperty.node && enumNode.node.property == nodeProperty.property);
+    const isEnum = this.enumOverview.find(enumNode => enumNode.node.node === nodeProperty.node && enumNode.node.property === nodeProperty.property);
     if (isEnum) {
       if (this.dropdownValueMap) {
         const values = this.dropdownValueMap.get(isEnum.cacheName);
         if (values) {
           this.selectedEnumValues = Object.keys(values);
-          this.filteredEnumValues.next(this.selectedEnumValues)
+          this.filteredEnumValues.next(this.selectedEnumValues);
         }
       }
       this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
-      this.wheres.controls.forEach(where => where.get('operator')?.setValue(this.operatorsMap.get(QueryDataType.ENUM)![0]))
-    }
-    else if (nodeProperty.property.includes('date') || nodeProperty.property.includes('timestamp')) {
+      this.wheres.controls.forEach(where => where.get('operator')?.setValue(this.operatorsMap.get(QueryDataType.ENUM)![0]));
+    } else if (nodeProperty.property.includes('date') || nodeProperty.property.includes('timestamp')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
-    }
-    else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
+    } else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-    }
-    else {
+    } else if (nodeProperty.property.includes('asset_locked')) {
+      this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
+    } else {
       this.queryForm.get('dataType')?.setValue(QueryDataType.STRING);
     }
     const dataType = this.queryForm.get('dataType')?.value;
-    this.operators = this.operatorsMap.get(dataType ? QueryDataType[dataType] : QueryDataType.STRING)!; // I'M SORRY i know ! is bad, but I KNOW it will always have STRING key. it is hardcoded goddammit.
+    this.operators = this.operatorsMap.get(dataType ? QueryDataType[dataType] : QueryDataType.STRING) ?? [QueryDataType.STRING];
   }
 
   addWhereData(where: QueryInner) {
-    const isDate = where.dataType == QueryDataType.DATE;
-    const rangedDate = isDate && where.operator.toLowerCase().includes('range');
+    const isDate = where.dataType === QueryDataType.DATE;
+    const rangedDate = isDate && where.operator.toLowerCase().includes('BETWEEN');
     this.queryForm.get('dataType')?.setValue(QueryDataType[where.dataType]);
 
     this.wheres.push(this.fb.group({
@@ -199,7 +199,7 @@ export class QueryBuilderComponent implements OnInit {
 
   addWhere() {
     this.wheres.push(this.fb.group({
-      operator: new FormControl(this.queryForm.get('dataType')?.value == QueryDataType.ENUM ? '=' : null, Validators.required),
+      operator: new FormControl(this.queryForm.get('dataType')?.value === QueryDataType.ENUM ? '=' : null, Validators.required),
       value: new FormControl(null, Validators.required),
       date: new FormControl<Date | null>(null),
       dateStart: new FormControl<Date | null>(null),
@@ -208,7 +208,7 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   removeWhere(index: number): void {
-    if (index == 0 && this.wheres.length <= 1) {
+    if (index === 0 && this.wheres.length <= 1) {
       this.wheres.at(index).reset();
     } else {
       this.wheres.removeAt(index);
@@ -217,11 +217,11 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   compareNodeProperty(o1: any, o2: any): boolean {
-    return !!(o1 && o2 && o1.node == o2.node && o1.property == o2.property);
+    return !!(o1 && o2 && o1.node === o2.node && o1.property === o2.property);
   }
 
   filterAutocomplete(value: any) {
-    this.filteredEnumValues.next(this.selectedEnumValues.filter(enumVal => enumVal.includes(value.toLowerCase())))
+    this.filteredEnumValues.next(this.selectedEnumValues.filter(enumVal => enumVal.includes(value.toLowerCase())));
   }
 
   protected readonly QueryDataType = QueryDataType;

@@ -37,8 +37,8 @@
                 </mat-select>
               </mat-form-field>
 
-              <div *ngIf="queryForm.get('dataType')?.value == QueryDataType.DATE; else input">
-                <div *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('RANGE'); else oneDate">
+              <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.DATE">
+                <div *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('BETWEEN'); else oneDate">
                   <mat-form-field appearance="outline">
                     <mat-label>Enter a date range</mat-label>
                     <mat-date-range-input [rangePicker]="picker">
@@ -63,8 +63,25 @@
                 </ng-template>
               </div>
 
-              <ng-template #input>
-                <div *ngIf="queryForm.get('dataType')?.value == QueryDataType.ENUM; else defaultValueInput">
+              <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.BOOLEAN">
+                <mat-form-field appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input type="text"
+                         placeholder="Value"
+                         matInput
+                         formControlName="value"
+                         #enumInput
+                         [matAutocomplete]="auto">
+                  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [panelWidth]="'fit-content'">
+                    <mat-option class="autocomplete-option" *ngFor="let option of [true, false]" [value]="option">
+                      {{option}}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+              </div>
+
+              <div *ngIf="queryForm.get('dataType')?.value !== QueryDataType.DATE && queryForm.get('dataType')?.value !== QueryDataType.BOOLEAN">
+                <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.ENUM; else defaultValueInput">
                   <mat-form-field appearance="outline">
                     <mat-label>Value</mat-label>
                     <input type="text"
@@ -81,7 +98,7 @@
                     </mat-autocomplete>
                   </mat-form-field>
                 </div>
-<!--              <div *ngIf="chosenNode.value && chosenNode.value.node == 'Asset' && chosenNode.value.property.includes('status'); else defaultValueInput">-->
+<!--              <div *ngIf="chosenNode.value && chosenNode.value.node === 'Asset' && chosenNode.value.property.includes('status'); else defaultValueInput">-->
 <!--                <mat-form-field appearance="outline">-->
 <!--                  <mat-label>Status</mat-label>-->
 <!--                  <mat-select formControlName="value">-->
@@ -101,7 +118,7 @@
                   <input matInput type="text" formControlName="value">
                 </mat-form-field>
               </ng-template>
-            </ng-template>
+            </div>
             <button mat-icon-button (click)="removeWhere(i)" color="primary"><mat-icon>delete</mat-icon></button>
             <button mat-mini-fab
                     class="save-btn"
