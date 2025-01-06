@@ -57,18 +57,18 @@ public class CacheService {
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
 
-        logger.info("Institution Cache: " + institutionCache.getInstitutions());
-        logger.info("Collection Cache: " + collectionCache.getCollectionMap());
-        logger.info("Digitisers Cache: " + digitiserCache.getDigitisers());
-        logger.info("Payload Type Cache: " + payloadTypeCache.getPayloadTypes());
-        logger.info("Pipeline Cache: " + pipelineCache.getPipelineMap());
-        logger.info("Preparation Type Cache: " + preparationTypeCache.getPreparationTypes());
-        logger.info("Restricted Access Cache: " + restrictedAccessCache.getRestrictedAccessList());
-        logger.info("Status Cache: " + statusCache.getStatus());
-        logger.info("Subject Cache: " + subjectCache.getSubjects());
-        logger.info("Workstation Cache: " + workstationCache.getWorkstationMap());
+        logger.info("Institution Cache: {}", institutionCache.getInstitutions());
+        logger.info("Collection Cache: {}", collectionCache.getCollectionMap());
+        logger.info("Digitisers Cache: {}", digitiserCache.getDigitisers());
+        logger.info("Payload Type Cache: {}", payloadTypeCache.getPayloadTypes());
+        logger.info("Pipeline Cache: {}", pipelineCache.getPipelineMap());
+        logger.info("Preparation Type Cache: {}", preparationTypeCache.getPreparationTypes());
+        logger.info("Restricted Access Cache: {}", restrictedAccessCache.getRestrictedAccessList());
+        logger.info("Status Cache: {}", statusCache.getStatus());
+        logger.info("Subject Cache: {}", subjectCache.getSubjects());
+        logger.info("Workstation Cache: {}", workstationCache.getWorkstationMap());
 
-        logger.info("Total number of caches added: " + allCaches.size());
+        logger.info("Total number of caches added: {}", allCaches.size());
 
         return allCaches;
     }

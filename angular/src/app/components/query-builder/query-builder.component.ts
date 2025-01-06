@@ -38,6 +38,7 @@ export class QueryBuilderComponent implements OnInit {
     {cacheName: 'pipelines', node: {node: 'Pipeline', property: 'name'}},
     {cacheName: 'collections', node: {node: 'Collection', property: 'name'}},
     {cacheName: 'workstations', node: {node: 'Workstation', property: 'name'}},
+    {cacheName: 'workstations', node: {node: 'Workstation', property: 'status'}},
     {cacheName: 'digitisers', node: {node: 'User', property: 'name'}},
     {cacheName: 'digitisers', node: {node: 'Asset', property: 'asset_created_by'}},
     {cacheName: 'digitisers', node: {node: 'Asset', property: 'asset_deleted_by'}},
