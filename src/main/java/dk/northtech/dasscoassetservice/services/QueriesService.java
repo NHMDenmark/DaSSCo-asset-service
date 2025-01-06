@@ -202,8 +202,7 @@ public class QueriesService {
 
         List<Asset> distinctAssets = new ArrayList<>(new HashSet<>(originalAssets)); // object hash has been set so that not all properties are checked here
 
-        distinctAssets.stream()
-                .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
+        distinctAssets
                 .forEach(asset -> asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid)); // setting events for the duplicated assets
 
         return distinctAssets;
