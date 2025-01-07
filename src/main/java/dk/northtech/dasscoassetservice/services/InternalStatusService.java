@@ -70,7 +70,7 @@ public class InternalStatusService {
         }).forEach(x -> guidAllocated.put(x.assetGuid(), x.allocatedStorageMb()));
 
 
-        return internalStatusRepository.getInprogress().stream()
+        Map<String, AssetStatusInfo> collect = internalStatusRepository.getInprogress().stream()
                 .filter(x -> !onlyFailed || x.status() == InternalStatus.ERDA_ERROR)
                 .map(assetStatusInfo -> new AssetStatusInfo(assetStatusInfo.asset_guid()
                         , assetStatusInfo.parent_guid()
@@ -78,7 +78,12 @@ public class InternalStatusService {
                         , assetStatusInfo.status()
                         , assetStatusInfo.error_message()
                         , guidAllocated.getOrDefault(assetStatusInfo.asset_guid(), null)))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(AssetStatusInfo::asset_guid, x -> x));
+        // The getInprogress method currently doesn't find assets that are COMPLETED but still has open share. We can extrapolate the status as all others are covered.
+        guidAllocated.forEach((x,y) ->{
+            collect.computeIfAbsent(x, k -> new AssetStatusInfo(x, null, null ,InternalStatus.COMPLETED, null, y));
+        });
+        return new ArrayList<>(collect.values());
     }
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
         Optional<AssetStatusInfo> assetStatus = internalStatusRepository.getAssetStatus(assetGuid);
