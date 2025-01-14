@@ -217,9 +217,6 @@ public class AssetService {
             logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
             digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
-
-
-
         return true;
     }
 
@@ -257,7 +254,7 @@ public class AssetService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED && assetStatus != InternalStatus.ASSET_RECEIVED) {
+        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ASSET_RECEIVED) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);

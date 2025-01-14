@@ -354,7 +354,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testSetAssetAssetDoesntExist(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("non-existent-asset", "ERDA_FAILED", ""));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("non-existent-asset", "ERDA_ERROR", ""));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
