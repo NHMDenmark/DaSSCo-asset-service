@@ -135,7 +135,7 @@ public class AssetApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetStatus.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetStatus> getAssetStatus(){
-        return assetService.listStatus();
+        return Arrays.asList(AssetStatus.values());
     }
 
     @GET

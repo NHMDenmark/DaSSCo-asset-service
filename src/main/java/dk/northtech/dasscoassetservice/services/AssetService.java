@@ -47,7 +47,6 @@ public class AssetService {
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
-    private final StatusCache statusCache;
     private final PreparationTypeCache preparationTypeCache;
     private final RestrictedAccessCache restrictedAccessCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
@@ -68,7 +67,6 @@ public class AssetService {
                         DigitiserCache digitiserCache,
                         SubjectCache subjectCache,
                         PayloadTypeCache payloadTypeCache,
-                        StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
                         RestrictedAccessCache restrictedAccessCache,
                         FileProxyConfiguration fileProxyConfiguration,
@@ -83,7 +81,6 @@ public class AssetService {
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
-        this.statusCache = statusCache;
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
         this.restrictedAccessCache = restrictedAccessCache;
@@ -347,21 +344,6 @@ public class AssetService {
             }
         }
 
-        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
-            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
-                statusCache.clearCache();
-                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listStatus();
-                });
-                if (!statusList.isEmpty()){
-                    for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCacheIfAbsent(status);
-                    }
-                }
-            }
-        }
-
         boolean prepTypeExists = true;
         if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
             for (Specimen specimen : updatedAsset.specimens){
@@ -528,22 +510,6 @@ public class AssetService {
                 }
             }
         }
-
-        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
-            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
-                statusCache.clearCache();
-                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listStatus();
-                });
-                if (!statusList.isEmpty()){
-                    for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCacheIfAbsent(status);
-                    }
-                }
-            }
-        }
-
         return bulkUpdateSuccess;
     }
 
@@ -784,8 +750,6 @@ public class AssetService {
             if (asset.payload_type != null && !asset.payload_type.isEmpty()){
                     payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
             }
-
-            statusCache.putStatusInCacheIfAbsent(asset.status);
             if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
                 for (InternalRole internalRole : asset.restricted_access){
                     restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
@@ -816,10 +780,6 @@ public class AssetService {
 
     public List<String> listPayloadTypes(){
         return payloadTypeCache.getPayloadTypes();
-    }
-
-    public List<AssetStatus> listStatus(){
-        return statusCache.getStatus();
     }
 
     public List<InternalRole>  listRestrictedAccess(){
@@ -856,16 +816,6 @@ public class AssetService {
         if (!preparationTypeList.isEmpty()){
             for (String preparationType : preparationTypeList){
                 this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-            }
-        }
-        statusCache.clearCache();
-        List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listStatus();
-        });
-        if (!statusList.isEmpty()){
-            for(AssetStatus status : statusList){
-                this.statusCache.putStatusInCacheIfAbsent(status);
             }
         }
         restrictedAccessCache.clearCache();

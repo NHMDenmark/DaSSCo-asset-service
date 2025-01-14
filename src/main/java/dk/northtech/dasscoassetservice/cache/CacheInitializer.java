@@ -28,7 +28,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
     private final PreparationTypeCache preparationTypeCache;
-    private final StatusCache statusCache;
     private final RestrictedAccessCache restrictedAccessCache;
     private boolean initialized = false;
     private static final Logger logger = LoggerFactory.getLogger(CacheInitializer.class);
@@ -43,7 +42,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             SubjectCache subjectCache,
                             PayloadTypeCache payloadTypeCache,
                             PreparationTypeCache preparationTypeCache,
-                            StatusCache statusCache,
                             RestrictedAccessCache restrictedAccessCache,
                             Jdbi jdbi){
         this.institutionCache = institutionCache;
@@ -57,7 +55,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
         this.preparationTypeCache = preparationTypeCache;
-        this.statusCache = statusCache;
         this.restrictedAccessCache = restrictedAccessCache;
         this.jdbi = jdbi;
     }
@@ -127,15 +124,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                         this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
                     }
                 }
-                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-                   AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                   return assetRepository.listStatus();
-                });
-                if (!statusList.isEmpty()){
-                    for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCacheIfAbsent(status);
-                    }
-                }
                 List<String> restrictedAccessList = jdbi.withHandle(handle -> {
                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
                    return assetRepository.listRestrictedAccess();
@@ -155,7 +143,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
             logger.info("SubjectCache: {}", subjectCache != null ? subjectCache.getSubjectMap() : "Not present");
             logger.info("PayloadTypeCache: {}", payloadTypeCache != null ? payloadTypeCache.getPayloadTypeMap() : "Not present");
             logger.info("PreparationTypeCache: {}", preparationTypeCache != null ? preparationTypeCache.getPreparationTypeMap() : "Not present");
-            logger.info("StatusCache: {}", statusCache != null ? statusCache.getStatusMap() : "Not present");
             logger.info("RestrictedAccessCache: {}", restrictedAccessCache != null ? restrictedAccessCache.getRestrictedAccessMap() : "Not present");
             logger.info("WorkstationCache: {}", workstationCache != null ? workstationCache.getWorkstationMap() : "Not present");
 

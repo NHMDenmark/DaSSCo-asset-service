@@ -2,11 +2,13 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.inject.Inject;
 import dk.northtech.dasscoassetservice.cache.*;
+import dk.northtech.dasscoassetservice.domain.AssetStatus;
 import dk.northtech.dasscoassetservice.domain.Digitiser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +21,6 @@ public class CacheService {
     private final PipelineCache pipelineCache;
     private final PreparationTypeCache preparationTypeCache;
     private final RestrictedAccessCache restrictedAccessCache;
-    private final StatusCache statusCache;
     private final SubjectCache subjectCache;
     private final WorkstationCache workstationCache;
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -29,7 +30,7 @@ public class CacheService {
                         InstitutionCache institutionCache, PayloadTypeCache payloadTypeCache,
                         PipelineCache pipelineCache, PreparationTypeCache preparationTypeCache,
                         RestrictedAccessCache restrictedAccessCache,
-                        StatusCache statusCache, SubjectCache subjectCache,
+                        SubjectCache subjectCache,
                         WorkstationCache workstationCache){
         this.collectionCache = collectionCache;
         this.digitiserCache = digitiserCache;
@@ -38,7 +39,6 @@ public class CacheService {
         this.pipelineCache = pipelineCache;
         this.preparationTypeCache = preparationTypeCache;
         this.restrictedAccessCache = restrictedAccessCache;
-        this.statusCache = statusCache;
         this.subjectCache = subjectCache;
         this.workstationCache = workstationCache;
     }
@@ -53,7 +53,7 @@ public class CacheService {
         allCaches.put("pipelines", pipelineCache.getPipelineMap());
         allCaches.put("preparation_types", preparationTypeCache.getPreparationTypeMap());
         allCaches.put("restricted_access", restrictedAccessCache.getRestrictedAccessMap());
-        allCaches.put("status", statusCache.getStatusMap());
+        allCaches.put("status", Arrays.asList(AssetStatus.values()));
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
 
@@ -64,7 +64,6 @@ public class CacheService {
         logger.info("Pipeline Cache: {}", pipelineCache.getPipelineMap());
         logger.info("Preparation Type Cache: {}", preparationTypeCache.getPreparationTypes());
         logger.info("Restricted Access Cache: {}", restrictedAccessCache.getRestrictedAccessList());
-        logger.info("Status Cache: {}", statusCache.getStatus());
         logger.info("Subject Cache: {}", subjectCache.getSubjects());
         logger.info("Workstation Cache: {}", workstationCache.getWorkstationMap());
 
