@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CacheService {
@@ -53,7 +54,7 @@ public class CacheService {
         allCaches.put("pipelines", pipelineCache.getPipelineMap());
         allCaches.put("preparation_types", preparationTypeCache.getPreparationTypeMap());
         allCaches.put("restricted_access", restrictedAccessCache.getRestrictedAccessMap());
-        allCaches.put("status", Arrays.asList(AssetStatus.values()));
+        allCaches.put("status", Arrays.stream(AssetStatus.values()).collect(Collectors.toMap(Enum::name, (x) -> x)));
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
 
