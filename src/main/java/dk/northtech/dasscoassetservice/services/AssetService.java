@@ -38,7 +38,6 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
-//    private final StatisticsDataService statisticsDataService;
     private final StatisticsDataServiceV2 statisticsDataServiceV2;
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
@@ -48,7 +47,6 @@ public class AssetService {
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
     private final PreparationTypeCache preparationTypeCache;
-    private final RestrictedAccessCache restrictedAccessCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
     private final ObservationRegistry observationRegistry;
@@ -68,7 +66,6 @@ public class AssetService {
                         SubjectCache subjectCache,
                         PayloadTypeCache payloadTypeCache,
                         PreparationTypeCache preparationTypeCache,
-                        RestrictedAccessCache restrictedAccessCache,
                         FileProxyConfiguration fileProxyConfiguration,
                         ObservationRegistry observationRegistry) {
         this.institutionService = institutionService;
@@ -83,7 +80,6 @@ public class AssetService {
         this.payloadTypeCache = payloadTypeCache;
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
-        this.restrictedAccessCache = restrictedAccessCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
         this.observationRegistry = observationRegistry;
         this.guids = Caffeine.newBuilder()
@@ -365,28 +361,6 @@ public class AssetService {
                 }
             }
         }
-
-        if (updatedAsset.restricted_access != null && !updatedAsset.restricted_access.isEmpty()){
-            boolean restrictedAccessExists = true;
-            for (InternalRole internalRole : updatedAsset.restricted_access){
-                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
-                    restrictedAccessExists = false;
-                }
-            }
-            if (!restrictedAccessExists){
-                restrictedAccessCache.clearCache();
-                List<String> restrictedAccessList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listRestrictedAccess();
-                });
-                if (!restrictedAccessList.isEmpty()){
-                    for (String internalRole : restrictedAccessList){
-                        this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
-                    }
-                }
-            }
-        }
-
         return existing;
     }
 
@@ -750,11 +724,6 @@ public class AssetService {
             if (asset.payload_type != null && !asset.payload_type.isEmpty()){
                     payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
             }
-            if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
-                for (InternalRole internalRole : asset.restricted_access){
-                    restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
-                }
-            }
             LocalDateTime cacheEnd = LocalDateTime.now();
             logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
 
@@ -780,11 +749,6 @@ public class AssetService {
 
     public List<String> listPayloadTypes(){
         return payloadTypeCache.getPayloadTypes();
-    }
-
-    public List<InternalRole>  listRestrictedAccess(){
-        //TODO this seems to be overly complicated. need cleanup
-        return restrictedAccessCache.getRestrictedAccessList();
     }
 
     public void reloadAssetCache(){
@@ -816,16 +780,6 @@ public class AssetService {
         if (!preparationTypeList.isEmpty()){
             for (String preparationType : preparationTypeList){
                 this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-            }
-        }
-        restrictedAccessCache.clearCache();
-        List<String> restrictedAccessList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listRestrictedAccess();
-        });
-        if (!restrictedAccessList.isEmpty()){
-            for (String internalRole : restrictedAccessList){
-                this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
             }
         }
     }
