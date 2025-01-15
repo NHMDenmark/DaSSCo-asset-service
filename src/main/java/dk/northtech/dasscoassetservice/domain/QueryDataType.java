@@ -9,4 +9,5 @@ public enum QueryDataType {
     , ENUM
     , STRING
     , LIST
+    , BOOLEAN
 }

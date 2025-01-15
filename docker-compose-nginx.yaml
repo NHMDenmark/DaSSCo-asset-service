@@ -1,4 +1,4 @@
-ervices:
+services:
   nginx:
     image: nginx
     ports:

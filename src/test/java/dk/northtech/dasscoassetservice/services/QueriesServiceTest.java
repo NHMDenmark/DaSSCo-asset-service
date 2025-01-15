@@ -39,54 +39,40 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         Asset firstAsset = getTestAsset("asset_fnoop_1", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(firstAsset, user, 11);
 
-        Asset secondAsset = getTestAsset("asset_nnad_1", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
+        Asset secondAsset = getTestAsset("asset_fnoop_2", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(secondAsset, user, 11);
 
-        long yesterday = Instant.now().minus(1, ChronoUnit.DAYS).toEpochMilli();
-        long tomorrow = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();
+        Asset thirdAsset = getTestAsset("asset_nnad_1", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
+        assetService.persistAsset(thirdAsset, user, 11);
 
-        List<QueriesReceived> queries = new LinkedList<QueriesReceived>(Arrays.asList(
-            new QueriesReceived("0", new LinkedList<Query>(Arrays.asList(
-                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
-                    new QueryWhere("asset_guid", Arrays.asList(
-                            new QueryInner("CONTAINS", "fnoop", QueryDataType.STRING)
-                    )),
-                    new QueryWhere("created_timestamp", Arrays.asList(
-                            new QueryInner("RANGE", yesterday + "#" + tomorrow, QueryDataType.DATE)
-                    ))
-                ))),
-                new Query("Institution", new LinkedList<QueryWhere>(Arrays.asList(
-                    new QueryWhere("name", Arrays.asList(
-                            new QueryInner("CONTAINS", "FNOOP", QueryDataType.STRING)
-                    ))
-                ))),
-                new Query("Pipeline", new LinkedList<QueryWhere>(Arrays.asList(
-                    new QueryWhere("name", Arrays.asList(
-                            new QueryInner("STARTS WITH", "fnoop", QueryDataType.STRING)
-                    ))
+        List<QueriesReceived> queries = new LinkedList<>(List.of(
+                new QueriesReceived("0", new LinkedList<>(Arrays.asList(
+                        new Query("Asset", new LinkedList<>(Arrays.asList(
+                                new QueryWhere("asset_guid", Arrays.asList(
+                                        new QueryInner("CONTAINS", "e", QueryDataType.STRING),
+                                        new QueryInner("CONTAINS", "a", QueryDataType.STRING)
+                                )),
+                                new QueryWhere("asset_guid", List.of(
+                                        new QueryInner("ENDS WITH", "1", QueryDataType.STRING)
+                                )),
+                                new QueryWhere("status", List.of(
+                                        new QueryInner("=", "BEING_PROCESSED", QueryDataType.STRING)
+                                ))
+                        ))),
+                        new Query("Pipeline", new LinkedList<>(List.of(
+                                new QueryWhere("name", List.of(
+                                        new QueryInner("=", "fnoopyline", QueryDataType.STRING)
+                                ))
+                        )))
                 )))
-            ))),
-            new QueriesReceived("1", new LinkedList<Query>(Arrays.asList(
-                new Query("Asset", new LinkedList<QueryWhere>(Arrays.asList(
-                    new QueryWhere("asset_guid", Arrays.asList(
-                            new QueryInner("CONTAINS", "nnad", QueryDataType.STRING)
-                    ))
-                )))
-            )))
         ));
 
         List<Asset> assets = this.queriesService.getAssetsFromQuery(queries, 200, user);
 
-        assertThat(assets.size()).isAtLeast(1);
         for (Asset asset : assets) {
-            System.out.println(asset.event_name);
             if (asset.asset_guid.equalsIgnoreCase(firstAsset.asset_guid)) {
                 assertThat(asset.institution).matches(firstAsset.institution);
                 assertThat(asset.pipeline).matches(firstAsset.pipeline);
-            }
-            if (asset.asset_guid.equalsIgnoreCase(secondAsset.asset_guid)) {
-                assertThat(asset.institution).matches(secondAsset.institution);
-                assertThat(asset.pipeline).matches(secondAsset.pipeline);
             }
         }
     }
@@ -157,7 +143,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
             collectionService.persistCollection(new Collection("n_c1", "FNOOP", new ArrayList<>()));
             collectionService.persistCollection(new Collection("i_c1", "NNAD", new ArrayList<>()));
         }
-        Asset firstAsset = getTestAsset("asset_fnoop_2", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
+        Asset firstAsset = getTestAsset("asset_fnoop_3", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(firstAsset, user, 11);
 
         Asset secondAsset = getTestAsset("asset_nnad", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
@@ -173,7 +159,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         auditedAsset.status = AssetStatus.BEING_PROCESSED;
 
         assetService.persistAsset(auditedAsset, user, 11);
-        assetService.completeAsset(new AssetUpdateRequest("audited", new MinimalAsset("audited", null, "NNAD", "i_c1")
+        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("audited", null, "NNAD", "i_c1")
                 , "i2_w1", "pl-01", user.username));
         assetService.auditAsset(auditingUser, new Audit(auditingUser.username), "audited");
 

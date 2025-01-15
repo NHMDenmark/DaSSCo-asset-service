@@ -2,14 +2,15 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
-import dk.northtech.dasscoassetservice.services.InternalStatusService;
-import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,13 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.print.attribute.standard.Media;
+
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -82,6 +81,7 @@ public class Assetupdates {
             "Required information is: shareName and a MinimalAsset with asset_guid.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Hidden
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -170,9 +170,38 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class) ))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(Asset asset
+    public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+            {
+              "asset_guid": "ti-a01-202305241657",
+              "institution": "test-institution",
+              "parent_guid":  null,
+              "status": "BEING_PROCESSED",
+              "specimens": [
+                    {
+                        "barcode": "bc123456",
+                        "specimen_pid": "spcpid-123",
+                        "preparation_type": "slide"
+                    }
+                ],
+              "funding": "hundredetusindvis af dollars",
+              "subject": "folder",
+              "payload_type": "ct scan",
+              "file_formats": [
+                "TIF"
+              ],
+              "asset_locked": false,
+              "restricted_access": [],
+              "pipeline": "ti-p1",
+              "workstation": "ti-ws1",
+              "digitiser" : "thbo",
+              "updateUser": "thbo",
+              "tags": {
+                  "testtag2": "test-tag"
+              }
+            }
+            """)}))Asset asset
             , @PathParam("assetGuid") String assetGuid
             , @Context SecurityContext securityContext) {
         if(!Objects.equals(assetGuid, asset.asset_guid)) {
@@ -185,11 +214,26 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @PUT
     @Path("/bulkUpdate")
-    @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
+    @Operation(summary = "Bulk Update Assets", description = """
+    Update metadata in many assets at the same time. Takes a list of asse_guid and a body of properties to be updated.
+    All assets in the list will have their properties overwritten by the values in the postbody. 
+    """)
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset>  bulkUpdate(Asset asset
+    public List<Asset>  bulkUpdate(@RequestBody(description = "The fields to update", required = true, content = @Content(schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+            {
+              "status": "BEING_PROCESSED",
+              "asset_locked": false,
+              "subject": "Folder",
+              "funding": "Hundredetusindvis af dollars",
+              "payload_type": "CT scan",
+              "digitiser": "Doris Digitiser",
+              "pipeline": "tb-pipeline-10",
+              "workstation": "tb-workstation-101",
+              "updateUser": "thomas@northtech.dk"
+            }
+            """)})) Asset asset
             , @QueryParam("assets") List<String> assetGuids
             , @Context SecurityContext securityContext){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
@@ -211,7 +255,10 @@ public class Assetupdates {
     }
 
     @DELETE
-    @Operation(summary = "Delete Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).")
+    @Operation(summary = "Mark asset as deleted", description = """
+    Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA). 
+    Assets marked as deleted are not included in statistics but metadata and assets files are not deleted.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")

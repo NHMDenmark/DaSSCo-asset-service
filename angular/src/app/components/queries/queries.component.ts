@@ -148,15 +148,15 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         } else {
           nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
         }
-      })
+      });
       const qv2s = Array.from(nodeMap).map((value) => {
         return {select: value[0], where: value[1]} as Query;
-      })
+      });
 
       const response: QueryResponse = {id: parseInt(key), query: qv2s};
       queryResponses.push(response);
       this.selection.clear();
-    })
+    });
 
     this.queriesService.getAssetsFromQuery(queryResponses, this.limit)
       .subscribe(result => {

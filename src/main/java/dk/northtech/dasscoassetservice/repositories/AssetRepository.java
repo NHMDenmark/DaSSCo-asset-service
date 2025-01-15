@@ -825,35 +825,7 @@ public interface AssetRepository extends SqlObject {
         }
     }
 
-    default List<AssetStatus> listStatus(){
-        boilerplate();
-        return listStatusInternal();
-    }
 
-    default List<AssetStatus> listStatusInternal(){
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                    MATCH (a:Asset)
-                    WHERE EXISTS(a.status)
-                    RETURN DISTINCT a.status AS status
-                $$) as (status agtype);
-                """;
-
-        try {
-            return withHandle(handle -> {
-                Connection connection = handle.getConnection();
-                PgConnection pgConnection = connection.unwrap(PgConnection.class);
-                pgConnection.addDataType("agtype", Agtype.class);
-                return handle.createQuery(sql)
-                        .map((rs, ctx) -> {
-                            Agtype subject = rs.getObject("status", Agtype.class);
-                            return AssetStatus.valueOf(subject.getString());
-                        }).list();
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-    }
 
     default List<String> listRestrictedAccess(){
         boilerplate();

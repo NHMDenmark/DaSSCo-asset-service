@@ -10,7 +10,7 @@
     </parent>
     <groupId>dk.northtech</groupId>
     <artifactId>dassco-asset-service</artifactId>
-    <version>1.7.3</version>
+    <version>1.7.4</version>
     <name>dassco-asset-service</name>
     <description>dassco-asset-service</description>
     <properties>
@@ -320,7 +320,7 @@
                 <version>2.2.7</version>
                 <configuration>
                     <outputFileName>openapi</outputFileName>
-                    <outputPath>${project.basedir}/src/main/resources</outputPath>
+                    <outputPath>${project.basedir}/target/classes</outputPath>
                     <outputFormat>JSONANDYAML</outputFormat>
                     <resourcePackages>
                         <package>dk.northtech.dasscoassetservice.webapi</package>

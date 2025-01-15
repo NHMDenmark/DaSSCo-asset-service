@@ -39,12 +39,12 @@ public class InternalStatusRepository {
             """
                SELECT * from cypher('dassco', $$
                     MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
-               	 WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']  #and# 	 \s
+               	 WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'ERDA_ERROR', 'ERDA_FAILED']  #and# 	 \s
                	 OPTIONAL MATCH (a)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})
                     WITH
                         count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] AND ed is null THEN 1 END) as pending,
                         count(CASE WHEN a.internal_status = 'COMPLETED'  AND ed is null THEN 1 END) as completed,
-                        count(CASE WHEN a.internal_status IN ['SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']  AND ed is null THEN 1 END) as failed
+                        count(CASE WHEN a.internal_status IN ['ERDA_ERROR', 'ERDA_FAILED']  AND ed is null THEN 1 END) as failed
                     RETURN
                         pending,
                         completed,

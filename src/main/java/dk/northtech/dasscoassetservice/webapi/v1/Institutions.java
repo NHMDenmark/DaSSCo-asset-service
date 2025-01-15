@@ -59,7 +59,7 @@ public class Institutions {
 
     @PUT
     @Path("/{institutionName}")
-    @Operation(summary = "Update Institution", description = "Updates the institution.")
+    @Operation(summary = "Update role restrictions on Institution", description = "Updates the role restrictions of the institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
@@ -72,7 +72,11 @@ public class Institutions {
     }
 
     @POST
-    @Operation(summary = "Create Institution", description = "Registers a new institution.")
+    @Operation(summary = "Create Institution", description = """
+        Registers a new institution.
+        Institutions can have a list of roles, that restricts access to the assets within the institution.
+        If an institution have the role restriction NHMD users with the role NHMD_WRITE has read/write access and users with the role NHMD_READ only have read access.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})

@@ -38,7 +38,6 @@ public class AssetService {
     private final InstitutionService institutionService;
     private final CollectionService collectionService;
     private final WorkstationService workstationService;
-//    private final StatisticsDataService statisticsDataService;
     private final StatisticsDataServiceV2 statisticsDataServiceV2;
     private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
@@ -47,9 +46,7 @@ public class AssetService {
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
-    private final StatusCache statusCache;
     private final PreparationTypeCache preparationTypeCache;
-    private final RestrictedAccessCache restrictedAccessCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
     private final ObservationRegistry observationRegistry;
@@ -68,9 +65,7 @@ public class AssetService {
                         DigitiserCache digitiserCache,
                         SubjectCache subjectCache,
                         PayloadTypeCache payloadTypeCache,
-                        StatusCache statusCache,
                         PreparationTypeCache preparationTypeCache,
-                        RestrictedAccessCache restrictedAccessCache,
                         FileProxyConfiguration fileProxyConfiguration,
                         ObservationRegistry observationRegistry) {
         this.institutionService = institutionService;
@@ -83,10 +78,8 @@ public class AssetService {
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
-        this.statusCache = statusCache;
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
-        this.restrictedAccessCache = restrictedAccessCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
         this.observationRegistry = observationRegistry;
         this.guids = Caffeine.newBuilder()
@@ -217,25 +210,21 @@ public class AssetService {
             logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
             digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
         }
-
-
-
         return true;
     }
 
+    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
+    // TODO  is this used
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
-        }
-        if (assetSmbRequest.shareName() == null) {
-            throw new IllegalArgumentException("Share id cannot be null");
         }
         Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
         if (optAsset.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
 
-        //Mark as asset received
+        // Mark as asset received
         Asset asset = optAsset.get();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         if (asset.asset_locked) {
@@ -258,7 +247,7 @@ public class AssetService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ERDA_FAILED && assetStatus != InternalStatus.ASSET_RECEIVED) {
+        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ASSET_RECEIVED) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
@@ -312,7 +301,8 @@ public class AssetService {
         existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         validateAssetFields(existing);
-        jdbi.onDemand(AssetRepository.class).updateAsset(existing, specimensToDetach);
+        jdbi.onDemand(AssetRepository.class)
+                .updateAsset(existing, specimensToDetach);
 
         statisticsDataServiceV2.refreshCachedData();
 
@@ -350,21 +340,6 @@ public class AssetService {
             }
         }
 
-        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
-            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
-                statusCache.clearCache();
-                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listStatus();
-                });
-                if (!statusList.isEmpty()){
-                    for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCacheIfAbsent(status);
-                    }
-                }
-            }
-        }
-
         boolean prepTypeExists = true;
         if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()){
             for (Specimen specimen : updatedAsset.specimens){
@@ -386,28 +361,6 @@ public class AssetService {
                 }
             }
         }
-
-        if (updatedAsset.restricted_access != null && !updatedAsset.restricted_access.isEmpty()){
-            boolean restrictedAccessExists = true;
-            for (InternalRole internalRole : updatedAsset.restricted_access){
-                if (!restrictedAccessCache.getRestrictedAccessMap().containsKey(internalRole.toString())){
-                    restrictedAccessExists = false;
-                }
-            }
-            if (!restrictedAccessExists){
-                restrictedAccessCache.clearCache();
-                List<String> restrictedAccessList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listRestrictedAccess();
-                });
-                if (!restrictedAccessList.isEmpty()){
-                    for (String internalRole : restrictedAccessList){
-                        this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
-                    }
-                }
-            }
-        }
-
         return existing;
     }
 
@@ -531,22 +484,6 @@ public class AssetService {
                 }
             }
         }
-
-        if (updatedAsset.status != null && !updatedAsset.status.toString().isEmpty()){
-            if (!statusCache.getStatusMap().containsKey(updatedAsset.status.toString())){
-                statusCache.clearCache();
-                List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listStatus();
-                });
-                if (!statusList.isEmpty()){
-                    for(AssetStatus status : statusList){
-                        this.statusCache.putStatusInCacheIfAbsent(status);
-                    }
-                }
-            }
-        }
-
         return bulkUpdateSuccess;
     }
 
@@ -665,7 +602,13 @@ public class AssetService {
         }
     }
 
-    void validateAsset(Asset asset) {
+    void validateNewAsset(Asset asset) {
+        if(Strings.isNullOrEmpty(asset.institution)) {
+            throw new IllegalArgumentException("Institution cannot be null");
+        }
+        if(Strings.isNullOrEmpty(asset.collection)) {
+            throw new IllegalArgumentException("Collection cannot be null");
+        }
         Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
         if (ifExists.isEmpty()) {
             throw new IllegalArgumentException("Institution doesnt exist");
@@ -674,6 +617,8 @@ public class AssetService {
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
+    }
+    void validateAsset(Asset asset) {
         Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
         if (pipelineOpt.isEmpty()) {
             throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
@@ -726,6 +671,7 @@ public class AssetService {
 
         LocalDateTime validationStart = LocalDateTime.now();
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        validateNewAsset(asset);
         validateAsset(asset);
         guids.put(asset.asset_guid, Instant.now());
         LocalDateTime validationEnd = LocalDateTime.now();
@@ -778,13 +724,6 @@ public class AssetService {
             if (asset.payload_type != null && !asset.payload_type.isEmpty()){
                     payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
             }
-
-            statusCache.putStatusInCacheIfAbsent(asset.status);
-            if (asset.restricted_access != null && !asset.restricted_access.isEmpty()){
-                for (InternalRole internalRole : asset.restricted_access){
-                    restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole.toString());
-                }
-            }
             LocalDateTime cacheEnd = LocalDateTime.now();
             logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
 
@@ -810,14 +749,6 @@ public class AssetService {
 
     public List<String> listPayloadTypes(){
         return payloadTypeCache.getPayloadTypes();
-    }
-
-    public List<AssetStatus> listStatus(){
-        return statusCache.getStatus();
-    }
-
-    public List<InternalRole>  listRestrictedAccess(){
-        return restrictedAccessCache.getRestrictedAccessList();
     }
 
     public void reloadAssetCache(){
@@ -849,26 +780,6 @@ public class AssetService {
         if (!preparationTypeList.isEmpty()){
             for (String preparationType : preparationTypeList){
                 this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-            }
-        }
-        statusCache.clearCache();
-        List<AssetStatus> statusList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listStatus();
-        });
-        if (!statusList.isEmpty()){
-            for(AssetStatus status : statusList){
-                this.statusCache.putStatusInCacheIfAbsent(status);
-            }
-        }
-        restrictedAccessCache.clearCache();
-        List<String> restrictedAccessList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listRestrictedAccess();
-        });
-        if (!restrictedAccessList.isEmpty()){
-            for (String internalRole : restrictedAccessList){
-                this.restrictedAccessCache.putRestrictedAccessInCacheIfAbsent(internalRole);
             }
         }
     }

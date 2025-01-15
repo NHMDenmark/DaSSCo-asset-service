@@ -2,13 +2,17 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.google.inject.Inject;
 import dk.northtech.dasscoassetservice.cache.*;
+import dk.northtech.dasscoassetservice.domain.AssetStatus;
 import dk.northtech.dasscoassetservice.domain.Digitiser;
+import dk.northtech.dasscoassetservice.domain.InternalRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CacheService {
@@ -18,8 +22,6 @@ public class CacheService {
     private final PayloadTypeCache payloadTypeCache;
     private final PipelineCache pipelineCache;
     private final PreparationTypeCache preparationTypeCache;
-    private final RestrictedAccessCache restrictedAccessCache;
-    private final StatusCache statusCache;
     private final SubjectCache subjectCache;
     private final WorkstationCache workstationCache;
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
@@ -28,8 +30,7 @@ public class CacheService {
     public CacheService(CollectionCache collectionCache, DigitiserCache digitiserCache,
                         InstitutionCache institutionCache, PayloadTypeCache payloadTypeCache,
                         PipelineCache pipelineCache, PreparationTypeCache preparationTypeCache,
-                        RestrictedAccessCache restrictedAccessCache,
-                        StatusCache statusCache, SubjectCache subjectCache,
+                        SubjectCache subjectCache,
                         WorkstationCache workstationCache){
         this.collectionCache = collectionCache;
         this.digitiserCache = digitiserCache;
@@ -37,8 +38,6 @@ public class CacheService {
         this.payloadTypeCache = payloadTypeCache;
         this.pipelineCache = pipelineCache;
         this.preparationTypeCache = preparationTypeCache;
-        this.restrictedAccessCache = restrictedAccessCache;
-        this.statusCache = statusCache;
         this.subjectCache = subjectCache;
         this.workstationCache = workstationCache;
     }
@@ -52,23 +51,21 @@ public class CacheService {
         allCaches.put("payload_types", payloadTypeCache.getPayloadTypeMap());
         allCaches.put("pipelines", pipelineCache.getPipelineMap());
         allCaches.put("preparation_types", preparationTypeCache.getPreparationTypeMap());
-        allCaches.put("restricted_access", restrictedAccessCache.getRestrictedAccessMap());
-        allCaches.put("status", statusCache.getStatusMap());
+        allCaches.put("restricted_access", Arrays.stream(InternalRole.values()).collect(Collectors.toMap(Enum::name, (x) ->x)));
+        allCaches.put("status", Arrays.stream(AssetStatus.values()).collect(Collectors.toMap(Enum::name, (x) -> x)));
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
 
-        logger.info("Institution Cache: " + institutionCache.getInstitutions());
-        logger.info("Collection Cache: " + collectionCache.getCollectionMap());
-        logger.info("Digitisers Cache: " + digitiserCache.getDigitisers());
-        logger.info("Payload Type Cache: " + payloadTypeCache.getPayloadTypes());
-        logger.info("Pipeline Cache: " + pipelineCache.getPipelineMap());
-        logger.info("Preparation Type Cache: " + preparationTypeCache.getPreparationTypes());
-        logger.info("Restricted Access Cache: " + restrictedAccessCache.getRestrictedAccessList());
-        logger.info("Status Cache: " + statusCache.getStatus());
-        logger.info("Subject Cache: " + subjectCache.getSubjects());
-        logger.info("Workstation Cache: " + workstationCache.getWorkstationMap());
+        logger.info("Institution Cache: {}", institutionCache.getInstitutions());
+        logger.info("Collection Cache: {}", collectionCache.getCollectionMap());
+        logger.info("Digitisers Cache: {}", digitiserCache.getDigitisers());
+        logger.info("Payload Type Cache: {}", payloadTypeCache.getPayloadTypes());
+        logger.info("Pipeline Cache: {}", pipelineCache.getPipelineMap());
+        logger.info("Preparation Type Cache: {}", preparationTypeCache.getPreparationTypes());
+        logger.info("Subject Cache: {}", subjectCache.getSubjects());
+        logger.info("Workstation Cache: {}", workstationCache.getWorkstationMap());
 
-        logger.info("Total number of caches added: " + allCaches.size());
+        logger.info("Total number of caches added: {}", allCaches.size());
 
         return allCaches;
     }
