@@ -13,6 +13,5 @@ public record Collection(
         @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
         String institution,
         @ArraySchema(schema = @Schema( description = "If this list is not empty users need atleast one of the roles from the list in order to read/write assets from the collection",implementation = Role.class))
-        @Schema(description = "")
         List<Role> roleRestrictions) {
 }
