@@ -1,4 +1,8 @@
 package dk.northtech.dasscoassetservice.domain;
 
-public record Role(String name) {
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record Role(
+        @Schema(description = "The role", example = "test-role")
+        String name) {
 }
