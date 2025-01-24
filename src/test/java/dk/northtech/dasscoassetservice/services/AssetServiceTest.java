@@ -561,6 +561,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testValidateAssetCollectionDoesntExist(){
         Asset asset = new Asset();
         asset.institution = "institution_2";
+        asset.digitiser = "Bazviola";
         asset.collection = "doesnt ecksist";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");

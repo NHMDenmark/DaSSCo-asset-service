@@ -651,7 +651,7 @@ public class AssetService {
     }
 
 
-    public Asset persistAsset(Asset asset, User user, int allocation) {
+    public Asset persistAsset2(Asset asset, User user, int allocation) {
         //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         validateAssetFields(asset);
         if (assetsGettingCreated.getIfPresent(asset.asset_guid) != null) {
@@ -682,10 +682,7 @@ public class AssetService {
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
-        logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guid);
-        Observation.createNotStarted("persist:openShareOnFP", observationRegistry).observe(() -> {
-            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
-        });
+
         // Default values on creation
         asset.date_metadata_updated = Instant.now();
         asset.created_date = Instant.now();
@@ -721,7 +718,7 @@ public class AssetService {
         return asset;
     }
 
-    public Asset persistAsset2(Asset asset, User user, int allocation) {
+    public Asset persistAsset(Asset asset, User user, int allocation) {
         //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         validateAssetFields(asset);
         if (assetsGettingCreated.getIfPresent(asset.asset_guid) != null) {
