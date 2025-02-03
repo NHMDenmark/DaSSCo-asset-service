@@ -11,7 +11,7 @@ public record Institution(
     String name
     ,
     @ArraySchema(schema = @Schema(description = "The roles you need to access assets within this institution", implementation = Role.class))
-    List<Role> roleRestriction) {
+    List<Role> roleRestrictions) {
 
     public Institution(String name) {
         this(name, new ArrayList<>());

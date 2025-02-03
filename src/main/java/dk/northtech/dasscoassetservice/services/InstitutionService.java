@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.cache.InstitutionCache;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.Institution;
@@ -13,7 +12,6 @@ import joptsimple.internal.Strings;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -65,7 +63,7 @@ public class InstitutionService {
 //            throw new IllegalArgumentException("Name must be alphanumeric");
 //        }
             repository.persistInstitution(institution);
-            roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestriction());
+            roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name() ,institution.roleRestrictions());
             //institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
@@ -101,7 +99,7 @@ public class InstitutionService {
                 return null;
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
-            roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestriction());
+            roleRepository.setRoleRestriction(RestrictedObjectType.INSTITUTION, institution.name(), institution.roleRestrictions());
             institutionCache.put(institution.name(), institution);
             return h;
         });
