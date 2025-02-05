@@ -45,13 +45,13 @@ import {Location} from "@angular/common";
 export class GraphDataComponent implements AfterViewInit, OnDestroy {
   chart: any;
   viewForm = new FormControl(defaultView);
-  statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
+  statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTION);
   statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
   statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
   private destroy = new Subject<boolean>()
-  statValue = StatValue.INSTITUTE; // the statistics chosen -> institute, pipeline, workstation
-  statForm = new FormControl(0);
+  statValue = StatValue.INSTITUTION; // the statistics chosen -> institute, pipeline, workstation
+  statForm = new FormControl('');
   timeFrameForm = new FormGroup({
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
     end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
@@ -122,12 +122,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     ).subscribe(val => {
       const queryParams = { ...this.route.snapshot.queryParams };
       const statValues = ['institution', 'pipeline', 'workstation'];
-      if (val >= 0 && val < statValues.length) {
-        queryParams['statValue'] = statValues[val];
+      if (statValues.indexOf(val) != -1) {
+        queryParams['statValue'] = val;
         const newQueryString = new URLSearchParams(queryParams).toString();
-        this.location.replaceState(window.location.origin, newQueryString);
+        // this.location.replaceState(window.location.origin, newQueryString);
+        this.location.replaceState(this.router.url.split('?')[0], newQueryString);
       }
-      this.setStatValue(val);
+      // this.setStatValue(null);
     });
 
     this.viewForm.valueChanges
@@ -141,9 +142,9 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
 
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
-
+        console.log('tezt')
         let queryParams = {...this.route.snapshot.queryParams};
-        queryParams['type'] = this.translateView(view)
+        queryParams['type'] = view
         if (view === ViewV2.WEEK) {
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
@@ -160,6 +161,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.MONTH) {
+          console.log('hej')
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -224,7 +226,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     this.route.queryParamMap.pipe(take(1)).subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
-
+      console.log('qparams', params)
       if (type?.toLowerCase() == "week" || type == null) {
         this.viewForm.setValue(ViewV2.WEEK);
       } else if (type?.toLowerCase() == "month") {
@@ -242,12 +244,14 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       }
 
       const statValue = params.get("statValue")
-      if (statValue?.toLowerCase() == "institution" || statValue == null) {
-        this.statForm.setValue(0);
-      } else if (statValue?.toLowerCase() == "pipeline") {
-        this.statForm.setValue(1);
-      } else if (statValue?.toLowerCase() == "workstation") {
-        this.statForm.setValue(2);
+      if (statValue?.toLowerCase() == StatValue.INSTITUTION || statValue == null) {
+        this.statForm.setValue(StatValue.INSTITUTION);
+      } else if (statValue?.toLowerCase() == StatValue.PIPELINE) {
+        this.statForm.setValue(StatValue.PIPELINE);
+      } else if (statValue?.toLowerCase() == StatValue.WORKSTATION) {
+        this.statForm.setValue(StatValue.WORKSTATION);
+      } else {
+        this.statForm.setValue(StatValue.INSTITUTION);
       }
     })
   }
@@ -256,19 +260,20 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   setStatValue(statValue: StatValue) {
     this.statValueSubject.next(statValue);
     this.statValue = statValue;
-    if (statValue === StatValue.INSTITUTE) this.title = 'Specimens / Institution';
+    if (statValue === StatValue.INSTITUTION) this.title = 'Specimens / Institution';
     if (statValue === StatValue.PIPELINE) this.title = 'Specimens / Pipeline';
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
 
   clearCustomTimeFrame(clearView: boolean) {
+    console.log('clearing custom time frame')
     this.timeFrameForm.reset();
     this.router.navigate([], {
       queryParamsHandling: 'merge',
       queryParams: {
         startDate: null,
         endDate: null,
-        type: this.translateView(this.viewForm.value)
+        type: this.viewForm.value
       }
     })
     if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
@@ -291,22 +296,22 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       })
   }
 
-  translateView(view: number | undefined | null): string | null {
-    switch (view) {
-      case ViewV2.WEEK:
-        return 'week';
-      case ViewV2.MONTH:
-        return 'month';
-      case ViewV2.YEAR:
-        return 'year';
-      case ViewV2.CUSTOM:
-        return 'custom';
-      case ViewV2.EXPONENTIAL:
-        return 'exponential'
-      default:
-        return null;
-    }
-  }
+  // translateView(view: number | undefined | null): string | null {
+  //   switch (view) {
+  //     case ViewV2.WEEK:
+  //       return 'week';
+  //     case ViewV2.MONTH:
+  //       return 'month';
+  //     case ViewV2.YEAR:
+  //       return 'year';
+  //     case ViewV2.CUSTOM:
+  //       return 'custom';
+  //     case ViewV2.EXPONENTIAL:
+  //       return 'exponential'
+  //     default:
+  //       return null;
+  //   }
+  // }
 
   openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action, {duration: 3000});
