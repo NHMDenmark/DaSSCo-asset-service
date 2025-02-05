@@ -32,9 +32,11 @@ import {Location} from "@angular/common";
   templateUrl: './graph-data.component.html',
   styleUrls: ['./graph-data.component.scss'],
   providers: [
-    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE,
-        MAT_MOMENT_DATE_ADAPTER_OPTIONS] },
-    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
+    {
+      provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE,
+        MAT_MOMENT_DATE_ADAPTER_OPTIONS]
+    },
+    {provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: {useUtc: true}},
     {
       provide: MAT_DATE_FORMATS, useValue: CUSTOM_DATE_FORMAT
     }
@@ -69,39 +71,39 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   endDate: string | null = null;
 
   constructor(public specimenGraphService: SpecimenGraphService
-    , private snackBar: MatSnackBar, private route : ActivatedRoute,
-              private router : Router, private location : Location) {
+    , private snackBar: MatSnackBar, private route: ActivatedRoute,
+              private router: Router, private location: Location) {
 
 
-     this.timeFrameForm.valueChanges.pipe(startWith(null), distinctUntilChanged(), filter((range) => !!range?.start && !!range?.end), switchMap((range) => {
-        if (range) {
-          if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
-            && moment(range.end, 'DD-MM-YYYY ', true).isValid()
-            && this.timeFrameForm.valid) {
-            let view = "WEEK";
-            if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
-            if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
-            // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
-            const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
+    this.timeFrameForm.valueChanges.pipe(startWith(null), distinctUntilChanged(), filter((range) => !!range?.start && !!range?.end), switchMap((range) => {
+      if (range) {
+        if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
+          && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+          && this.timeFrameForm.valid) {
+          let view = "WEEK";
+          if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
+          if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
+          // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
+          const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
 
-            this.router.navigate([], {
-              queryParamsHandling: 'merge',
-              queryParams: {
-                startDate: range.start!.format('DD-MM-YYYY'),
-                endDate: range.end!.format('DD-MM-YYYY'),
-                type: 'custom'
-              }
-            })
-            return this.specimenGraphService.getSpecimenDataCustom(view,
-              moment(range.start).valueOf(),
-              endDateFormatted.valueOf())
-              .pipe(filter(isNotUndefined))
-          }
-          return of(null)
-        } else {
-          return of(null);
+          this.router.navigate([], {
+            queryParamsHandling: 'merge',
+            queryParams: {
+              startDate: range.start!.format('DD-MM-YYYY'),
+              endDate: range.end!.format('DD-MM-YYYY'),
+              type: 'custom'
+            }
+          })
+          return this.specimenGraphService.getSpecimenDataCustom(view,
+            moment(range.start).valueOf(),
+            endDateFormatted.valueOf())
+            .pipe(filter(isNotUndefined))
         }
-      }), takeUntil(this.destroy))
+        return of(null)
+      } else {
+        return of(null);
+      }
+    }), takeUntil(this.destroy))
       .subscribe(customData => {
         if (!customData) {
           this.statsV2Subject.next(undefined)
@@ -113,32 +115,20 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         this.statsV2Subject.next(mappedData);
       });
 
-      this.statForm.valueChanges.pipe(
-        filter(isNotNull),
-        distinctUntilChanged(), takeUntil(this.destroy))
-        .subscribe(val => {
-          let queryParams = { ... this.route.snapshot.queryParams };
-          if (val == 0){
-            queryParams['statValue'] = 'institution';
-            const newQueryString = Object.keys(queryParams)
-              .map(key => `${key}=${queryParams[key]}`)
-              .join("&");
-            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
-          } else if (val == 1){
-            queryParams['statValue'] = 'pipeline';
-            const newQueryString = Object.keys(queryParams)
-              .map(key => `${key}=${queryParams[key]}`)
-              .join("&");
-            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
-          } else if (val == 2){
-            queryParams['statValue'] = 'workstation';
-            const newQueryString = Object.keys(queryParams)
-              .map(key => `${key}=${queryParams[key]}`)
-              .join("&");
-            this.location.replaceState(this.router.url.split('?')[0], newQueryString);
-          }
-          this.setStatValue(val)
-        });
+    this.statForm.valueChanges.pipe(
+      filter(isNotNull),
+      distinctUntilChanged(),
+      takeUntil(this.destroy)
+    ).subscribe(val => {
+      const queryParams = { ...this.route.snapshot.queryParams };
+      const statValues = ['institution', 'pipeline', 'workstation'];
+      if (val >= 0 && val < statValues.length) {
+        queryParams['statValue'] = statValues[val];
+        const newQueryString = new URLSearchParams(queryParams).toString();
+        this.location.replaceState(window.location.origin, newQueryString);
+      }
+      this.setStatValue(val);
+    });
 
     this.viewForm.valueChanges
       .pipe(
@@ -152,10 +142,9 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         this.clearCustomTimeFrame(false);
         this.currentViewSubscription?.unsubscribe();
 
-        let queryParams = { ... this.route.snapshot.queryParams };
+        let queryParams = {...this.route.snapshot.queryParams};
         queryParams['type'] = this.translateView(view)
         if (view === ViewV2.WEEK) {
-          // queryParams['type'] = 'week';
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -171,7 +160,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.MONTH) {
-          // queryParams['type'] = 'month';
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -188,14 +176,12 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
-          if (view === ViewV2.YEAR){
-            // queryParams['type'] = 'year';
+          if (view === ViewV2.YEAR) {
             const newQueryString = Object.keys(queryParams)
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
             this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else {
-            // queryParams['type'] = 'exponential';
             const newQueryString = Object.keys(queryParams)
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
@@ -215,8 +201,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               this.statsV2Subject.next(mappedData);
             });
         }
-        if (view === ViewV2.CUSTOM){
-          // queryParams['type'] = 'custom';
+        if (view === ViewV2.CUSTOM) {
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -231,9 +216,9 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
 
 
   ngOnDestroy(): void {
-        this.destroy.next(true)
+    this.destroy.next(true)
     this.currentViewSubscription?.unsubscribe()
-    }
+  }
 
   ngAfterViewInit(): void {
     this.route.queryParamMap.pipe(take(1)).subscribe(params => {
@@ -248,24 +233,24 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         this.viewForm.setValue(ViewV2.YEAR);
       } else if (type?.toLowerCase() == "exponential") {
         this.viewForm.setValue(ViewV2.EXPONENTIAL);
-      } else if (type?.toLowerCase() == "custom"){
+      } else if (type?.toLowerCase() == "custom") {
         this.startDate = params.get("startDate");
         this.endDate = params.get("endDate");
-        if (moment(this.startDate, 'DD-MM-YYYY').isValid() && moment(this.endDate, 'DD-MM-YYYY').isValid()){
+        if (moment(this.startDate, 'DD-MM-YYYY').isValid() && moment(this.endDate, 'DD-MM-YYYY').isValid()) {
           this.viewForm.setValue(ViewV2.CUSTOM);
         }
       }
 
       const statValue = params.get("statValue")
-      if (statValue?.toLowerCase() == "institution" || statValue == null){
+      if (statValue?.toLowerCase() == "institution" || statValue == null) {
         this.statForm.setValue(0);
-      } else if (statValue?.toLowerCase() == "pipeline"){
+      } else if (statValue?.toLowerCase() == "pipeline") {
         this.statForm.setValue(1);
-      } else if (statValue?.toLowerCase() == "workstation"){
+      } else if (statValue?.toLowerCase() == "workstation") {
         this.statForm.setValue(2);
       }
     })
-    }
+  }
 
 
   setStatValue(statValue: StatValue) {
@@ -306,16 +291,23 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       })
   }
 
-  translateView(view: number | undefined| null): string | null {
+  translateView(view: number | undefined | null): string | null {
     switch (view) {
-      case ViewV2.WEEK: return 'week';
-      case ViewV2.MONTH: return 'month';
-      case ViewV2.YEAR: return 'year';
-      case ViewV2.CUSTOM: return 'custom';
-      case ViewV2.EXPONENTIAL: return 'exponential'
-      default: return null;
+      case ViewV2.WEEK:
+        return 'week';
+      case ViewV2.MONTH:
+        return 'month';
+      case ViewV2.YEAR:
+        return 'year';
+      case ViewV2.CUSTOM:
+        return 'custom';
+      case ViewV2.EXPONENTIAL:
+        return 'exponential'
+      default:
+        return null;
     }
   }
+
   openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action, {duration: 3000});
   }
