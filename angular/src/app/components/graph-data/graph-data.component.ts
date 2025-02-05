@@ -268,7 +268,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       queryParams: {
         startDate: null,
         endDate: null,
-        // type: 'custom'
+        type: this.translateView(this.viewForm.value)
       }
     })
     if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
