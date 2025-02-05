@@ -144,7 +144,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       .pipe(
         filter(isNotNull),
         startWith(this.viewForm.value),
-        distinctUntilChanged(),
+        // distinctUntilChanged(),
         takeUntil(this.destroy)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
@@ -153,9 +153,9 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         this.currentViewSubscription?.unsubscribe();
 
         let queryParams = { ... this.route.snapshot.queryParams };
-
+        queryParams['type'] = this.translateView(view)
         if (view === ViewV2.WEEK) {
-          queryParams['type'] = 'week';
+          // queryParams['type'] = 'week';
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -171,7 +171,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.MONTH) {
-          queryParams['type'] = 'month';
+          // queryParams['type'] = 'month';
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -189,13 +189,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         }
         if (view === ViewV2.YEAR || view === ViewV2.EXPONENTIAL) {
           if (view === ViewV2.YEAR){
-            queryParams['type'] = 'year';
+            // queryParams['type'] = 'year';
             const newQueryString = Object.keys(queryParams)
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
             this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           } else {
-            queryParams['type'] = 'exponential';
+            // queryParams['type'] = 'exponential';
             const newQueryString = Object.keys(queryParams)
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
@@ -216,7 +216,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.CUSTOM){
-          queryParams['type'] = 'custom';
+          // queryParams['type'] = 'custom';
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -228,6 +228,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         }
       });
   }
+
 
   ngOnDestroy(): void {
         this.destroy.next(true)
@@ -277,6 +278,14 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
 
   clearCustomTimeFrame(clearView: boolean) {
     this.timeFrameForm.reset();
+    this.router.navigate([], {
+      queryParamsHandling: 'merge',
+      queryParams: {
+        startDate: null,
+        endDate: null,
+        // type: 'custom'
+      }
+    })
     if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
   }
 
@@ -297,11 +306,16 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       })
   }
 
-  refreshPage(){
-    this.location.go(this.location.path());
-    window.location.reload();
+  translateView(view: number | undefined| null): string | null {
+    switch (view) {
+      case ViewV2.WEEK: return 'week';
+      case ViewV2.MONTH: return 'month';
+      case ViewV2.YEAR: return 'year';
+      case ViewV2.CUSTOM: return 'custom';
+      case ViewV2.EXPONENTIAL: return 'exponential'
+      default: return null;
+    }
   }
-
   openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action, {duration: 3000});
   }
