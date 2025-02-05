@@ -81,7 +81,7 @@ public class Collections {
     @Operation(summary = "Update role restrictions on collection", description = "Updates the role restrictions on the collection")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Collection updateInstitution(Collection collection
