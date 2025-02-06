@@ -268,18 +268,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
 
-  clearDates() {
-    this.timeFrameForm.reset();
-
-    this.clearCustomTimeFrame(true);
-  }
   clearCustomTimeFrame(clearView: boolean) {
     this.timeFrameForm.reset();
     this.router.navigate([], {
       queryParamsHandling: 'merge',
       queryParams: {
         startDate: null,
-        endDate: null,//TODO find out how not to overwrite  q params  on page load.
+        endDate: null,
         type: this.viewForm.value
       }
     })
