@@ -141,8 +141,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     this.viewForm.valueChanges
       .pipe(
         filter(isNotNull),
-        // startWith(this.viewForm.value),
-        // distinctUntilChanged(),
         takeUntil(this.destroy)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
@@ -150,7 +148,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
           this.clearCustomTimeFrame(false);
         }
         this.currentViewSubscription?.unsubscribe();
-        console.log('tezt')
         let queryParams = {...this.route.snapshot.queryParams};
         queryParams['type'] = view
         if (view === ViewV2.WEEK) {
@@ -205,7 +202,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               const mappedData: Map<string, Map<string, GraphStatsV2>> = new Map(Object.entries(data.body));
               if (view === ViewV2.YEAR) { // we don't need this if it's just year and not the mix
                 mappedData.delete(ChartDataTypes.EXPONENTIAL);
-                console.log('mapped', mappedData)
               }
               this.statsV2Subject.next(mappedData);
             });
@@ -230,7 +226,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    console.log('after-view-init')
     this.route.queryParamMap.pipe(take(1)).subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
@@ -274,13 +269,11 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   }
 
   clearDates() {
-    console.log('clearing dates')
     this.timeFrameForm.reset();
 
     this.clearCustomTimeFrame(true);
   }
   clearCustomTimeFrame(clearView: boolean) {
-    console.log('clearing custom time frame')
     this.timeFrameForm.reset();
     this.router.navigate([], {
       queryParamsHandling: 'merge',
