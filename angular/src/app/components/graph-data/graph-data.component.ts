@@ -7,14 +7,19 @@ import {
   map,
   Observable,
   of,
-  startWith, Subject,
+  startWith,
+  Subject,
   Subscription,
-  switchMap, take, takeUntil,
+  switchMap,
+  take,
+  takeUntil,
 } from 'rxjs';
 import {
-  defaultView,
+  ChartDataTypes,
+  CUSTOM_DATE_FORMAT,
+  GraphStatsV2,
   StatValue,
-  GraphStatsV2, ViewV2, CUSTOM_DATE_FORMAT, ChartDataTypes
+  ViewV2
 } from '../../types/graph-types';
 import {isNotNull, isNotUndefined} from '@northtech/ginnungagap';
 import moment, {Moment} from 'moment-timezone';
@@ -44,14 +49,14 @@ import {Location} from "@angular/common";
 })
 export class GraphDataComponent implements AfterViewInit, OnDestroy {
   chart: any;
-  viewForm = new FormControl(defaultView);
+  viewForm = new FormControl();
   statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTION);
   statsV2Subject = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined); // incremental: {dato, data}, exponential: {dato, data}
   statsV2$ = this.statsV2Subject.asObservable();
   title = 'Specimens / Institute';
   private destroy = new Subject<boolean>()
   statValue = StatValue.INSTITUTION; // the statistics chosen -> institute, pipeline, workstation
-  statForm = new FormControl('');
+  statForm: FormControl<string|null> = new FormControl(null);
   timeFrameForm = new FormGroup({
     start: new FormControl<Moment | null>(null, {updateOn: 'blur'}),
     end: new FormControl<Moment | null>(null, {updateOn: 'blur'})
@@ -128,19 +133,22 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
         // this.location.replaceState(window.location.origin, newQueryString);
         this.location.replaceState(this.router.url.split('?')[0], newQueryString);
       }
-      // this.setStatValue(null);
+      if(Object.values(StatValue).includes(val as StatValue)) {
+        this.setStatValue(val as StatValue)
+      }
     });
 
     this.viewForm.valueChanges
       .pipe(
         filter(isNotNull),
-        startWith(this.viewForm.value),
+        // startWith(this.viewForm.value),
         // distinctUntilChanged(),
         takeUntil(this.destroy)
       )
       .subscribe(view => { // 1 -> week, 2 -> month, 3 -> year, 4 -> combined
-
-        this.clearCustomTimeFrame(false);
+        if(view != ViewV2.CUSTOM) {
+          this.clearCustomTimeFrame(false);
+        }
         this.currentViewSubscription?.unsubscribe();
         console.log('tezt')
         let queryParams = {...this.route.snapshot.queryParams};
@@ -161,7 +169,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             });
         }
         if (view === ViewV2.MONTH) {
-          console.log('hej')
           const newQueryString = Object.keys(queryParams)
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
@@ -223,6 +230,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    console.log('after-view-init')
     this.route.queryParamMap.pipe(take(1)).subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
@@ -265,6 +273,12 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     if (statValue === StatValue.WORKSTATION) this.title = 'Specimens / Workstation';
   }
 
+  clearDates() {
+    console.log('clearing dates')
+    this.timeFrameForm.reset();
+
+    this.clearCustomTimeFrame(true);
+  }
   clearCustomTimeFrame(clearView: boolean) {
     console.log('clearing custom time frame')
     this.timeFrameForm.reset();
@@ -272,7 +286,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       queryParamsHandling: 'merge',
       queryParams: {
         startDate: null,
-        endDate: null,
+        endDate: null,//TODO find out how not to overwrite  q params  on page load.
         type: this.viewForm.value
       }
     })
