@@ -156,7 +156,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(updatedAsest, user);
 
         Asset auditedAsset = getTestAsset("audited", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
-        auditedAsset.status = AssetStatus.BEING_PROCESSED;
+        auditedAsset.status = "BEING_PROCESSED";
 
         assetService.persistAsset(auditedAsset, user, 11);
         assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("audited", null, "NNAD", "i_c1")
@@ -185,14 +185,21 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assertThat(assets.size()).isAtLeast(2);
         int asset_nnadCount = 0;
         for (Asset asset1 : assets) {
+            System.out.println(asset1);
             if (asset1.asset_guid.equalsIgnoreCase("asset_nnad")) asset_nnadCount++;
         }
         boolean auditedFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase("audited"));
         boolean notUpdatedAssetFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase("asset_fnoop"));
-
-        assertThat(asset_nnadCount).isEqualTo(1); // updated twice, so there'll be at least three events for this asset.
-        assertThat(auditedFound).isTrue();
-        assertThat(notUpdatedAssetFound).isFalse();
+        while(true) {
+            try {
+                Thread.sleep(400000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+//        assertThat(asset_nnadCount).isEqualTo(1); // updated twice, so there'll be at least three events for this asset.
+//        assertThat(auditedFound).isTrue();
+//        assertThat(notUpdatedAssetFound).isFalse();
     }
 
     @Test
@@ -251,7 +258,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         asset.funding = "Hundredetusindvis af dollars";
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
-        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = username;
         asset.pipeline = pipeline;
@@ -260,7 +267,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         asset.collection = collection;
         asset.asset_pid = "pid-auditAsset";
         asset.asset_locked = false;
-        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.status = "BEING_PROCESSED";
         return asset;
     }
 

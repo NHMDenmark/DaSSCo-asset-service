@@ -54,7 +54,7 @@ public class AssetService {
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
     private final ObservationRegistry observationRegistry;
-
+    private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
 
     @Inject
@@ -65,13 +65,14 @@ public class AssetService {
             , Jdbi jdbi
             , StatisticsDataServiceV2 statisticsDataServiceV2
             , PipelineService pipelineService
-            , RightsValidationService rightsValidationService,
-                        DigitiserCache digitiserCache,
-                        SubjectCache subjectCache,
-                        PayloadTypeCache payloadTypeCache,
-                        PreparationTypeCache preparationTypeCache,
-                        FileProxyConfiguration fileProxyConfiguration,
-                        ObservationRegistry observationRegistry) {
+            , RightsValidationService rightsValidationService
+            , DigitiserCache digitiserCache
+            , SubjectCache subjectCache
+            , PayloadTypeCache payloadTypeCache
+            , PreparationTypeCache preparationTypeCache
+            , FileProxyConfiguration fileProxyConfiguration
+            , ObservationRegistry observationRegistry
+            , ExtendableEnumService extendableEnumService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -86,6 +87,7 @@ public class AssetService {
         this.preparationTypeCache = preparationTypeCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
         this.observationRegistry = observationRegistry;
+        this.extendableEnumService = extendableEnumService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
     }
@@ -218,7 +220,6 @@ public class AssetService {
     }
 
     // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
-    // TODO  is this used
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
@@ -495,7 +496,7 @@ public class AssetService {
         AgtypeMapBuilder builder = new AgtypeMapBuilder();
 
         if (updatedFields.status != null) {
-            builder.add("status", updatedFields.status.name());
+            builder.add("status", updatedFields.status);
         }
 
         if (updatedFields.funding != null) {
@@ -591,17 +592,17 @@ public class AssetService {
         return sql.formatted(assetListAsString);
     }
 
-    void validateAssetFields(Asset a) {
-        if (Strings.isNullOrEmpty(a.asset_guid)) {
+    void validateAssetFields(Asset asset) {
+        if (Strings.isNullOrEmpty(asset.asset_guid)) {
             throw new IllegalArgumentException("asset_guid cannot be null");
         }
-        if (Strings.isNullOrEmpty(a.asset_pid)) {
+        if (Strings.isNullOrEmpty(asset.asset_pid)) {
             throw new IllegalArgumentException("asset_pid cannot be null");
         }
-        if (a.status == null) {
+        if (Strings.isNullOrEmpty(asset.status) ||!extendableEnumService.getStatuses().contains(asset.status)) {
             throw new IllegalArgumentException("Status cannot be null");
         }
-        if ("".equals(a.parent_guid)) {
+        if ("".equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Parent may not be an empty string");
         }
     }
@@ -642,7 +643,14 @@ public class AssetService {
         if (workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)) {
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
-
+        if(asset.file_formats != null && !asset.file_formats.isEmpty()){
+            Set<String> fileFormats = extendableEnumService.getFileFormats();
+            for(String s: fileFormats) {
+                if(!fileFormats.contains(s)){
+                    throw new IllegalArgumentException(s + " is not a valid file format");
+                }
+            }
+        }
         if (asset.parent_guid != null) {
             Optional<Asset> parentOpt = getAsset(asset.parent_guid);
             if (parentOpt.isEmpty()) {

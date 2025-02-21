@@ -35,8 +35,10 @@ public class AssetMapper implements RowMapper<Asset> {
 
         asset.asset_guid = guid.getString();
         asset.asset_pid = pid.getString();
-        asset.status = AssetStatus.valueOf(status.getString());
-        asset.file_formats = fileFormats.getList().stream().map(x -> FileFormat.valueOf(x.toString())).collect(Collectors.toList());
+        asset.status = status.getString();
+        asset.file_formats = fileFormats.getList().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
         asset.multi_specimen = asset.specimens.size() > 1;
         asset.institution = institutionName.getString();
         rs.getString("collection_name");

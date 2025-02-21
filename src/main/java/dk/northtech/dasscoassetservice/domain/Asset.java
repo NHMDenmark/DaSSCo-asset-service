@@ -12,7 +12,7 @@ public class Asset {
     @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
     public String asset_guid;
     @Schema(description = "The current status of an asset", example = "BEING_PROCESSED")
-    public AssetStatus status;
+    public String status;
     @Schema(description = "A single image (or other type of media) that contains multiple specimens in it. One asset is linked to multiple specimens", example = "false")
     public boolean multi_specimen;
     //@Schema(description = "The barcodes of associated specimens", example = "'[\"ti-sp-00012\"']")
@@ -26,7 +26,7 @@ public class Asset {
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")
     public String payload_type;
     @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
-    public List<FileFormat> file_formats = new ArrayList<>();
+    public List<String> file_formats = new ArrayList<>();
     @Schema(description = "Flags if it is possible to edit / delete the media of this asset", example = "true")
     public boolean asset_locked;
     @Schema(description = "List of possible roles for users", example = "[\"ADMIN\"]")
