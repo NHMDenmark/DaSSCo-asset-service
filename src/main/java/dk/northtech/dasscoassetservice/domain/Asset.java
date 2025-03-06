@@ -82,6 +82,25 @@ public class Asset {
     @Schema(description = "Whether the current user has write access. Used in frontend operations.", example = "TRUE")
     public boolean writeAccess;
 
+
+    // new fields
+    @Schema(description = "Field that would indicate if the cameras exif data falls into certain predetermined categories")
+    public String camera_setting_control;
+    @Schema(description = "This field records the date the ingestion client or server generated the initial metadata on the specimen", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_metadata_ingested;
+
+    @Schema(description = "The version of the metadata template used to create this particular metadata. Template that is used before/outside of ARS. We are basically moving from having this in tags to its own field", example = "1.0.0")
+    public String metadata_version;
+
+    @Schema(description = "Id binding multi object specimens together. This is relevant when a specimen is in multiple parts across multiple assets. Each asset has its own barcode but this id lets us identify them as a whole.", example = "mos123")
+    public String mos_id;
+
+    @Schema(description = "Not all assets should necessarily be made available to external publishers (e.g., documents) or in some cases where an issue is detected with the asset. This field will be populated during image processing with a yes or no.",example = "false", defaultValue = "false")
+    public boolean make_public;
+
+    @Schema(description = "Not all assets will necessarily be pushed to Specify. Some are not needed in specify and for others there could be issues found during processing. This field will be populated during image processing with a yes or no.",example = "false",defaultValue = "false")
+    public boolean push_to_specify;
+
     public String getAsset_guid() {
         return asset_guid;
     }
