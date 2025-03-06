@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="VERSION-6.0.0_CREATE_ENUMS" author="Thomas Skov Bornerup" contextFilter="default">
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS age;
+            LOAD 'age';
+            SET search_path = ag_catalog, "$user", public;
+
+            SELECT create_vlabel('dassco','Status');
+            SELECT create_vlabel('dassco','File_format');
+        </sql>
+    </changeSet>
+
+    <changeSet id="VERSION-6.0.0:LOAD_ENUMS" author="Thomas Skov Bornerup" contextFilter="default">
+        <sqlFile path="/sql/6.0.0/enums.sql"/>
+    </changeSet>
+
+    <changeSet id="VERSION-6.0.0-TAG-DATABASE" author="Thomas Skov Bornerup" context="default">
+        <tagDatabase tag="VERSION-6.0.0"/>
+    </changeSet>
+</databaseChangeLog>

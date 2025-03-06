@@ -21,6 +21,7 @@ public class CacheService {
     private final InstitutionCache institutionCache;
     private final PayloadTypeCache payloadTypeCache;
     private final PipelineCache pipelineCache;
+    private final ExtendableEnumService extendableEnumService;
     private final PreparationTypeCache preparationTypeCache;
     private final SubjectCache subjectCache;
     private final WorkstationCache workstationCache;
@@ -31,7 +32,8 @@ public class CacheService {
                         InstitutionCache institutionCache, PayloadTypeCache payloadTypeCache,
                         PipelineCache pipelineCache, PreparationTypeCache preparationTypeCache,
                         SubjectCache subjectCache,
-                        WorkstationCache workstationCache){
+                        WorkstationCache workstationCache,
+                        ExtendableEnumService extendableEnumService){
         this.collectionCache = collectionCache;
         this.digitiserCache = digitiserCache;
         this.institutionCache = institutionCache;
@@ -40,6 +42,7 @@ public class CacheService {
         this.preparationTypeCache = preparationTypeCache;
         this.subjectCache = subjectCache;
         this.workstationCache = workstationCache;
+        this.extendableEnumService = extendableEnumService;
     }
 
     public Map<String, Object> getAllCaches(){
@@ -52,10 +55,9 @@ public class CacheService {
         allCaches.put("pipelines", pipelineCache.getPipelineMap());
         allCaches.put("preparation_types", preparationTypeCache.getPreparationTypeMap());
         allCaches.put("restricted_access", Arrays.stream(InternalRole.values()).collect(Collectors.toMap(Enum::name, (x) ->x)));
-        allCaches.put("status", Arrays.stream(AssetStatus.values()).collect(Collectors.toMap(Enum::name, (x) -> x)));
+        allCaches.put("status", extendableEnumService.getStatusCache());
         allCaches.put("subjects", subjectCache.getSubjectMap());
         allCaches.put("workstations", workstationCache.getWorkstationMap());
-
         logger.info("Institution Cache: {}", institutionCache.getInstitutions());
         logger.info("Collection Cache: {}", collectionCache.getCollectionMap());
         logger.info("Digitisers Cache: {}", digitiserCache.getDigitisers());

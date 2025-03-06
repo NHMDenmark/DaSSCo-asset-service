@@ -882,14 +882,14 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_pid = guid + "-pid";
-        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.status = "BEING_PROCESSED";
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.funding = "Hundredetusindvis af dollars";
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
-        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         return asset;

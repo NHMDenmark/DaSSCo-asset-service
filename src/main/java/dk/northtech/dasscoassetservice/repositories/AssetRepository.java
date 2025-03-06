@@ -414,7 +414,7 @@ public interface AssetRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
+                asset.file_formats.forEach(agtypeListBuilder::add);
                 AgtypeMapBuilder tags = new AgtypeMapBuilder();
                 asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
                 AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
@@ -426,7 +426,7 @@ public interface AssetRepository extends SqlObject {
                         .add("pipeline_name", asset.pipeline)
                         .add("asset_pid", asset.asset_pid)
                         .add("asset_guid", asset.asset_guid)
-                        .add("status", asset.status.name())
+                        .add("status", asset.status)
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
                         .add("payload_type", asset.payload_type)
@@ -535,7 +535,7 @@ public interface AssetRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-                asset.file_formats.forEach(x -> agtypeListBuilder.add(x.name()));
+                asset.file_formats.forEach(agtypeListBuilder::add);
                 AgtypeMapBuilder tags = new AgtypeMapBuilder();
                 asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
                 AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
@@ -545,7 +545,7 @@ public interface AssetRepository extends SqlObject {
                         .add("workstation_name", asset.workstation)
                         .add("pipeline_name", asset.pipeline)
                         .add("asset_guid", asset.asset_guid)
-                        .add("status", asset.status.name())
+                        .add("status", asset.status)
                         .add("funding", asset.funding)
                         .add("subject", asset.subject)
                         .add("payload_type", asset.payload_type)

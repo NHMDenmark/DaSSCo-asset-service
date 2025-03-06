@@ -178,7 +178,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.funding = "Hundredetusindvis af dollars";
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
-        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         asset.specimens = Arrays.asList(new Specimen(instituteName, "i1_c1", "creatAsset-sp-" + id, "spid" + id, "slide"), new Specimen(instituteName, "i1_c1", "creatAsset-sp-0" + id, "spid0" + id, "slide"));
@@ -189,7 +189,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.institution = instituteName;
         asset.collection = collectionName;
         asset.asset_pid = "pid-createAsset";
-        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.status = "BEING_PROCESSED";
         return asset;
     }
 
