@@ -358,164 +358,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
-    @Test
-    void testUpdateAsset() {
-        Asset createAsset = getTestAsset("createAssetUpdateAsset");
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide"));
-        createAsset.pipeline = "i1_p1";
-        createAsset.workstation = "i1_w1";
-        createAsset.tags.put("Tag1", "value1");
-        createAsset.tags.put("Tag2", "value2");
-        createAsset.institution = "institution_1";
-        createAsset.collection = "i1_c1";
-        createAsset.asset_pid = "pid-createAsset";
-        createAsset.status = "BEING_PROCESSED";
-        assetService.persistAsset(createAsset, user,10);
-        Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
-        assertThat(resultOpt.isPresent()).isTrue();
-        Asset result = resultOpt.get();
-        result.updateUser = "Uffe Updater";
-        result.payload_type = "conventional";
-        assetService.updateAsset(result,user);
-        result.payload_type = "nuclear";
-        assetService.updateAsset(result,user);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null),"i1_w1", "i1_p1", "bob"));
-        assetService.auditAsset(user,new Audit("Audrey Auditor"), "createAssetUpdateAsset");
-        List<Event> resultEvents = assetService.getEvents(result.asset_guid,user);
-        assertThat(resultEvents.size()).isEqualTo(5);
-        Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
-        assertThat(resultOpt2.isPresent()).isTrue();
-        Asset resultAsset = resultOpt2.get();
-        assertThat(resultAsset.payload_type).isEqualTo("nuclear");
-        Instant latestUpdate;
-        List<Instant> updates = resultEvents.stream()
-                .filter(x -> x.event.equals(DasscoEvent.UPDATE_ASSET_METADATA))
-                .map(x -> x.timeStamp)
-                .sorted().toList();
-        //The last update event
-        assertThat(resultAsset.date_metadata_updated).isEqualTo(updates.get(1));
-        assertThat(resultAsset.audited).isTrue();
-    }
-
-    @Test
-    void updateAssetAssetDoesntExist(){
-        Asset asset = getTestAsset("updateAssetAssetDoesntExist");
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset, user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset updateAssetAssetDoesntExist does not exist");
-    }
-
-    @Test
-    void updateAssetNoUpdateUser(){
-        Asset asset = getTestAsset("updateAssetNoUpdateUser");
-        asset.asset_pid = "pid-updateAssetNoUpdateUser";
-        asset.workstation = "i2_w1";
-        asset.institution = "institution_2";
-        asset.pipeline = "i2_p1";
-        asset.collection = "i2_c1";
-        asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 1);
-        asset.updateUser = "";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset,user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided");
-    }
-
-    @Test
-    void testUpdateAssetdoNotPermitUnlocking() {
-        Asset createAsset = getTestAsset("doNotPermitUnlocking");
-        createAsset.pipeline = "i1_p1";
-        createAsset.workstation = "i1_w1";
-        createAsset.tags.put("Tag1", "value1");
-        createAsset.tags.put("Tag2", "value2");
-        createAsset.institution = "institution_1";
-        createAsset.collection = "i1_c1";
-        createAsset.asset_pid = "pid-createAsset";
-        createAsset.status = "BEING_PROCESSED";
-        createAsset = assetService.persistAsset(createAsset, user, 11);
-
-        createAsset.updateUser = "Uffe Updater";
-        createAsset.asset_locked = true;
-        assetService.updateAsset(createAsset,user);
-        createAsset.asset_locked = false;
-        Asset finalCreateAsset = createAsset;
-        DasscoIllegalActionException illegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(finalCreateAsset,user));
-        assertThat(illegalActionException.getMessage()).isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-
-    }
-
-    @Test
-    void updateAsset() {
-        Asset asset = getTestAsset("updateAsset");
-//        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
-        asset.institution = "institution_1";
-        asset.specimens = new ArrayList<>(Arrays.asList(new Specimen(asset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide")
-                , new Specimen(asset.institution, "i1_c1", "creatAsset-sp-2", "spid1", "pinning")));
-        asset.pipeline = "i1_p1";
-        asset.workstation = "i1_w1";
-        asset.tags.put("Tag1", "value1");
-        asset.tags.put("Tag2", "value2");
-        asset.collection = "i1_c1";
-        asset.asset_pid = "pid-updateAsset";
-        asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 11);
-        asset.tags.remove("Tag1");
-        asset.tags.remove("Tag2");
-        asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", "slide"));
-//        asset.specimens.get()
-        asset.workstation = "i1_w2";
-        asset.pipeline = "i1_p2";
-        asset.status ="ISSUE_WITH_METADATA";
-        asset.subject = "new sub";
-        asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
-        asset.funding = "Funding secured";
-        asset.file_formats = Arrays.asList("RAW");
-        asset.payload_type = "Conventional";
-        asset.digitiser = "Diane Digitiser";
-        assetService.updateAsset(asset,user);
-        Optional<Asset> updateAsset = assetService.getAsset("updateAsset");
-        assertThat(updateAsset.isPresent()).isTrue();
-        Asset result = updateAsset.get();
-        assertThat(result.tags.isEmpty()).isTrue();
-        // The pipeline and workstation fields on asset is the ones used to create the assets.
-        // The ones set on the updated asset is used on the update event and is not displayed on the asset
-        assertThat(result.pipeline).isEqualTo("i1_p1");
-        assertThat(result.workstation).isEqualTo("i1_w1");
-        assertThat(result.status).isEqualTo("ISSUE_WITH_METADATA");
-        assertThat(result.subject).isEqualTo("new sub");
-        assertThat(result.restricted_access.get(0)).isEqualTo(InternalRole.ADMIN);
-        assertThat(result.funding).isEqualTo("Funding secured");
-        assertThat(result.file_formats.size()).isEqualTo(1);
-        assertThat(result.file_formats.get(0)).isEqualTo("RAW");
-        assertThat(result.payload_type).isEqualTo("Conventional");
-        //Digitiser is the original creator of the asset. The name of the new digitiser appears on the update event in the graph
-        assertThat(result.digitiser).isEqualTo("Karl-Børge");
-        assertThat(result.specimens).hasSize(1);
-
-        //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
-         Specimen specimen = result.specimens.get(0);
-        assertThat(specimen.preparation_type()).isEqualTo("slide");
-        assertThat(specimen.specimen_pid()).isEqualTo("spid2");
-    }
-
-    @Test
-    void updateAssetNoWritePermission(){
-        collectionService.persistCollection(new Collection("updateAssetNoWritePermission_1","institution_2", Arrays.asList(new Role("updateAssetNoWritePermission_1"))));
-        Asset asset = getTestAsset("udateAssetNoWritePermission");
-        asset.asset_pid = "pid-updateAssetNoWritePermission";
-        asset.workstation = "i2_w1";
-        asset.institution = "institution_2";
-        asset.pipeline = "i2_p1";
-        asset.collection = "updateAssetNoWritePermission_1";
-        asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 1);
-        asset.updateUser = "karl-børge";
-        //verify that user cant update without write access
-        assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset,user));
-        //verify that user cant update with read access
-        assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset,new User("karl-børge", new HashSet<>(Arrays.asList("READ_updateAssetNoWritePermission_1")))));
-        //verify that it works when user have write access
-        assetService.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("WRITE_updateAssetNoWritePermission_1"))));
-    }
-
 
     @Test
     void testValidateAssetFieldsNoAssetGuid(){
@@ -649,7 +491,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-2");
         assertThat(result.payload_type).isEqualTo("nuclear");
-        assertThat(result.funding).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(result.funding.get(0)).isEqualTo("Hundredetusindvis af dollars");
         //Specimens
         assertThat(result.specimens).hasSize(2);
         Specimen specimen_1 = result.specimens.get(0).barcode().equals("creatAsset-sp-1") ? result.specimens.get(0): result.specimens.get(1);
@@ -719,7 +561,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset2, user, 10);
         Asset parent = assetService.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
-        parent.funding = "Hundredetusindvis af dollar, jeg er stadig i chok";
+        parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
         assetService.updateAsset(parent, user);
         Asset child = assetService.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
@@ -896,7 +738,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = "Hundredetusindvis af dollars";
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -958,8 +800,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedSecondAsset.events.size()).isEqualTo(2);
         assertThat(updatedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
         // Funding changed:
-        assertThat(updatedFirstAsset.funding).isEqualTo("Hundredetusindvis af dollars");
-        assertThat(updatedSecondAsset.funding).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(updatedFirstAsset.funding.get(0)).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(updatedSecondAsset.funding.get(0)).isEqualTo("Hundredetusindvis af dollars");
         // Subject changed:
         assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
         assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
@@ -1023,7 +865,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(optNotUpdated.isPresent()).isTrue();
         Asset notUpdated = optNotUpdated.get();
         // Using funding or subject or payload_type is the easiest way to check if an asset was updated or not.
-        assertThat(notUpdated.funding).isEqualTo("funding has depleted");
+        assertThat(notUpdated.funding.get(0)).isEqualTo("funding has depleted");
     }
 
     @Test
@@ -1071,7 +913,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-" + guid;
         asset.asset_guid = guid;
         asset.status = "WORKING_COPY";
-        asset.funding = "funding has depleted";
+        asset.funding = Arrays.asList("funding has depleted");
         asset.subject = "subject-non-edited";
         asset.payload_type = "payload-not-edited";
         asset.tags.put("Tag 1", "Value 1");

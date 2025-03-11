@@ -20,7 +20,7 @@ public class Asset {
     @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
     public List<Specimen> specimens = new ArrayList<>();
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
-    public String funding;
+    public List<String> funding;
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
     public String subject;
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")
@@ -92,6 +92,9 @@ public class Asset {
     @Schema(description = "The version of the metadata template used to create this particular metadata. Template that is used before/outside of ARS. We are basically moving from having this in tags to its own field", example = "1.0.0")
     public String metadata_version;
 
+    @Schema(description = "This field records where the metadata is intially generated as a json format. If possible should also note the version of the ´system´ used to generate the metadata.", example = "MDR")
+    public String metadata_source;
+
     @Schema(description = "Id binding multi object specimens together. This is relevant when a specimen is in multiple parts across multiple assets. Each asset has its own barcode but this id lets us identify them as a whole.", example = "mos123")
     public String mos_id;
 
@@ -142,6 +145,7 @@ public class Asset {
                 '}';
     }
 
+    //TODO maybe we need to handle the new lists here
     @Override
     public boolean equals(Object o) { // does NOT compare the creation_date, workstation, pipeline and digitiser (to be able to compare the objects regardless of the Event linked to it)
         if (this == o) return true;

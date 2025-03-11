@@ -25,9 +25,9 @@ public class AssetMapper implements RowMapper<Asset> {
         Agtype status = rs.getObject("status", Agtype.class);
         Agtype fileFormats = rs.getObject("file_formats", Agtype.class);
         Agtype internalStatus = rs.getObject("internal_status", Agtype.class);
-        Agtype restrictedAccess = rs.getObject("restricted_access", Agtype.class);
         Agtype tags = rs.getObject("tags", Agtype.class);
-
+        Agtype make_public = rs.getObject("make_public", Agtype.class);
+        Agtype push_to_specify = rs.getObject("push_to_specify", Agtype.class);
         Agtype assetLocked = rs.getObject("asset_locked", Agtype.class);
         asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
 
@@ -41,6 +41,8 @@ public class AssetMapper implements RowMapper<Asset> {
                 .collect(Collectors.toList());
         asset.multi_specimen = asset.specimens.size() > 1;
         asset.institution = institutionName.getString();
+        asset.push_to_specify = push_to_specify.getBoolean();
+        asset.make_public = make_public.getBoolean();
         rs.getString("collection_name");
         if (!rs.wasNull()) {
             Agtype collection = rs.getObject("collection_name", Agtype.class);
@@ -58,7 +60,6 @@ public class AssetMapper implements RowMapper<Asset> {
         }
 
         asset.asset_locked = assetLocked.getBoolean();
-        asset.restricted_access = restrictedAccess.getList().stream().map(role -> InternalRole.valueOf(role.toString())).collect(Collectors.toList());
         Map<String, String> tagsMap = new HashMap<>();
         tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null ? tag.getValue().toString() : null));
         asset.tags = tagsMap;
@@ -95,6 +96,11 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype dateMetaDataTaken = rs.getObject("date_metadata_taken", Agtype.class);
             asset.date_asset_finalised = Instant.ofEpochMilli(dateMetaDataTaken.getLong());
         }
+        rs.getString("date_metadata_ingested");
+        if (!rs.wasNull()) {
+            Agtype dateMetaDataTaken = rs.getObject("date_metadata_ingested", Agtype.class);
+            asset.date_metadata_ingested = Instant.ofEpochMilli(dateMetaDataTaken.getLong());
+        }
         rs.getString("date_asset_taken");
         if (!rs.wasNull()) {
             Agtype assetTakenDate = rs.getObject("date_asset_taken", Agtype.class);
@@ -110,11 +116,12 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype subject = rs.getObject("subject", Agtype.class);
             asset.subject = subject.getString();
         }
-        rs.getString("funding");
-        if (!rs.wasNull()) {
-            Agtype funding = rs.getObject("funding", Agtype.class);
-            asset.funding = funding.getString();
-        }
+
+        Agtype funding = rs.getObject("funding", Agtype.class);
+        asset.funding = funding.getList().stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
+
         rs.getString("parent_guid");
         if (!rs.wasNull()) {
             Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
@@ -125,6 +132,27 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype writeAccess = rs.getObject("write_access", Agtype.class);
             asset.writeAccess = writeAccess.getBoolean();
         }
+//        .camera_setting_control = "Mom get the camera!";
+//        asset.date_asset_finalised = Instant.now();
+//        asset.metadata_source = "I made it up";
+//        asset.metadata_version = "1.0.0";
+//        asset.date_metadata_taken = Instant.now();
+        rs.getString("camera_setting_control");
+        if (!rs.wasNull()) {
+            Agtype camera_setting_control = rs.getObject("camera_setting_control", Agtype.class);
+            asset.camera_setting_control = camera_setting_control.getString();
+        }
+        rs.getString("metadata_source");
+        if (!rs.wasNull()) {
+            Agtype metadata_source = rs.getObject("metadata_source", Agtype.class);
+            asset.metadata_source = metadata_source.getString();
+        }
+        rs.getString("metadata_version");
+        if (!rs.wasNull()) {
+            Agtype metadata_version = rs.getObject("metadata_version", Agtype.class);
+            asset.metadata_version = metadata_version.getString();
+        }
+
         return asset;
     }
 

@@ -21,14 +21,14 @@ public interface EnumRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
                              MATCH (e:<EnumName> {<propertyName>: $name})
-                             SET e.<propertyName> = $new_name
+                             SET e.name = $new_name
                            $$, #params
                         ) as (e agtype);""";
-        return sql.replace("<EnumName>", extendableEnum.enumName).replace("<propertyName>", extendableEnum.propertyName);
+        return sql.replace("<EnumName>", extendableEnum.enumName);
     }
 
     static String formatSQL(String sql, ExtendableEnumService.ExtendableEnum enumToUpdate) {
-        return sql.replace("<EnumName>", enumToUpdate.enumName).replace("<propertyName>", enumToUpdate.propertyName);
+        return sql.replace("<EnumName>", enumToUpdate.enumName);
     }
 
     default void persistEnum(ExtendableEnumService.ExtendableEnum enumToUpdate, String status) {
@@ -48,7 +48,7 @@ public interface EnumRepository extends SqlObject {
                 Connection connection = handle.getConnection();
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
-                AgtypeMap name = new AgtypeMapBuilder().add(enumToUpdate.propertyName, status).build();
+                AgtypeMap name = new AgtypeMapBuilder().add("name", status).build();
                 Agtype agtype = AgtypeFactory.create(name);
                 handle.execute(DBConstants.AGE_BOILERPLATE);
                 handle.createUpdate(sqlFormatted)
@@ -67,7 +67,7 @@ public interface EnumRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                          , $$
                              MATCH (e:<EnumName>)
-                             RETURN e.<propertyName>
+                             RETURN e.name
                            $$
                         ) as (e agtype);""";
 
@@ -131,7 +131,7 @@ public interface EnumRepository extends SqlObject {
                 PgConnection pgConn = connection.unwrap(PgConnection.class);
                 pgConn.addDataType("agtype", Agtype.class);
                 handle.execute(DBConstants.AGE_BOILERPLATE);
-                AgtypeMap name = new AgtypeMapBuilder().add( enumToDelete.propertyName,valueToDelete).build();
+                AgtypeMap name = new AgtypeMapBuilder().add( "name",valueToDelete).build();
                 Agtype agtype = AgtypeFactory.create(name);
                 handle.createUpdate(sql)
                         .bind("params", agtype)

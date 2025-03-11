@@ -498,10 +498,10 @@ public class AssetService {
         if (updatedFields.status != null) {
             builder.add("status", updatedFields.status);
         }
-
-        if (updatedFields.funding != null) {
-            builder.add("funding", updatedFields.funding);
-        }
+        //TODO handle new lists here
+//        if (updatedFields.funding != null) {
+//            builder.add("funding", updatedFields.funding);
+//        }
 
         if (updatedFields.subject != null) {
             builder.add("subject", updatedFields.subject);

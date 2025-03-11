@@ -22,16 +22,15 @@ public class ExtendableEnumService {
     }
 
     public enum ExtendableEnum {
-        FILE_FORMAT("File_format", "file_format"),
-        STATUS("Status", "status");
+        FILE_FORMAT("File_format"),
+        STATUS("Status");
 
-        ExtendableEnum(String enumName, String propertyName) {
+        ExtendableEnum(String enumName) {
             this.enumName = enumName;
-            this.propertyName = propertyName;
         }
 
         public final String enumName;
-        public final String propertyName;
+
     }
 
     public Set<String> getFileFormats() {
@@ -81,7 +80,7 @@ public class ExtendableEnumService {
 
     public void persistEnum(ExtendableEnum extendableEnum, String value) {
         if (Strings.isNullOrEmpty(value)) {
-            throw new IllegalArgumentException(extendableEnum.propertyName + " cannot be null");
+            throw new IllegalArgumentException("Name cannot be null");
         }
         switch (extendableEnum) {
             case FILE_FORMAT -> {
@@ -126,10 +125,10 @@ public class ExtendableEnumService {
     }
     public void updateEnum(ExtendableEnum extendableEnum, String existing, String new_name) {
         if (Strings.isNullOrEmpty(new_name)) {
-            throw new IllegalArgumentException(extendableEnum.propertyName + " cannot be null");
+            throw new IllegalArgumentException("Enum name cannot be null");
         }
         if(!checkExists(extendableEnum, existing)) {
-            throw new IllegalArgumentException(extendableEnum.propertyName + " doesnt exist");
+            throw new IllegalArgumentException("Enum name doesnt exist");
         }
         jdbi.withHandle(h -> {
             EnumRepository repository = h.attach(EnumRepository.class);

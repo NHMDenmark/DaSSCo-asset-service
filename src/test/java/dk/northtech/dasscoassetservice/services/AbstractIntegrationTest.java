@@ -44,7 +44,11 @@ public class AbstractIntegrationTest {
     @Inject
     WorkstationService workstationService;
     @Inject InternalStatusService internalStatusService;
+
+
+
     AssetService assetService;
+    AssetService2 assetService2;
     @Inject FileProxyClient fileProxyClient;
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
@@ -52,10 +56,12 @@ public class AbstractIntegrationTest {
     @Inject ExtendableEnumService extendableEnumService;
     User user = new User();
     @Inject
-    void setAssetService(AssetService assetService) {
+    void setAssetService(AssetService assetService, AssetService2 assetService2) {
         AssetService spyAssetService = spy(assetService);
+        AssetService2 spyAssetService2 = spy(assetService2);
         HttpInfo success = new HttpInfo("/", "host.dk", 10000, 20000, 9990, 10, "success", HttpAllocationStatus.SUCCESS);
         doReturn(success).when(spyAssetService).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
+        doReturn(success).when(spyAssetService2).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
 
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
@@ -68,14 +74,17 @@ public class AbstractIntegrationTest {
             e.printStackTrace();
         }
         doReturn(mockHttpClient).when(spyAssetService).createHttpClient();
+//        doReturn(mockHttpClient).when(spyAssetService2).createHttpClient();
 
         this.assetService = spyAssetService;
+        this.assetService2 = spyAssetService2;
     }
 
 
 
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
+        System.out.println("POOOOOOOORT "+ postgreSQL.getFirstMappedPort());
         // These tests assume the dev dataset, so roll that context on:
         System.out.println("POOOOOOOOOOORT "+postgreSQL.getFirstMappedPort());
         registry.add("spring.liquibase.contexts", () -> "default, development, test");

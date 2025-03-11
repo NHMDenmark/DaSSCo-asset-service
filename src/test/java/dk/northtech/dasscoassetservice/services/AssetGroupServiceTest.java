@@ -886,7 +886,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
-        asset.funding = "Hundredetusindvis af dollars";
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
