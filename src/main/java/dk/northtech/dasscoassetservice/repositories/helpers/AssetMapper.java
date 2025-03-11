@@ -91,11 +91,6 @@ public class AssetMapper implements RowMapper<Asset> {
             Agtype dateAssetFinalised = rs.getObject("date_asset_finalised", Agtype.class);
             asset.date_asset_finalised = Instant.ofEpochMilli(dateAssetFinalised.getLong());
         }
-        rs.getString("date_metadata_taken");
-        if (!rs.wasNull()) {
-            Agtype dateMetaDataTaken = rs.getObject("date_metadata_taken", Agtype.class);
-            asset.date_asset_finalised = Instant.ofEpochMilli(dateMetaDataTaken.getLong());
-        }
         rs.getString("date_metadata_ingested");
         if (!rs.wasNull()) {
             Agtype dateMetaDataTaken = rs.getObject("date_metadata_ingested", Agtype.class);

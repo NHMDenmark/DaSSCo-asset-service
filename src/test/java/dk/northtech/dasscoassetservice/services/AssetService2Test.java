@@ -295,7 +295,6 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.date_asset_finalised = Instant.now();
         asset.metadata_source = "I made it up";
         asset.metadata_version = "1.0.0";
-        asset.date_metadata_taken = Instant.now();
         asset.date_metadata_ingested = Instant.now();
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         asset.make_public = true;
@@ -418,6 +417,10 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList("RAW");
         asset.payload_type = "Conventional";
         asset.digitiser = "Diane Digitiser";
+        asset.metadata_version = "One point oh-uh";
+        asset.metadata_source = "It came to me in a dream";
+        asset.make_public = false;
+        asset.push_to_specify = false;
         assetService2.updateAsset(asset, user);
         Optional<Asset> updateAsset = assetService2.getAsset("updateAsset");
         assertThat(updateAsset.isPresent()).isTrue();
@@ -441,10 +444,16 @@ class AssetService2Test extends AbstractIntegrationTest {
 //        assertThat(result.file_formats.size()).isEqualTo(1);
 //        assertThat(result.file_formats.get(0)).isEqualTo("RAW");
         assertThat(result.payload_type).isEqualTo("Conventional");
+        assertThat(result.date_asset_finalised).isNotNull();
+        assertThat(result.date_asset_taken).isNotNull();
+        assertThat(result.date_metadata_ingested).isNotNull();
         //Digitiser is the original creator of the asset. The name of the new digitiser appears on the update event in the graph
         assertThat(result.digitiser).isEqualTo("Karl-Børge");
         assertThat(result.specimens).hasSize(1);
-
+        assertThat(asset.metadata_version).isEqualTo("One point oh-uh");
+        assertThat(asset.metadata_source).isEqualTo("It came to me in a dream");
+        assertThat(asset.make_public).isFalse();
+        assertThat(asset.push_to_specify).isFalse();
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
