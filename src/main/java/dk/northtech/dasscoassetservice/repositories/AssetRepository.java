@@ -486,11 +486,6 @@ public interface AssetRepository extends SqlObject {
                 } else {
                     agBuilder.add("date_asset_taken", (String) null);
                 }
-                if (asset.date_metadata_taken != null) {
-                    agBuilder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
-                } else {
-                    agBuilder.add("date_metadata_taken", (String) null);
-                }
                 AgtypeMap parms = agBuilder.build();
                 Agtype agtype = AgtypeFactory.create(parms);
                 handle.createUpdate(sql)
@@ -600,11 +595,7 @@ public interface AssetRepository extends SqlObject {
                         .add("tags", tags.build())
                         .add("asset_locked", asset.asset_locked)
                         .add("restricted_access", restrictedAcces.build());
-                if (asset.date_metadata_taken != null) {
-                    builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
-                } else {
-                    builder.addNull("date_metadata_taken");
-                }
+
                 if (asset.date_asset_finalised != null) {
                     builder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
                 } else {

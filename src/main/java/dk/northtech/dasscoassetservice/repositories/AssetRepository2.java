@@ -139,90 +139,6 @@ public interface AssetRepository2 extends SqlObject {
         return asset;
     }
 
-    default Optional<Asset> readAssetInternal(String assetGuid) {
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                    , $$
-                         MATCH (a:Asset{name: $asset_guid})
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                         MATCH (e:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(a)
-                         MATCH (u:User)<-[:INITIATED_BY]-(e)
-                         MATCH (p:Pipeline)<-[:USED]-(e)
-                         MATCH (w:Workstation)<-[:USED]-(e)
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(:Asset{name: $asset_guid})
-                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                         OPTIONAL MATCH (a)-[:HAS]->
-                         RETURN a.asset_guid
-                         , a.asset_pid
-                         , a.status
-                         , a.multi_specimen
-                         , a.funding
-                         , a.subject
-                         , a.payload_type
-                         , a.file_formats
-                         , a.asset_taken_date
-                         , a.internal_status
-                         , a.asset_locked
-                         , pa.asset_guid 
-                         , a.tags
-                         , a.error_message
-                         , a.error_timestamp
-                         , collect(s)
-                         , i.name
-                         , c.name
-                         , p.name
-                         , w.name
-                         , e.timestamp
-                         , a.date_asset_finalised
-                         , u.name
-                         , a.date_metadata_taken
-                         , a.date_asset_taken
-                         , null
-                      $$
-                    , #params)
-                    as (asset_guid agtype
-                    , asset_pid agtype
-                    , status agtype
-                    , multi_specimen agtype
-                    , funding agtype
-                    , subject agtype
-                    , payload_type agtype
-                    , file_formats agtype
-                    , asset_taken_date agtype
-                    , internal_status agtype
-                    , asset_locked agtype
-                    , parent_guid agtype
-                    , tags agtype
-                    , error_message agtype
-                    , error_timestamp agtype
-                    , specimens agtype
-                    , institution_name agtype
-                    , collection_name agtype
-                    , pipeline_name agtype
-                    , workstation_name agtype
-                    , creation_date agtype
-                    , date_asset_finalised agtype
-                    , user_name agtype
-                    , date_metadata_taken agtype
-                    , date_asset_taken agtype
-                    , write_access agtype);
-                  """;
-        return withHandle(handle -> {
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guid", assetGuid)
-                    .add("asset_guid", assetGuid)//TODO see if we can delete this
-                    .build();
-            Agtype agtype = AgtypeFactory.create(agParams);
-            return handle.createQuery(sql)
-                    .bind("params", agtype)
-                    .map(new AssetMapper())
-                    .findOne();
-        });
-    }
-
-
     default Optional<Asset> readAssetInternalNew(String assetGuid) {
         String sql = """
                   SELECT * FROM ag_catalog.cypher(
@@ -271,7 +187,6 @@ public interface AssetRepository2 extends SqlObject {
                          , create_event.timestamp
                          , asset.date_asset_finalised
                          , u.name
-                         , asset.date_metadata_taken
                          , asset.date_asset_taken
                          , asset.date_metadata_ingested
                          , null
@@ -306,7 +221,6 @@ public interface AssetRepository2 extends SqlObject {
                     , creation_date agtype
                     , date_asset_finalised agtype
                     , user_name agtype
-                    , date_metadata_taken agtype
                     , date_asset_taken agtype
                     , date_metadata_ingested agtype
                     , write_access agtype
@@ -419,8 +333,8 @@ public interface AssetRepository2 extends SqlObject {
                             , date_asset_taken: $date_asset_taken
                             , tags: $tags
                             , asset_locked: $asset_locked
-                            , date_metadata_taken: $date_metadata_taken
                             , date_metadata_ingested: $date_metadata_ingested
+                            , date_asset_finalised: $date_asset_finalised
                             , make_public: $make_public
                             , push_to_specify: $push_to_specify
                         })
@@ -433,18 +347,17 @@ public interface AssetRepository2 extends SqlObject {
         } else {
             agBuilder.add("date_asset_taken", (String) null);
         }
-        if (asset.date_metadata_taken != null) {
-            agBuilder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
-        } else {
-            agBuilder.add("date_metadata_taken", (String) null);
-        }
         if (asset.date_metadata_ingested != null) {
             System.out.println("D8 is not null");
             agBuilder.add("date_metadata_ingested", asset.date_metadata_ingested.toEpochMilli());
         } else {
             agBuilder.add("date_metadata_ingested", (String) null);
         }
-
+        if (asset.date_asset_finalised != null) {
+            agBuilder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
+        } else {
+            agBuilder.add("date_asset_finalised", (String) null);
+        }
         if (!Strings.isNullOrEmpty(asset.subject)) {
             sb.append("""
                             MERGE (sb:Subject{name: $subject})
@@ -560,7 +473,7 @@ public interface AssetRepository2 extends SqlObject {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                     , $$
-                         MATCH (a:Asset)
+                         MATCH (asset:Asset)
                          WHERE a.asset_guid IN [%s]
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(a)
@@ -594,7 +507,6 @@ public interface AssetRepository2 extends SqlObject {
                          , e.timestamp
                          , a.date_asset_finalised
                          , u.name
-                         , a.date_metadata_taken
                          , a.date_asset_taken
                          , null
                       $$
@@ -623,7 +535,6 @@ public interface AssetRepository2 extends SqlObject {
                     , creation_date agtype
                     , date_asset_finalised agtype
                     , user_name agtype
-                    , date_metadata_taken agtype
                     , date_asset_taken agtype
                     , write_access agtype);
                   """.formatted(assetListAsString);
@@ -674,92 +585,142 @@ public interface AssetRepository2 extends SqlObject {
         StringBuilder sb = new StringBuilder("""
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (w:Workstation {name: $workstation_name})
-                            MATCH (p:Pipeline {name: $pipeline_name})
-                            MATCH (a:Asset {name: $asset_guid})
+                            MATCH (collection:Collection {name: $collection_name})
+                            MATCH (workstation:Workstation {name: $workstation_name})
+                            MATCH (pipeline:Pipeline {name: $pipeline_name})
+                            MATCH (asset:Asset {name: $asset_guid})
+                            MATCH (asset)-[existing_has_status:HAS]->(status:Status)
+                            MATCH (new_status:Status{name:$status})
+                            OPTIONAL MATCH (asset)-[existing_child_of:CHILD_OF]->(parent:Asset)
+                            OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(payload_type:Payload_type)
+                            OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(subject:Subject)
+                            OPTIONAL MATCH (asset)-[existing_has_camera_setting_control:HAS]->(camera_setting_control:Camera_setting_control)
+                            OPTIONAL MATCH (asset)-[existing_has_metadata_version:HAS]->(metadata_version:Metadata_version)
+                            OPTIONAL MATCH (asset)-[existing_has_metadata_source:HAS]->(metadata_source:Metadata_source)
+                            OPTIONAL MATCH (asset)-[existing_has_file_format:HAS]->(file_format:File_format)
+                            DELETE existing_has_payload_type
+                            DELETE existing_has_subject
+                            DELETE existing_has_camera_setting_control
+                            DELETE existing_has_metadata_version
+                            DELETE existing_has_metadata_source
+                            DELETE existing_has_file_format
+                            DELETE existing_has_status
+                            DELETE existing_child_of
+                            MERGE (asset)-[:HAS]->(new_status)
+                            MERGE (user:User{user_id: $user, name: $user})
+                            MERGE (update_event:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
+                            MERGE (update_event)-[uw:USED]->(workstation)
+                            MERGE (update_event)-[up:USED]->(pipeline)
+                            MERGE (update_event)-[pb:INITIATED_BY]->(user)
+                            MERGE (asset)-[ca:CHANGED_BY]->(update_event)
+                            SET asset.status = $status
+                            , asset.tags = $tags
+                            , asset.funding = $funding
+                            , asset.subject = $subject
+                            , asset.payload_type = $payload_type
+                            , asset.file_formats = $file_formats
+                            , asset.restricted_access = $restricted_access
+                            , asset.date_asset_finalised = $date_asset_finalised
+                            , asset.parent_id = $parent_id
+                            , asset.asset_locked = $asset_locked
+                            , asset.internal_status = $internal_status
+                            , asset.date_asset_taken = $date_asset_taken
+                            , asset.date_metadata_ingested = $date_metadata_ingested
+                            , asset.digitiser = $digitiser
                 """);
+        if (asset.date_asset_taken != null) {
+            agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
+        } else {
+            agBuilder.add("date_asset_taken", (String) null);
+        }
+        if (asset.date_metadata_ingested != null) {
+            agBuilder.add("date_metadata_ingested", asset.date_metadata_ingested.toEpochMilli());
+        } else {
+            agBuilder.add("date_metadata_ingested", (String) null);
+        }
+        if (asset.date_asset_finalised != null) {
+            agBuilder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
+        } else {
+            agBuilder.add("date_asset_finalised", (String) null);
+        }
 
+        if (!Strings.isNullOrEmpty(asset.subject)) {
+            sb.append("""
+                            MERGE (new_subject:Subject{name: $subject})
+                            MERGE (asset)-[new_asset_has_subject:HAS]->(new_subject)
+                    """);
+            agBuilder.add("subject", asset.subject);
+
+        }
+        if (!Strings.isNullOrEmpty(asset.camera_setting_control)) {
+            sb.append("""
+                            MERGE (new_camera_setting_control:Camera_setting_control{name: $camera_setting_control})
+                            MERGE (asset)-[new_has_camera_setting_control:HAS]->(new_camera_setting_control)
+                    """);
+            agBuilder.add("camera_setting_control", asset.camera_setting_control);
+        }
+        if (!Strings.isNullOrEmpty(asset.metadata_version)) {
+            sb.append("""
+                            MERGE (new_metadata_version:Metadata_version{name: $metadata_version})
+                            MERGE (asset)-[new_has_metadata_version:HAS]->(new_metadata_version)
+                    """);
+            agBuilder.add("metadata_version", asset.metadata_version);
+        }
+        if (!Strings.isNullOrEmpty(asset.metadata_source)) {
+            sb.append("""
+                            MERGE (new_metadata_source:Metadata_source{name: $metadata_source})
+                            MERGE (asset)-[new_has_metadata_source:HAS]->(new_metadata_source)
+                    """);
+            agBuilder.add("metadata_source", asset.metadata_source);
+        }
+
+        if (asset.payload_type != null) {
+            sb.append("""
+                            MERGE (new_payload_type:Payload_type{name: $payload_type})
+                            MERGE (asset)-[new_has_payload_type:HAS]->(new_payload_type)
+                    """);
+            agBuilder.add("payload_type", asset.payload_type);
+        }
+        if (asset.digitiser != null) {
+            agBuilder.add("digitiser", asset.digitiser);
+        } else {
+            agBuilder.addNull("digitiser");
+        }
+        sb.append("""
+                $$
+                        , #params) as (a agtype);
+                """);
+        return sb.toString();
     }
     default Asset update_asset_internal(Asset asset) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (w:Workstation {name: $workstation_name})
-                            MATCH (p:Pipeline {name: $pipeline_name})                        
-                            MATCH (a:Asset {name: $asset_guid})
-                            OPTIONAL MATCH (a)-[co:CHILD_OF]->(parent:Asset)
-                            DELETE co
-                            MERGE (u:User{user_id: $user, name: $user})
-                            MERGE (e:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
-                            MERGE (e)-[uw:USED]->(w)
-                            MERGE (e)-[up:USED]->(p)
-                            MERGE (e)-[pb:INITIATED_BY]->(u)
-                            MERGE (a)-[ca:CHANGED_BY]-(e)
-                            SET a.status = $status
-                            , a.tags = $tags
-                            , a.funding = $funding
-                            , a.subject = $subject
-                            , a.payload_type = $payload_type
-                            , a.file_formats = $file_formats
-                            , a.restricted_access = $restricted_access
-                            , a.date_asset_finalised = $date_asset_finalised
-                            , a.parent_id = $parent_id
-                            , a.asset_locked = $asset_locked
-                            , a.internal_status = $internal_status
-                            , a.date_metadata_taken = $date_metadata_taken
-                            , a.date_asset_taken = $date_asset_taken
-                            , a.digitiser = $digitiser
-                        $$
-                        , #params) as (a agtype);
-                        """;
+
+        AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+        asset.file_formats.forEach(agtypeListBuilder::add);
+        AgtypeMapBuilder tags = new AgtypeMapBuilder();
+        asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
+        AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+        asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
+        AgtypeMapBuilder builder = new AgtypeMapBuilder()
+                .add("collection_name", asset.collection)
+                .add("workstation_name", asset.workstation)
+                .add("pipeline_name", asset.pipeline)
+                .add("asset_guid", asset.asset_guid)
+                .add("status", asset.status)
+//                        .add("funding", asset.funding)
+                .add("subject", asset.subject)
+                .add("payload_type", asset.payload_type)
+                .add("file_formats", agtypeListBuilder.build())
+                .add("updated_date", Instant.now().toEpochMilli())
+                .add("internal_status", asset.internal_status.name())
+                .add("parent_id", asset.parent_guid)
+                .add("user", asset.updateUser)
+                .add("tags", tags.build())
+                .add("asset_locked", asset.asset_locked)
+                .add("restricted_access", restrictedAcces.build());
+        String sql = buildUpdateSQL(asset, builder);
+        logger.info(sql);
         try {
             withHandle(handle -> {
-                AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-                asset.file_formats.forEach(agtypeListBuilder::add);
-                AgtypeMapBuilder tags = new AgtypeMapBuilder();
-                asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
-                AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-                asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-                AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("collection_name", asset.collection)
-                        .add("workstation_name", asset.workstation)
-                        .add("pipeline_name", asset.pipeline)
-                        .add("asset_guid", asset.asset_guid)
-                        .add("status", asset.status)
-//                        .add("funding", asset.funding)
-                        .add("subject", asset.subject)
-                        .add("payload_type", asset.payload_type)
-                        .add("file_formats", agtypeListBuilder.build())
-                        .add("updated_date", Instant.now().toEpochMilli())
-                        .add("internal_status", asset.internal_status.name())
-                        .add("parent_id", asset.parent_guid)
-                        .add("user", asset.updateUser)
-                        .add("tags", tags.build())
-                        .add("asset_locked", asset.asset_locked)
-                        .add("restricted_access", restrictedAcces.build());
-                if (asset.date_metadata_taken != null) {
-                    builder.add("date_metadata_taken", asset.date_metadata_taken.toEpochMilli());
-                } else {
-                    builder.addNull("date_metadata_taken");
-                }
-                if (asset.date_asset_finalised != null) {
-                    builder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
-                } else {
-                    builder.addNull("date_asset_finalised");
-                }
-                if (asset.date_asset_taken != null) {
-                    builder.add("date_asset_taken", asset.date_asset_finalised.toEpochMilli());
-                } else {
-                    builder.addNull("date_asset_taken");
-                }
-                if (asset.digitiser != null) {
-                    builder.add("digitiser", asset.digitiser);
-                } else {
-                    builder.addNull("digitiser");
-                }
                 Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
                         .bind("params", agtype)
