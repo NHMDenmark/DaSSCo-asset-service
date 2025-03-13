@@ -185,6 +185,7 @@ public class AssetService2 {
         LocalDateTime databaseCheckEnd = LocalDateTime.now();
         logger.info("#2: Database call to check if Asset existed took {} ms", Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
         LocalDateTime validationStart = LocalDateTime.now();
+        asset.updateUser = user.username;
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateNewAsset(asset);
         validateAsset(asset);

@@ -398,12 +398,12 @@ public interface AssetRepository2 extends SqlObject {
                     """);
             agBuilder.add("payload_type", asset.payload_type);
         }
-        if (asset.payload_type != null) {
+        if (asset.digitiser != null) {
             sb.append("""
                             MERGE (digitiser:Digitiser{name: $digitiser})
                             MERGE (a)<-[:DIGITISED]-(digitiser)
                     """);
-            agBuilder.add("payload_type", asset.payload_type);
+            agBuilder.add("digitiser", asset.digitiser);
         }
 
         for(int i = 0 ; i < asset.funding.size(); i++) {
@@ -423,6 +423,15 @@ public interface AssetRepository2 extends SqlObject {
                     .append("})\n        MERGE (a)-[:HAS]->(issues")
                     .append(i).append(")");
             agBuilder.add("issues" + i, asset.issues.get(i).issue());
+        }
+        for(int i = 0 ; i < asset.file_formats.size(); i++) {
+            sb.append("      MERGE (new_file_format")
+                    .append(i)
+                    .append(":File_format{name: $new_file_format")
+                    .append(i)
+                    .append("})\n        MERGE (a)-[:HAS]->(new_file_format")
+                    .append(i).append(")");
+            agBuilder.add("new_file_format" + i, asset.file_formats.get(i));
         }
         for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
             sb.append("      MERGE (digitiser")

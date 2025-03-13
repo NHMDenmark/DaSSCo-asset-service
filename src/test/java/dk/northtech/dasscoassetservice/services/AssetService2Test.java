@@ -30,8 +30,8 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.collection = "i2_c1";
         asset.asset_pid = "pid-assetEvents";
         asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 10);
-        List<Event> events = assetService.getEvents("assetEvents", user);
+        assetService2.persistAsset(asset, user, 10);
+        List<Event> events = assetService2.getEvents("assetEvents", user);
         assertThat(events.size()).isAtLeast(1);
         assertThat(events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
     }
@@ -156,7 +156,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         createAsset.status = "BEING_PROCESSED";
         createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
         createAsset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"),new Funding("Jeg er stadig i chok"));
-
+        createAsset.file_formats = Arrays.asList("PNG", "PDF");
         assetService2.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService2.getAsset("createAsset");
 
@@ -201,6 +201,9 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.issues).hasSize(2);
         assertThat(result.issues).contains(new Issue("Substance abuse"));
         assertThat(result.issues).contains(new Issue("It aint working"));
+        assertThat(result.file_formats).hasSize(2);
+        assertThat(result.file_formats).contains("PDF");
+        assertThat(result.file_formats).contains("PNG");
         //Specimens
         assertThat(result.specimens).hasSize(2);
         Specimen specimen_1 = result.specimens.get(0).barcode().equals("creatAsset-sp-1") ? result.specimens.get(0) : result.specimens.get(1);
@@ -268,11 +271,11 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset2.digitiser = "Bob";
         asset2.status = "BEING_PROCESSED";
         assetService2.persistAsset(asset2, user, 10);
-        Asset parent = assetService.getAsset(asset.asset_guid).get();
+        Asset parent = assetService2.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
         parent.funding = Arrays.asList(new Funding("Hundredetusindvis af dollar, jeg er stadig i chok"));
-        assetService.updateAsset(parent, user);
-        Asset child = assetService.getAsset(asset2.asset_guid).get();
+        assetService2.updateAsset(parent, user);
+        Asset child = assetService2.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
     }
 
@@ -364,24 +367,10 @@ class AssetService2Test extends AbstractIntegrationTest {
     @Test
     void updateAssetAssetDoesntExist() {
         Asset asset = getTestAsset("updateAssetAssetDoesntExist");
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset, user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService2.updateAsset(asset, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset updateAssetAssetDoesntExist does not exist");
     }
 
-    @Test
-    void updateAssetNoUpdateUser() {
-        Asset asset = getTestAsset("updateAssetNoUpdateUser");
-        asset.asset_pid = "pid-updateAssetNoUpdateUser";
-        asset.workstation = "i2_w1";
-        asset.institution = "institution_2";
-        asset.pipeline = "i2_p1";
-        asset.collection = "i2_c1";
-        asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 1);
-        asset.updateUser = "";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset, user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided");
-    }
 
     @Test
     void testUpdateAssetdoNotPermitUnlocking() {
@@ -394,15 +383,15 @@ class AssetService2Test extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
-        createAsset = assetService.persistAsset(createAsset, user, 11);
+        createAsset = assetService2.persistAsset(createAsset, user, 11);
 
         createAsset.updateUser = "Uffe Updater";
 
         createAsset.asset_locked = true;
-        assetService.updateAsset(createAsset, user);
+        assetService2.updateAsset(createAsset, user);
         createAsset.asset_locked = false;
         Asset finalCreateAsset = createAsset;
-        DasscoIllegalActionException illegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(finalCreateAsset, user));
+        DasscoIllegalActionException illegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService2.updateAsset(finalCreateAsset, user));
         assertThat(illegalActionException.getMessage()).isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
 
     }
@@ -442,6 +431,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.metadata_source = "It came to me in a dream";
         asset.make_public = false;
         asset.push_to_specify = false;
+        asset.file_formats = Arrays.asList("PDF", "PNG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
         asset.issues = Arrays.asList(new Issue("no issues"));
         assetService2.updateAsset(asset, user);
@@ -462,6 +452,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.workstation).isEqualTo("i1_w1");
         assertThat(result.status).isEqualTo("ISSUE_WITH_METADATA");
         assertThat(result.subject).isEqualTo("new sub");
+
         //TODO handle lists here!
 //        assertThat(result.funding.get(0)).isEqualTo("Funding secured");
 //        assertThat(result.file_formats.size()).isEqualTo(1);
@@ -477,6 +468,9 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.complete_digitiser_list).contains("Viola");
         assertThat(result.complete_digitiser_list).contains("Karl-Børge");
         assertThat(result.complete_digitiser_list).hasSize(2);
+        assertThat(result.file_formats).hasSize(2);
+        assertThat(result.file_formats).contains("PDF");
+        assertThat(result.file_formats).contains("PNG");
         assertThat(result.funding).contains(new Funding("420"));
         assertThat(result.funding).contains(new Funding("Funding secured"));
         assertThat(result.funding).hasSize(2);
@@ -501,14 +495,14 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.pipeline = "i2_p1";
         asset.collection = "updateAssetNoWritePermission_1";
         asset.status = "BEING_PROCESSED";
-        assetService.persistAsset(asset, user, 1);
+        assetService2.persistAsset(asset, user, 1);
         asset.updateUser = "karl-børge";
         //verify that user cant update without write access
-        assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset, user));
+        assertThrows(DasscoIllegalActionException.class, () -> assetService2.updateAsset(asset, user));
         //verify that user cant update with read access
-        assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("READ_updateAssetNoWritePermission_1")))));
+        assertThrows(DasscoIllegalActionException.class, () -> assetService2.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("READ_updateAssetNoWritePermission_1")))));
         //verify that it works when user have write access
-        assetService.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("WRITE_updateAssetNoWritePermission_1"))));
+        assetService2.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("WRITE_updateAssetNoWritePermission_1"))));
     }
 
 
