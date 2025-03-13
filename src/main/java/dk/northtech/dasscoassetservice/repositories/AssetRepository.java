@@ -160,7 +160,7 @@ public interface AssetRepository extends SqlObject {
                          , a.asset_taken_date
                          , a.internal_status
                          , a.asset_locked
-                         , pa.asset_guid 
+                         , pa.asset_guid
                          , a.restricted_access
                          , a.tags
                          , a.error_message

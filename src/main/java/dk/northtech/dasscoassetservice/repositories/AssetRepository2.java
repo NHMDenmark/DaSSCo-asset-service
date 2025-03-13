@@ -87,11 +87,6 @@ public interface AssetRepository2 extends SqlObject {
         return Optional.of(asset1);
     }
 
-    @Transaction
-    default List<Asset> readMultipleAssets(List<String> assets) {
-        boilerplate();
-        return readMultipleAssetsInternal(assets);
-    }
 
     @Transaction
     default Asset updateAsset(Asset asset, List<Specimen> specimenToDetach) {
@@ -102,27 +97,6 @@ public interface AssetRepository2 extends SqlObject {
         return asset;
     }
 
-    @Transaction
-    default List<Asset> bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, List<Asset> assets, List<String> assetList) {
-        boilerplate();
-        // Update asset metadata:
-        bulkUpdateAssets(sql, builder);
-        // Add Event to every asset:
-        // TODO: This is a solution for the bulk update, but it takes individual calls.
-        for (Asset asset : assets) {
-            // Set event (individual calls)
-            setEvent(updatedAsset.updateUser, event, asset);
-            // Connect parent and child (individual calls)
-            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
-            // Modify tags
-            if (!updatedAsset.tags.isEmpty()) {
-                setTags(asset);
-            }
-        }
-
-        // Return the List of Assets:
-        return this.readMultipleAssetsInternal(assetList);
-    }
 
     @Transaction
     default Asset updateAssetNoEvent(Asset asset) {
@@ -145,98 +119,7 @@ public interface AssetRepository2 extends SqlObject {
                 'dassco'
                     , $$
                          MATCH (asset:Asset{name: $asset_guid})
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(asset)
-                         MATCH (create_event:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset)
-                         MATCH (u:User)<-[:INITIATED_BY]-(create_event)
-                         MATCH (p:Pipeline)<-[:USED]-(create_event)
-                         MATCH (w:Workstation)<-[:USED]-(create_event)
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(asset)
-                		 MATCH (asset)-[:HAS]->(status:Status)
-                         MATCH (asset)-[:HAS]->(internal_status:Internal_status)
-                		 OPTIONAL MATCH (s:Specimen)-[:USED_BY]->(:Asset{name: $asset_guid})
-                         OPTIONAL MATCH (asset)-[:CHILD_OF]->(pa:Asset)
-                         OPTIONAL MATCH (asset)<-[:WORKED_ON]-(digitisers:Digitiser)
-                         OPTIONAL MATCH (asset)<-[:DIGITISED]-(digitiser:Digitiser)
-                         OPTIONAL MATCH (asset)<-[:FUNDS]-(funding:Funding_entity)
-                         OPTIONAL MATCH (asset)-[:HAS]->(issue:Issue)
-                         OPTIONAL MATCH (asset)-[:HAS]->(payload_type:Payload_type)
-                         OPTIONAL MATCH (asset)-[:HAS]->(subject:Subject)
-                         OPTIONAL MATCH (asset)-[:HAS]->(camera_setting_control:Camera_setting_control)
-                         OPTIONAL MATCH (asset)-[:HAS]->(metadata_version:Metadata_version)
-                         OPTIONAL MATCH (asset)-[:HAS]->(metadata_source:Metadata_source)
-                         OPTIONAL MATCH (asset)-[:HAS]->(file_format:File_format)
-                         RETURN asset.asset_guid
-                         , asset.asset_pid
-                         , status.name
-                         , asset.multi_specimen
-                         , collect(distinct funding.name)
-                         , collect(distinct issue.name)
-                         , collect(distinct digitisers.name)
-                         , digitiser.name
-                         , subject.name
-                         , payload_type.name
-                         , collect(distinct file_format.name)
-                         , asset.asset_taken_date
-                         , internal_status.name
-                         , asset.asset_locked
-                         , pa.asset_guid
-                         , asset.tags
-                         , asset.error_message
-                         , asset.error_timestamp
-                         , collect(distinct s)
-                         , i.name
-                         , c.name
-                         , p.name
-                         , w.name
-                         , create_event.timestamp
-                         , asset.date_asset_finalised
-                         , u.name
-                         , asset.date_asset_taken
-                         , asset.date_metadata_ingested
-                         , null
-                         , camera_setting_control.name
-                         , metadata_version.name
-                         , asset.push_to_specify
-                         , asset.make_public
-                         , metadata_source.name
-                      $$, #params
-                    )
-                    as (asset_guid agtype
-                    , asset_pid agtype
-                    , status agtype
-                    , multi_specimen agtype
-                    , funding agtype
-                    , issues agtype
-                    , complete_digitiser_list agtype
-                    , digitiser agtype
-                    , subject agtype
-                    , payload_type agtype
-                    , file_formats agtype
-                    , asset_taken_date agtype
-                    , internal_status agtype
-                    , asset_locked agtype
-                    , parent_guid agtype
-                    , tags agtype
-                    , error_message agtype
-                    , error_timestamp agtype
-                    , specimens agtype
-                    , institution_name agtype
-                    , collection_name agtype
-                    , pipeline_name agtype
-                    , workstation_name agtype
-                    , creation_date agtype
-                    , date_asset_finalised agtype
-                    , user_name agtype
-                    , date_asset_taken agtype
-                    , date_metadata_ingested agtype
-                    , write_access agtype
-                    , camera_setting_control agtype
-                    , metadata_version agtype
-                    , push_to_specify agtype
-                    , make_public agtype
-                    , metadata_source agtype
-                    );
-                    """;
+                      """ + READ_WITHOUT_WHERE;
         return withHandle(handle -> {
             AgtypeMap agParams = new AgtypeMapBuilder()
                     .add("asset_guid", assetGuid)
@@ -1098,4 +981,100 @@ public interface AssetRepository2 extends SqlObject {
             throw new RuntimeException(e);
         }
     }
+    
+    public static final String READ_WITHOUT_WHERE =
+
+            """
+        MATCH (c:Collection)<-[:IS_PART_OF]-(asset)
+        MATCH (create_event:Event{event:'CREATE_ASSET_METADATA'})<-[:CHANGED_BY]-(asset)
+        MATCH (u:User)<-[:INITIATED_BY]-(create_event)
+        MATCH (p:Pipeline)<-[:USED]-(create_event)
+        MATCH (w:Workstation)<-[:USED]-(create_event)
+        MATCH (i:Institution)<-[:BELONGS_TO]-(asset)
+        MATCH (asset)-[:HAS]->(status:Status)
+        MATCH (asset)-[:HAS]->(internal_status:Internal_status)
+        OPTIONAL MATCH (s:Specimen)-[:USED_BY]->(:Asset{name: $asset_guid})
+        OPTIONAL MATCH (asset)-[:CHILD_OF]->(pa:Asset)
+        OPTIONAL MATCH (asset)<-[:WORKED_ON]-(digitisers:Digitiser)
+        OPTIONAL MATCH (asset)<-[:DIGITISED]-(digitiser:Digitiser)
+        OPTIONAL MATCH (asset)<-[:FUNDS]-(funding:Funding_entity)
+        OPTIONAL MATCH (asset)-[:HAS]->(issue:Issue)
+        OPTIONAL MATCH (asset)-[:HAS]->(payload_type:Payload_type)
+        OPTIONAL MATCH (asset)-[:HAS]->(subject:Subject)
+        OPTIONAL MATCH (asset)-[:HAS]->(camera_setting_control:Camera_setting_control)
+        OPTIONAL MATCH (asset)-[:HAS]->(metadata_version:Metadata_version)
+        OPTIONAL MATCH (asset)-[:HAS]->(metadata_source:Metadata_source)
+        OPTIONAL MATCH (asset)-[:HAS]->(file_format:File_format)
+        RETURN asset.asset_guid
+        , asset.asset_pid
+        , status.name
+        , asset.multi_specimen
+        , collect(distinct funding.name)
+        , collect(distinct issue.name)
+        , collect(distinct digitisers.name)
+        , digitiser.name
+        , subject.name
+        , payload_type.name
+        , collect(distinct file_format.name)
+        , asset.asset_taken_date
+        , internal_status.name
+        , asset.asset_locked
+        , pa.asset_guid
+        , asset.tags
+        , asset.error_message
+        , asset.error_timestamp
+        , collect(distinct s)
+        , i.name
+        , c.name
+        , p.name
+        , w.name
+        , create_event.timestamp
+        , asset.date_asset_finalised
+        , u.name
+        , asset.date_asset_taken
+        , asset.date_metadata_ingested
+        , null
+        , camera_setting_control.name
+        , metadata_version.name
+        , asset.push_to_specify
+        , asset.make_public
+        , metadata_source.name
+        $$, #params
+        )
+        as (asset_guid agtype
+        , asset_pid agtype
+        , status agtype
+        , multi_specimen agtype
+        , funding agtype
+        , issues agtype
+        , complete_digitiser_list agtype
+        , digitiser agtype
+        , subject agtype
+        , payload_type agtype
+        , file_formats agtype
+        , asset_taken_date agtype
+        , internal_status agtype
+        , asset_locked agtype
+        , parent_guid agtype
+        , tags agtype
+        , error_message agtype
+        , error_timestamp agtype
+        , specimens agtype
+        , institution_name agtype
+        , collection_name agtype
+        , pipeline_name agtype
+        , workstation_name agtype
+        , creation_date agtype
+        , date_asset_finalised agtype
+        , user_name agtype
+        , date_asset_taken agtype
+        , date_metadata_ingested agtype
+        , write_access agtype
+        , camera_setting_control agtype
+        , metadata_version agtype
+        , push_to_specify agtype
+        , make_public agtype
+        , metadata_source agtype
+        );
+""";
 }

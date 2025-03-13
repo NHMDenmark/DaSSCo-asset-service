@@ -45,7 +45,7 @@ public class AbstractIntegrationTest {
     WorkstationService workstationService;
     @Inject InternalStatusService internalStatusService;
 
-
+    @Inject BulkUpdateService bulkUpdateService;
 
     AssetService assetService;
     AssetService2 assetService2;

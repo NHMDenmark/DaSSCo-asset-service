@@ -111,37 +111,48 @@ public class Asset {
     @Override
     public String toString() {
         return "Asset{" +
-                "asset_pid='" + asset_pid + '\'' +
-                ", asset_guid='" + asset_guid + '\'' +
-                ", status=" + status +
-                ", multi_specimen=" + multi_specimen +
-                ", specimens=" + specimens +
-                ", funding='" + funding + '\'' +
-                ", subject='" + subject + '\'' +
-                ", payload_type='" + payload_type + '\'' +
-                ", file_formats=" + file_formats +
-                ", asset_locked=" + asset_locked +
-                ", restricted_access=" + restricted_access +
-                ", tags=" + tags +
-                ", audited=" + audited +
-                ", created_date=" + created_date +
-                ", date_metadata_updated=" + date_metadata_updated +
-                ", date_asset_taken=" + date_asset_taken +
-                ", date_asset_deleted=" + date_asset_deleted +
-                ", date_asset_finalised=" + date_asset_finalised +
-                ", institution='" + institution + '\'' +
-                ", parent_guid='" + parent_guid + '\'' +
-                ", collection='" + collection + '\'' +
-                ", httpInfo=" + httpInfo +
-                ", internal_status=" + internal_status +
-                ", updateUser='" + updateUser + '\'' +
-                ", events=" + events +
-                ", digitiser='" + digitiser + '\'' +
-                ", workstation='" + workstation + '\'' +
-                ", pipeline='" + pipeline + '\'' +
-                ", error_message='" + error_message + '\'' +
-                ", error_timestamp=" + error_timestamp +
-                '}';
+               "asset_pid='" + asset_pid + '\'' +
+               ", asset_guid='" + asset_guid + '\'' +
+               ", status='" + status + '\'' +
+               ", multi_specimen=" + multi_specimen +
+               ", specimens=" + specimens +
+               ", funding=" + funding +
+               ", subject='" + subject + '\'' +
+               ", payload_type='" + payload_type + '\'' +
+               ", file_formats=" + file_formats +
+               ", asset_locked=" + asset_locked +
+               ", restricted_access=" + restricted_access +
+               ", tags=" + tags +
+               ", audited=" + audited +
+               ", created_date=" + created_date +
+               ", date_metadata_updated=" + date_metadata_updated +
+               ", date_asset_taken=" + date_asset_taken +
+               ", date_asset_deleted=" + date_asset_deleted +
+               ", date_asset_finalised=" + date_asset_finalised +
+               ", institution='" + institution + '\'' +
+               ", parent_guid='" + parent_guid + '\'' +
+               ", collection='" + collection + '\'' +
+               ", httpInfo=" + httpInfo +
+               ", internal_status=" + internal_status +
+               ", updateUser='" + updateUser + '\'' +
+               ", events=" + events +
+               ", workstation='" + workstation + '\'' +
+               ", pipeline='" + pipeline + '\'' +
+               ", error_message='" + error_message + '\'' +
+               ", error_timestamp=" + error_timestamp +
+               ", event_name=" + event_name +
+               ", writeAccess=" + writeAccess +
+               ", camera_setting_control='" + camera_setting_control + '\'' +
+               ", date_metadata_ingested=" + date_metadata_ingested +
+               ", metadata_version='" + metadata_version + '\'' +
+               ", metadata_source='" + metadata_source + '\'' +
+               ", mos_id='" + mos_id + '\'' +
+               ", make_public=" + make_public +
+               ", push_to_specify=" + push_to_specify +
+               ", issues=" + issues +
+               ", digitiser='" + digitiser + '\'' +
+               ", complete_digitiser_list=" + complete_digitiser_list +
+               '}';
     }
 
     //TODO maybe we need to handle the new lists here

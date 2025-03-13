@@ -194,7 +194,6 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.complete_digitiser_list).hasSize(2);
         assertThat(result.complete_digitiser_list).contains("Karl-Børge");
         assertThat(result.complete_digitiser_list).contains("Bazviola");
-//TODO handle lists here
         assertThat(result.funding).hasSize(2);
         assertThat(result.funding).contains(new Funding("Hundredetusindvis af dollars"));
         assertThat(result.funding).contains(new Funding("Jeg er stadig i chok"));
@@ -453,10 +452,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.status).isEqualTo("ISSUE_WITH_METADATA");
         assertThat(result.subject).isEqualTo("new sub");
 
-        //TODO handle lists here!
-//        assertThat(result.funding.get(0)).isEqualTo("Funding secured");
-//        assertThat(result.file_formats.size()).isEqualTo(1);
-//        assertThat(result.file_formats.get(0)).isEqualTo("RAW");
+
         assertThat(result.payload_type).isEqualTo("Conventional");
         assertThat(result.date_asset_finalised).isNotNull();
         assertThat(result.date_asset_taken).isNotNull();
