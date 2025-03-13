@@ -351,13 +351,22 @@ public class AssetService2 {
         existing.asset_locked = updatedAsset.asset_locked;
         existing.subject = updatedAsset.subject;
         existing.restricted_access = updatedAsset.restricted_access;
-        existing.funding = updatedAsset.funding;
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
-        existing.digitiser = updatedAsset.digitiser;
         existing.parent_guid = updatedAsset.parent_guid;
         existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
+        existing.metadata_version = updatedAsset.metadata_version;
+        existing.metadata_source = updatedAsset.metadata_source;
+        existing.camera_setting_control = updatedAsset.camera_setting_control;
+        existing.push_to_specify = updatedAsset.push_to_specify;
+        existing.digitiser = updatedAsset.digitiser;
+        existing.make_public = updatedAsset.make_public;
+
+        existing.issues = updatedAsset.issues;
+        existing.complete_digitiser_list = updatedAsset.complete_digitiser_list;
+        existing.funding = updatedAsset.funding;
+
         validateAssetFields(existing);
         jdbi.onDemand(AssetRepository2.class)
                 .updateAsset(existing, specimensToDetach);

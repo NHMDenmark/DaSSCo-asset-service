@@ -561,7 +561,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset2, user, 10);
         Asset parent = assetService.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
-        parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
+        parent.funding = Arrays.asList(new Funding("Hundredetusindvis af dollar, jeg er stadig i chok"));
         assetService.updateAsset(parent, user);
         Asset child = assetService.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
@@ -738,7 +738,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
+        asset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"));
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -913,7 +913,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-" + guid;
         asset.asset_guid = guid;
         asset.status = "WORKING_COPY";
-        asset.funding = Arrays.asList("funding has depleted");
+        asset.funding = Arrays.asList(new Funding("funding has depleted"));
         asset.subject = "subject-non-edited";
         asset.payload_type = "payload-not-edited";
         asset.tags.put("Tag 1", "Value 1");

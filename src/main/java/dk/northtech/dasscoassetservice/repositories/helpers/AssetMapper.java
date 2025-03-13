@@ -66,10 +66,10 @@ public class AssetMapper implements RowMapper<Asset> {
         AgtypeList list = specimens.getList();
         asset.specimens = list.stream().map(x -> mapSpecimen((AgtypeMap) x)).collect(Collectors.toList());
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
-        rs.getString("user_name");
+        rs.getString("digitiser");
         if (!rs.wasNull()) {
-            Agtype userName = rs.getObject("user_name", Agtype.class);
-            asset.digitiser = userName.getString();
+            Agtype digitiser = rs.getObject("digitiser", Agtype.class);
+            asset.digitiser = digitiser.getString();
         }
         rs.getString("creation_date");
         if (!rs.wasNull()) {
@@ -114,8 +114,24 @@ public class AssetMapper implements RowMapper<Asset> {
 
         Agtype funding = rs.getObject("funding", Agtype.class);
         asset.funding = funding.getList().stream()
+                .map(f -> new Funding(f.toString()))
+                .collect(Collectors.toList());
+
+        Agtype issues = rs.getObject("issues", Agtype.class);
+        asset.issues = issues.getList().stream()
+                .map(i -> new Issue(i.toString()))
+                .collect(Collectors.toList());
+
+        Agtype complete_digitiser_list = rs.getObject("complete_digitiser_list", Agtype.class);
+        asset.complete_digitiser_list = complete_digitiser_list.getList().stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
+
+        rs.getString("digitiser");
+        if (!rs.wasNull()) {
+            Agtype digitiser = rs.getObject("digitiser", Agtype.class);
+            asset.digitiser = digitiser.getString();
+        }
 
         rs.getString("parent_guid");
         if (!rs.wasNull()) {

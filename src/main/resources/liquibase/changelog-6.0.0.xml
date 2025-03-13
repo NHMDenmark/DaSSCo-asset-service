@@ -9,7 +9,9 @@
             LOAD 'age';
             SET search_path = ag_catalog, "$user", public;
             SELECT create_elabel('dassco','DIGITISED');
+            SELECT create_elabel('dassco','WORKED_ON');
             SELECT create_elabel('dassco','HAS');
+            SELECT create_elabel('dassco','FUNDS');
 
             SELECT create_vlabel('dassco','Status');
             SELECT create_vlabel('dassco','File_format');
@@ -22,6 +24,8 @@
             SELECT create_vlabel('dassco','Subject');
             SELECT create_vlabel('dassco','Internal_status');
             SELECT create_vlabel('dassco','Payload_type');
+            SELECT create_vlabel('dassco','Digitiser');
+
 
 
         </sql>

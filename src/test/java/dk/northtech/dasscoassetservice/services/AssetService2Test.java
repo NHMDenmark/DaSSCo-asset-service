@@ -144,6 +144,7 @@ class AssetService2Test extends AbstractIntegrationTest {
     @Test
     void testPersistAsset() {
         Asset createAsset = getTestAsset("createAsset");
+        createAsset.complete_digitiser_list = Arrays.asList("Bazviola", "Karl-Børge");
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
@@ -153,9 +154,19 @@ class AssetService2Test extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
+        createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
+        createAsset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"),new Funding("Jeg er stadig i chok"));
+
         assetService2.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService2.getAsset("createAsset");
 
+//                while(true) {
+//            try {
+//                Thread.sleep(10000);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
 
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
@@ -179,8 +190,17 @@ class AssetService2Test extends AbstractIntegrationTest {
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-1");
 //        assertThat(result.specimen_barcodes).contains("createAsset-sp-2");
         assertThat(result.payload_type).isEqualTo("nuclear");
+        assertThat(result.digitiser).isEqualTo("Karl-Børge");
+        assertThat(result.complete_digitiser_list).hasSize(2);
+        assertThat(result.complete_digitiser_list).contains("Karl-Børge");
+        assertThat(result.complete_digitiser_list).contains("Bazviola");
 //TODO handle lists here
-        //        assertThat(result.funding.get(0)).isEqualTo("Hundredetusindvis af dollars");
+        assertThat(result.funding).hasSize(2);
+        assertThat(result.funding).contains(new Funding("Hundredetusindvis af dollars"));
+        assertThat(result.funding).contains(new Funding("Jeg er stadig i chok"));
+        assertThat(result.issues).hasSize(2);
+        assertThat(result.issues).contains(new Issue("Substance abuse"));
+        assertThat(result.issues).contains(new Issue("It aint working"));
         //Specimens
         assertThat(result.specimens).hasSize(2);
         Specimen specimen_1 = result.specimens.get(0).barcode().equals("creatAsset-sp-1") ? result.specimens.get(0) : result.specimens.get(1);
@@ -250,7 +270,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         assetService2.persistAsset(asset2, user, 10);
         Asset parent = assetService.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
-        parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
+        parent.funding = Arrays.asList(new Funding("Hundredetusindvis af dollar, jeg er stadig i chok"));
         assetService.updateAsset(parent, user);
         Asset child = assetService.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
@@ -281,7 +301,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
+        asset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"));
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -377,6 +397,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         createAsset = assetService.persistAsset(createAsset, user, 11);
 
         createAsset.updateUser = "Uffe Updater";
+
         createAsset.asset_locked = true;
         assetService.updateAsset(createAsset, user);
         createAsset.asset_locked = false;
@@ -413,7 +434,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.status = "ISSUE_WITH_METADATA";
         asset.subject = "new sub";
         asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
-        asset.funding = Arrays.asList("Funding secured");
+        asset.funding = Arrays.asList(new Funding("420"),new Funding("Funding secured"));
         asset.file_formats = Arrays.asList("RAW");
         asset.payload_type = "Conventional";
         asset.digitiser = "Diane Digitiser";
@@ -421,6 +442,8 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.metadata_source = "It came to me in a dream";
         asset.make_public = false;
         asset.push_to_specify = false;
+        asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
+        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService2.updateAsset(asset, user);
         Optional<Asset> updateAsset = assetService2.getAsset("updateAsset");
         assertThat(updateAsset.isPresent()).isTrue();
@@ -447,17 +470,25 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.date_asset_finalised).isNotNull();
         assertThat(result.date_asset_taken).isNotNull();
         assertThat(result.date_metadata_ingested).isNotNull();
-        //Digitiser is the original creator of the asset. The name of the new digitiser appears on the update event in the graph
-        assertThat(result.digitiser).isEqualTo("Karl-Børge");
+
+        assertThat(result.digitiser).isEqualTo("Diane Digitiser");
+        assertThat(result.metadata_version).isEqualTo("One point oh-uh");
+        assertThat(result.metadata_source).isEqualTo("It came to me in a dream");
+        assertThat(result.complete_digitiser_list).contains("Viola");
+        assertThat(result.complete_digitiser_list).contains("Karl-Børge");
+        assertThat(result.complete_digitiser_list).hasSize(2);
+        assertThat(result.funding).contains(new Funding("420"));
+        assertThat(result.funding).contains(new Funding("Funding secured"));
+        assertThat(result.funding).hasSize(2);
+        assertThat(result.issues).hasSize(1);
         assertThat(result.specimens).hasSize(1);
-        assertThat(asset.metadata_version).isEqualTo("One point oh-uh");
-        assertThat(asset.metadata_source).isEqualTo("It came to me in a dream");
-        assertThat(asset.make_public).isFalse();
-        assertThat(asset.push_to_specify).isFalse();
+        assertThat(result.make_public).isFalse();
+        assertThat(result.push_to_specify).isFalse();
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
+
     }
 
     @Test

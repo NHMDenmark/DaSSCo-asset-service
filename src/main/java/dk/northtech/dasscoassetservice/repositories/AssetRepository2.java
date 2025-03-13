@@ -155,7 +155,9 @@ public interface AssetRepository2 extends SqlObject {
                          MATCH (asset)-[:HAS]->(internal_status:Internal_status)
                 		 OPTIONAL MATCH (s:Specimen)-[:USED_BY]->(:Asset{name: $asset_guid})
                          OPTIONAL MATCH (asset)-[:CHILD_OF]->(pa:Asset)
-                         OPTIONAL MATCH (asset)-[:HAS]->(funding:Funding_entity)
+                         OPTIONAL MATCH (asset)<-[:WORKED_ON]-(digitisers:Digitiser)
+                         OPTIONAL MATCH (asset)<-[:DIGITISED]-(digitiser:Digitiser)
+                         OPTIONAL MATCH (asset)<-[:FUNDS]-(funding:Funding_entity)
                          OPTIONAL MATCH (asset)-[:HAS]->(issue:Issue)
                          OPTIONAL MATCH (asset)-[:HAS]->(payload_type:Payload_type)
                          OPTIONAL MATCH (asset)-[:HAS]->(subject:Subject)
@@ -167,11 +169,13 @@ public interface AssetRepository2 extends SqlObject {
                          , asset.asset_pid
                          , status.name
                          , asset.multi_specimen
-                         , collect(funding.name)
-                         , collect(issue.name)
+                         , collect(distinct funding.name)
+                         , collect(distinct issue.name)
+                         , collect(distinct digitisers.name)
+                         , digitiser.name
                          , subject.name
                          , payload_type.name
-                         , collect(file_format.name)
+                         , collect(distinct file_format.name)
                          , asset.asset_taken_date
                          , internal_status.name
                          , asset.asset_locked
@@ -179,7 +183,7 @@ public interface AssetRepository2 extends SqlObject {
                          , asset.tags
                          , asset.error_message
                          , asset.error_timestamp
-                         , collect(s)
+                         , collect(distinct s)
                          , i.name
                          , c.name
                          , p.name
@@ -203,6 +207,8 @@ public interface AssetRepository2 extends SqlObject {
                     , multi_specimen agtype
                     , funding agtype
                     , issues agtype
+                    , complete_digitiser_list agtype
+                    , digitiser agtype
                     , subject agtype
                     , payload_type agtype
                     , file_formats agtype
@@ -322,9 +328,6 @@ public interface AssetRepository2 extends SqlObject {
                         MATCH (c:Collection {name: $collection_name})
                         MATCH (w:Workstation {name: $workstation_name})
                         MATCH (p:Pipeline {name: $pipeline_name})
-                            """
-        );
-        sb.append("""
                         MATCH (ist:Internal_status{name: $internal_status})
                         MATCH (s:Status{name: $status})
                         MERGE (a:Asset {name: $asset_guid
@@ -395,9 +398,44 @@ public interface AssetRepository2 extends SqlObject {
                     """);
             agBuilder.add("payload_type", asset.payload_type);
         }
+        if (asset.payload_type != null) {
+            sb.append("""
+                            MERGE (digitiser:Digitiser{name: $digitiser})
+                            MERGE (a)<-[:DIGITISED]-(digitiser)
+                    """);
+            agBuilder.add("payload_type", asset.payload_type);
+        }
+
+        for(int i = 0 ; i < asset.funding.size(); i++) {
+            sb.append("MERGE (funding")
+                    .append(i)
+                    .append(":Funding_entity{name: $funding")
+                    .append(i)
+                    .append("})\n        MERGE (a)<-[:FUNDS]-(funding")
+                    .append(i).append(")");
+            agBuilder.add("funding" + i, asset.funding.get(i).name());
+        }
+        for(int i = 0 ; i < asset.issues.size(); i++) {
+            sb.append("      MERGE (issues")
+                    .append(i)
+                    .append(":Issue{name: $issues")
+                    .append(i)
+                    .append("})\n        MERGE (a)-[:HAS]->(issues")
+                    .append(i).append(")");
+            agBuilder.add("issues" + i, asset.issues.get(i).issue());
+        }
+        for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
+            sb.append("      MERGE (digitiser")
+                    .append(i)
+                    .append(":Digitiser{name: $digitiser")
+                    .append(i)
+                    .append("})\n        MERGE (a)<-[:WORKED_ON]-(digitiser")
+                    .append(i).append(")");
+            agBuilder.add("digitiser" + i, asset.complete_digitiser_list.get(i));
+        }
 
         sb.append("""                         
-                        MERGE (u:User{user_id: $user, name: $user})
+                        \nMERGE (u:User{user_id: $user, name: $user})
                         MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET_METADATA', name: 'CREATE_ASSET_METADATA'})
                         MERGE (e)-[uw:USED]->(w)
                         MERGE (e)-[up:USED]->(p)
@@ -592,12 +630,17 @@ public interface AssetRepository2 extends SqlObject {
                             MATCH (asset)-[existing_has_status:HAS]->(status:Status)
                             MATCH (new_status:Status{name:$status})
                             OPTIONAL MATCH (asset)-[existing_child_of:CHILD_OF]->(parent:Asset)
+                            OPTIONAL MATCH (asset)<-[existing_worked_on:WORKED_ON]-(:Digitiser)
+                            OPTIONAL MATCH (asset)<-[existing_digitised:DIGITISED]-(:Digitiser)
+                            OPTIONAL MATCH (asset)<-[existing_funds:FUNDS]-(:Funding_entity)
                             OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(payload_type:Payload_type)
                             OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(subject:Subject)
                             OPTIONAL MATCH (asset)-[existing_has_camera_setting_control:HAS]->(camera_setting_control:Camera_setting_control)
                             OPTIONAL MATCH (asset)-[existing_has_metadata_version:HAS]->(metadata_version:Metadata_version)
                             OPTIONAL MATCH (asset)-[existing_has_metadata_source:HAS]->(metadata_source:Metadata_source)
                             OPTIONAL MATCH (asset)-[existing_has_file_format:HAS]->(file_format:File_format)
+                            DELETE existing_digitised
+                            DELETE existing_worked_on
                             DELETE existing_has_payload_type
                             DELETE existing_has_subject
                             DELETE existing_has_camera_setting_control
@@ -606,6 +649,7 @@ public interface AssetRepository2 extends SqlObject {
                             DELETE existing_has_file_format
                             DELETE existing_has_status
                             DELETE existing_child_of
+                            DELETE existing_funds
                             MERGE (asset)-[:HAS]->(new_status)
                             MERGE (user:User{user_id: $user, name: $user})
                             MERGE (update_event:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
@@ -615,10 +659,8 @@ public interface AssetRepository2 extends SqlObject {
                             MERGE (asset)-[ca:CHANGED_BY]->(update_event)
                             SET asset.status = $status
                             , asset.tags = $tags
-                            , asset.funding = $funding
                             , asset.subject = $subject
                             , asset.payload_type = $payload_type
-                            , asset.file_formats = $file_formats
                             , asset.restricted_access = $restricted_access
                             , asset.date_asset_finalised = $date_asset_finalised
                             , asset.parent_id = $parent_id
@@ -626,7 +668,8 @@ public interface AssetRepository2 extends SqlObject {
                             , asset.internal_status = $internal_status
                             , asset.date_asset_taken = $date_asset_taken
                             , asset.date_metadata_ingested = $date_metadata_ingested
-                            , asset.digitiser = $digitiser
+                            , asset.make_public = $make_public
+                            , asset.push_to_specify = $push_to_specify
                 """);
         if (asset.date_asset_taken != null) {
             agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
@@ -643,7 +686,14 @@ public interface AssetRepository2 extends SqlObject {
         } else {
             agBuilder.add("date_asset_finalised", (String) null);
         }
-
+        if (!Strings.isNullOrEmpty(asset.digitiser)) {
+            sb.append("""
+                            MERGE (new_digitiser:Digitiser{name: $new_digitiser})
+                            MERGE (asset)<-[new_digitised:DIGITISED]-(new_digitiser)
+                    """);
+            agBuilder.add("new_digitiser", asset.digitiser);
+        }
+        // Nullable relations
         if (!Strings.isNullOrEmpty(asset.subject)) {
             sb.append("""
                             MERGE (new_subject:Subject{name: $subject})
@@ -661,10 +711,10 @@ public interface AssetRepository2 extends SqlObject {
         }
         if (!Strings.isNullOrEmpty(asset.metadata_version)) {
             sb.append("""
-                            MERGE (new_metadata_version:Metadata_version{name: $metadata_version})
+                            MERGE (new_metadata_version:Metadata_version{name: $new_metadata_version})
                             MERGE (asset)-[new_has_metadata_version:HAS]->(new_metadata_version)
                     """);
-            agBuilder.add("metadata_version", asset.metadata_version);
+            agBuilder.add("new_metadata_version", asset.metadata_version);
         }
         if (!Strings.isNullOrEmpty(asset.metadata_source)) {
             sb.append("""
@@ -681,13 +731,45 @@ public interface AssetRepository2 extends SqlObject {
                     """);
             agBuilder.add("payload_type", asset.payload_type);
         }
-        if (asset.digitiser != null) {
-            agBuilder.add("digitiser", asset.digitiser);
-        } else {
-            agBuilder.addNull("digitiser");
+        // List objects
+        for(int i = 0 ; i < asset.funding.size(); i++) {
+            sb.append("          MERGE (new_funding")
+                    .append(i)
+                    .append(":Funding_entity{name: $new_funding")
+                    .append(i)
+                    .append("})\n        MERGE (asset)<-[:FUNDS]-(new_funding")
+                    .append(i).append(")");
+            agBuilder.add("new_funding" + i, asset.funding.get(i).name());
+        }
+        for(int i = 0 ; i < asset.issues.size(); i++) {
+            sb.append("      MERGE (new_issues")
+                    .append(i)
+                    .append(":Issue{name: $new_issues")
+                    .append(i)
+                    .append("})\n        MERGE (asset)-[:HAS]->(new_issues")
+                    .append(i).append(")");
+            agBuilder.add("new_issues" + i, asset.issues.get(i).issue());
+        }
+        for(int i = 0 ; i < asset.file_formats.size(); i++) {
+            sb.append("      MERGE (new_file_format")
+                    .append(i)
+                    .append(":File_format{name: $new_file_format")
+                    .append(i)
+                    .append("})\n        MERGE (asset)-[:HAS]->(new_file_format")
+                    .append(i).append(")");
+            agBuilder.add("new_file_format" + i, asset.file_formats.get(i));
+        }
+        for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
+            sb.append("      MERGE (digitiser")
+                    .append(i)
+                    .append(":Digitiser{name: $digitiser")
+                    .append(i)
+                    .append("})\n        MERGE (asset)<-[:WORKED_ON]-(digitiser")
+                    .append(i).append(")");
+            agBuilder.add("digitiser" + i, asset.complete_digitiser_list.get(i));
         }
         sb.append("""
-                $$
+                \n$$
                         , #params) as (a agtype);
                 """);
         return sb.toString();
@@ -716,7 +798,10 @@ public interface AssetRepository2 extends SqlObject {
                 .add("user", asset.updateUser)
                 .add("tags", tags.build())
                 .add("asset_locked", asset.asset_locked)
-                .add("restricted_access", restrictedAcces.build());
+                .add("restricted_access", restrictedAcces.build())
+                .add("make_public", asset.make_public)
+                .add("push_to_specify", asset.push_to_specify);
+
         String sql = buildUpdateSQL(asset, builder);
         logger.info(sql);
         try {
