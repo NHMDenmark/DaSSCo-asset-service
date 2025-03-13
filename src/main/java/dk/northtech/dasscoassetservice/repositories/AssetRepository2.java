@@ -588,11 +588,14 @@ public interface AssetRepository2 extends SqlObject {
                 """
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-                            MATCH (a:Asset {name: $asset_guid})
-                            SET a.asset_locked = $asset_locked
-                            , a.internal_status = $internal_status
-                            , a.error_message = $error_message
-                            , a.error_timestamp = $error_timestamp
+                            MATCH (asset:Asset {name: $asset_guid})
+                            MATCH (new_internal_status:Internal_status{name: $new_internal_staus})
+                            MATCH (asset)-[existing_has_internal_status:HAS]->(:Internal_status)
+                            DELETE existing_has_internal_status
+                            MERGE (asset)-[:HAS]->(new_internal_status)
+                            SET asset.asset_locked = $asset_locked
+                            , asset.error_message = $error_message
+                            , asset.error_timestamp = $error_timestamp
                         $$
                         , #params) as (a agtype);
                         """;
@@ -600,7 +603,7 @@ public interface AssetRepository2 extends SqlObject {
             withHandle(handle -> {
                 AgtypeMapBuilder builder = new AgtypeMapBuilder()
                         .add("asset_guid", asset.asset_guid)
-                        .add("internal_status", asset.internal_status.name())
+                        .add("new_internal_staus", asset.internal_status.name())
                         .add("error_message", asset.error_message)
                         .add("asset_locked", asset.asset_locked);
                 if (asset.error_timestamp != null) {

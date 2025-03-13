@@ -430,4 +430,62 @@ public class AssetService2 {
         }
         return existing;
     }
+
+    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = InternalStatus.COMPLETED;
+        asset.error_message = null;
+        asset.error_timestamp = null;
+        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
+        jdbi.onDemand(AssetRepository2.class).updateAssetAndEvent(asset, event);
+
+        statisticsDataServiceV2.refreshCachedData();
+
+
+        if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()) {
+            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+        }
+        return true;
+    }
+
+    public boolean auditAsset(User user, Audit audit, String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (Strings.isNullOrEmpty(audit.user())) {
+            throw new IllegalArgumentException("Audit must have a user!");
+        }
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+            throw new DasscoIllegalActionException("Asset must be complete before auditing");
+        }
+        if (Objects.equals(asset.digitiser, audit.user())) {
+            throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
+        }
+        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
+
+        logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
+
+        return true;
+    }
+
+    public List<Event> getEvents(String assetGuid, User user) {
+        Optional<Asset> assetOpt = this.getAsset(assetGuid);
+        if (assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist");
+        }
+        Asset asset = assetOpt.get();
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
+    }
+
 }

@@ -343,11 +343,11 @@ class AssetService2Test extends AbstractIntegrationTest {
         assetService2.updateAsset(result, user);
         result.payload_type = "nuclear";
         assetService2.updateAsset(result, user);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob"));
-        assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
-        List<Event> resultEvents = assetService.getEvents(result.asset_guid, user);
+        assetService2.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob"));
+        assetService2.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
+        List<Event> resultEvents = assetService2.getEvents(result.asset_guid, user);
         assertThat(resultEvents.size()).isEqualTo(5);
-        Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
+        Optional<Asset> resultOpt2 = assetService2.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt2.isPresent()).isTrue();
         Asset resultAsset = resultOpt2.get();
         assertThat(resultAsset.payload_type).isEqualTo("nuclear");
