@@ -1,9 +1,7 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
-import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
@@ -23,8 +21,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import static dk.northtech.dasscoassetservice.repositories.AssetRepository2.READ_WITHOUT_WHERE;
 
@@ -33,10 +32,11 @@ import static dk.northtech.dasscoassetservice.repositories.AssetRepository2.READ
 public interface BulkUpdateRepository extends SqlObject {
     //    private Jdbi jdbi;
 //    private DataSource dataSource;
-    static final Logger logger = LoggerFactory.getLogger(BulkUpdateRepository.class);
+    Logger logger = LoggerFactory.getLogger(BulkUpdateRepository.class);
 
     @CreateSqlObject
     SpecimenRepository createSpecimenRepository();
+
 
     //This must be called once per transaction
     default void boilerplate() {
@@ -54,20 +54,224 @@ public interface BulkUpdateRepository extends SqlObject {
     }
 
 
-
-
     @Transaction
     default List<Asset> readMultipleAssets(List<String> assets) {
         boilerplate();
         return readMultipleAssetsInternal(assets);
     }
 
+    static record AGEQuery(String sql, AgtypeMapBuilder agtypeMapBuilder) {
+
+    }
+
+    static AGEQuery createBulkUpdateSql(List<String> assetList, Asset updatedFields) {
+
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+        AgtypeListBuilder assetGuidBuilder = new AgtypeListBuilder();
+        assetList.forEach(assetGuidBuilder::add);
+        builder.add("asset_guids", assetGuidBuilder.build());
+        StringBuilder sb = new StringBuilder("""
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                        MATCH (asset:Asset)
+                        WHERE asset.asset_guid IN $asset_guids
+                        MATCH (asset)-[existing_has_status:HAS]->(:Status)
+                """);
+        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
+            sb.append("""
+                          MATCH (new_parent:Asset{name: $new_parent_guid})
+                    """);
+            builder.add("new_parent_guid", updatedFields.parent_guid);
+        }
+        if (!Strings.isNullOrEmpty(updatedFields.status)) {
+            sb.append("""
+                            MATCH (new_status:Status{name: $new_status})
+                    """);
+            builder.add("new_status", updatedFields.status);
+        }
+
+        sb.append("""
+                        OPTIONAL MATCH (digitiser:Digitiser)-[existing_digitised:DIGITISED]->(asset)
+                        OPTIONAL MATCH (asset)-[existing_child_of:CHILD_OF]->(existing_parent:Asset)
+                        OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(:Payload_type)
+                        OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(:Subject)
+                """);
+        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
+
+            sb.append("""
+                            DELETE existing_child_of
+                            MERGE (asset)-[:CHILD_OF]->(new_parent)
+                    """);
+        }
+        if (!Strings.isNullOrEmpty(updatedFields.status)) {
+            sb.append("""
+                            DELETE existing_has_status
+                            MERGE (asset)-[:HAS]->(new_status)
+                    """);
+        }
+        if (!Strings.isNullOrEmpty(updatedFields.digitiser)) {
+            sb.append("""
+                            DELETE existing_digitised
+                            MERGE (digitiser:Digitiser{name: $digitiser})
+                            MERGE (digitiser)-[:DIGITISED]->(asset)
+                    """);
+            builder.add("digitiser", updatedFields.digitiser);
+        }
+        if (!Strings.isNullOrEmpty(updatedFields.subject)) {
+            sb.append("""   
+                            DELETE existing_has_subject
+                            MERGE(new_subject:Subject{name: $new_subject})
+                            MERGE (asset)-[:HAS]->(new_subject)
+                    """);
+            builder.add("new_subject", updatedFields.subject);
+        }
+        if (!Strings.isNullOrEmpty(updatedFields.payload_type)) {
+            sb.append("""
+                            DELETE existing_has_payload_type
+                            MERGE(new_payload_type:Payload_type{name: $new_payload_type})
+                            MERGE (asset)-[:HAS]->(new_payload_type)
+                    """);
+            builder.add("new_payload_type", updatedFields.payload_type);
+        }
+        // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
+        if (updatedFields.asset_locked) {
+            sb.append("""
+                                SET
+                                asset.asset_locked = $asset_locked
+                    """);
+            builder.add("asset_locked", true);
+        }
+
+
+        sb.append("""
+                       
+                        $$
+                        , #params) as (a agtype);
+                """);
+        return new AGEQuery(sb.toString(), builder);
+
+    }
+
+    static AGEQuery deleteList(List<String> assetGuids, String relation, String name, String listNode) {
+        if (assetGuids.isEmpty()) {
+            return null;
+        }
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+        AgtypeListBuilder assetGuidBuilder = new AgtypeListBuilder();
+        assetGuids.forEach(assetGuidBuilder::add);
+        builder.add("asset_guids", assetGuidBuilder.build());
+        StringBuilder sb = new StringBuilder("""
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                        MATCH (asset:Asset)
+                        WHERE asset.asset_guid IN $asset_guids
+                        MATCH (asset)
+                """);
+        sb.append(relation)
+                .append("(:")
+                .append(listNode)
+                .append(")\n")
+                .append("DELETE ")
+                .append(name)
+                        .append("""
+                                $$
+                                , #params) as (a agtype);
+                        """);
+        return new AGEQuery(sb.toString(), builder);
+    }
+
+    //If this query is folded into the createList query as MERGE it will result in the first list item getting duplicated for each asset.
+    static AGEQuery ensureExistes(List<String> nameProperties, String listNode) {
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+
+        StringBuilder sb = new StringBuilder("""
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+
+                """);
+        for(int i = 0 ; i < nameProperties.size(); i++) {
+            sb.append("MERGE (").append(":").append(listNode).append("{name: ").append("$l").append(i).append("})\n");
+            builder.add("l"+ i, nameProperties.get(i));
+
+        }
+         sb.append("""
+                                $$
+                                , #params) as (a agtype);
+                        """);
+        return new AGEQuery(sb.toString(), builder);
+    }
+
+    static AGEQuery createList(List<String> assetGuids, List<String> nameProperty, String relation, String listNode) {
+        if (assetGuids.isEmpty()) {
+            return null;
+        }
+        AgtypeMapBuilder builder = new AgtypeMapBuilder();
+        AgtypeListBuilder assetGuidBuilder = new AgtypeListBuilder();
+        assetGuids.forEach(assetGuidBuilder::add);
+        builder.add("asset_guids", assetGuidBuilder.build());
+        StringBuilder sb = new StringBuilder("""
+                SELECT * FROM ag_catalog.cypher('dassco'
+                        , $$
+                        MATCH (asset:Asset)
+                        WHERE asset.asset_guid IN $asset_guids
+                """);
+
+        String parmName = listNode.toLowerCase();
+
+        for (int i = 0; i < nameProperty.size(); i++) {
+            var name = nameProperty.get(i);
+            if (!Strings.isNullOrEmpty(name)) {
+                sb.append(" \nMATCH (new_").append(parmName).append(i).append(":").append(listNode).append("{name: $new_")
+                        .append(parmName)
+                        .append(i)
+                        .append("})");
+                builder.add("new_" + parmName + i, name);
+            }
+        }
+        for (int i = 0; i < nameProperty.size(); i++) {
+            var name = nameProperty.get(i);
+            if (!Strings.isNullOrEmpty(name)) {
+                sb.append("          \nMERGE (asset)")
+                        .append(relation)
+                        .append("(new_")
+                        .append(parmName)
+                        .append(i)
+                        .append(")");
+
+                builder.add("new_" + parmName + i, name);
+            }
+        }
+                        sb.append("""                               
+                                        $$
+                                        , #params) as (a agtype);
+                                """);
+                ;
+        return new AGEQuery(sb.toString(), builder);
+
+    }
 
     @Transaction
-    default List<Asset> bulkUpdate(String sql, AgtypeMapBuilder builder, Asset updatedAsset, Event event, List<Asset> assets, List<String> assetList) {
+    default List<Asset> bulkUpdate(Asset updatedAsset, Event event, List<Asset> assets, List<String> assetList) {
         boilerplate();
+        AGEQuery bulkUpdateSql = createBulkUpdateSql(assetList, updatedAsset);
+        logger.info("Bulk update SQL: {}", bulkUpdateSql.sql);
         // Update asset metadata:
-        bulkUpdateAssets(sql, builder);
+        executeUpdate(bulkUpdateSql);
+
+        if (updatedAsset.funding != null) {
+            AGEQuery ageQuery = deleteList(assetList, "<-[funds_to_delete:FUNDS]-", "funds_to_delete", "Funding_entity");
+            System.out.println(ageQuery.sql);
+            executeUpdate(ageQuery);
+            if (!updatedAsset.funding.isEmpty()) {
+                AGEQuery ensureExistsQuery = ensureExistes(updatedAsset.funding, "Funding_entity");
+                System.out.println(ensureExistsQuery.sql);
+                executeUpdate(ensureExistsQuery);
+                AGEQuery funding = createList(assetList, updatedAsset.funding, "<-[:FUNDS]-", "Funding_entity");
+                System.out.println(funding.sql);
+                executeUpdate(funding);
+            }
+        }
+
         // Add Event to every asset:
         // TODO: This is a solution for the bulk update, but it takes individual calls.
         for (Asset asset : assets) {
@@ -86,13 +290,12 @@ public interface BulkUpdateRepository extends SqlObject {
     }
 
 
-
-
     @Transaction
     default List<Event> readEvents(String guid) {
         boilerplate();
         return readEvents_internal(guid);
     }
+
 
     default List<Event> readEvents_internal(String guid) {
         String sql =
@@ -162,19 +365,18 @@ public interface BulkUpdateRepository extends SqlObject {
 
     default List<Asset> readMultipleAssetsInternal(List<String> assets) {
         String sql = """
-                  SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                    , $$
-                         MATCH (asset:Asset)
-                         WHERE asset.asset_guid IN $asset_guids
-                         """
-                            + READ_WITHOUT_WHERE
-;
+                               SELECT * FROM ag_catalog.cypher(
+                             'dassco'
+                                 , $$
+                                      MATCH (asset:Asset)
+                                      WHERE asset.asset_guid IN $asset_guids
+                                      """
+                     + READ_WITHOUT_WHERE;
         return withHandle(handle -> {
             AgtypeListBuilder assetGuidList = new AgtypeListBuilder();
             assets.forEach(assetGuidList::add);
             AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guids", assetGuidList.build() )
+                    .add("asset_guids", assetGuidList.build())
                     .build();
             Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)
@@ -182,215 +384,6 @@ public interface BulkUpdateRepository extends SqlObject {
                     .map(new AssetMapper())
                     .list();
         });
-    }
-
-
-
-    static String buildUpdateSQL(Asset asset, AgtypeMapBuilder agBuilder) {
-        StringBuilder sb = new StringBuilder("""
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (collection:Collection {name: $collection_name})
-                            MATCH (workstation:Workstation {name: $workstation_name})
-                            MATCH (pipeline:Pipeline {name: $pipeline_name})
-                            MATCH (asset:Asset {name: $asset_guid})
-                            MATCH (asset)-[existing_has_status:HAS]->(status:Status)
-                            MATCH (new_status:Status{name:$status})
-                            OPTIONAL MATCH (asset)-[existing_child_of:CHILD_OF]->(parent:Asset)
-                            OPTIONAL MATCH (asset)<-[existing_worked_on:WORKED_ON]-(:Digitiser)
-                            OPTIONAL MATCH (asset)<-[existing_digitised:DIGITISED]-(:Digitiser)
-                            OPTIONAL MATCH (asset)<-[existing_funds:FUNDS]-(:Funding_entity)
-                            OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(payload_type:Payload_type)
-                            OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(subject:Subject)
-                            OPTIONAL MATCH (asset)-[existing_has_camera_setting_control:HAS]->(camera_setting_control:Camera_setting_control)
-                            OPTIONAL MATCH (asset)-[existing_has_metadata_version:HAS]->(metadata_version:Metadata_version)
-                            OPTIONAL MATCH (asset)-[existing_has_metadata_source:HAS]->(metadata_source:Metadata_source)
-                            OPTIONAL MATCH (asset)-[existing_has_file_format:HAS]->(file_format:File_format)
-                            DELETE existing_digitised
-                            DELETE existing_worked_on
-                            DELETE existing_has_payload_type
-                            DELETE existing_has_subject
-                            DELETE existing_has_camera_setting_control
-                            DELETE existing_has_metadata_version
-                            DELETE existing_has_metadata_source
-                            DELETE existing_has_file_format
-                            DELETE existing_has_status
-                            DELETE existing_child_of
-                            DELETE existing_funds
-                            MERGE (asset)-[:HAS]->(new_status)
-                            MERGE (user:User{user_id: $user, name: $user})
-                            MERGE (update_event:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
-                            MERGE (update_event)-[uw:USED]->(workstation)
-                            MERGE (update_event)-[up:USED]->(pipeline)
-                            MERGE (update_event)-[pb:INITIATED_BY]->(user)
-                            MERGE (asset)-[ca:CHANGED_BY]->(update_event)
-                            SET asset.status = $status
-                            , asset.tags = $tags
-                            , asset.subject = $subject
-                            , asset.payload_type = $payload_type
-                            , asset.restricted_access = $restricted_access
-                            , asset.date_asset_finalised = $date_asset_finalised
-                            , asset.parent_id = $parent_id
-                            , asset.asset_locked = $asset_locked
-                            , asset.internal_status = $internal_status
-                            , asset.date_asset_taken = $date_asset_taken
-                            , asset.date_metadata_ingested = $date_metadata_ingested
-                            , asset.make_public = $make_public
-                            , asset.push_to_specify = $push_to_specify
-                """);
-        if (asset.date_asset_taken != null) {
-            agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_taken", (String) null);
-        }
-        if (asset.date_metadata_ingested != null) {
-            agBuilder.add("date_metadata_ingested", asset.date_metadata_ingested.toEpochMilli());
-        } else {
-            agBuilder.add("date_metadata_ingested", (String) null);
-        }
-        if (asset.date_asset_finalised != null) {
-            agBuilder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_finalised", (String) null);
-        }
-        if (!Strings.isNullOrEmpty(asset.digitiser)) {
-            sb.append("""
-                            MERGE (new_digitiser:Digitiser{name: $new_digitiser})
-                            MERGE (asset)<-[new_digitised:DIGITISED]-(new_digitiser)
-                    """);
-            agBuilder.add("new_digitiser", asset.digitiser);
-        }
-        // Nullable relations
-        if (!Strings.isNullOrEmpty(asset.subject)) {
-            sb.append("""
-                            MERGE (new_subject:Subject{name: $subject})
-                            MERGE (asset)-[new_asset_has_subject:HAS]->(new_subject)
-                    """);
-            agBuilder.add("subject", asset.subject);
-
-        }
-        if (!Strings.isNullOrEmpty(asset.camera_setting_control)) {
-            sb.append("""
-                            MERGE (new_camera_setting_control:Camera_setting_control{name: $camera_setting_control})
-                            MERGE (asset)-[new_has_camera_setting_control:HAS]->(new_camera_setting_control)
-                    """);
-            agBuilder.add("camera_setting_control", asset.camera_setting_control);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_version)) {
-            sb.append("""
-                            MERGE (new_metadata_version:Metadata_version{name: $new_metadata_version})
-                            MERGE (asset)-[new_has_metadata_version:HAS]->(new_metadata_version)
-                    """);
-            agBuilder.add("new_metadata_version", asset.metadata_version);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_source)) {
-            sb.append("""
-                            MERGE (new_metadata_source:Metadata_source{name: $metadata_source})
-                            MERGE (asset)-[new_has_metadata_source:HAS]->(new_metadata_source)
-                    """);
-            agBuilder.add("metadata_source", asset.metadata_source);
-        }
-
-        if (asset.payload_type != null) {
-            sb.append("""
-                            MERGE (new_payload_type:Payload_type{name: $payload_type})
-                            MERGE (asset)-[new_has_payload_type:HAS]->(new_payload_type)
-                    """);
-            agBuilder.add("payload_type", asset.payload_type);
-        }
-        // List objects
-        for(int i = 0 ; i < asset.funding.size(); i++) {
-            sb.append("          MERGE (new_funding")
-                    .append(i)
-                    .append(":Funding_entity{name: $new_funding")
-                    .append(i)
-                    .append("})\n        MERGE (asset)<-[:FUNDS]-(new_funding")
-                    .append(i).append(")");
-            agBuilder.add("new_funding" + i, asset.funding.get(i).name());
-        }
-        for(int i = 0 ; i < asset.issues.size(); i++) {
-            sb.append("      MERGE (new_issues")
-                    .append(i)
-                    .append(":Issue{name: $new_issues")
-                    .append(i)
-                    .append("})\n        MERGE (asset)-[:HAS]->(new_issues")
-                    .append(i).append(")");
-            agBuilder.add("new_issues" + i, asset.issues.get(i).issue());
-        }
-        for(int i = 0 ; i < asset.file_formats.size(); i++) {
-            sb.append("      MERGE (new_file_format")
-                    .append(i)
-                    .append(":File_format{name: $new_file_format")
-                    .append(i)
-                    .append("})\n        MERGE (asset)-[:HAS]->(new_file_format")
-                    .append(i).append(")");
-            agBuilder.add("new_file_format" + i, asset.file_formats.get(i));
-        }
-        for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
-            sb.append("      MERGE (digitiser")
-                    .append(i)
-                    .append(":Digitiser{name: $digitiser")
-                    .append(i)
-                    .append("})\n        MERGE (asset)<-[:WORKED_ON]-(digitiser")
-                    .append(i).append(")");
-            agBuilder.add("digitiser" + i, asset.complete_digitiser_list.get(i));
-        }
-        sb.append("""
-                \n$$
-                        , #params) as (a agtype);
-                """);
-        return sb.toString();
-    }
-    default Asset update_asset_internal(Asset asset) {
-
-        AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-        asset.file_formats.forEach(agtypeListBuilder::add);
-        AgtypeMapBuilder tags = new AgtypeMapBuilder();
-        asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
-        AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-        asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                .add("collection_name", asset.collection)
-                .add("workstation_name", asset.workstation)
-                .add("pipeline_name", asset.pipeline)
-                .add("asset_guid", asset.asset_guid)
-                .add("status", asset.status)
-//                        .add("funding", asset.funding)
-                .add("subject", asset.subject)
-                .add("payload_type", asset.payload_type)
-                .add("file_formats", agtypeListBuilder.build())
-                .add("updated_date", Instant.now().toEpochMilli())
-                .add("internal_status", asset.internal_status.name())
-                .add("parent_id", asset.parent_guid)
-                .add("user", asset.updateUser)
-                .add("tags", tags.build())
-                .add("asset_locked", asset.asset_locked)
-                .add("restricted_access", restrictedAcces.build())
-                .add("make_public", asset.make_public)
-                .add("push_to_specify", asset.push_to_specify);
-
-        String sql = buildUpdateSQL(asset, builder);
-        logger.info(sql);
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return asset;
-    }
-
-    @Transaction
-    default void deleteAsset(String assetGuid) {
-        boilerplate();
-        // Deletes Asset and removes connections to Specimens and Events.
-        // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
-        internal_deleteAsset(assetGuid);
     }
 
     default void internal_deleteAsset(String assetGuid) {
@@ -444,11 +437,11 @@ public interface BulkUpdateRepository extends SqlObject {
     }
 
     @Transaction
-    default void bulkUpdateAssets(String sql, AgtypeMapBuilder builder) {
+    default void executeUpdate(AGEQuery ageQuery) {
         try {
             withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
+                Agtype agtype = AgtypeFactory.create(ageQuery.agtypeMapBuilder.build());
+                handle.createUpdate(ageQuery.sql)
                         .bind("params", agtype)
                         .execute();
                 return handle;
@@ -560,9 +553,6 @@ public interface BulkUpdateRepository extends SqlObject {
             throw new RuntimeException(e);
         }
     }
-
-
-
 
 
 }

@@ -296,7 +296,7 @@ public interface AssetRepository2 extends SqlObject {
                     .append(i)
                     .append("})\n        MERGE (a)<-[:FUNDS]-(funding")
                     .append(i).append(")");
-            agBuilder.add("funding" + i, asset.funding.get(i).name());
+            agBuilder.add("funding" + i, asset.funding.get(i));
         }
         for(int i = 0 ; i < asset.issues.size(); i++) {
             sb.append("      MERGE (issues")
@@ -634,7 +634,7 @@ public interface AssetRepository2 extends SqlObject {
                     .append(i)
                     .append("})\n        MERGE (asset)<-[:FUNDS]-(new_funding")
                     .append(i).append(")");
-            agBuilder.add("new_funding" + i, asset.funding.get(i).name());
+            agBuilder.add("new_funding" + i, asset.funding.get(i));
         }
         for(int i = 0 ; i < asset.issues.size(); i++) {
             sb.append("      MERGE (new_issues")

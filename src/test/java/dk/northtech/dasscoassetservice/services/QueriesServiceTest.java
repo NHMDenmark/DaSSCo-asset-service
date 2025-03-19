@@ -150,9 +150,9 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(secondAsset, user, 11);
 
         Asset updatedAsest = secondAsset;
-        updatedAsest.funding = Arrays.asList(new Funding("So much money it's insane"));
+        updatedAsest.funding = Arrays.asList("So much money it's insane");
         assetService.updateAsset(updatedAsest, user);
-        updatedAsest.funding = Arrays.asList(new Funding("Even more money!!"));
+        updatedAsest.funding = Arrays.asList("Even more money!!");
         assetService.updateAsset(updatedAsest, user);
 
         Asset auditedAsset = getTestAsset("audited", user.username, "NNAD", "i2_w1", "pl-01", "i_c1");
@@ -255,7 +255,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         asset.asset_locked = false;
         asset.digitiser = username;
         asset.asset_guid = guid;
-        asset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"));
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");

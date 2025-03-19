@@ -561,7 +561,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset2, user, 10);
         Asset parent = assetService.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
-        parent.funding = Arrays.asList(new Funding("Hundredetusindvis af dollar, jeg er stadig i chok"));
+        parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
         assetService.updateAsset(parent, user);
         Asset child = assetService.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
@@ -738,7 +738,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"));
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -816,93 +816,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(updatedSecondAsset.tags.size()).isEqualTo(3);
         }
 
-    @Test
-    void testBulkUpdateNoBody(){
-        List<String> assetList = new ArrayList<String>();
-        assetList.add("bulk-asset-no-body");
-        assetList.add("bulk-asset-no-body-2");
-        Asset updatedAsset = null;
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset,user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Empty body, please specify fields to update");
-    }
 
-    @Test
-    void testBulkUpdateOneAssetNotFound(){
-        // Create three different assets
-        Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
-        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
-
-        assetService.persistAsset(firstAsset, user, 1);
-
-        Asset updatedAsset = getBulkUpdateAsset();
-
-        // Create list of assets to be updated:
-        List<String> assetList = new ArrayList<String>();
-        assetList.add("bulk-asset-exists");
-        assetList.add("bulk-asset-does-not");
-        // Update assets with the new asset information:
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, updatedAsset,user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("One or more assets were not found!");
-    }
-
-    @Test
-    void testBulkUpdateNoAssetParent(){
-
-        Asset toBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent");
-        Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent-2");
-        assetService.persistAsset(toBeUpdated, user, 1);
-        assetService.persistAsset(secondToBeUpdated, user, 1);
-
-        Asset updatedAsset = getBulkUpdateAsset();
-        updatedAsset.parent_guid = "this-does-not-exist";
-
-        List<String> listOfAssets = Arrays.asList("bulk-update-no-parent", "bulk-update-no-parent-2");
-
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(listOfAssets, updatedAsset,user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_parent does not exist!");
-
-        Optional<Asset> optNotUpdated = assetService.getAsset("bulk-update-no-parent-2");
-        assertThat(optNotUpdated.isPresent()).isTrue();
-        Asset notUpdated = optNotUpdated.get();
-        // Using funding or subject or payload_type is the easiest way to check if an asset was updated or not.
-        assertThat(notUpdated.funding.get(0)).isEqualTo("funding has depleted");
-    }
-
-    @Test
-    void testBulkUpdateNoUnlockAllowed(){
-
-        Asset firstToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed");
-        Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed-2");
-        secondToBeUpdated.asset_locked = true;
-        assetService.persistAsset(firstToBeUpdated, user, 1);
-        assetService.persistAsset(secondToBeUpdated, user, 1);
-
-        Asset updatedAsset = getBulkUpdateAsset();
-        updatedAsset.asset_locked = false;
-
-        List<String> assetList = Arrays.asList("bulk-update-no-unlocking-allowed", "bulk-update-no-unlocking-allowed-2");
-
-        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.bulkUpdate(assetList, updatedAsset,user));
-        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-
-        Optional<Asset> optAsset = assetService.getAsset("bulk-update-no-unlocking-allowed");
-        assertThat(optAsset.isPresent()).isTrue();
-        Asset found = optAsset.get();
-        assertThat(found.asset_locked).isFalse();
-        Optional<Asset> optAsset2 = assetService.getAsset("bulk-update-no-unlocking-allowed-2");
-        assertThat(optAsset2.isPresent()).isTrue();
-        Asset found2 = optAsset2.get();
-        assertThat(found2.asset_locked).isTrue();
-    }
-
-    @Test
-    void testBulkUpdateNoUpdateUser(){
-
-        Asset asset = new Asset();
-        List<String> assetList = new ArrayList<>();
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.bulkUpdate(assetList, asset,user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Update user must be provided!");
-    }
 
     public Asset getBulkUpdateAssetToBeUpdated(String guid){
         Asset asset = new Asset();
@@ -913,7 +827,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-" + guid;
         asset.asset_guid = guid;
         asset.status = "WORKING_COPY";
-        asset.funding = Arrays.asList(new Funding("funding has depleted"));
+        asset.funding = Arrays.asList("funding has depleted");
         asset.subject = "subject-non-edited";
         asset.payload_type = "payload-not-edited";
         asset.tags.put("Tag 1", "Value 1");

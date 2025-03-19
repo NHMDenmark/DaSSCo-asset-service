@@ -42,16 +42,16 @@ public class RightsValidationService {
 
     public void checkReadRightsThrowing(User user, String institutionName) {
         boolean hasRight = checkRights(user, institutionName, false);
-        if(!hasRight){
-            LOGGER.info("User {} does not have read access to institution {}",user.username, institutionName);
+        if (!hasRight) {
+            LOGGER.info("User {} does not have read access to institution {}", user.username, institutionName);
             throw new DasscoIllegalActionException();
         }
     }
 
     public void checkWriteRightsThrowing(User user, String institutionName) {
         boolean hasRight = checkRights(user, institutionName, false);
-        if(!hasRight){
-            LOGGER.info("User {} does not have write access to institution {}",user.username, institutionName);
+        if (!hasRight) {
+            LOGGER.info("User {} does not have write access to institution {}", user.username, institutionName);
             throw new DasscoIllegalActionException();
         }
     }
@@ -71,13 +71,13 @@ public class RightsValidationService {
         }
         Set<String> allUserRoles = getUserRoles(user.roles);
         Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if(ifExists.isEmpty()) {
+        if (ifExists.isEmpty()) {
             throw new RuntimeException("This should not happen :^)");
         }
         Institution institution = ifExists.get();
         if (!institution.roleRestrictions().isEmpty()) {
             for (Role r : institution.roleRestrictions()) {
-                if(allUserRoles.contains((write?WRITE_ROLE_PREFIX: READ_ROLE_PREFIX)+r.name())){
+                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;
                 }
             }
@@ -86,56 +86,59 @@ public class RightsValidationService {
         //If no roles exists everyone has access
         return true;
     }
+
     public boolean checkReadRights(User user, String institutionName, String collectionName) {
-        return checkRights(user, institutionName,collectionName, false);
+        return checkRights(user, institutionName, collectionName, false);
     }
 
     public boolean checkWriteRights(User user, String institutionName, String collectionName) {
-        return checkRights(user, institutionName,collectionName, true);
+        return checkRights(user, institutionName, collectionName, true);
     }
 
     public void checkReadRightsThrowing(User user, String institutionName, String collectionName) {
         boolean hasRight = checkRights(user, institutionName, collectionName, false);
-        if(!hasRight) {
-            LOGGER.warn("User {} does not have read access to collection {} in institution {}",user.username,collectionName,institutionName);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have read access to collection {} in institution {}", user.username, collectionName, institutionName);
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
 
-    public void checkReadRightsThrowing(User user, String institutionName, String collectionName, String assetGuid){
+    public void checkReadRightsThrowing(User user, String institutionName, String collectionName, String assetGuid) {
         boolean hasRight = checkRights(user, institutionName, collectionName, assetGuid, false);
-        if(!hasRight) {
-            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}",user.username,assetGuid,collectionName,institutionName);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}", user.username, assetGuid, collectionName, institutionName);
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
 
-    public boolean checkReadRightsThrowing(User user, AssetGroup assetGroup){
+    public boolean checkReadRightsThrowing(User user, AssetGroup assetGroup) {
         boolean hasRight = checkRights(user, assetGroup);
         if (!hasRight) {
-            LOGGER.warn("User {} does not have read access to assetGroup {}",user.username,assetGroup.group_name);
+            LOGGER.warn("User {} does not have read access to assetGroup {}", user.username, assetGroup.group_name);
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
         return true;
     }
 
-    public void checkAssetGroupOwnershipThrowing(User user, AssetGroup assetGroup){
+    public void checkAssetGroupOwnershipThrowing(User user, AssetGroup assetGroup) {
         boolean hasRight = checkAssetGroupOwnership(user, assetGroup);
         if (!hasRight) {
-            LOGGER.warn("User {} does not have write access to assetGroup {}",user.username,assetGroup.group_name);
+            LOGGER.warn("User {} does not have write access to assetGroup {}", user.username, assetGroup.group_name);
             throw new DasscoIllegalActionException("User is not the owner of this asset group.");
         }
     }
 
     public void checkWriteRightsThrowing(User user, String institutionName, String collectionName) {
         boolean hasRight = checkRights(user, institutionName, collectionName, true);
-        if(!hasRight) {
-            LOGGER.warn("User {} does not have write access to collection {} in institution {}",user.username,collectionName,institutionName);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have write access to collection {} in institution {}", user.username, collectionName, institutionName);
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
+
     public boolean checkRights(User user, String institutionName, String collectionName, boolean write) {
         Set<String> roles = user.roles;
+        // Roles that has access to all institutions and collections
         if (roles.contains(InternalRole.ADMIN.roleName)
             || roles.contains(InternalRole.SERVICE_USER.roleName)
             || roles.contains(InternalRole.DEVELOPER.roleName)) {
@@ -149,20 +152,20 @@ public class RightsValidationService {
         Collection collection = collectionOpt.get();
         if (!collection.roleRestrictions().isEmpty()) {
             for (Role r : collection.roleRestrictions()) {
-                if(allUserRoles.contains((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name())){
+                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;
                 }
             }
             return false;
         }
         Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if(ifExists.isEmpty()) {
+        if (ifExists.isEmpty()) {
             throw new RuntimeException("This should not happen :^)");
         }
         Institution institution = ifExists.get();
         if (!institution.roleRestrictions().isEmpty()) {
             for (Role r : institution.roleRestrictions()) {
-                if(allUserRoles.contains((write?WRITE_ROLE_PREFIX: READ_ROLE_PREFIX)+r.name())){
+                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;
                 }
             }
@@ -172,16 +175,16 @@ public class RightsValidationService {
         return true;
     }
 
-    public boolean checkRights(User user, String institutionName, String collectionName, String assetGuid, boolean write){
+    public boolean checkRights(User user, String institutionName, String collectionName, String assetGuid, boolean write) {
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
-                || roles.contains(InternalRole.SERVICE_USER.roleName)
-                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            || roles.contains(InternalRole.SERVICE_USER.roleName)
+            || roles.contains(InternalRole.DEVELOPER.roleName)) {
             return true;
         }
 
         boolean hasAccess = jdbi.onDemand(UserRepository.class).userHasAccessToAsset(user.username, assetGuid);
-        if (hasAccess){
+        if (hasAccess) {
             return true;
         }
 
@@ -193,21 +196,21 @@ public class RightsValidationService {
         Collection collection = collectionOpt.get();
         if (!collection.roleRestrictions().isEmpty()) {
             for (Role r : collection.roleRestrictions()) {
-                System.out.println((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name());
-                if(allUserRoles.contains((write ? WRITE_ROLE_PREFIX: READ_ROLE_PREFIX) + r.name())){
+                System.out.println((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name());
+                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;
                 }
             }
             return false;
         }
         Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if(ifExists.isEmpty()) {
+        if (ifExists.isEmpty()) {
             throw new RuntimeException("This should not happen :^)");
         }
         Institution institution = ifExists.get();
         if (!institution.roleRestrictions().isEmpty()) {
             for (Role r : institution.roleRestrictions()) {
-                if(allUserRoles.contains((write?WRITE_ROLE_PREFIX: READ_ROLE_PREFIX)+r.name())){
+                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;
                 }
             }
@@ -217,26 +220,26 @@ public class RightsValidationService {
         return true;
     }
 
-    public boolean checkRights(User user, AssetGroup assetGroup){
+    public boolean checkRights(User user, AssetGroup assetGroup) {
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
-                || roles.contains(InternalRole.SERVICE_USER.roleName)
-                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            || roles.contains(InternalRole.SERVICE_USER.roleName)
+            || roles.contains(InternalRole.DEVELOPER.roleName)) {
             return true;
         }
 
-        if (assetGroup.hasAccess.contains(user.username)){
+        if (assetGroup.hasAccess.contains(user.username)) {
             return true;
         }
 
         return false;
     }
 
-    public boolean checkAssetGroupOwnership(User user, AssetGroup assetGroup){
+    public boolean checkAssetGroupOwnership(User user, AssetGroup assetGroup) {
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
-                || roles.contains(InternalRole.SERVICE_USER.roleName)
-                || roles.contains(InternalRole.DEVELOPER.roleName)) {
+            || roles.contains(InternalRole.SERVICE_USER.roleName)
+            || roles.contains(InternalRole.DEVELOPER.roleName)) {
             return true;
         }
 

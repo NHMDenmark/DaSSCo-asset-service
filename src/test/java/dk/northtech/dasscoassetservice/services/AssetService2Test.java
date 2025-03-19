@@ -155,7 +155,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
         createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
-        createAsset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"),new Funding("Jeg er stadig i chok"));
+        createAsset.funding = Arrays.asList("Hundredetusindvis af dollars","Jeg er stadig i chok");
         createAsset.file_formats = Arrays.asList("PNG", "PDF");
         assetService2.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService2.getAsset("createAsset");
@@ -195,8 +195,8 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.complete_digitiser_list).contains("Karl-Børge");
         assertThat(result.complete_digitiser_list).contains("Bazviola");
         assertThat(result.funding).hasSize(2);
-        assertThat(result.funding).contains(new Funding("Hundredetusindvis af dollars"));
-        assertThat(result.funding).contains(new Funding("Jeg er stadig i chok"));
+        assertThat(result.funding).contains("Hundredetusindvis af dollars");
+        assertThat(result.funding).contains("Jeg er stadig i chok");
         assertThat(result.issues).hasSize(2);
         assertThat(result.issues).contains(new Issue("Substance abuse"));
         assertThat(result.issues).contains(new Issue("It aint working"));
@@ -213,6 +213,13 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
         assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
+        while(true) {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Test
@@ -272,7 +279,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         assetService2.persistAsset(asset2, user, 10);
         Asset parent = assetService2.getAsset(asset.asset_guid).get();
         parent.updateUser = "Bob";
-        parent.funding = Arrays.asList(new Funding("Hundredetusindvis af dollar, jeg er stadig i chok"));
+        parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
         assetService2.updateAsset(parent, user);
         Asset child = assetService2.getAsset(asset2.asset_guid).get();
         assertWithMessage("Parent should not be deleted").that(child.parent_guid).isNotEmpty();
@@ -303,7 +310,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = Arrays.asList(new Funding("Hundredetusindvis af dollars"));
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
         asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -409,7 +416,9 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.asset_pid = "pid-updateAsset";
         asset.status = "BEING_PROCESSED";
+
         assetService2.persistAsset(asset, user, 11);
+
         asset.tags.remove("Tag1");
         asset.tags.remove("Tag2");
         asset.date_asset_finalised = Instant.now();
@@ -422,8 +431,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         asset.status = "ISSUE_WITH_METADATA";
         asset.subject = "new sub";
         asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
-        asset.funding = Arrays.asList(new Funding("420"),new Funding("Funding secured"));
-        asset.file_formats = Arrays.asList("RAW");
+        asset.funding = Arrays.asList("420","Funding secured");
         asset.payload_type = "Conventional";
         asset.digitiser = "Diane Digitiser";
         asset.metadata_version = "One point oh-uh";
@@ -437,13 +445,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         Optional<Asset> updateAsset = assetService2.getAsset("updateAsset");
         assertThat(updateAsset.isPresent()).isTrue();
         Asset result = updateAsset.get();
-        //        while(true) {
-//            try {
-//                Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
+
         assertThat(result.tags.isEmpty()).isTrue();
         // The pipeline and workstation fields on asset is the ones used to create the assets.
         // The ones set on the updated asset is used on the update event and is not displayed on the asset
@@ -467,8 +469,8 @@ class AssetService2Test extends AbstractIntegrationTest {
         assertThat(result.file_formats).hasSize(2);
         assertThat(result.file_formats).contains("PDF");
         assertThat(result.file_formats).contains("PNG");
-        assertThat(result.funding).contains(new Funding("420"));
-        assertThat(result.funding).contains(new Funding("Funding secured"));
+        assertThat(result.funding).contains("420");
+        assertThat(result.funding).contains("Funding secured");
         assertThat(result.funding).hasSize(2);
         assertThat(result.issues).hasSize(1);
         assertThat(result.specimens).hasSize(1);
@@ -478,6 +480,7 @@ class AssetService2Test extends AbstractIntegrationTest {
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
+
 
     }
 

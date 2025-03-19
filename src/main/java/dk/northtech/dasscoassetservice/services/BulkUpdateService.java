@@ -158,67 +158,67 @@ public class BulkUpdateService {
             }
         }
 
-        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
-        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
+//        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
+//        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
 
-//        // Create the new BULK_UPDATE_ASSET_METADATA event:
-//        Event event = new Event();
-//        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
-//        event.user = updatedAsset.updateUser;
-//        event.workstation = updatedAsset.workstation;
-//        event.pipeline = updatedAsset.pipeline;
-//        event.timeStamp = Instant.now();
+        // Create the new BULK_UPDATE_ASSET_METADATA event:
+        Event event = new Event();
+        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
+        event.user = updatedAsset.updateUser;
+        event.workstation = updatedAsset.workstation;
+        event.pipeline = updatedAsset.pipeline;
+        event.timeStamp = Instant.now();
 //
-//        assets.forEach(asset -> {
-//            Map<String, String> existingTags = new HashMap<>(asset.tags);
-//            for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()) {
-//                if (existingTags.containsKey(entry.getKey())) {
-//                    if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
-//                        existingTags.put(entry.getKey(), entry.getValue());
-//                    }
-//                } else {
-//                    existingTags.put(entry.getKey(), entry.getValue());
-//                }
-//            }
-//            asset.tags = existingTags;
-//        });
-//
-//        List<Asset> bulkUpdateSuccess = jdbi.onDemand(AssetRepository2.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
-//
-//        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
-//        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-//
-//        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-//            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-//                this.subjectCache.clearCache();
-//                List<String> subjectList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listSubjects();
-//                });
-//                if (!subjectList.isEmpty()) {
-//                    for (String subject : subjectList) {
-//                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-//                    }
-//                }
-//            }
-//        }
-//
-//        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-//            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-//                this.payloadTypeCache.clearCache();
-//                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listPayloadTypes();
-//                });
-//                if (!payloadTypeList.isEmpty()) {
-//                    for (String payloadType : payloadTypeList) {
-//                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-//                    }
-//                }
-//            }
-//        }
-//        return bulkUpdateSuccess;
-    return null;
+        assets.forEach(asset -> {
+            Map<String, String> existingTags = new HashMap<>(asset.tags);
+            for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()) {
+                if (existingTags.containsKey(entry.getKey())) {
+                    if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
+                        existingTags.put(entry.getKey(), entry.getValue());
+                    }
+                } else {
+                    existingTags.put(entry.getKey(), entry.getValue());
+                }
+            }
+            asset.tags = existingTags;
+        });
+
+        List<Asset> bulkUpdateSuccess = jdbi.onDemand(BulkUpdateRepository.class).bulkUpdate(updatedAsset, event, assets, assetList);
+
+        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
+                this.subjectCache.clearCache();
+                List<String> subjectList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listSubjects();
+                });
+                if (!subjectList.isEmpty()) {
+                    for (String subject : subjectList) {
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
+                    }
+                }
+            }
+        }
+
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
+                this.payloadTypeCache.clearCache();
+                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listPayloadTypes();
+                });
+                if (!payloadTypeList.isEmpty()) {
+                    for (String payloadType : payloadTypeList) {
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
+                    }
+                }
+            }
+        }
+        return bulkUpdateSuccess;
+
     }
 
     AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {

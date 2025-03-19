@@ -21,7 +21,7 @@ public class Asset {
     @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
     public List<Specimen> specimens = new ArrayList<>();
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
-    public List<Funding> funding = new ArrayList<>();
+    public List<String> funding = new ArrayList<>();
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
     public String subject;
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")

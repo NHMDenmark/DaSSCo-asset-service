@@ -114,7 +114,7 @@ public class AssetMapper implements RowMapper<Asset> {
 
         Agtype funding = rs.getObject("funding", Agtype.class);
         asset.funding = funding.getList().stream()
-                .map(f -> new Funding(f.toString()))
+                .map(Object::toString)
                 .collect(Collectors.toList());
 
         Agtype issues = rs.getObject("issues", Agtype.class);
