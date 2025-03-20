@@ -20,12 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static dk.northtech.dasscoassetservice.repositories.AssetRepository2.READ_WITHOUT_WHERE;
+import static dk.northtech.dasscoassetservice.repositories.AssetRepository.READ_WITHOUT_WHERE;
+
 
 
 //@Repository
@@ -58,10 +58,6 @@ public interface BulkUpdateRepository extends SqlObject {
     default List<Asset> readMultipleAssets(List<String> assets) {
         boilerplate();
         return readMultipleAssetsInternal(assets);
-    }
-
-    static record AGEQuery(String sql, AgtypeMapBuilder agtypeMapBuilder) {
-
     }
 
     static AGEQuery createBulkUpdateSql(List<String> assetList, Asset updatedFields) {
@@ -254,20 +250,20 @@ public interface BulkUpdateRepository extends SqlObject {
     default List<Asset> bulkUpdate(Asset updatedAsset, Event event, List<Asset> assets, List<String> assetList) {
         boilerplate();
         AGEQuery bulkUpdateSql = createBulkUpdateSql(assetList, updatedAsset);
-        logger.info("Bulk update SQL: {}", bulkUpdateSql.sql);
+        logger.info("Bulk update SQL: {}", bulkUpdateSql.sql());
         // Update asset metadata:
         executeUpdate(bulkUpdateSql);
 
         if (updatedAsset.funding != null) {
             AGEQuery ageQuery = deleteList(assetList, "<-[funds_to_delete:FUNDS]-", "funds_to_delete", "Funding_entity");
-            System.out.println(ageQuery.sql);
+            System.out.println(ageQuery.sql());
             executeUpdate(ageQuery);
             if (!updatedAsset.funding.isEmpty()) {
                 AGEQuery ensureExistsQuery = ensureExistes(updatedAsset.funding, "Funding_entity");
-                System.out.println(ensureExistsQuery.sql);
+                System.out.println(ensureExistsQuery.sql());
                 executeUpdate(ensureExistsQuery);
                 AGEQuery funding = createList(assetList, updatedAsset.funding, "<-[:FUNDS]-", "Funding_entity");
-                System.out.println(funding.sql);
+                System.out.println(funding.sql());
                 executeUpdate(funding);
             }
         }
@@ -440,8 +436,8 @@ public interface BulkUpdateRepository extends SqlObject {
     default void executeUpdate(AGEQuery ageQuery) {
         try {
             withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(ageQuery.agtypeMapBuilder.build());
-                handle.createUpdate(ageQuery.sql)
+                Agtype agtype = AgtypeFactory.create(ageQuery.agtypeMapBuilder().build());
+                handle.createUpdate(ageQuery.sql())
                         .bind("params", agtype)
                         .execute();
                 return handle;

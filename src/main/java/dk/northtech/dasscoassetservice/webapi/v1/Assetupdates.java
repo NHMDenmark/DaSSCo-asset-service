@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
+import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -37,12 +38,14 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class Assetupdates {
 
     private final AssetService assetService;
+    private final BulkUpdateService bulkUpdateService;
 
     private static final Logger logger = LoggerFactory.getLogger(Assetupdates.class);
 
     @Inject
-    public Assetupdates(AssetService assetService) {
+    public Assetupdates(AssetService assetService, BulkUpdateService bulkUpdateService) {
         this.assetService = assetService;
+        this.bulkUpdateService = bulkUpdateService;
     }
 
     @POST
@@ -239,7 +242,7 @@ public class Assetupdates {
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
         // Return type?
         // Roles Allowed?
-        return this.assetService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
+        return this.bulkUpdateService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
     }
 
     @GET
@@ -251,7 +254,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.assetService.checkUserRights(assetGuid, UserMapper.from(securityContext)).orElse(null);
+        return this.bulkUpdateService.checkUserRights(assetGuid, UserMapper.from(securityContext)).orElse(null);
     }
 
     @DELETE

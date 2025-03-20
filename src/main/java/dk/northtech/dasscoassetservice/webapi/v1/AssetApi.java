@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
+import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import dk.northtech.dasscoassetservice.services.InternalStatusService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.UserMapper;
@@ -41,14 +42,16 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class AssetApi {
     private final InternalStatusService internalStatusService;
     private final RightsValidationService rightsValidationService;
+    private final BulkUpdateService bulkUpdateService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
     private AssetService assetService;
 
     @Inject
-    public AssetApi(InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService) {
+    public AssetApi(BulkUpdateService bulkUpdateService, InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService) {
         this.internalStatusService = internalStatusService;
         this.assetService = assetService;
         this.rightsValidationService = rightsValidationService;
+        this.bulkUpdateService = bulkUpdateService;
     }
 
     // TODO: Hidden for now.
@@ -172,7 +175,7 @@ public class AssetApi {
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
@@ -199,7 +202,7 @@ public class AssetApi {
         } else {
             // Return the csv String:
             return Response.status(200)
-                    .entity(assetService.createCSVString(hasReadAccessTo))
+                    .entity(bulkUpdateService.createCSVString(hasReadAccessTo))
                     .build();
         }
     }
@@ -213,7 +216,7 @@ public class AssetApi {
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");

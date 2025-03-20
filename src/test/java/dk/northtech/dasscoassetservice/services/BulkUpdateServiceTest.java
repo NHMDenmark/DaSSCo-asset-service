@@ -25,14 +25,14 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-2");
         Asset thirdAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-3");
         firstAsset.complete_digitiser_list = Arrays.asList("Bob", "Gertrud");
-        assetService2.persistAsset(firstAsset, user, 1);
-        assetService2.persistAsset(secondAsset, user, 1);
-        assetService2.persistAsset(thirdAsset, user, 1);
+        assetService.persistAsset(firstAsset, user, 1);
+        assetService.persistAsset(secondAsset, user, 1);
+        assetService.persistAsset(thirdAsset, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
 
-        Optional<Asset> optionalFirstAsset = assetService2.getAsset("bulk-asset-1");
-        Optional<Asset> optionalSecondAsset = assetService2.getAsset("bulk-asset-2");
+        Optional<Asset> optionalFirstAsset = assetService.getAsset("bulk-asset-1");
+        Optional<Asset> optionalSecondAsset = assetService.getAsset("bulk-asset-2");
         assertThat(optionalFirstAsset.isPresent()).isTrue();
         assertThat(optionalSecondAsset.isPresent()).isTrue();
         Asset persistedFirstAsset = optionalFirstAsset.get();
@@ -50,9 +50,9 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         // Update assets with the new asset information:
         bulkUpdateService.bulkUpdate(assetList, updatedAsset, user);
 
-        Optional<Asset> optionalUpdatedFirstAsset = assetService2.getAsset("bulk-asset-1");
-        Optional<Asset> optionalUpdatedSecondAsset = assetService2.getAsset("bulk-asset-2");
-        Optional<Asset> optionalUnchangedThirdASset = assetService2.getAsset("bulk-asset-3");
+        Optional<Asset> optionalUpdatedFirstAsset = assetService.getAsset("bulk-asset-1");
+        Optional<Asset> optionalUpdatedSecondAsset = assetService.getAsset("bulk-asset-2");
+        Optional<Asset> optionalUnchangedThirdASset = assetService.getAsset("bulk-asset-3");
         assertThat(optionalUpdatedFirstAsset.isPresent()).isTrue();
         assertThat(optionalUpdatedSecondAsset.isPresent()).isTrue();
 
@@ -74,25 +74,25 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         assertThat(updatedFirstAsset.funding).contains("Hundredetusindvis af dollars");
         assertThat(updatedSecondAsset.funding).contains("Hundredetusindvis af dollars");
         assertThat(unChangedThirdAsset.funding).hasSize(2);
-//        // Subject changed:
-//        assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
-//        assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
-//        // Payload type changed:
-//        assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
-//        assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
-//        // Asset locked changed:
-//        assertThat(updatedFirstAsset.asset_locked).isTrue();
-//        assertThat(updatedSecondAsset.asset_locked).isTrue();
-//        // Tags changed:
-//        assertThat(updatedFirstAsset.tags.size()).isEqualTo(3);
-//        assertThat(updatedSecondAsset.tags.size()).isEqualTo(3);
-        while(true) {
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        // Subject changed:
+        assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
+        assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
+        // Payload type changed:
+        assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
+        assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
+        // Asset locked changed:
+        assertThat(updatedFirstAsset.asset_locked).isTrue();
+        assertThat(updatedSecondAsset.asset_locked).isTrue();
+        // Tags changed:
+        assertThat(updatedFirstAsset.tags.size()).isEqualTo(3);
+        assertThat(updatedSecondAsset.tags.size()).isEqualTo(3);
+//        while(true) {
+//            try {
+//                Thread.sleep(10000);
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
     }
 
     public Asset getBulkUpdateAssetToBeUpdated(String guid){
@@ -174,7 +174,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
         Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
 
-        assetService2.persistAsset(firstAsset, user, 1);
+        assetService.persistAsset(firstAsset, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
 
@@ -192,8 +192,8 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
 
         Asset toBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent");
         Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-parent-2");
-        assetService2.persistAsset(toBeUpdated, user, 1);
-        assetService2.persistAsset(secondToBeUpdated, user, 1);
+        assetService.persistAsset(toBeUpdated, user, 1);
+        assetService.persistAsset(secondToBeUpdated, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
         updatedAsset.parent_guid = "this-does-not-exist";
@@ -203,7 +203,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> bulkUpdateService.bulkUpdate(listOfAssets, updatedAsset,user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_parent does not exist!");
 
-        Optional<Asset> optNotUpdated = assetService2.getAsset("bulk-update-no-parent-2");
+        Optional<Asset> optNotUpdated = assetService.getAsset("bulk-update-no-parent-2");
         assertThat(optNotUpdated.isPresent()).isTrue();
         Asset notUpdated = optNotUpdated.get();
         // Using funding or subject or payload_type is the easiest way to check if an asset was updated or not.
@@ -216,8 +216,8 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         Asset firstToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed");
         Asset secondToBeUpdated = getBulkUpdateAssetToBeUpdated("bulk-update-no-unlocking-allowed-2");
         secondToBeUpdated.asset_locked = true;
-        assetService2.persistAsset(firstToBeUpdated, user, 1);
-        assetService2.persistAsset(secondToBeUpdated, user, 1);
+        assetService.persistAsset(firstToBeUpdated, user, 1);
+        assetService.persistAsset(secondToBeUpdated, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
         updatedAsset.asset_locked = false;
@@ -227,11 +227,11 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> bulkUpdateService.bulkUpdate(assetList, updatedAsset,user));
         assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Cannot unlock using updateAsset API, use dedicated API for unlocking");
 
-        Optional<Asset> optAsset = assetService2.getAsset("bulk-update-no-unlocking-allowed");
+        Optional<Asset> optAsset = assetService.getAsset("bulk-update-no-unlocking-allowed");
         assertThat(optAsset.isPresent()).isTrue();
         Asset found = optAsset.get();
         assertThat(found.asset_locked).isFalse();
-        Optional<Asset> optAsset2 = assetService2.getAsset("bulk-update-no-unlocking-allowed-2");
+        Optional<Asset> optAsset2 = assetService.getAsset("bulk-update-no-unlocking-allowed-2");
         assertThat(optAsset2.isPresent()).isTrue();
         Asset found2 = optAsset2.get();
         assertThat(found2.asset_locked).isTrue();

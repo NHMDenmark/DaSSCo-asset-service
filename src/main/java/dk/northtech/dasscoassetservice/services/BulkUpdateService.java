@@ -8,15 +8,11 @@ import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
-import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository2;
 import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
@@ -26,12 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -464,9 +456,41 @@ public class BulkUpdateService {
     }
 
     public List<Asset> readMultipleAssets(List<String> assets) {
-        return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assets);
+        return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assets);
     }
 
+    public String createCSVString(List<Asset> assets) {
+        String csv = "";
+        if (assets.isEmpty()) {
+            return "";
+        }
+        StringBuilder csvBuilder = new StringBuilder();
+        Field[] fields = Asset.class.getDeclaredFields();
+        String headers = String.join(",", Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
+        csvBuilder.append(headers).append("\n");
+        for (Asset asset : assets) {
+            StringJoiner joiner = new StringJoiner(",");
+            for (Field field : fields) {
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(asset);
+                    joiner.add(escapeCsvValue(value != null ? value.toString() : ""));
+                } catch (IllegalAccessException e) {
+                    joiner.add("");
+                }
+            }
+            csvBuilder.append(joiner).append("\n");
+        }
+        return csvBuilder.toString();
+    }
+
+    public String escapeCsvValue(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            value = "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
     // For Mocking.
     public HttpClient createHttpClient() {
         return HttpClient.newHttpClient();

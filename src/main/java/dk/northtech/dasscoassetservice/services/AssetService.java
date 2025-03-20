@@ -17,7 +17,6 @@ import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -91,507 +89,6 @@ public class AssetService {
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
     }
-
-    public boolean auditAsset(User user, Audit audit, String assetGuid) {
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if (Strings.isNullOrEmpty(audit.user())) {
-            throw new IllegalArgumentException("Audit must have a user!");
-        }
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-        Asset asset = optAsset.get();
-        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-        if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
-            throw new DasscoIllegalActionException("Asset must be complete before auditing");
-        }
-        if (Objects.equals(asset.digitiser, audit.user())) {
-            throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
-        }
-        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
-
-        logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
-
-        return true;
-    }
-
-    public boolean deleteAsset(String assetGuid, User user) {
-        String userId = user.username;
-        if (Strings.isNullOrEmpty(userId)) {
-            throw new IllegalArgumentException("User is null");
-        }
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-        Asset asset = optAsset.get();
-        rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
-        if (asset.asset_locked) {
-            throw new DasscoIllegalActionException("Asset is locked");
-        }
-        if (asset.date_asset_deleted != null) {
-            throw new IllegalArgumentException("Asset is already deleted");
-        }
-
-        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
-
-        statisticsDataServiceV2.refreshCachedData();
-
-        logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
-
-        return true;
-    }
-
-    public void deleteAssetMetadata(String assetGuid, User user) {
-        // Check that the asset exists:
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-
-        // Close the share if open:
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(fileProxyConfiguration.url() + "/shares/assets/" + assetGuid + "/deleteShare"))
-                .header("Authorization", "Bearer " + user.token)
-                .DELETE()
-                .build();
-
-        HttpClient httpClient = createHttpClient();
-        try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200 || response.statusCode() == 404) {
-                Asset asset = optAsset.get();
-                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
-                jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
-
-                // Refresh cache:
-                reloadAssetCache();
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean unlockAsset(String assetGuid) {
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-        Asset asset = optAsset.get();
-        asset.asset_locked = false;
-        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
-        return true;
-    }
-
-    public List<Event> getEvents(String assetGuid, User user) {
-        Optional<Asset> assetOpt = this.getAsset(assetGuid);
-        if (assetOpt.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist");
-        }
-        Asset asset = assetOpt.get();
-        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-        return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
-    }
-
-    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
-        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-        Asset asset = optAsset.get();
-        asset.internal_status = InternalStatus.COMPLETED;
-        asset.error_message = null;
-        asset.error_timestamp = null;
-        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
-        jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
-
-        statisticsDataServiceV2.refreshCachedData();
-
-
-        if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()) {
-            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
-            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
-        }
-        return true;
-    }
-
-    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
-    public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
-        if (assetSmbRequest.minimalAsset() == null) {
-            throw new IllegalArgumentException("Asset cannot be null");
-        }
-        Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-
-        // Mark as asset received
-        Asset asset = optAsset.get();
-        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        if (asset.asset_locked) {
-            throw new DasscoIllegalActionException("Asset is locked");
-        }
-        asset.internal_status = InternalStatus.ASSET_RECEIVED;
-        // Close samba and sync ERDA;
-        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
-        statisticsDataServiceV2.refreshCachedData();
-
-        logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
-        return true;
-    }
-
-    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
-        InternalStatus assetStatus = null;
-        try {
-            assetStatus = InternalStatus.valueOf(status);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid status: " + status);
-        }
-        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ASSET_RECEIVED) {
-            throw new IllegalArgumentException("Invalid status: " + status);
-        }
-        Optional<Asset> optAsset = getAsset(assetGuid);
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
-        }
-        Asset asset = optAsset.get();
-        asset.internal_status = assetStatus;
-        asset.error_message = errorMessage;
-        if (!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
-            asset.error_timestamp = Instant.now();
-        }
-        jdbi.onDemand(AssetRepository.class)
-                .updateAssetNoEvent(asset);
-
-        statisticsDataServiceV2.refreshCachedData();
-        return true;
-    }
-
-    public Asset updateAsset(Asset updatedAsset, User user) {
-        Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
-        if (assetOpt.isEmpty()) {
-            throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
-        }
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
-            throw new IllegalArgumentException("Update user must be provided");
-        }
-        validateAsset(updatedAsset);
-        Asset existing = assetOpt.get();
-        rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
-        Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
-
-        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
-        existing.specimens = updatedAsset.specimens;
-        existing.tags = updatedAsset.tags;
-        existing.workstation = updatedAsset.workstation;
-        existing.pipeline = updatedAsset.pipeline;
-        existing.date_asset_finalised = updatedAsset.date_asset_finalised;
-        existing.status = updatedAsset.status;
-        if (existing.asset_locked && !updatedAsset.asset_locked) {
-            throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-        }
-        existing.asset_locked = updatedAsset.asset_locked;
-        existing.subject = updatedAsset.subject;
-        existing.restricted_access = updatedAsset.restricted_access;
-        existing.funding = updatedAsset.funding;
-        existing.file_formats = updatedAsset.file_formats;
-        existing.payload_type = updatedAsset.payload_type;
-        existing.digitiser = updatedAsset.digitiser;
-        existing.parent_guid = updatedAsset.parent_guid;
-        existing.updateUser = updatedAsset.updateUser;
-        existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
-        validateAssetFields(existing);
-        jdbi.onDemand(AssetRepository.class)
-                .updateAsset(existing, specimensToDetach);
-
-        statisticsDataServiceV2.refreshCachedData();
-
-        logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-
-
-        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-                this.subjectCache.clearCache();
-                List<String> subjectList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listSubjects();
-                });
-                if (!subjectList.isEmpty()) {
-                    for (String subject : subjectList) {
-                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-                    }
-                }
-            }
-        }
-
-        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-                this.payloadTypeCache.clearCache();
-                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listPayloadTypes();
-                });
-                if (!payloadTypeList.isEmpty()) {
-                    for (String payloadType : payloadTypeList) {
-                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-                    }
-                }
-            }
-        }
-
-        boolean prepTypeExists = true;
-        if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()) {
-            for (Specimen specimen : updatedAsset.specimens) {
-                if (!preparationTypeCache.getPreparationTypeMap().containsKey(specimen.preparation_type())) {
-                    prepTypeExists = false;
-                    break;
-                }
-            }
-            if (!prepTypeExists) {
-                preparationTypeCache.clearCache();
-                List<String> preparationTypeList = jdbi.withHandle(handle -> {
-                    SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-                    return specimenRepository.listPreparationTypes();
-                });
-                if (!preparationTypeList.isEmpty()) {
-                    for (String preparationType : preparationTypeList) {
-                        this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-                    }
-                }
-            }
-        }
-        return existing;
-    }
-
-    public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user) {
-               /* Bulk-Updatable fields:
-            Tags (Added, not replaced).
-            Status
-            Asset_Locked (Only for locking, not unlocking)
-            Subject ️
-            Funding
-            Payload_Type
-            Parent_Guid
-            Digitiser
-        */
-
-        if (updatedAsset == null) {
-            throw new IllegalArgumentException("Empty body, please specify fields to update");
-        }
-
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
-            throw new IllegalArgumentException("Update user must be provided!");
-        }
-
-        if (assetList.isEmpty()) {
-            throw new IllegalArgumentException("Assets to update cannot be empty.");
-        }
-
-        // Check if all the assets exist:
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
-
-        for (Asset asset : assets) {
-            rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
-        }
-
-        if (assets.size() != assetList.size()) {
-            throw new IllegalArgumentException("One or more assets were not found!");
-        }
-
-        // Check that the bulk update will not set the asset to be its own parent:
-        for (Asset asset : assets) {
-            if (updatedAsset.parent_guid != null) {
-                if (asset.asset_guid.equals(updatedAsset.parent_guid)) {
-                    throw new IllegalArgumentException("Asset cannot be its own parent");
-                }
-            }
-        }
-
-        // Parent_guid does not exist:
-        if (updatedAsset.parent_guid != null) {
-            Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
-            if (optParent.isEmpty()) {
-                throw new IllegalArgumentException("asset_parent does not exist!");
-            }
-        }
-
-        // Do not allow unlocking:
-        if (!updatedAsset.asset_locked) {
-            for (Asset asset : assets) {
-                if (asset.asset_locked) {
-                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-                }
-            }
-        }
-
-        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
-        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
-
-        // Create the new BULK_UPDATE_ASSET_METADATA event:
-        Event event = new Event();
-        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
-        event.user = updatedAsset.updateUser;
-        event.workstation = updatedAsset.workstation;
-        event.pipeline = updatedAsset.pipeline;
-        event.timeStamp = Instant.now();
-
-        assets.forEach(asset -> {
-            Map<String, String> existingTags = new HashMap<>(asset.tags);
-            for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()) {
-                if (existingTags.containsKey(entry.getKey())) {
-                    if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
-                        existingTags.put(entry.getKey(), entry.getValue());
-                    }
-                } else {
-                    existingTags.put(entry.getKey(), entry.getValue());
-                }
-            }
-            asset.tags = existingTags;
-        });
-
-        List<Asset> bulkUpdateSuccess = jdbi.onDemand(AssetRepository.class).bulkUpdate(sql, builder, updatedAsset, event, assets, assetList);
-
-        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
-
-        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-                this.subjectCache.clearCache();
-                List<String> subjectList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listSubjects();
-                });
-                if (!subjectList.isEmpty()) {
-                    for (String subject : subjectList) {
-                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-                    }
-                }
-            }
-        }
-
-        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-                this.payloadTypeCache.clearCache();
-                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listPayloadTypes();
-                });
-                if (!payloadTypeList.isEmpty()) {
-                    for (String payloadType : payloadTypeList) {
-                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-                    }
-                }
-            }
-        }
-        return bulkUpdateSuccess;
-    }
-
-    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {
-        AgtypeMapBuilder builder = new AgtypeMapBuilder();
-
-        if (updatedFields.status != null) {
-            builder.add("status", updatedFields.status);
-        }
-        //TODO handle new lists here
-//        if (updatedFields.funding != null) {
-//            builder.add("funding", updatedFields.funding);
-//        }
-
-        if (updatedFields.subject != null) {
-            builder.add("subject", updatedFields.subject);
-        }
-
-        if (updatedFields.payload_type != null) {
-            builder.add("payload_type", updatedFields.payload_type);
-        }
-
-        if (updatedFields.parent_guid != null) {
-            builder.add("parent_id", updatedFields.parent_guid);
-        }
-
-        if (updatedFields.asset_locked) {
-            builder.add("asset_locked", true);
-        }
-
-        if (updatedFields.digitiser != null) {
-            builder.add("digitiser", updatedFields.digitiser);
-        }
-
-        builder
-                .add("user", updatedFields.updateUser);
-
-        return builder;
-    }
-
-    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields) {
-
-        String assetListAsString = assetList.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (a:Asset)
-                            WHERE a.asset_guid IN [%s]
-                            
-                            SET
-                """;
-
-        if (updatedFields.funding != null) {
-            sql = sql + """
-                                a.funding = $funding,
-                    """;
-        }
-        if (updatedFields.subject != null) {
-            sql = sql + """
-                                a.subject = $subject,
-                    """;
-        }
-        if (updatedFields.payload_type != null) {
-            sql = sql + """
-                                a.payload_type = $payload_type,
-                    """;
-        }
-
-        if (updatedFields.status != null) {
-            sql = sql + """
-                                a.status = $status,
-                    """;
-        }
-        if (updatedFields.parent_guid != null) {
-            sql = sql + """
-                                a.parent_id = $parent_id,
-                    """;
-        }
-        // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
-        if (updatedFields.asset_locked) {
-            sql = sql + """
-                                a.asset_locked = $asset_locked,
-                    """;
-        }
-        if (updatedFields.digitiser != null) {
-            sql = sql + """
-                                a.digitiser = $digitiser,
-                    """;
-        }
-
-        sql = sql + """
-                        a.workstation = $workstation_name,
-                        a.pipeline = $pipeline_name
-                        $$
-                        , #params) as (a agtype);
-                """;
-
-        return sql.formatted(assetListAsString);
-    }
-
     void validateAssetFields(Asset asset) {
         if (Strings.isNullOrEmpty(asset.asset_guid)) {
             throw new IllegalArgumentException("asset_guid cannot be null");
@@ -625,6 +122,10 @@ public class AssetService {
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
+    }
+
+    public Optional<Asset> getAsset(String assetGuid) {
+        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
 
     void validateAsset(Asset asset) {
@@ -679,15 +180,16 @@ public class AssetService {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
         LocalDateTime databaseCheckEnd = LocalDateTime.now();
-        logger.info("#2: Database call to check if Asset existed took {} ms", java.time.Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
+        logger.info("#2: Database call to check if Asset existed took {} ms", Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
         LocalDateTime validationStart = LocalDateTime.now();
+        asset.updateUser = user.username;
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
         validateNewAsset(asset);
         validateAsset(asset);
         // Create share
         assetsGettingCreated.put(asset.asset_guid, Instant.now());
         LocalDateTime validationEnd = LocalDateTime.now();
-        logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", java.time.Duration.between(validationStart, validationEnd).toMillis());
+        logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guid);
@@ -766,7 +268,7 @@ public class AssetService {
             payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
         }
         LocalDateTime cacheEnd = LocalDateTime.now();
-        logger.info("#7 Refreshing dropdown caches took {} ms", java.time.Duration.between(cacheStart, cacheEnd).toMillis());
+        logger.info("#7 Refreshing dropdown caches took {} ms", Duration.between(cacheStart, cacheEnd).toMillis());
     }
 
     public List<String> listSubjects() {
@@ -819,63 +321,294 @@ public class AssetService {
         return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);
     }
 
-    public Optional<Asset> getAsset(String assetGuid) {
-        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
-    }
 
-    public Optional<Asset> checkUserRights(String assetGuid, User user) {
-        LocalDateTime getAssetStart = LocalDateTime.now();
-        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
-        LocalDateTime getAssetEnd = LocalDateTime.now();
-        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", java.time.Duration.between(getAssetStart, getAssetEnd).toMillis());
-        if (optionalAsset.isPresent()) {
-            Asset found = optionalAsset.get();
-            LocalDateTime checkValidationStart = LocalDateTime.now();
-            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
-            LocalDateTime checkValidationEnd = LocalDateTime.now();
-            logger.info("#4.1.3 Validating Asset took {} ms", java.time.Duration.between(checkValidationStart, checkValidationEnd).toMillis());
+
+    public Asset updateAsset(Asset updatedAsset, User user) {
+        Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
+        if (assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
-        return optionalAsset;
-    }
-
-    public List<Asset> readMultipleAssets(List<String> assets) {
-        return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assets);
-    }
-
-    public String createCSVString(List<Asset> assets) {
-        String csv = "";
-        if (assets.isEmpty()) {
-            return "";
+        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
+            throw new IllegalArgumentException("Update user must be provided");
         }
-        StringBuilder csvBuilder = new StringBuilder();
-        Field[] fields = Asset.class.getDeclaredFields();
-        String headers = String.join(",", Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
-        csvBuilder.append(headers).append("\n");
-        for (Asset asset : assets) {
-            StringJoiner joiner = new StringJoiner(",");
-            for (Field field : fields) {
-                field.setAccessible(true);
-                try {
-                    Object value = field.get(asset);
-                    joiner.add(escapeCsvValue(value != null ? value.toString() : ""));
-                } catch (IllegalAccessException e) {
-                    joiner.add("");
+        validateAsset(updatedAsset);
+        Asset existing = assetOpt.get();
+        rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
+        Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
+
+        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+        existing.specimens = updatedAsset.specimens;
+        existing.tags = updatedAsset.tags;
+        existing.workstation = updatedAsset.workstation;
+        existing.pipeline = updatedAsset.pipeline;
+        existing.date_asset_finalised = updatedAsset.date_asset_finalised;
+        existing.status = updatedAsset.status;
+        if (existing.asset_locked && !updatedAsset.asset_locked) {
+            throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+        }
+        existing.asset_locked = updatedAsset.asset_locked;
+        existing.subject = updatedAsset.subject;
+        existing.restricted_access = updatedAsset.restricted_access;
+        existing.file_formats = updatedAsset.file_formats;
+        existing.payload_type = updatedAsset.payload_type;
+        existing.parent_guid = updatedAsset.parent_guid;
+        existing.updateUser = updatedAsset.updateUser;
+        existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
+        existing.metadata_version = updatedAsset.metadata_version;
+        existing.metadata_source = updatedAsset.metadata_source;
+        existing.camera_setting_control = updatedAsset.camera_setting_control;
+        existing.push_to_specify = updatedAsset.push_to_specify;
+        existing.digitiser = updatedAsset.digitiser;
+        existing.make_public = updatedAsset.make_public;
+
+        existing.issues = updatedAsset.issues;
+        existing.complete_digitiser_list = updatedAsset.complete_digitiser_list;
+        existing.funding = updatedAsset.funding;
+
+        validateAssetFields(existing);
+        jdbi.onDemand(AssetRepository.class)
+                .updateAsset(existing, specimensToDetach);
+
+        statisticsDataServiceV2.refreshCachedData();
+
+        logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+
+
+        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
+            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
+                this.subjectCache.clearCache();
+                List<String> subjectList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listSubjects();
+                });
+                if (!subjectList.isEmpty()) {
+                    for (String subject : subjectList) {
+                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
+                    }
                 }
             }
-            csvBuilder.append(joiner).append("\n");
         }
-        return csvBuilder.toString();
+
+        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
+            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
+                this.payloadTypeCache.clearCache();
+                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+                    return assetRepository.listPayloadTypes();
+                });
+                if (!payloadTypeList.isEmpty()) {
+                    for (String payloadType : payloadTypeList) {
+                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
+                    }
+                }
+            }
+        }
+
+        boolean prepTypeExists = true;
+        if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()) {
+            for (Specimen specimen : updatedAsset.specimens) {
+                if (!preparationTypeCache.getPreparationTypeMap().containsKey(specimen.preparation_type())) {
+                    prepTypeExists = false;
+                    break;
+                }
+            }
+            if (!prepTypeExists) {
+                preparationTypeCache.clearCache();
+                List<String> preparationTypeList = jdbi.withHandle(handle -> {
+                    SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+                    return specimenRepository.listPreparationTypes();
+                });
+                if (!preparationTypeList.isEmpty()) {
+                    for (String preparationType : preparationTypeList) {
+                        this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
+                    }
+                }
+            }
+        }
+        return existing;
     }
 
-    public String escapeCsvValue(String value) {
-        if (value == null) return "";
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            value = "\"" + value.replace("\"", "\"\"") + "\"";
+    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
         }
-        return value;
+        Asset asset = optAsset.get();
+        asset.internal_status = InternalStatus.COMPLETED;
+        asset.error_message = null;
+        asset.error_timestamp = null;
+        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
+        jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
+
+        statisticsDataServiceV2.refreshCachedData();
+
+
+        if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()) {
+            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+        }
+        return true;
     }
 
-    // For Mocking.
+    public boolean auditAsset(User user, Audit audit, String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (Strings.isNullOrEmpty(audit.user())) {
+            throw new IllegalArgumentException("Audit must have a user!");
+        }
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+            throw new DasscoIllegalActionException("Asset must be complete before auditing");
+        }
+        if (Objects.equals(asset.digitiser, audit.user())) {
+            throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
+        }
+        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
+
+        logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
+
+        return true;
+    }
+
+    public List<Event> getEvents(String assetGuid, User user) {
+        Optional<Asset> assetOpt = this.getAsset(assetGuid);
+        if (assetOpt.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist");
+        }
+        Asset asset = assetOpt.get();
+        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        return jdbi.onDemand(AssetRepository.class).readEvents(assetGuid);
+    }
+
+
+    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
+    public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
+        if (assetSmbRequest.minimalAsset() == null) {
+            throw new IllegalArgumentException("Asset cannot be null");
+        }
+        Optional<Asset> optAsset = getAsset(assetSmbRequest.minimalAsset().asset_guid());
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+
+        // Mark as asset received
+        Asset asset = optAsset.get();
+        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        if (asset.asset_locked) {
+            throw new DasscoIllegalActionException("Asset is locked");
+        }
+        asset.internal_status = InternalStatus.ASSET_RECEIVED;
+        // Close samba and sync ERDA;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        statisticsDataServiceV2.refreshCachedData();
+
+        logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
+        return true;
+    }
+
+    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
+        InternalStatus assetStatus = null;
+        try {
+            assetStatus = InternalStatus.valueOf(status);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ASSET_RECEIVED) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.internal_status = assetStatus;
+        asset.error_message = errorMessage;
+        if (!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
+            asset.error_timestamp = Instant.now();
+        }
+        jdbi.onDemand(AssetRepository.class)
+                .updateAssetNoEvent(asset);
+
+        statisticsDataServiceV2.refreshCachedData();
+        return true;
+    }
+
+    public void deleteAssetMetadata(String assetGuid, User user) {
+        // Check that the asset exists:
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+
+        // Close the share if open:
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(fileProxyConfiguration.url() + "/shares/assets/" + assetGuid + "/deleteShare"))
+                .header("Authorization", "Bearer " + user.token)
+                .DELETE()
+                .build();
+
+        HttpClient httpClient = createHttpClient();
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200 || response.statusCode() == 404) {
+                Asset asset = optAsset.get();
+                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
+
+                // Refresh cache:
+                reloadAssetCache();
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public boolean deleteAsset(String assetGuid, User user) {
+        String userId = user.username;
+        if (Strings.isNullOrEmpty(userId)) {
+            throw new IllegalArgumentException("User is null");
+        }
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+        if (asset.asset_locked) {
+            throw new DasscoIllegalActionException("Asset is locked");
+        }
+        if (asset.date_asset_deleted != null) {
+            throw new IllegalArgumentException("Asset is already deleted");
+        }
+
+        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
+        jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
+
+        statisticsDataServiceV2.refreshCachedData();
+
+        logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
+
+        return true;
+    }
+
+    public boolean unlockAsset(String assetGuid) {
+        Optional<Asset> optAsset = getAsset(assetGuid);
+        if (optAsset.isEmpty()) {
+            throw new IllegalArgumentException("Asset doesnt exist!");
+        }
+        Asset asset = optAsset.get();
+        asset.asset_locked = false;
+        jdbi.onDemand(AssetRepository.class).updateAssetNoEvent(asset);
+        return true;
+    }
+
     public HttpClient createHttpClient() {
         return HttpClient.newHttpClient();
     }

@@ -48,7 +48,7 @@ public class AbstractIntegrationTest {
     @Inject BulkUpdateService bulkUpdateService;
 
     AssetService assetService;
-    AssetService2 assetService2;
+//    AssetService assetService;
     @Inject FileProxyClient fileProxyClient;
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
@@ -56,9 +56,9 @@ public class AbstractIntegrationTest {
     @Inject ExtendableEnumService extendableEnumService;
     User user = new User();
     @Inject
-    void setAssetService(AssetService assetService, AssetService2 assetService2) {
+    void setAssetService(AssetService assetService, AssetService assetService2) {
         AssetService spyAssetService = spy(assetService);
-        AssetService2 spyAssetService2 = spy(assetService2);
+        AssetService spyAssetService2 = spy(assetService2);
         HttpInfo success = new HttpInfo("/", "host.dk", 10000, 20000, 9990, 10, "success", HttpAllocationStatus.SUCCESS);
         doReturn(success).when(spyAssetService).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
         doReturn(success).when(spyAssetService2).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
@@ -77,7 +77,7 @@ public class AbstractIntegrationTest {
 //        doReturn(mockHttpClient).when(spyAssetService2).createHttpClient();
 
         this.assetService = spyAssetService;
-        this.assetService2 = spyAssetService2;
+        this.assetService = spyAssetService2;
     }
 
 
