@@ -11,11 +11,8 @@ import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
-import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
-import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,21 +30,16 @@ import java.util.stream.Collectors;
 
 @Service
 public class BulkUpdateService {
-    private final InstitutionService institutionService;
-    private final CollectionService collectionService;
     private final WorkstationService workstationService;
-    private final StatisticsDataServiceV2 statisticsDataServiceV2;
-    private final FileProxyClient fileProxyClient;
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
-    private final PreparationTypeCache preparationTypeCache;
+
     private static final Logger logger = LoggerFactory.getLogger(BulkUpdateService.class);
-    private final FileProxyConfiguration fileProxyConfiguration;
-    private final ObservationRegistry observationRegistry;
+
     private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
 
@@ -67,20 +59,14 @@ public class BulkUpdateService {
             , FileProxyConfiguration fileProxyConfiguration
             , ObservationRegistry observationRegistry
             , ExtendableEnumService extendableEnumService) {
-        this.institutionService = institutionService;
-        this.collectionService = collectionService;
         this.workstationService = workstationService;
-        this.fileProxyClient = fileProxyClient;
-        this.statisticsDataServiceV2 = statisticsDataServiceV2;
+
         this.pipelineService = pipelineService;
         this.jdbi = jdbi;
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
         this.rightsValidationService = rightsValidationService;
-        this.preparationTypeCache = preparationTypeCache;
-        this.fileProxyConfiguration = fileProxyConfiguration;
-        this.observationRegistry = observationRegistry;
         this.extendableEnumService = extendableEnumService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
@@ -101,9 +87,6 @@ public class BulkUpdateService {
 //        // Validation
         if (updatedAsset == null) {
             throw new IllegalArgumentException("Empty body, please specify fields to update");
-        }
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
-            throw new IllegalArgumentException("Update user must be provided!");
         }
         if (assetList.isEmpty()) {
             throw new IllegalArgumentException("Assets to update cannot be empty.");
@@ -156,7 +139,7 @@ public class BulkUpdateService {
         // Create the new BULK_UPDATE_ASSET_METADATA event:
         Event event = new Event();
         event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
-        event.user = updatedAsset.updateUser;
+        event.user = user.username;
         event.workstation = updatedAsset.workstation;
         event.pipeline = updatedAsset.pipeline;
         event.timeStamp = Instant.now();
@@ -178,7 +161,7 @@ public class BulkUpdateService {
         List<Asset> bulkUpdateSuccess = jdbi.onDemand(BulkUpdateRepository.class).bulkUpdate(updatedAsset, event, assets, assetList);
 
         logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
             if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
@@ -211,106 +194,6 @@ public class BulkUpdateService {
         }
         return bulkUpdateSuccess;
 
-    }
-
-    AgtypeMapBuilder bulkUpdateBuilderFactory(Asset updatedFields) {
-        AgtypeMapBuilder builder = new AgtypeMapBuilder();
-
-        if (updatedFields.status != null) {
-            builder.add("status", updatedFields.status);
-        }
-        //TODO handle new lists here
-//        if (updatedFields.funding != null) {
-//            builder.add("funding", updatedFields.funding);
-//        }
-
-        if (updatedFields.subject != null) {
-            builder.add("subject", updatedFields.subject);
-        }
-
-        if (updatedFields.payload_type != null) {
-            builder.add("payload_type", updatedFields.payload_type);
-        }
-
-        if (updatedFields.parent_guid != null) {
-            builder.add("parent_id", updatedFields.parent_guid);
-        }
-
-        if (updatedFields.asset_locked) {
-            builder.add("asset_locked", true);
-        }
-
-        if (updatedFields.digitiser != null) {
-            builder.add("digitiser", updatedFields.digitiser);
-        }
-
-        builder
-                .add("user", updatedFields.updateUser);
-
-        return builder;
-    }
-
-    String bulkUpdateSqlStatementFactory(List<String> assetList, Asset updatedFields) {
-
-        String assetListAsString = assetList.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (a:Asset)
-                            WHERE a.asset_guid IN [%s]
-                            
-                            SET
-                """;
-
-        if (updatedFields.funding != null) {
-            sql = sql + """
-                                a.funding = $funding,
-                    """;
-        }
-        if (updatedFields.subject != null) {
-            sql = sql + """
-                                a.subject = $subject,
-                    """;
-        }
-        if (updatedFields.payload_type != null) {
-            sql = sql + """
-                                a.payload_type = $payload_type,
-                    """;
-        }
-
-        if (updatedFields.status != null) {
-            sql = sql + """
-                                a.status = $status,
-                    """;
-        }
-        if (updatedFields.parent_guid != null) {
-            sql = sql + """
-                                a.parent_id = $parent_id,
-                    """;
-        }
-        // If asset locked is false it means either that they forgot to add it or that they want to unlock an asset, which they cannot do like this.
-        if (updatedFields.asset_locked) {
-            sql = sql + """
-                                a.asset_locked = $asset_locked,
-                    """;
-        }
-        if (updatedFields.digitiser != null) {
-            sql = sql + """
-                                a.digitiser = $digitiser,
-                    """;
-        }
-
-        sql = sql + """
-                        a.workstation = $workstation_name,
-                        a.pipeline = $pipeline_name
-                        $$
-                        , #params) as (a agtype);
-                """;
-
-        return sql.formatted(assetListAsString);
     }
 
     void validateAssetFields(Asset asset) {
@@ -359,81 +242,6 @@ public class BulkUpdateService {
             }
         }
 
-    }
-
-
-    public void refreshCaches(Asset asset) {
-        LocalDateTime cacheStart = LocalDateTime.now();
-        if (asset.digitiser != null && !asset.digitiser.isEmpty()) {
-            logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
-            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser, asset.digitiser));
-        }
-
-        if (asset.specimens != null && !asset.specimens.isEmpty()) {
-            for (Specimen specimen : asset.specimens) {
-                preparationTypeCache.putPreparationTypesInCacheIfAbsent(specimen.preparation_type());
-            }
-        }
-
-        if (asset.subject != null && !asset.subject.isEmpty()) {
-            subjectCache.putSubjectsInCacheIfAbsent(asset.subject);
-        }
-
-        if (asset.payload_type != null && !asset.payload_type.isEmpty()) {
-            payloadTypeCache.putPayloadTypesInCacheIfAbsent(asset.payload_type);
-        }
-        LocalDateTime cacheEnd = LocalDateTime.now();
-        logger.info("#7 Refreshing dropdown caches took {} ms", Duration.between(cacheStart, cacheEnd).toMillis());
-    }
-
-    public List<String> listSubjects() {
-        return subjectCache.getSubjects();
-    }
-
-    public List<Digitiser> listDigitisers() {
-        return digitiserCache.getDigitisers();
-    }
-
-    public List<String> listPayloadTypes() {
-        return payloadTypeCache.getPayloadTypes();
-    }
-
-    public void reloadAssetCache() {
-        subjectCache.clearCache();
-        List<String> subjectList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listSubjects();
-        });
-        if (!subjectList.isEmpty()) {
-            for (String subject : subjectList) {
-                this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-            }
-        }
-        payloadTypeCache.clearCache();
-        List<String> payloadTypeList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listPayloadTypes();
-        });
-        if (!payloadTypeList.isEmpty()) {
-            for (String payloadType : payloadTypeList) {
-                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-            }
-        }
-        preparationTypeCache.clearCache();
-        List<String> preparationTypeList = jdbi.withHandle(handle -> {
-            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-            return specimenRepository.listPreparationTypes();
-        });
-        if (!preparationTypeList.isEmpty()) {
-            for (String preparationType : preparationTypeList) {
-                this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-            }
-        }
-    }
-
-    //This is here for mocking
-    public HttpInfo openHttpShare(MinimalAsset minimalAsset, User updateUser, int allocation) {
-        return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);
     }
 
     public Optional<Asset> getAsset(String assetGuid) {
