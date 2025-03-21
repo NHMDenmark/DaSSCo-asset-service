@@ -1,4 +1,4 @@
-## Protocol: Asset
+## Protocol: Legal
 
 | Fieldname ARS | Desription | Datatype | Required in metadata | Action                  | Notes |
 |---------------|------------|----------|----------------------|-------------------------|-------|
