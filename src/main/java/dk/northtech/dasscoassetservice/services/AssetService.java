@@ -372,7 +372,7 @@ public class AssetService {
         statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.updateUser, updatedAsset.updateUser));
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
 
 
         if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {

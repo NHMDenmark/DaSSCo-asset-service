@@ -23,6 +23,7 @@ public class ExtendableEnumService {
 
     public enum ExtendableEnum {
         FILE_FORMAT("File_format"),
+        ISSUE_NAME("Issue_name"),
         STATUS("Status");
 
         ExtendableEnum(String enumName) {

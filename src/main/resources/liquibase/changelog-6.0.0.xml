@@ -14,6 +14,7 @@
             SELECT create_elabel('dassco','FUNDS');
 
             SELECT create_vlabel('dassco','Status');
+            SELECT create_vlabel('dassco','Issue_name');
             SELECT create_vlabel('dassco','File_format');
             SELECT create_vlabel('dassco','Camera_setting_control');
             SELECT create_vlabel('dassco','Metadata_version');
