@@ -4,42 +4,415 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
     <!-- This changelog primarily handles competition setup -->
 
-    <changeSet id="VERSION-1.0.0-INIT-AGE" author="Thomas Skov Bornerup" contextFilter="default">
-        <validCheckSum>8:fcd2dcad5d1487b66ad7b53400fb0ba8</validCheckSum>
+    <changeSet id="VERSION-1.0.0" author="Nicolas Jan" contextFilter="default">
         <sql>
-            CREATE EXTENSION IF NOT EXISTS age;
-            LOAD 'age';
-            SET search_path = ag_catalog, "$user", public;
+            CREATE USER ${readonly.username} WITH PASSWORD '${readonly.password}';
+            GRANT CONNECT ON DATABASE ${readonly.database} TO ${readonly.username};
+            GRANT USAGE ON SCHEMA public TO ${readonly.username};
+            GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${readonly.username};
+            GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO ${readonly.username};
+            GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${readonly.username};
 
-            SELECT create_graph('dassco');
+--             GRANT USAGE ON SCHEMA ag_catalog TO ${readonly.username};
+--             GRANT SELECT ON ALL TABLES IN SCHEMA ag_catalog TO ${readonly.username};
+--             GRANT USAGE ON ALL SEQUENCES IN SCHEMA ag_catalog TO ${readonly.username};
+--             GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ag_catalog TO ${readonly.username};
 
-            -- Nodes
-            SELECT create_vlabel('dassco','Institute');
-            SELECT create_vlabel('dassco','Institution');
-            SELECT create_vlabel('dassco','Event');
-            SELECT create_vlabel('dassco','User');
-            SELECT create_vlabel('dassco','Pipeline');
-            SELECT create_vlabel('dassco','Workstation');
-            SELECT create_vlabel('dassco','Collection');
-            SELECT create_vlabel('dassco','Asset');
-            SELECT create_vlabel('dassco','Specimen');
+--             GRANT USAGE ON SCHEMA dassco TO ${readonly.username};
+--             GRANT SELECT ON ALL TABLES IN SCHEMA dassco TO ${readonly.username};
+--             GRANT USAGE ON ALL SEQUENCES IN SCHEMA dassco TO ${readonly.username};
+--             GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA dassco TO ${readonly.username};
 
+            GRANT USAGE ON SCHEMA information_schema TO ${readonly.username};
+            GRANT USAGE ON SCHEMA pg_catalog TO ${readonly.username};
+            GRANT USAGE ON SCHEMA pg_toast TO ${readonly.username};
 
-            -- Relations
-            SELECT create_elabel('dassco','INITIATED_BY');
-            SELECT create_elabel('dassco','STATIONED_AT');
-            SELECT create_elabel('dassco','USED_BY');
-            SELECT create_elabel('dassco','CREATED_BY');
-            SELECT create_elabel('dassco','CHANGED_BY');
-            SELECT create_elabel('dassco','CHILD_OF');
-            SELECT create_elabel('dassco','BELONGS_TO');
-            SELECT create_elabel('dassco','IS_PART_OF');
-            SELECT create_elabel('dassco','USED');
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO ${readonly.username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO ${readonly.username};
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT SELECT ON TABLES TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT USAGE ON SEQUENCES TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA ag_catalog GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT SELECT ON TABLES TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT USAGE ON SEQUENCES TO ${readonly.username};
+--             ALTER DEFAULT PRIVILEGES IN SCHEMA dassco GRANT EXECUTE ON FUNCTIONS TO ${readonly.username};
+        </sql>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_INTERNAL_STATUS" author="Thomas Skov Bornerup">
+        <createTable tableName="internal_asset_status">
+            <column name="internal_asset_status" type="text">
+                <constraints primaryKey="true" primaryKeyName="pk_internal_status"/>
+            </column>
+        </createTable>
+        <sql>
+            INSERT INTO internal_asset_status(internal_asset_status)
+            VALUES ('METADATA_RECEIVED')
+                   , ('ASSET_RECEIVED')
+                   , ('COMPLETED')
+                   , ('ERDA_FAILED')
+                   , ('ERDA_ERROR')
+        </sql>
+    </changeSet>
+    
+    <changeSet id="1.0.0:CREATE_INSTITUTION" author="Thomas Skov Bornerup">
+        <createTable tableName="institution">
+            <column name="institution_name" type="text">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_institution"></constraints>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:COLLECTION" author="Thomas Skov Bornerup">
+        <createTable tableName="collection">
+            <column type="int" name="collection_id" autoIncrement="true">
+                <constraints primaryKeyName="pk_collection"
+                             nullable="false"
+                             primaryKey="true"/>
+            </column>
+            <column name="institution_name" type="text">
+                <constraints nullable="false"></constraints>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0:CREATE_ROLE" author="Thomas Skov Bornerup">
+        <createTable tableName="role">
+            <column name="role" type="text">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_role"></constraints>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0:CREATE_COLLECTION_ROLE_RESTRICTION" author="Thomas Skov Bornerup">
+        <createTable tableName="collection_role_restriction">
+            <column name="collection_role_restriction_id" autoIncrement="true" type="int">
+                <constraints primaryKeyName="pk_collection_role_restriction"
+                             primaryKey="true"/>
+            </column>
+            <column name="role" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="collection_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_INSTITUTION_ROLE_RESTRICTION" author="Thomas Skov Bornerup">
+        <createTable tableName="institution_role_restriction">
+            <column name="institution_role_restriction_id" autoIncrement="true" type="int">
+                <constraints primaryKeyName="pk_institution_role_restriction"
+                             primaryKey="true"/>
+            </column>
+            <column name="role" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="institution_name" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ROLE_RESTRICTION_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="collection_role_restriction"
+                                 baseColumnNames="role"
+                                 constraintName="fk_collection_role_restriction__role"
+                                 referencedTableName="role"
+                                 referencedColumnNames="role"/>
+        <addForeignKeyConstraint baseTableName="collection_role_restriction"
+                                 baseColumnNames="collection_id"
+                                 constraintName="fk_collection_role_restriction__collection"
+                                 referencedTableName="collection"
+                                 referencedColumnNames="collection_id"/>
+        <addForeignKeyConstraint baseTableName="institution_role_restriction"
+                                 baseColumnNames="role"
+                                 constraintName="fk_institution_role_restriction__role"
+                                 referencedTableName="role"
+                                 referencedColumnNames="role"/>
+        <addForeignKeyConstraint baseTableName="institution_role_restriction"
+                                 baseColumnNames="institution_name"
+                                 constraintName="fk_institution_role_restriction__institution"
+                                 referencedTableName="institution"
+                                 referencedColumnNames="institution_name"/>
+    </changeSet>
+
+    <changeSet id="1.0.0:CREATE_ASSET_STATUS" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_status">
+            <column name="asset_status" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_status"/>
+            </column>
+        </createTable>
+        <sql>
+            INSERT INTO asset_status(asset_status)
+            VALUES ('WORKING_COPY')
+                 , ('ARCHIVE')
+                 , ('BEING_PROCESSED')
+                 , ('PROCESSING_HALTED')
+                 , ('ISSUE_WITH_MEDIA')
+                 , ('ISSUE_WITH_METADATA')
+                 , ('FOR_DELETION')
         </sql>
     </changeSet>
 
-    <changeSet id="VERSION-1.0.0-TAG-DATABASE" author="Thomas Skov Bornerup" context="default">
-        <tagDatabase tag="VERSION-1.0.0"/>
+    <changeSet id="1.0.0:CREATE_PIPELINE" author="Thomas Skov Bornerup">
+        <createTable tableName="pipeline">
+            <column name="pipeline_id" autoIncrement="true" type="int">
+                <constraints primaryKey="true" primaryKeyName="pk_pipeline"/>
+            </column>
+            <column name="pipeline_name" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="institution_name" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0:CREATE_WORKSTATION_STATUS" author="Thomas Skov Bornerup">
+        <createTable tableName="workstation_status">
+            <column name="workstation_status" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="pk_workstation_status"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:INSERT_WORKSTATION_STATUS" author="Thomas Skov Bornerup">
+        <sql>INSERT INTO workstation_status (workstation_status) VALUES ('IN_SERVICE');</sql>
+        <sql>INSERT INTO workstation_status (workstation_status) VALUES ('OUT_OF_SERVICE');</sql>
+    </changeSet>
+
+    <changeSet id="1.0.0:CREATE_WORKSTATION" author="Thomas Skov Bornerup">
+        <createTable tableName="workstation">
+            <column name="workstation_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workstation_status" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="institution_name" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_WORKSTATION_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="workstation"
+                                 baseColumnNames="institution_name"
+                                 constraintName="fk_workstation__institution"
+                                 referencedTableName="institution"
+                                 referencedColumnNames="institution_name"/>
+        <addForeignKeyConstraint baseTableName="workstation"
+                                 baseColumnNames="workstation_status"
+                                 constraintName="fk_workstation__workstation_status"
+                                 referencedTableName="workstation_status"
+                                 referencedColumnNames="workstation_status"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_PIPELINE_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="pipeline"
+                                 baseColumnNames="institution_name"
+                                 constraintName="fk_pipeline__institution"
+                                 referencedTableName="institution"
+                                 referencedColumnNames="institution_name"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_SPECIMEN" author="Thomas Skov Bornerup">
+        <createTable tableName="specimen">
+            <column name="specimen_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_specimen"/>
+            </column>
+            <column name="specimen_pid" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="collection_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="barcode" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="preparation_type" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_SPECIMEN_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint
+                baseTableName="specimen"
+                baseColumnNames="collection_id"
+                constraintName="fk_specimen__collection"
+                referencedTableName="collection"
+                referencedColumnNames="collection_id"/>
+    </changeSet>
+    <changeSet id="VERSION-1.0.0" author="Thomas Skov Bornerup" contextFilter="default">
+        <tagDatabase tag="VERSION-1.0.0" />
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_FUNDING" author="Thomas Skov Bornerup">
+        <createTable tableName="funding">
+            <column name="funding_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_funding"/>
+            </column>
+            <column name="funding" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+<!--    <changeSet id="1.0.0:CREATE_PUBLISHER" author="Thomas Skov Bornerup">-->
+<!--        <createTable tableName="publisher">-->
+<!--            <column name="publisher_id" type="int" autoIncrement="true">-->
+<!--                <constraints primaryKey="true" primaryKeyName="pk_publisher"/>-->
+<!--            </column>-->
+<!--            <column name="name" type="text">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--        </createTable>-->
+<!--    </changeSet>-->
+<!--    <changeSet id="1.0.0:CREATE_PUBLICATION_LINK" author="Thomas Skov Bornerup">-->
+<!--        <createTable tableName="publication_link">-->
+<!--            <column name="publication_link_id"></column>-->
+<!--        </createTable>-->
+<!--    </changeSet>-->
+    <changeSet id="1.0.0:CREATE_SUBJECT" author="Thomas Skov Bornerup">
+        <createTable tableName="subject">
+            <column name="subject" type="text"/>
+        </createTable>
+        <sql>
+            INSERT INTO subject(subject)
+            VALUES ('folder')
+                 , ('specimen')
+                 , ('label')
+        </sql>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_DIGITISER" author="Thomas Skov Bornerup">
+        <createTable tableName="digitiser">
+            <column name="digitiser_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_digitiser"/>
+            </column>
+            <column name="name" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_PAYLOAD_TYPE" author="Thomas Skov Bornerup">
+        <createTable tableName="payload_type">
+            <column name="payload_type" type="text">
+                <constraints primaryKeyName="pk_payload_type" primaryKey="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_CAMERA_SETTING_CONTROL" author="Thomas Skov Bornerup">
+        <createTable tableName="camera_setting_control">
+            <column name="camera_setting_control_id" type="int" autoIncrement="true">
+                <constraints primaryKeyName="pk_camera_setting_control" primaryKey="true"/>
+            </column>
+            <column name="camera_setting_control" type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_EVENT_TYPE" author="Thomas Skov Bornerup">
+        <createTable tableName="event_type">
+            <column name="event_type" type="text">
+                <constraints primaryKey="true" primaryKeyName="pk_event_type"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:INSERT_EVENT" author="Thomas Skov Bornerup">
+        <sql>
+            INSERT INTO event_type (event_type)
+            VALUES ('CREATE_ASSET')
+                  , ('UPDATE_ASSET')
+                  , ('AUDIT_ASSET')
+                  , ('DELETE_ASSET')
+                  , ('CREATE_ASSET_METADATA')
+                  , ('UPDATE_ASSET_METADATA')
+                  , ('BULK_UPDATE_ASSET_METADATA')
+                  , ('AUDIT_ASSET_METADATA')
+                  , ('DELETE_ASSET_METADATA')
+                  , ('METADATA_TAKEN')
+                  , ('ASSET_FINALISED');
+        </sql>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_USER" author="Thomas Skov Bornerup">
+        <createTable tableName="user">
+            <column name="user_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+            </column>
+            <column name="username" type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_GROUP" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_group">
+            <column name="asset_group_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_group"/>
+            </column>
+            <column name="group_name" type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="creator_user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_ASSET_GROUP_FKEY" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_group"
+                                 baseColumnNames="creator_user_id"
+                                 constraintName="pk_asset_group__user"
+                                 referencedTableName="user"
+                                 referencedColumnNames="user_id"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_GROUP_ACCESS" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_group_access">
+            <column name="asset_group_access_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_group_access"/>
+            </column>
+            <column name="asset_group_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_USER_GROUP_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_group_access"
+                                 baseColumnNames="asset_group_id"
+                                 constraintName="fk_asset_group_access__asset_group"
+                                 referencedTableName="asset_group"
+                                 referencedColumnNames="asset_group_id"/>
+        <addForeignKeyConstraint baseTableName="asset_group_access"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_asset_group_access__user"
+                                 referencedTableName="user"
+                                 referencedColumnNames="user_id"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ISSUE_TYPE" author="Thomas Skov Bornerup">
+        <createTable tableName="issue_category">
+            <column name="issue_category" type="text">
+                <constraints primaryKey="true" primaryKeyName="pk_issue_category"/>
+            </column>
+        </createTable>
+    </changeSet>
+<!--    <changeSet id="1.0.0:CREATE_ISSUE" author="Thomas Skov bornerup">-->
+<!--        <createTable tableName="issue">-->
+<!--            <column name="issue_id" type="int" autoIncrement="true">-->
+<!--                <constraints primaryKey="true" primaryKeyName="pk_issue"/>-->
+<!--            </column>-->
+<!--            <column name="category" type="text">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="name" type="text"/>-->
+<!--            <column name="timestamp" type="timestamp" defaultValue="now()">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="status" type="text">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="description" type="text"/>-->
+<!--            <column name="notest" type="text"/>-->
+<!--            <column name="solved" type="boolean">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--        </createTable>-->
+<!--    </changeSet>-->
+<!--    <changeSet id="1.0.0:CREATE_ISSUE_FKEY" author="">-->
+<!--        <-->
+<!--    </changeSet>-->
 </databaseChangeLog>

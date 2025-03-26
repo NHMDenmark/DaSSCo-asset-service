@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+    <!-- This changelog primarily handles competition setup -->
+
+    <changeSet id="VERSION-1.0.0-INIT-AGE" author="Thomas Skov Bornerup" contextFilter="default">
+        <validCheckSum>8:fcd2dcad5d1487b66ad7b53400fb0ba8</validCheckSum>
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS age;
+            LOAD 'age';
+            SET search_path = ag_catalog, "$user", public;
+
+            SELECT create_graph('dassco');
+
+            -- Nodes
+            SELECT create_vlabel('dassco','Institute');
+            SELECT create_vlabel('dassco','Institution');
+            SELECT create_vlabel('dassco','Event');
+            SELECT create_vlabel('dassco','User');
+            SELECT create_vlabel('dassco','Pipeline');
+            SELECT create_vlabel('dassco','Workstation');
+            SELECT create_vlabel('dassco','Collection');
+            SELECT create_vlabel('dassco','Asset');
+            SELECT create_vlabel('dassco','Specimen');
+
+
+            -- Relations
+            SELECT create_elabel('dassco','INITIATED_BY');
+            SELECT create_elabel('dassco','STATIONED_AT');
+            SELECT create_elabel('dassco','USED_BY');
+            SELECT create_elabel('dassco','CREATED_BY');
+            SELECT create_elabel('dassco','CHANGED_BY');
+            SELECT create_elabel('dassco','CHILD_OF');
+            SELECT create_elabel('dassco','BELONGS_TO');
+            SELECT create_elabel('dassco','IS_PART_OF');
+            SELECT create_elabel('dassco','USED');
+        </sql>
+    </changeSet>
+
+    <changeSet id="VERSION-1.0.0-TAG-DATABASE" author="Thomas Skov Bornerup" context="default">
+        <tagDatabase tag="VERSION-1.0.0"/>
+    </changeSet>
+
+</databaseChangeLog>

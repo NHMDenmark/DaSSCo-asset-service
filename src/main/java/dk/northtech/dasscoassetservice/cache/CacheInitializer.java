@@ -28,7 +28,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
     private final PreparationTypeCache preparationTypeCache;
-    private boolean initialized = false;
+    private boolean initialized = true; //TODO Temporarely disabled while changing db
     private static final Logger logger = LoggerFactory.getLogger(CacheInitializer.class);
     private final Jdbi jdbi;
 
