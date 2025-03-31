@@ -132,4 +132,9 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         Optional<Collection> optCollection = collectionService.findCollectionInternal("does-not-exist","institution_1");
         assertThat(optCollection.isPresent()).isFalse();
     }
+
+    @Test
+    void dummy() {
+        System.out.println("hell o");
+    }
 }

@@ -68,6 +68,9 @@
                              nullable="false"
                              primaryKey="true"/>
             </column>
+            <column name="collection_name" type="text">
+                <constraints nullable="false"></constraints>
+            </column>
             <column name="institution_name" type="text">
                 <constraints nullable="false"></constraints>
             </column>
@@ -179,10 +182,10 @@
 
     <changeSet id="1.0.0:CREATE_WORKSTATION" author="Thomas Skov Bornerup">
         <createTable tableName="workstation">
-            <column name="workstation_id" type="INT">
+            <column name="workstation_id" type="INT" autoIncrement="true">
                 <constraints primaryKey="true" primaryKeyName="pk_workstation"/>
             </column>
-            <column name="name" type="TEXT">
+            <column name="workstation_name" type="TEXT">
                 <constraints nullable="false"/>
             </column>
             <column name="workstation_status" type="TEXT">
@@ -316,51 +319,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet id="1.0.0:CREATE_ASSET_GROUP" author="Thomas Skov Bornerup">
-        <createTable tableName="asset_group">
-            <column name="asset_group_id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" primaryKeyName="pk_asset_group"/>
-            </column>
-            <column name="group_name" type="text">
-                <constraints nullable="false" unique="true"/>
-            </column>
-            <column name="creator_user_id" type="int">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet id="1.0.0:ADD_ASSET_GROUP_FKEY" author="Thomas Skov Bornerup">
-        <addForeignKeyConstraint baseTableName="asset_group"
-                                 baseColumnNames="creator_user_id"
-                                 constraintName="pk_asset_group__user"
-                                 referencedTableName="user"
-                                 referencedColumnNames="user_id"/>
-    </changeSet>
-    <changeSet id="1.0.0:CREATE_ASSET_GROUP_ACCESS" author="Thomas Skov Bornerup">
-        <createTable tableName="asset_group_access">
-            <column name="asset_group_access_id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" primaryKeyName="pk_asset_group_access"/>
-            </column>
-            <column name="asset_group_id" type="int">
-                <constraints nullable="false"/>
-            </column>
-            <column name="user_id" type="int">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet id="1.0.0:ADD_USER_GROUP_FKEYS" author="Thomas Skov Bornerup">
-        <addForeignKeyConstraint baseTableName="asset_group_access"
-                                 baseColumnNames="asset_group_id"
-                                 constraintName="fk_asset_group_access__asset_group"
-                                 referencedTableName="asset_group"
-                                 referencedColumnNames="asset_group_id"/>
-        <addForeignKeyConstraint baseTableName="asset_group_access"
-                                 baseColumnNames="user_id"
-                                 constraintName="fk_asset_group_access__user"
-                                 referencedTableName="user"
-                                 referencedColumnNames="user_id"/>
-    </changeSet>
+
     <changeSet id="1.0.0:CREATE_ISSUE_CATEGORY" author="Thomas Skov Bornerup">
         <createTable tableName="issue_category">
             <column name="category" type="text">
@@ -668,7 +627,7 @@
             <column name="digitiser_list_id" type="int">
                 <constraints primaryKey="true" primaryKeyName="pk_digitiser_list"/>
             </column>
-            <column name="digitser_id" type="int">
+            <column name="digitiser_id" type="int">
                 <constraints nullable="false"/>
             </column>
             <column name="asset_guid" type="text">
@@ -689,5 +648,75 @@
                 constraintName="fk_digitiser_list__asset"
                 referencedTableName="asset"
                 referencedColumnNames="asset_guid"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_GROUP" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_group">
+            <column name="asset_group_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_group"/>
+            </column>
+            <column name="group_name" type="text">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="creator_user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_ASSET_GROUP_FKEY" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_group"
+                                 baseColumnNames="creator_user_id"
+                                 constraintName="pk_asset_group__user"
+                                 referencedTableName="user"
+                                 referencedColumnNames="user_id"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_GROUP_ACCESS" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_group_access">
+            <column name="asset_group_access_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_group_access"/>
+            </column>
+            <column name="asset_group_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_USER_GROUP_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_group_access"
+                                 baseColumnNames="asset_group_id"
+                                 constraintName="fk_asset_group_access__asset_group"
+                                 referencedTableName="asset_group"
+                                 referencedColumnNames="asset_group_id"/>
+        <addForeignKeyConstraint baseTableName="asset_group_access"
+                                 baseColumnNames="user_id"
+                                 constraintName="fk_asset_group_access__user"
+                                 referencedTableName="user"
+                                 referencedColumnNames="user_id"/>
+    </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_GROUP_ASSET" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_group_asset">
+            <column name="asset_group_asset_id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_group_asset"/>
+            </column>
+            <column name="asset_group_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="asset_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_ASSET_GROUP_ASSET_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_group_asset"
+                                 baseColumnNames="asset_group_id"
+                                 constraintName="fk_asset_group_asset__asset_group"
+                                 referencedTableName="asset_group"
+                                 referencedColumnNames="asset_group_id"/>
+        <addForeignKeyConstraint baseTableName="asset_group_asset"
+                                 baseColumnNames="asset_guid"
+                                 constraintName="fk_asset_group_asset__asset"
+                                 referencedTableName="asset"
+                                 referencedColumnNames="asset_guid"/>
     </changeSet>
 </databaseChangeLog>

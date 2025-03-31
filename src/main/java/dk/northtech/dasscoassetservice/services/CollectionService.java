@@ -122,7 +122,7 @@ public class CollectionService {
     public Collection updateCollection(Collection collection) {
         jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
-            roleRepository.setRoleRestriction(RestrictedObjectType.COLLECTION,collection.name(),collection.roleRestrictions());
+            roleRepository.setRestrictions(RestrictedObjectType.COLLECTION,collection.roleRestrictions(),collection.name());
             return h;
         });
         collectionCache.put(collection.institution(), collection.name(), collection);
