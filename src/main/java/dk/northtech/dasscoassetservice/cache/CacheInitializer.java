@@ -20,8 +20,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
 
     private final InstitutionCache institutionCache;
     private final CollectionCache collectionCache;
-    private final PipelineCache pipelineCache;
-    private final PipelineRepository pipelineRepository;
+
     private final WorkstationCache workstationCache;
     private final WorkstationRepository workstationRepository;
     private final DigitiserRepository digitiserRepository;
@@ -38,7 +37,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     public CacheInitializer(InstitutionCache institutionCache,
                             CollectionService collectionService,
                             CollectionCache collectionCache,
-                            PipelineCache pipelineCache, PipelineRepository pipelineRepository,
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
                             SubjectCache subjectCache,
@@ -47,8 +45,6 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             Jdbi jdbi){
         this.institutionCache = institutionCache;
         this.collectionCache = collectionCache;
-        this.pipelineCache = pipelineCache;
-        this.pipelineRepository = pipelineRepository;
         this.workstationCache = workstationCache;
         this.workstationRepository = workstationRepository;
         this.digitiserRepository = digitiserRepository;
@@ -76,12 +72,12 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                             this.collectionCache.putCollectionInCacheIfAbsent(institution.name(), collection.name(), collection);
                         }
                     }
-                    List<Pipeline> pipelineList = pipelineRepository.listPipelines(institution);
-                    if (!pipelineList.isEmpty()){
-                        for (Pipeline pipeline : pipelineList){
-                            this.pipelineCache.putPipelineInCacheIfAbsent(pipeline);
-                        }
-                    }
+//                    List<Pipeline> pipelineList = pipelineRepository.listPipelines(institution);
+//                    if (!pipelineList.isEmpty()){
+//                        for (Pipeline pipeline : pipelineList){
+//                            this.pipelineCache.putPipelineInCacheIfAbsent(pipeline);
+//                        }
+//                    }
                     List<Workstation> workstationList = workstationRepository.listWorkStations(institution);
                     if (!workstationList.isEmpty()){
                         for (Workstation workstation : workstationList){
@@ -127,7 +123,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
             logger.info("CacheInitializer initialized with the following caches:");
             logger.info("InstitutionCache: {}", institutionCache != null ? institutionCache.getInstitutionMap(): "Not present");
             logger.info("CollectionCache: {}", collectionCache != null ? collectionCache.getCollectionMap() : "Not present");
-            logger.info("PipelineCache: {}", pipelineCache != null ? pipelineCache.getPipelineMap() : "Not present");
+//            logger.info("PipelineCache: {}", pipelineCache != null ? pipelineCache.getPipelineMap() : "Not present");
             logger.info("DigitiserCache: {}", digitiserCache != null ? digitiserCache.getDigitiserMap() : "Not present");
             logger.info("SubjectCache: {}", subjectCache != null ? subjectCache.getSubjectMap() : "Not present");
             logger.info("PayloadTypeCache: {}", payloadTypeCache != null ? payloadTypeCache.getPayloadTypeMap() : "Not present");
