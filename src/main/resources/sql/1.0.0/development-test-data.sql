@@ -11,9 +11,9 @@ VALUES ('institution_1'),
 --Collections
 
 INSERT INTO collection(collection_name, institution_name)
-VALUES ('institution_1', 'i1_12')
-     , ('institution_1', 'i1_c2')
-     , ('institution_2', 'i2_c1');
+VALUES ('i1_c1','institution_1')
+     , ('i1_c2','institution_1')
+     , ('i2_c1','institution_2');
 
 -- Workstations
 INSERT INTO workstation(workstation_name, institution_name, workstation_status)

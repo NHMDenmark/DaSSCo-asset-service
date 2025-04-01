@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.cache;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
+import dk.northtech.dasscoassetservice.services.CollectionService;
 import dk.northtech.dasscoassetservice.webapi.v1.StatisticsDataApi;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
@@ -26,6 +27,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private final DigitiserRepository digitiserRepository;
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
+    CollectionService collectionService;
     private final PayloadTypeCache payloadTypeCache;
     private final PreparationTypeCache preparationTypeCache;
     private boolean initialized = true; //TODO Temporarely disabled while changing db
@@ -34,6 +36,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
 
     @Inject
     public CacheInitializer(InstitutionCache institutionCache,
+                            CollectionService collectionService,
                             CollectionCache collectionCache,
                             PipelineCache pipelineCache, PipelineRepository pipelineRepository,
                             WorkstationCache workstationCache, WorkstationRepository workstationRepository,
@@ -54,6 +57,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.payloadTypeCache = payloadTypeCache;
         this.preparationTypeCache = preparationTypeCache;
         this.jdbi = jdbi;
+        this.collectionService = collectionService;
     }
 
     @Override
@@ -66,10 +70,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
             if (!institutionList.isEmpty()){
                 for (Institution institution : institutionList) {
                     institutionCache.putInstitutionInCacheIfAbsent(institution.name(), institution);
-                    List<Collection> collectionList = jdbi.withHandle(h -> {
-                        CollectionRepository collectionRepository = h.attach(CollectionRepository.class);
-                        return collectionRepository.listCollections(institution);
-                    });
+                    List<Collection> collectionList = collectionService.listCollectionsInternal(institution);
                     if (!collectionList.isEmpty()){
                         for (Collection collection : collectionList){
                             this.collectionCache.putCollectionInCacheIfAbsent(institution.name(), collection.name(), collection);

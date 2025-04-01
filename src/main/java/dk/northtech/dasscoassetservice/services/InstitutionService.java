@@ -119,7 +119,7 @@ public class InstitutionService {
                     }
 
                     this.institutionMap.putAll(nameInstitution);
-//                    logger.info("Loaded {} institutions", institutionMap.size());
+                    logger.info("Loaded {} institutions", institutionMap.size());
                     return h;
                 });
                 this.initialised = true;
@@ -134,7 +134,7 @@ public class InstitutionService {
                 throw new IllegalArgumentException("Institution not found");
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
-            roleRepository.removeAllRestrictions(RestrictedObjectType.INSTITUTION, institution.name());
+//            roleRepository.removeAllRestrictions(RestrictedObjectType.INSTITUTION, institution.name());
             roleRepository.setRestrictions(RestrictedObjectType.INSTITUTION, institution.roleRestrictions() ,institution.name());
             institutionCache.put(institution.name(), institution);
             return h;

@@ -28,11 +28,13 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         Optional<Collection> testology = collectionService.findCollectionInternal("Testology","institution_1");
         assertThat(testology.isPresent()).isTrue();
         Collection resutl = testology.get();
+        // Verify that it is actually saved
+        assertThat(resutl.collection_id()).isNotNull();
+        assertThat(resutl.collection_id()).isGreaterThan(0);
         assertThat(resutl.name()).isEqualTo("Testology");
     }
 
     @Test
-    @Disabled
     void testSameNameDiffInstitutions() {
         institutionService.createInstitution(new Institution("testSameNameDiffInstitutions_1", new ArrayList<>()));
         institutionService.createInstitution(new Institution("testSameNameDiffInstitutions_2", new ArrayList<>()));
@@ -77,7 +79,7 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         Institution institution1 = new Institution("institution_1");
         List<Collection> before = collectionService.listCollections(institution1,user);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.persistCollection(new Collection("persistCollectionAlreadyExists", "institution_1", new ArrayList<>())));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection already exists in this institute");
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection already exists in this institution");
         List<Collection> after = collectionService.listCollections(institution1,user);
         assertThat(before.size()).isEqualTo(after.size());
     }
@@ -110,7 +112,7 @@ class CollectionServiceTest extends AbstractIntegrationTest {
     @Test
     void testListCollectionInstitutionDoesNotExist(){
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> collectionService.listCollections(new Institution("non-existent-institution"),user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution does not exist");
     }
 
     @Test
