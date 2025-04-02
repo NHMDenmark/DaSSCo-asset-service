@@ -136,7 +136,7 @@ public class AssetService {
         if (asset.asset_guid.equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
-        Optional<Workstation> workstationOpt = workstationService.findWorkstation(asset.workstation);
+        Optional<Workstation> workstationOpt = workstationService.findWorkstation(asset.workstation, asset.institution);
         if (workstationOpt.isEmpty()) {
             throw new IllegalArgumentException("Workstation does not exist");
         }

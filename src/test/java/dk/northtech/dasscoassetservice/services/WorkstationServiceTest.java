@@ -19,7 +19,7 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistWorkstation() {
         workstationService.createWorkStation("institution_1", new Workstation("testPersistWorkstation", WorkstationStatus.IN_SERVICE, "institution_1"));
-        Optional<Workstation> result = workstationService.findWorkstation("testPersistWorkstation");
+        Optional<Workstation> result = workstationService.findWorkstation("testPersistWorkstation", "institution_1");
         assertThat(result.isPresent()).isTrue();
         Workstation workstation = result.get();
         assertThat(workstation.name()).isEqualTo("testPersistWorkstation");
@@ -53,13 +53,20 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
     @Test
     void testUpdateWorkstation() {
         Workstation workstation = new Workstation("testUpdateWorkstation", WorkstationStatus.IN_SERVICE, "institution_1");
-        workstationService.createWorkStation("institution_1",workstation );
-        Workstation updatedWorkstation = new Workstation(workstation.name(), WorkstationStatus.OUT_OF_SERVICE, workstation.institution_name());
+        Workstation createdWorkStation = workstationService.createWorkStation("institution_1", workstation);
+        Workstation updatedWorkstation = new Workstation(workstation.name(), WorkstationStatus.OUT_OF_SERVICE, workstation.institution_name(),createdWorkStation.workstation_id());
         workstationService.updateWorkstation(updatedWorkstation, "institution_1");
-        Optional<Workstation> result = workstationService.findWorkstation("testUpdateWorkstation");
+        Optional<Workstation> result = workstationService.findWorkstation("testUpdateWorkstation", "institution_1");
         assertThat(result.isPresent()).isTrue();
         Workstation restul = result.get();
         assertThat(restul.status()).isEqualTo(WorkstationStatus.OUT_OF_SERVICE);
+        //Check if it is actually saved
+        workstationService.forceCacheRefresh();
+        Optional<Workstation> result2 = workstationService.findWorkstation("testUpdateWorkstation", "institution_1");
+        assertThat(result2.isPresent()).isTrue();;
+        Workstation workstation1 = result2.get();
+        assertThat(workstation1.status()).isEqualTo(WorkstationStatus.OUT_OF_SERVICE);
+
     }
 
     @Test
@@ -83,7 +90,7 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testFindWorkstation(){
-        Optional<Workstation> optWorkstation = workstationService.findWorkstation("i1_w1");
+        Optional<Workstation> optWorkstation = workstationService.findWorkstation("i1_w1","institution_1");
         assertThat(optWorkstation.isPresent()).isTrue();
         Workstation found = optWorkstation.get();
         assertThat(found.name()).isEqualTo("i1_w1");
@@ -93,7 +100,7 @@ class WorkstationServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testFindWorkstationFail(){
-        Optional<Workstation> optionalWorkstation = workstationService.findWorkstation("non-existent-workstation");
+        Optional<Workstation> optionalWorkstation = workstationService.findWorkstation("non-existent-workstation","institution_1");
         assertThat(optionalWorkstation.isPresent()).isFalse();
     }
 }

@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.cache;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.services.CollectionService;
+import dk.northtech.dasscoassetservice.services.WorkstationService;
 import dk.northtech.dasscoassetservice.webapi.v1.StatisticsDataApi;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
@@ -20,9 +21,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
 
     private final InstitutionCache institutionCache;
     private final CollectionCache collectionCache;
-
+    private final WorkstationService workstationService;
     private final WorkstationCache workstationCache;
-    private final WorkstationRepository workstationRepository;
     private final DigitiserRepository digitiserRepository;
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
@@ -37,7 +37,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     public CacheInitializer(InstitutionCache institutionCache,
                             CollectionService collectionService,
                             CollectionCache collectionCache,
-                            WorkstationCache workstationCache, WorkstationRepository workstationRepository,
+                            WorkstationCache workstationCache
+                            , WorkstationService workstationService,
                             DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
                             SubjectCache subjectCache,
                             PayloadTypeCache payloadTypeCache,
@@ -46,7 +47,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
         this.institutionCache = institutionCache;
         this.collectionCache = collectionCache;
         this.workstationCache = workstationCache;
-        this.workstationRepository = workstationRepository;
+        this.workstationService = workstationService;
         this.digitiserRepository = digitiserRepository;
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
@@ -78,7 +79,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
 //                            this.pipelineCache.putPipelineInCacheIfAbsent(pipeline);
 //                        }
 //                    }
-                    List<Workstation> workstationList = workstationRepository.listWorkStations(institution);
+                    List<Workstation> workstationList = workstationService.listWorkstations(institution);
                     if (!workstationList.isEmpty()){
                         for (Workstation workstation : workstationList){
                             this.workstationCache.putWorkstationInCacheIfAbsent(workstation);
