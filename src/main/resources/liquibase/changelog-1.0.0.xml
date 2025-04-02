@@ -269,16 +269,6 @@
                  , ('label')
         </sql>
     </changeSet>
-    <changeSet id="1.0.0:CREATE_DIGITISER" author="Thomas Skov Bornerup">
-        <createTable tableName="digitiser">
-            <column name="digitiser_id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" primaryKeyName="pk_digitiser"/>
-            </column>
-            <column name="name" type="text">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
     <changeSet id="1.0.0:CREATE_PAYLOAD_TYPE" author="Thomas Skov Bornerup">
         <createTable tableName="payload_type">
             <column name="payload_type" type="text">
@@ -434,9 +424,9 @@
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="digitiser_id"
-                constraintName="fk_asset__digitiser"
-                referencedTableName="digitiser"
-                referencedColumnNames="digitiser_id"/>
+                constraintName="fk_asset__user"
+                referencedTableName="user"
+                referencedColumnNames="user_id"/>
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="payload_type"
@@ -546,7 +536,7 @@
             <column name="event_id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" primaryKeyName="pk_event"/>
             </column>
-            <column name="user" type="int">
+            <column name="user_id" type="int">
                 <constraints nullable="false"/>
             </column>
             <column name="event" type="text">
@@ -570,6 +560,12 @@
                 constraintName="fk_event__event_type"
                 referencedTableName="event_type"
                 referencedColumnNames="event"/>
+        <addForeignKeyConstraint
+                baseTableName="event"
+                baseColumnNames="user_id"
+                constraintName="fk_event__user"
+                referencedTableName="user"
+                referencedColumnNames="user_id"/>
     </changeSet>
     <changeSet id="1.0.0:CREATE_LEGAL" author="Thomas Skov Bornerup">
         <createTable tableName="legal">
@@ -627,7 +623,7 @@
             <column name="digitiser_list_id" type="int">
                 <constraints primaryKey="true" primaryKeyName="pk_digitiser_list"/>
             </column>
-            <column name="digitiser_id" type="int">
+            <column name="user_id" type="int">
                 <constraints nullable="false"/>
             </column>
             <column name="asset_guid" type="text">
@@ -638,10 +634,10 @@
     <changeSet id="1.0.0:ADD_DIGITISER_LIST_FKEYS" author="Thomas Skov Bornerup">
         <addForeignKeyConstraint
                 baseTableName="digitiser_list"
-                baseColumnNames="digitiser_id"
-                constraintName="fk_digitiser_list__digitiser"
-                referencedTableName="digitiser"
-                referencedColumnNames="digitiser_id"/>
+                baseColumnNames="user_id"
+                constraintName="fk_digitiser_list__user"
+                referencedTableName="user"
+                referencedColumnNames="user_id"/>
         <addForeignKeyConstraint
                 baseTableName="digitiser_list"
                 baseColumnNames="asset_guid"
