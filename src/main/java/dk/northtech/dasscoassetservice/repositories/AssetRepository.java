@@ -73,13 +73,13 @@ public interface AssetRepository extends SqlObject {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
             } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
-                asset1.date_metadata_updated = event.timeStamp;
+                asset1.date_metadata_updated = event.timestamp;
             } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
-                asset1.date_metadata_updated = event.timeStamp;
+                asset1.date_metadata_updated = event.timestamp;
             } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
-                asset1.date_metadata_updated = event.timeStamp;
+                asset1.date_metadata_updated = event.timestamp;
             } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
-                asset1.date_asset_deleted = event.timeStamp;
+                asset1.date_asset_deleted = event.timestamp;
             }
         }
         asset1.events = events;
@@ -170,7 +170,7 @@ public interface AssetRepository extends SqlObject {
                     .map(new EventMapper())
                     .list();
 
-            events.sort(Collections.reverseOrder(Comparator.comparing(event -> event.timeStamp)));
+            events.sort(Collections.reverseOrder(Comparator.comparing(event -> event.timestamp)));
             return events;
         });
     }
@@ -820,7 +820,7 @@ public interface AssetRepository extends SqlObject {
                         .add("asset_guid", asset.asset_guid)
 //                        .add("user", user)
                         .add("event", event.event.name())
-                        .add("updated_date", event.timeStamp.toEpochMilli());
+                        .add("updated_date", event.timestamp.toEpochMilli());
                 if (event.user != null) {
                     builder.add("user", event.user);
                 }

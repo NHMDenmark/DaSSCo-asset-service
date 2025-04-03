@@ -326,7 +326,7 @@ public interface BulkUpdateRepository extends SqlObject {
                     .map(new EventMapper())
                     .list();
 
-            events.sort(Collections.reverseOrder(Comparator.comparing(event -> event.timeStamp)));
+            events.sort(Collections.reverseOrder(Comparator.comparing(event -> event.timestamp)));
             return events;
         });
     }
@@ -528,7 +528,7 @@ public interface BulkUpdateRepository extends SqlObject {
                         .add("asset_guid", asset.asset_guid)
 //                        .add("user", user)
                         .add("event", event.event.name())
-                        .add("updated_date", event.timeStamp.toEpochMilli());
+                        .add("updated_date", event.timestamp.toEpochMilli());
                 if (event.user != null) {
                     builder.add("user", event.user);
                 }

@@ -142,7 +142,7 @@ public class BulkUpdateService {
         event.user = user.username;
         event.workstation = updatedAsset.workstation;
         event.pipeline = updatedAsset.pipeline;
-        event.timeStamp = Instant.now();
+        event.timestamp = Instant.now();
 //
         assets.forEach(asset -> {
             Map<String, String> existingTags = new HashMap<>(asset.tags);

@@ -23,12 +23,14 @@ public class AssetGroupService {
     private final Jdbi jdbi;
 
     private final RightsValidationService rightsValidationService;
-
+    private UserService userService;
     @Inject
     public AssetGroupService(Jdbi jdbi,
+                             UserService userService,
                              RightsValidationService rightsValidationService){
         this.jdbi = jdbi;
         this.rightsValidationService = rightsValidationService;
+        this.userService = userService;
     }
 
     public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, User user){
@@ -79,7 +81,7 @@ public class AssetGroupService {
 
             // Check if all the users exist!
             for (String username : assetGroup.hasAccess){
-                if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                if(jdbi.onDemand(UserService.class).getUserIfExists(username).isEmpty()){
                     throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
                 }
             }
@@ -252,7 +254,7 @@ public class AssetGroupService {
 
         // Check if all the users exist!
         for (String username : users){
-            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+            if(userService.getUserIfExists(username).isEmpty()){
                 throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
             }
         }
@@ -295,7 +297,7 @@ public class AssetGroupService {
 
         // Check if all the users exist!
         for (String username : users){
-            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+            if(userService.getUserIfExists(username).isEmpty()){
                 throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
             }
         }

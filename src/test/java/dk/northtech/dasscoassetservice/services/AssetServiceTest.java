@@ -398,7 +398,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Instant latestUpdate;
         List<Instant> updates = resultEvents.stream()
                 .filter(x -> x.event.equals(DasscoEvent.UPDATE_ASSET_METADATA))
-                .map(x -> x.timeStamp)
+                .map(x -> x.timestamp)
                 .sorted().toList();
         //The last update event
         assertThat(resultAsset.date_metadata_updated).isEqualTo(updates.get(1));

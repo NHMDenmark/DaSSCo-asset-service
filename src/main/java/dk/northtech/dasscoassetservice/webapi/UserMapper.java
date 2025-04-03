@@ -39,7 +39,7 @@ public class UserMapper {
             return authority;
         }).forEach(role -> user.roles.add(role));
 
-        user.keycloakId = String.valueOf(tokenAttributes.get("sub"));
+        user.keycloak_id = String.valueOf(tokenAttributes.get("sub"));
         user.username = String.valueOf(tokenAttributes.get("preferred_username"));
         user.token = token.getToken().getTokenValue();
         return user;

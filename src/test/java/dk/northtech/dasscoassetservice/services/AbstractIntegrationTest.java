@@ -54,6 +54,8 @@ public class AbstractIntegrationTest {
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
     @Inject ExtendableEnumService extendableEnumService;
+
+    @Inject UserService userService;
     User user = new User();
     @Inject
     void setAssetService(AssetService assetService, AssetService assetService2) {
