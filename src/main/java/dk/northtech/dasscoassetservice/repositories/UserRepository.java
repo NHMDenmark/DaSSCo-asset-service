@@ -29,7 +29,12 @@ public interface UserRepository extends SqlObject {
     @SqlQuery("SELECT * FROM dassco_user WHERE user.keycloak_id = :keycloak_id")
     User getUserByKeycloakId(String username);
 
-    @SqlQuery("SELECT username FROM digitiser_list WHERE asset_guid = :assetId")
+    @SqlQuery("""
+    SELECT username 
+    FROM digitiser_list 
+    LEFT JOIN dassco_user USING (dassco_user_id)
+    WHERE asset_guid = :assetId
+    """)
     List<String> getDigitiserList(String assetId);
 
     @GetGeneratedKeys
@@ -48,7 +53,7 @@ public interface UserRepository extends SqlObject {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    @SqlUpdate("INSERT INTO digitiser_list(asset_guid, dassco_user) VALUES (:assetGuid, :dasscoUserId)")
+    @SqlUpdate("INSERT INTO digitiser_list(asset_guid, dassco_user_id) VALUES (:assetGuid, :dasscoUserId)")
     void addDigitiser(String assetGuid, int dasscoUserId);
 
     @Transaction
@@ -56,92 +61,4 @@ public interface UserRepository extends SqlObject {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-//    default boolean userHasAccessToAssetInternal(String user, String assetGuid){
-//        String sql = """
-//                SELECT * FROM ag_catalog.cypher(
-//                    'dassco'
-//                        , $$
-//                        MATCH (u:User {name: $user_name})
-//                        MATCH (a:Asset {asset_guid: $asset_guid})
-//                        MATCH (ag:Asset_Group)-[:CONTAINS]->(a)
-//                        MATCH (u)<-[:HAS_ACCESS]-(ag)
-//                        RETURN COUNT(*) > 0 AS hasAccess
-//                    $$
-//                    , #params) as (hasAccess agtype);
-//                """;
-//
-//        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-//                .add("user_name", user);
-//        builder.add("asset_guid", assetGuid);
-//
-//        try {
-//            return withHandle(handle -> {
-//                Agtype agtype = AgtypeFactory.create(builder.build());
-//                return handle.createQuery(sql)
-//                        .bind("params", agtype)
-//                        .mapTo(Boolean.class)
-//                        .findOne()
-//                        .orElse(false);
-//            });
-//        } catch (Exception e){
-//            throw new RuntimeException(e);
-//        }
-//    }
-
-//    default boolean getUserByUsernameInternal(String username){
-//        String sql = """
-//                SELECT * FROM ag_catalog.cypher(
-//                    'dassco'
-//                        , $$
-//                        MATCH (u:User {name: $user_name})
-//                        RETURN EXISTS((u))
-//                    $$
-//                    , #params) as (u agtype);
-//                """;
-//
-//        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-//                .add("user_name", username);
-//
-//        try {
-//            return withHandle(handle -> {
-//                Agtype agtype = AgtypeFactory.create(builder.build());
-//                return handle.createQuery(sql)
-//                        .bind("params", agtype)
-//                        .mapTo(Boolean.class)
-//                        .findOne()
-//                        .orElse(false);
-//            });
-//        } catch (Exception e){
-//            throw new RuntimeException(e);
-//        }
-//    }
-
-//    default boolean isUserOwnerOfAssetGroupInternal(String groupName, String username){
-//        String sql = """
-//                SELECT * FROM ag_catalog.cypher(
-//                    'dassco'
-//                        , $$
-//                        MATCH (u:User {name: $user_name})<-[:MADE_BY]-(ag:Asset_Group {name: $asset_group})
-//                        RETURN EXISTS((u))
-//                    $$
-//                    , #params) as (u agtype);
-//                """;
-//
-//        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-//                .add("user_name", username);
-//        builder.add("asset_group", groupName);
-//
-//        try {
-//            return withHandle(handle -> {
-//                Agtype agtype = AgtypeFactory.create(builder.build());
-//                return handle.createQuery(sql)
-//                        .bind("params", agtype)
-//                        .mapTo(Boolean.class)
-//                        .findOne()
-//                        .orElse(false);
-//            });
-//        } catch (Exception e){
-//            throw new RuntimeException(e);
-//        }
-//    }
 }

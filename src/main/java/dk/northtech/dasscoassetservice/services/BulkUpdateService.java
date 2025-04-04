@@ -140,7 +140,6 @@ public class BulkUpdateService {
         Event event = new Event();
         event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
         event.user = user.username;
-        event.workstation = updatedAsset.workstation;
         event.pipeline = updatedAsset.pipeline;
         event.timestamp = Instant.now();
 //

@@ -45,72 +45,7 @@ public interface CollectionRepository extends SqlObject {
     @GetGeneratedKeys("collection_id")
     Collection persistCollection(@BindMethods Collection collection);
 
-//    default List<Collection> listCollections(Institution institution) {
-////        String sql =
-////                """
-////                        SELECT * FROM ag_catalog.cypher('dassco'
-////                         , $$
-////                             MATCH (c:Collection)-[USED_BY]-(i:Institution)
-////                             WHERE i.name = $institution_name
-////                             OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
-////                             RETURN c.name
-////                             , i.name
-////                             , collect(r)
-////                           $$
-////                         , #params
-////                        ) as (collection_name agtype, institution_name agtype, roles agtype);""";
-////
-////
-////        try {
-////            return withHandle(handle -> {
-////                // We have to register the type
-////                Connection connection = handle.getConnection();
-////                PgConnection pgConn = connection.unwrap(PgConnection.class);
-////                pgConn.addDataType("agtype", Agtype.class);
-////
-////                AgtypeMap name = new AgtypeMapBuilder().add("institution_name", institution.name()).build();
-////                Agtype agtype = AgtypeFactory.create(name);
-////                handle.execute(DBConstants.AGE_BOILERPLATE);
-////                return handle.createQuery(sql).bind("params", agtype)
-////                        .map(new CollectionMapper()).list();
-////            });
-////        } catch (Exception e) {
-////            throw new RuntimeException(e);
-////        }
-//        return null;
-//    }
 
-//    default Optional<Collection> findCollection(String collectionName, String institutionName) {
-//        String sql =
-//                """
-//                        SELECT * FROM ag_catalog.cypher('dassco'
-//                         , $$
-//                             MATCH (c:Collection{name: $collection_name})-[USED_BY]-(i:Institution{name: $institution_name})
-//                             OPTIONAL MATCH (c)-[:RESTRICTED_TO]->(r:Role)
-//                             RETURN c.name, i.name, collect(r)
-//                           $$
-//                         , #params
-//                        ) as (collection_name agtype, institution_name agtype, roles agtype);""";
-//
-//
-//        try {
-//            return withHandle(handle -> {
-//                // We have to register the type
-//                Connection connection = handle.getConnection();
-//                PgConnection pgConn = connection.unwrap(PgConnection.class);
-//                pgConn.addDataType("agtype", Agtype.class);
-//                AgtypeMap name = new AgtypeMapBuilder()
-//                        .add("collection_name", collectionName)
-//                        .add("institution_name", institutionName).build();
-//                Agtype agtype = AgtypeFactory.create(name);
-//                handle.execute(DBConstants.AGE_BOILERPLATE);
-//                return handle.createQuery(sql).bind("params", agtype)
-//                        .map(new CollectionMapper()).findOne();
-//            });
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 
     @SqlQuery("SELECT * FROM collection")
     List<Collection> readAll();

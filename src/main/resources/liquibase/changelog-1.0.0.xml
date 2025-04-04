@@ -138,12 +138,12 @@
 
     <changeSet id="1.0.0:CREATE_ASSET_STATUS" author="Thomas Skov Bornerup">
         <createTable tableName="asset_status">
-            <column name="status" type="TEXT">
+            <column name="asset_status" type="TEXT">
                 <constraints primaryKey="true" primaryKeyName="pk_asset_status"/>
             </column>
         </createTable>
         <sql>
-            INSERT INTO asset_status(status)
+            INSERT INTO asset_status(asset_status)
             VALUES ('WORKING_COPY')
                  , ('ARCHIVE')
                  , ('BEING_PROCESSED')
@@ -234,6 +234,18 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="1.0.0:CREATE_PREPARATION_TYPE" author="Thomas Skov Bornerup">
+        <createTable tableName="preparation_type">
+            <column name="preparation_type" type="text">
+                <constraints primaryKey="true" primaryKeyName="pk_preparation_type"/>
+            </column>
+        </createTable>
+        <sql>
+            INSERT INTO preparation_type(preparation_type)
+            VALUES ('slide')
+                , ('pinning')
+        </sql>
+    </changeSet>
     <changeSet id="1.0.0:ADD_SPECIMEN_FKEYS" author="Thomas Skov Bornerup">
         <addForeignKeyConstraint
                 baseTableName="specimen"
@@ -241,6 +253,12 @@
                 constraintName="fk_specimen__collection"
                 referencedTableName="collection"
                 referencedColumnNames="collection_id"/>
+        <addForeignKeyConstraint
+                baseTableName="specimen"
+                baseColumnNames="preparation_type"
+                constraintName="fk_specimen__preparation_type"
+                referencedTableName="preparation_type"
+                referencedColumnNames="preparation_type"/>
     </changeSet>
     <changeSet id="VERSION-1.0.0" author="Thomas Skov Bornerup" contextFilter="default">
         <tagDatabase tag="VERSION-1.0.0" />
@@ -269,13 +287,13 @@
                  , ('label')
         </sql>
     </changeSet>
-    <changeSet id="1.0.0:CREATE_PAYLOAD_TYPE" author="Thomas Skov Bornerup">
-        <createTable tableName="payload_type">
-            <column name="payload_type" type="text">
-                <constraints primaryKeyName="pk_payload_type" primaryKey="true"/>
-            </column>
-        </createTable>
-    </changeSet>
+<!--    <changeSet id="1.0.0:CREATE_PAYLOAD_TYPE" author="Thomas Skov Bornerup">-->
+<!--        <createTable tableName="payload_type">-->
+<!--            <column name="payload_type" type="text">-->
+<!--                <constraints primaryKeyName="pk_payload_type" primaryKey="true"/>-->
+<!--            </column>-->
+<!--        </createTable>-->
+<!--    </changeSet>-->
     <changeSet id="1.0.0:CREATE_EVENT_TYPE" author="Thomas Skov Bornerup">
         <createTable tableName="event_type">
             <column name="event" type="text">
@@ -300,9 +318,12 @@
         </sql>
     </changeSet>
     <changeSet id="1.0.0:CREATE_USER" author="Thomas Skov Bornerup">
-        <createTable tableName="user">
-            <column name="user_id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" primaryKeyName="pk_user"/>
+        <createTable tableName="dassco_user">
+            <column name="dassco_user_id" type="int" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_dassco_user"/>
+            </column>
+            <column name="keycloak_id" type="text">
+                <constraints nullable="true" unique="true"/>
             </column>
             <column name="username" type="text">
                 <constraints nullable="false" unique="true"/>
@@ -357,9 +378,6 @@
             <column name="file_format" type="text">
                 <constraints nullable="true"/>
             </column>
-            <column name="multi_specimen" type="boolean">
-                <constraints nullable="false"/>
-            </column>
             <column name="payload_type" type="text">
                 <constraints nullable="true"/>
             </column>
@@ -372,9 +390,9 @@
             <column name="workstation_id" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="pipeline_id" type="int">
-                <constraints nullable="false"/>
-            </column>
+<!--            <column name="pipeline_id" type="int">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
             <column name="internal_status" type="text">
                 <constraints nullable="false"/>
             </column>
@@ -393,13 +411,13 @@
             <column name="camera_setting_control" type="text">
                 <constraints nullable="true"/>
             </column>
-            <column name="date_asset_taken>" type="timestamp">
-                <constraints nullable="false"/>
+            <column name="date_asset_taken" type="timestamp">
+                <constraints nullable="true"/>
             </column>
             <column name="date_asset_finalised" type="timestamp">
                 <constraints nullable="true"/>
             </column>
-            <column name="initial_metadata_rocorded_by" type="text">
+            <column name="initial_metadata_recorded_by" type="text">
                 <constraints nullable="true"/>
             </column>
             <column name="date_metadata_ingested" type="timestamp">
@@ -424,21 +442,21 @@
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="digitiser_id"
-                constraintName="fk_asset__user"
-                referencedTableName="user"
-                referencedColumnNames="user_id"/>
-        <addForeignKeyConstraint
-                baseTableName="asset"
-                baseColumnNames="payload_type"
-                constraintName="fk_asset__payload_type"
-                referencedTableName="payload_type"
-                referencedColumnNames="payload_type"/>
+                constraintName="fk_asset__dassco_user"
+                referencedTableName="dassco_user"
+                referencedColumnNames="dassco_user_id"/>
+<!--        <addForeignKeyConstraint-->
+<!--                baseTableName="asset"-->
+<!--                baseColumnNames="payload_type"-->
+<!--                constraintName="fk_asset__payload_type"-->
+<!--                referencedTableName="payload_type"-->
+<!--                referencedColumnNames="payload_type"/>-->
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="status"
                 constraintName="fk_asset__asset_status"
                 referencedTableName="asset_status"
-                referencedColumnNames="status"/>
+                referencedColumnNames="asset_status"/>
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="workstation_id"
@@ -536,14 +554,20 @@
             <column name="event_id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" primaryKeyName="pk_event"/>
             </column>
-            <column name="user_id" type="int">
+            <column name="asset_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dassco_user_id" type="int">
                 <constraints nullable="false"/>
             </column>
             <column name="event" type="text">
                 <constraints nullable="false"/>
             </column>
-            <column name="asset_guid" type="text">
+            <column name="timestamp" type="timestamp" defaultValue="now()">
                 <constraints nullable="false"/>
+            </column>
+            <column name="pipeline_id" type="int">
+                <constraints nullable="true"/>
             </column>
         </createTable>
     </changeSet>
@@ -562,10 +586,16 @@
                 referencedColumnNames="event"/>
         <addForeignKeyConstraint
                 baseTableName="event"
-                baseColumnNames="user_id"
-                constraintName="fk_event__user"
-                referencedTableName="user"
-                referencedColumnNames="user_id"/>
+                baseColumnNames="dassco_user_id"
+                constraintName="fk_event__dassco_user"
+                referencedTableName="dassco_user"
+                referencedColumnNames="dassco_user_id"/>
+        <addForeignKeyConstraint
+                baseTableName="event"
+                baseColumnNames="pipeline_id"
+                constraintName="fk_event__pipeline"
+                referencedTableName="pipeline"
+                referencedColumnNames="pipeline_id"/>
     </changeSet>
     <changeSet id="1.0.0:CREATE_LEGAL" author="Thomas Skov Bornerup">
         <createTable tableName="legal">
@@ -593,7 +623,7 @@
     </changeSet>
     <changeSet id="1.0.0:CREATE_ASSET_FUNDING" author="Thomas Skov Bornerup">
         <createTable tableName="asset_funding">
-            <column name="asset_funding_id" type="int">
+            <column name="asset_funding_id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" primaryKeyName="asset_funding_id"/>
             </column>
             <column name="funding_id" type="int">
@@ -620,10 +650,10 @@
     </changeSet>
     <changeSet id="1.0.0:CREATE_DIGITISER_LIST" author="Thomas Skov Bornerup">
         <createTable tableName="digitiser_list">
-            <column name="digitiser_list_id" type="int">
+            <column name="digitiser_list_id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" primaryKeyName="pk_digitiser_list"/>
             </column>
-            <column name="user_id" type="int">
+            <column name="dassco_user_id" type="int">
                 <constraints nullable="false"/>
             </column>
             <column name="asset_guid" type="text">
@@ -634,10 +664,10 @@
     <changeSet id="1.0.0:ADD_DIGITISER_LIST_FKEYS" author="Thomas Skov Bornerup">
         <addForeignKeyConstraint
                 baseTableName="digitiser_list"
-                baseColumnNames="user_id"
-                constraintName="fk_digitiser_list__user"
-                referencedTableName="user"
-                referencedColumnNames="user_id"/>
+                baseColumnNames="dassco_user_id"
+                constraintName="fk_digitiser_list__dassco_user"
+                referencedTableName="dassco_user"
+                referencedColumnNames="dassco_user_id"/>
         <addForeignKeyConstraint
                 baseTableName="digitiser_list"
                 baseColumnNames="asset_guid"
@@ -661,9 +691,9 @@
     <changeSet id="1.0.0:ADD_ASSET_GROUP_FKEY" author="Thomas Skov Bornerup">
         <addForeignKeyConstraint baseTableName="asset_group"
                                  baseColumnNames="creator_user_id"
-                                 constraintName="pk_asset_group__user"
-                                 referencedTableName="user"
-                                 referencedColumnNames="user_id"/>
+                                 constraintName="fk_asset_group__dassco_user"
+                                 referencedTableName="dassco_user"
+                                 referencedColumnNames="dassco_user_id"/>
     </changeSet>
     <changeSet id="1.0.0:CREATE_ASSET_GROUP_ACCESS" author="Thomas Skov Bornerup">
         <createTable tableName="asset_group_access">
@@ -673,7 +703,7 @@
             <column name="asset_group_id" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="user_id" type="int">
+            <column name="dassco_user_id" type="int">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -685,10 +715,10 @@
                                  referencedTableName="asset_group"
                                  referencedColumnNames="asset_group_id"/>
         <addForeignKeyConstraint baseTableName="asset_group_access"
-                                 baseColumnNames="user_id"
-                                 constraintName="fk_asset_group_access__user"
-                                 referencedTableName="user"
-                                 referencedColumnNames="user_id"/>
+                                 baseColumnNames="dassco_user_id"
+                                 constraintName="fk_asset_group_access__dassco_user"
+                                 referencedTableName="dassco_user"
+                                 referencedColumnNames="dassco_user_id"/>
     </changeSet>
     <changeSet id="1.0.0:CREATE_ASSET_GROUP_ASSET" author="Thomas Skov Bornerup">
         <createTable tableName="asset_group_asset">
@@ -715,4 +745,30 @@
                                  referencedTableName="asset"
                                  referencedColumnNames="asset_guid"/>
     </changeSet>
+    <changeSet id="1.0.0:CREATE_ASSET_SPECIMEN" author="Thomas Skov Bornerup">
+        <createTable tableName="asset_specimen">
+            <column name="asset_specimen_id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_asset_specimen"/>
+            </column>
+            <column name="asset_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="specimen_id" type="int">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1.0.0:ADD_ASSET_SPECIMEN_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint baseTableName="asset_specimen"
+                                 baseColumnNames="asset_guid"
+                                 constraintName="fk_asset_specimen__asset"
+                                 referencedTableName="asset"
+                                 referencedColumnNames="asset_guid"/>
+        <addForeignKeyConstraint baseTableName="asset_specimen"
+                                 baseColumnNames="specimen_id"
+                                 constraintName="fk_asset_specimen__specimen"
+                                 referencedTableName="specimen"
+                                 referencedColumnNames="specimen_id"/>
+    </changeSet>
+
 </databaseChangeLog>

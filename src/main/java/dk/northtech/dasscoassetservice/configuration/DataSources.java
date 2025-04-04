@@ -57,8 +57,12 @@ public class DataSources {
             .registerRowMapper(ConstructorMapper.factory(Workstation.class))
             .registerRowMapper(ConstructorMapper.factory(Pipeline.class))
             .registerRowMapper(ConstructorMapper.factory(Role.class))
+            .registerRowMapper(ConstructorMapper.factory(User.class))
             .registerRowMapper(ConstructorMapper.factory(InstitutionRoleRestriction.class))
             .registerRowMapper(ConstructorMapper.factory(CollectionRoleRestriction.class))
+            .registerRowMapper(ConstructorMapper.factory(Specimen.class))
+            .registerRowMapper(ConstructorMapper.factory(Event.class))
+            .registerRowMapper(ConstructorMapper.factory(Funding.class))
             .registerColumnMapper(Role.class, (rs, col, ctx) -> new Role(rs.getString("role")))
            ;
   }

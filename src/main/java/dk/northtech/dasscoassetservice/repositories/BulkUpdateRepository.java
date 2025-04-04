@@ -494,9 +494,6 @@ public interface BulkUpdateRepository extends SqlObject {
         if (event.pipeline != null) {
             sql += "MATCH (p:Pipeline {name: $pipeline_name}) ";
         }
-        if (event.workstation != null) {
-            sql += "MATCH (w:Workstation {name: $workstation_name}) ";
-        }
         if (event.user != null) {
 
             sql += "MERGE (u:User{user_id: $user, name: $user}) ";
@@ -511,9 +508,6 @@ public interface BulkUpdateRepository extends SqlObject {
         }
         if (event.pipeline != null) {
             sql += " MERGE (e)-[pu:USED]->(p) ";
-        }
-        if (event.workstation != null) {
-            sql += " MERGE (e)-[wu:USED]->(w) ";
         }
         sql +=
                 """
@@ -532,9 +526,7 @@ public interface BulkUpdateRepository extends SqlObject {
                 if (event.user != null) {
                     builder.add("user", event.user);
                 }
-                if (event.workstation != null) {
-                    builder.add("workstation_name", event.workstation);
-                }
+
                 if (event.pipeline != null) {
                     builder.add("pipeline_name", event.pipeline);
                 }

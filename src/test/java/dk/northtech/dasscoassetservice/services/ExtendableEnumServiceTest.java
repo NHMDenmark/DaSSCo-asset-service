@@ -56,7 +56,7 @@ class ExtendableEnumServiceTest extends AbstractIntegrationTest {
     @Test
     void updateEnumDoesNotExist() {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> extendableEnumService.updateEnum(ExtendableEnumService.ExtendableEnum.STATUS, "ARCHYVE", "ARCHIVED"));
-        assertThat(illegalArgumentException.getMessage()).isEqualTo("status doesnt exist");
+        assertThat(illegalArgumentException.getMessage()).isEqualTo("asset_status doesnt exist");
         IllegalArgumentException illegalArgumentExceptionFF = assertThrows(IllegalArgumentException.class, () -> extendableEnumService.updateEnum(ExtendableEnumService.ExtendableEnum.FILE_FORMAT, "MP3", "MP4"));
         assertThat(illegalArgumentExceptionFF.getMessage()).isEqualTo("file_format doesnt exist");
 

@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.repositories;
 
+import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
@@ -15,6 +16,7 @@ import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 
@@ -32,6 +35,81 @@ public interface AssetRepository extends SqlObject {
 //    private DataSource dataSource;
     static final Logger logger = LoggerFactory.getLogger(AssetRepository.class);
 
+    static String INSERT_BASE_ASSET =
+            """
+            INSERT INTO public.asset(
+                     asset_guid
+                    , asset_locked
+                    , subject
+                    , collection_id
+                    , digitiser_id
+                    , file_format
+                    , payload_type
+                    , status
+                    , tags
+                    , workstation_id
+                    , internal_status
+                    , make_public
+                    , metadata_source
+                    , push_to_specify
+                    , metadata_version
+                    , camera_setting_control
+                    , date_asset_taken
+                    , date_asset_finalised
+                    , initial_metadata_recorded_by
+                    , date_metadata_ingested
+                  ) VALUES (
+                    :assetGuid
+                    , :assetLocked
+                    , :subject
+                    , :collectionId
+                    , :digitiserId
+                    , :fileFormat
+                    , :payloadType
+                    , :status
+                    , :tags::jsonb
+                    , :workstationId
+                    , :internalStatus
+                    , :makePublic
+                    , :metadataSource
+                    , :pushToSpecify
+                    , :metadataVersion
+                    , :cameraSettingControl
+                    , :date_asset_taken
+                    , :dateAssetFinalised
+                    , :initialMetadataRecordedBy
+                    , :dateMetadataIngested
+                  );
+    """;
+
+    default void insertBaseAsset(Asset asset) {
+        withHandle(handle -> {
+            handle.createUpdate(INSERT_BASE_ASSET)
+                    .bind("assetGuid", asset.asset_guid)
+                    .bind("assetLocked", asset.asset_locked)
+                    .bind("subject", asset.subject.toLowerCase())
+                    .bind("collectionId", asset.collection_id)
+                    .bind("digitiserId", asset.digitiser_id)
+                    .bind("fileFormat", asset.file_format)
+                    .bind("multiSpecimen", asset.multi_specimen)
+                    .bind("payloadType", asset.payload_type)
+                    .bind("status", asset.status)
+                    .bind("tags", new Gson().toJson( asset.tags)) // Assuming 'tags' is a Map or List of JSON-compatible types
+                    .bind("workstationId", asset.workstation_id)
+                    .bind("internalStatus", asset.internal_status)
+                    .bind("makePublic", asset.make_public)
+                    .bind("metadataSource", asset.metadata_source)
+                    .bind("pushToSpecify", asset.push_to_specify)
+                    .bind("metadataVersion", asset.metadata_version)
+                    .bind("cameraSettingControl", asset.camera_setting_control)
+                    .bind("date_asset_taken", asset.date_asset_taken != null ? Timestamp.from(asset.date_asset_taken):null)
+                    .bind("dateAssetFinalised", asset.date_asset_finalised != null ?Timestamp.from(asset.date_asset_finalised):null)
+                    .bind("initialMetadataRecordedBy", asset.initial_metadata_recorded_by)
+                    .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested): null)
+                    .execute();
+            return handle;
+        });
+    };
     @CreateSqlObject
     SpecimenRepository createSpecimenRepository();
 
@@ -50,17 +128,30 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
-    @Transaction
-    default Asset createAsset(Asset asset) {
-        boilerplate();
-        persistAssetNew(asset);
-        createSpecimenRepository().persistSpecimens(asset, new ArrayList<>());
-        connectParentChild(asset.parent_guid, asset.asset_guid);
-        return asset;
-    }
+//    @Transaction
+//    default Asset createAsset(Asset asset) {
+//        boilerplate();
+//        persistAssetNew(asset);
+//        createSpecimenRepository().persistSpecimens(asset, new ArrayList<>());
+//        connectParentChild(asset.parent_guid, asset.asset_guid);
+//        return asset;
+//    }
+
+    String READ_ASSET = """
+            SELECT asset.*
+                , collection.collection_name
+                , collection.institution_name
+                , dassco_user.username AS digitiser
+                , workstation.workstation_name 
+            FROM asset
+            LEFT JOIN collection USING(collection_id)
+            LEFT JOIN workstation USING(workstation_id)  
+            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+            """;
 
     @Transaction
     default Optional<Asset> readAsset(String assetId) {
+
         boilerplate();
         Optional<Asset> asset = readAssetInternalNew(assetId);
         if (asset.isEmpty()) {
@@ -92,7 +183,7 @@ public interface AssetRepository extends SqlObject {
         boilerplate();
         update_asset_internal(asset);
         connectParentChild(asset.parent_guid, asset.asset_guid);
-        createSpecimenRepository().persistSpecimens(asset, specimenToDetach);
+//        createSpecimenRepository().persistSpecimens(asset, specimenToDetach);
         return asset;
     }
 
@@ -108,24 +199,15 @@ public interface AssetRepository extends SqlObject {
     default Asset updateAssetAndEvent(Asset asset, Event event) {
         boilerplate();
         updateAssetNoEventInternal(asset);
-        setEvent(event.user, event, asset);
+//        setEvent(event.user, event, asset);
         return asset;
     }
 
     default Optional<Asset> readAssetInternalNew(String assetGuid) {
-        String sql = """
-                  SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                    , $$
-                         MATCH (asset:Asset{name: $asset_guid})
-                      """ + READ_WITHOUT_WHERE;
+        String sql = READ_ASSET + " WHERE asset_guid = :asset_guid";
         return withHandle(handle -> {
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guid", assetGuid)
-                    .build();
-            Agtype agtype = AgtypeFactory.create(agParams);
             return handle.createQuery(sql)
-                    .bind("params", agtype)
+                    .bind("asset_guid", assetGuid)
                     .map(new AssetMapper())
                     .findOne();
         });
@@ -343,56 +425,56 @@ public interface AssetRepository extends SqlObject {
         return sb.toString();
     }
 
-    default Asset persistAssetNew(Asset asset) {
-        System.out.println(asset);
-        //fileformats
-        //issues
-        //digitiser list
-        //funding
-        AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-        asset.file_formats.forEach(agtypeListBuilder::add);
-        AgtypeMapBuilder tags = new AgtypeMapBuilder();
-        asset.tags.forEach((key, value) -> tags.add(key, value)); //(tag -> tags.add(tag));
-        AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-        asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-        AgtypeMapBuilder agBuilder = new AgtypeMapBuilder()
-                .add("institution_name", asset.institution)
-                .add("collection_name", asset.collection)
-                .add("workstation_name", asset.workstation)
-                .add("pipeline_name", asset.pipeline)
-                .add("internal_status", asset.internal_status.name())
-                .add("status", asset.status)
-                .add("asset_guid", asset.asset_guid)
-                .add("asset_pid", asset.asset_pid)
-//                        .add("funding", asset.funding)
-//                        .add("payload_type", asset.payload_type)
-//                        .add("file_formats", agtypeListBuilder.build())
-                .add("created_date", asset.created_date.toEpochMilli())
-                .add("user", asset.digitiser)
-                .add("tags", tags.build())
-                .add("asset_locked", asset.asset_locked)
-                .add("make_public", asset.make_public)
-                .add("push_to_specify", asset.push_to_specify);
-
-
-        String sql =
-                buildCreateSQL(asset, agBuilder);
-        logger.info("sql {}", sql);
-        try {
-            withHandle(handle -> {
-                AgtypeMap parms = agBuilder.build();
-                Agtype agtype = AgtypeFactory.create(parms);
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return asset;
-    }
-
+//    default Asset persistAssetNew(Asset asset) {
+//        System.out.println(asset);
+//        //fileformats
+//        //issues
+//        //digitiser list
+//        //funding
+//        AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
+//        asset.file_formats.forEach(agtypeListBuilder::add);
+//        AgtypeMapBuilder tags = new AgtypeMapBuilder();
+//        asset.tags.forEach((key, value) -> tags.add(key, value)); //(tag -> tags.add(tag));
+//        AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
+//        asset.restricted_access.forEach(role -> restrictedAcces.add(role.funding()));
+//        AgtypeMapBuilder agBuilder = new AgtypeMapBuilder()
+//                .add("institution_name", asset.institution)
+//                .add("collection_name", asset.collection)
+//                .add("workstation_name", asset.workstation)
+//                .add("pipeline_name", asset.pipeline)
+//                .add("internal_status", asset.internal_status.funding())
+//                .add("status", asset.status)
+//                .add("asset_guid", asset.asset_guid)
+//                .add("asset_pid", asset.asset_pid)
+////                        .add("funding", asset.funding)
+////                        .add("payload_type", asset.payload_type)
+////                        .add("file_formats", agtypeListBuilder.build())
+//                .add("created_date", asset.created_date.toEpochMilli())
+//                .add("user", asset.digitiser)
+//                .add("tags", tags.build())
+//                .add("asset_locked", asset.asset_locked)
+//                .add("make_public", asset.make_public)
+//                .add("push_to_specify", asset.push_to_specify);
+//
+//
+//        String sql =
+//                buildCreateSQL(asset, agBuilder);
+//        logger.info("sql {}", sql);
+//        try {
+//            withHandle(handle -> {
+//                AgtypeMap parms = agBuilder.build();
+//                Agtype agtype = AgtypeFactory.create(parms);
+//                handle.createUpdate(sql)
+//                        .bind("params", agtype)
+//                        .execute();
+//                return handle;
+//            });
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//        return asset;
+//    }
+//
 
 
     default Asset updateAssetNoEventInternal(Asset asset) {
@@ -770,77 +852,15 @@ public interface AssetRepository extends SqlObject {
         }
     }
 
-    @Transaction
-    default void setEvent(String user, Event event, Asset asset) {
-        boilerplate();
-        internal_setEvent(user, event, asset);
-    }
-
-    default void internal_setEvent(String user, Event event, Asset asset) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (a:Asset {name: $asset_guid})
-                            """;
-        if (event.pipeline != null) {
-            sql += "MATCH (p:Pipeline {name: $pipeline_name}) ";
-        }
-        if (event.workstation != null) {
-            sql += "MATCH (w:Workstation {name: $workstation_name}) ";
-        }
-        if (event.user != null) {
-
-            sql += "MERGE (u:User{user_id: $user, name: $user}) ";
-        }
-        sql +=
-                """
-                        MERGE (e:Event{timestamp: $updated_date, event: $event, name: $event})
-                        MERGE (a)-[ca:CHANGED_BY]->(e)
-                        """;
-        if (event.user != null) {
-            sql += " MERGE (e)-[pb:INITIATED_BY]->(u) ";
-        }
-        if (event.pipeline != null) {
-            sql += " MERGE (e)-[pu:USED]->(p) ";
-        }
-        if (event.workstation != null) {
-            sql += " MERGE (e)-[wu:USED]->(w) ";
-        }
-        sql +=
-                """
-                        $$
-                        , #params) as (a agtype);
-                        """;
-
-        try {
-            String finalSql = sql;
-            withHandle(handle -> {
-                AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("asset_guid", asset.asset_guid)
-//                        .add("user", user)
-                        .add("event", event.event.name())
-                        .add("updated_date", event.timestamp.toEpochMilli());
-                if (event.user != null) {
-                    builder.add("user", event.user);
-                }
-                if (event.workstation != null) {
-                    builder.add("workstation_name", event.workstation);
-                }
-                if (event.pipeline != null) {
-                    builder.add("pipeline_name", event.pipeline);
-                }
-
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(finalSql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    @Transaction
+//    default void setEvent(String user, Event event, Asset asset) {
+//        boilerplate();
+//        internal_setEvent(user, event, asset);
+//    }
+//
+//    default void internal_setEvent(String user, Event event, Asset asset) {
+//
+//    }
 
     default List<String> listSubjects() {
         boilerplate();

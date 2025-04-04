@@ -8,172 +8,63 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.customizer.BindMethods;
+import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
+import org.jdbi.v3.sqlobject.statement.MapTo;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 public interface SpecimenRepository extends SqlObject {
 
-    default void persistSpecimens(Asset asset, List<Specimen> specimensToDetach) {
-        String cypher = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (i:Institution {name: $institution_name})
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset {name: $asset_guid})
-                            MERGE (s:Specimen{name: $specimen_barcode, specimen_barcode: $specimen_barcode})                       
-                            MERGE (s)-[u:USED_BY]->(a)
-                            MERGE (s)-[bt:IS_PART_OF]->(c)
-                            MERGE (s)-[bts:BELONGS_TO]->(i)
-                            SET s.preparation_type = $preparation_type
-                                , s.specimen_pid = $specimen_pid
-                        $$
-                        , #params) as (a agtype);
-                """;
-        String updateCreatedBy = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (i:Institution {name: $institution_name})
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset{name: $asset_guid})
-                            MATCH (s:Specimen{name: $specimen_barcode})
-                            WHERE NOT EXISTS((s)-[:CREATED_BY]-(:Asset))
-                            MERGE (s)-[scb:CREATED_BY]->(a)
-                        $$
-                        , #params) as (ag agtype);
-                """;
+    @SqlUpdate("INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type)")
+    void insert_specimen(@BindMethods Specimen specimen);
 
-        String deleteUsedBy = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (i:Institution {name: $institution_name})
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (a:Asset{name: $asset_guid})
-                            MATCH (s:Specimen{name: $specimen_barcode})
-                            MATCH (s)-[u:USED_BY]->(a)
-                            MATCH (s)-[bt:IS_PART_OF]->(c)
-                            MATCH (s)-[bts:BELONGS_TO]->(i)
-                            DELETE u
-                        $$
-                        , #params) as (ag agtype);
-                """;
-        withHandle(handle -> {
-            for (Specimen specimen : asset.specimens) {
-                AgtypeMap parms = new AgtypeMapBuilder()
-                        .add("institution_name", asset.institution)
-                        .add("collection_name", asset.collection)
-                        .add("asset_guid", asset.asset_guid)
-                        .add("specimen_pid", specimen.specimen_pid())
-                        .add("preparation_type", specimen.preparation_type())
-                        .add("specimen_barcode", specimen.barcode())
-                        .build();
-                Agtype agtype = AgtypeFactory.create(parms);
-                handle.createUpdate(cypher)
-                        .bind("params", agtype)
-                        .execute();
+    @SqlUpdate("""
+    INSERT INTO asset_specimen(asset_guid, specimen_id) VALUES (:assetGuid, :specimenId)
+    """)
+    void attachSpecimen(String assetGuid, Integer specimenId);
 
-                AgtypeMap specimenEdgeParam = new AgtypeMapBuilder()
-                        .add("asset_guid", asset.asset_guid)
-                        .add("institution_name", asset.institution)
-                        .add("collection_name", asset.collection)
-                        .add("specimen_barcode", specimen.barcode())
-                        .build();
-                Agtype specimenEdge = AgtypeFactory.create(specimenEdgeParam);
-                handle.createUpdate(updateCreatedBy)
-                        .bind("params", specimenEdge)
-                        .execute();
+    @SqlUpdate("""
+    DELETE FROM asset_specimen 
+    WHERE asset_guid = :assetGuid 
+        AND specimen_id = :specimenId
+    """)
+    void detachSpecimen(String assetGuid, String specimenId);
 
-            }
-            for(Specimen specimen : specimensToDetach) {
-                AgtypeMap deleteEdgeParams = new AgtypeMapBuilder()
-                        .add("asset_guid", asset.asset_guid)
-                        .add("institution_name", asset.institution)
-                        .add("collection_name", asset.collection)
-                        .add("specimen_barcode", specimen.barcode())
-                        .build();
-                Agtype deleteSpecimenEdge = AgtypeFactory.create(deleteEdgeParams);
-                handle.createUpdate(deleteUsedBy)
-                        .bind("params", deleteSpecimenEdge)
-                        .execute();
-            }
-            return handle;
-        });
-    }
+    @SqlUpdate("""
+    UPDATE specimen SET preparation_type = :preparation_type, barcode = :barcode WHERE specimen_id = :specimen_id
+""")
+    void updateSpecimen(Specimen specimen);
 
-    default void boilerplate() {
-        withHandle(handle -> {
-            Connection connection = handle.getConnection();
-            try {
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                return handle;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
+    @SqlQuery("""
+            SELECT specimen.*
+                , collection.collection_name AS collection
+                , collection.institution_name AS institution
+            FROM specimen
+                LEFT JOIN asset_specimen USING(specimen_id)
+                LEFT JOIN collection USING (collection_id)
+            WHERE asset_guid = :assetGuid
+            """)
+    List<Specimen> findSpecimensByAsset(String assetGuid);
 
-    default void updateSpecimen(Specimen specimen) {
-        String update = """
-                     SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (i:Institution {name: $institution_name})
-                            MATCH (c:Collection {name: $collection_name})
-                            MATCH (s:Specimen{name: $specimen_barcode})
-                            SET s.specimen_pid = $specimen_pid
-                            , s.preparation_type = $preparation_type                  
-                            MERGE (s)-[bt:IS_PART_OF]->(c)
-                            MERGE (s)-[bts:BELONGS_TO]->(i)
-                        $$
-                        , #params) as (a agtype);
-                """;
-        AgtypeMap updateSpecimen = new AgtypeMapBuilder()
-                .add("barcode", specimen.barcode())
-                .add("specimen_pid", specimen.specimen_pid())
-                .add("institution", specimen.institution())
-                .add("collection", specimen.collection())
-                .add("preparation_type", specimen.preparation_type())
-                .build();
-        Agtype specimenEdge = AgtypeFactory.create(updateSpecimen);
-        withHandle(handle -> {
-            handle.createUpdate(update)
-                    .bind("params", specimenEdge)
-                    .execute();
-            return handle;
-        });
-    }
+    @SqlQuery("""
+            SELECT specimen.*
+                , collection.collection_name AS collection
+                , collection.institution_name AS institution
+            FROM specimen
+                LEFT JOIN collection USING (collection_id)
+            WHERE specimen_pid = :pid
+            """)
+    Optional<Specimen> findSpecimensByPID(String pid);
 
-    default List<String> listPreparationTypes(){
-        boilerplate();
-        return listPreparationTypesInternal();
-    }
 
-    default List<String> listPreparationTypesInternal() {
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                    MATCH (s:Specimen)
-                    WHERE EXISTS(s.preparation_type)
-                    RETURN DISTINCT s.preparation_type AS preparation_type
-                $$) as (preparation_type agtype);
-                """;
-
-        try {
-            return withHandle(handle -> {
-                Connection connection = handle.getConnection();
-                PgConnection pgConnection = connection.unwrap(PgConnection.class);
-                pgConnection.addDataType("agtype", Agtype.class);
-                return handle.createQuery(sql)
-                        .map((rs, ctx) -> {
-                            Agtype subject = rs.getObject("preparation_type", Agtype.class);
-                            return subject.getString();
-                        }).list();
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    @SqlQuery("SELECT * FROM preparation_type")
+    List<String> listPreparationTypesInternal();
 
 }

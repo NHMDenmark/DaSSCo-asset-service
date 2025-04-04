@@ -104,9 +104,21 @@ public class Asset {
     public String digitiser;
     @Schema(description = "Would be for cases where multiple digitiser has worked as a team to digitise an artifact. We do not know who did exactly which part of the digitisation process. All should be given credit for the process. We provide this. It will often be empty or just contain one name from the digitiser list.")
     public List<String> complete_digitiser_list = new ArrayList<>();
+    public String initial_metadata_recorded_by;
+
+    public String file_format;
+    // Internal ids for database operations
+    public transient Integer workstation_id;
+    public transient Integer digitiser_id;
+    public transient Integer collection_id;
+    public transient Integer updating_pipeline_id;
+    public transient String creatorPipeline;
+    public String updating_pipeline;
+
     public String getAsset_guid() {
         return asset_guid;
     }
+
 
     @Override
     public String toString() {

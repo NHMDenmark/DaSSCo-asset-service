@@ -10,8 +10,7 @@ import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
+import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import io.micrometer.observation.Observation;
@@ -45,6 +44,7 @@ public class AssetService {
     private final PipelineService pipelineService;
     private final RightsValidationService rightsValidationService;
     private final Jdbi jdbi;
+    private final FundingService fundingService;
     private final DigitiserCache digitiserCache;
     private final SubjectCache subjectCache;
     private final PayloadTypeCache payloadTypeCache;
@@ -54,7 +54,7 @@ public class AssetService {
     private final ObservationRegistry observationRegistry;
     private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
-
+    private final UserService userService;
     @Inject
     public AssetService(InstitutionService institutionService
             , CollectionService collectionService
@@ -70,7 +70,9 @@ public class AssetService {
             , PreparationTypeCache preparationTypeCache
             , FileProxyConfiguration fileProxyConfiguration
             , ObservationRegistry observationRegistry
-            , ExtendableEnumService extendableEnumService) {
+            , ExtendableEnumService extendableEnumService
+            , UserService userService
+            , FundingService fundingService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -86,6 +88,8 @@ public class AssetService {
         this.fileProxyConfiguration = fileProxyConfiguration;
         this.observationRegistry = observationRegistry;
         this.extendableEnumService = extendableEnumService;
+        this.userService = userService;
+        this.fundingService = fundingService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
     }
@@ -104,7 +108,7 @@ public class AssetService {
         }
     }
 
-    void validateNewAsset(Asset asset) {
+    void validateNewAssetAndSetIds(Asset asset) {
         if (Strings.isNullOrEmpty(asset.institution)) {
             throw new IllegalArgumentException("Institution cannot be null");
         }
@@ -122,17 +126,50 @@ public class AssetService {
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
+        asset.collection_id = collectionOpt.get().collection_id();
     }
 
     public Optional<Asset> getAsset(String assetGuid) {
-        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
+        Optional<Asset> asset = jdbi.onDemand(AssetRepository.class).readAssetInternalNew(assetGuid);
+        if(asset.isPresent()){
+            Asset assetToBeMapped = asset.get();
+            jdbi.withHandle(h -> {
+                EventRepository attach = h.attach(EventRepository.class);
+                assetToBeMapped.events = attach.getAssetEvents(assetGuid);
+                SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
+                assetToBeMapped.specimens = specimenRepository.findSpecimensByAsset(assetGuid);
+                UserRepository userRepository = h.attach(UserRepository.class);
+                assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
+                FundingRepository fundingRepository = h.attach(FundingRepository.class);
+                assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
+                return h;
+            });
+            for (Event event : assetToBeMapped.events) {
+                if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+                    assetToBeMapped.audited = true;
+                } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
+                    assetToBeMapped.date_metadata_updated = event.timestamp;
+                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
+                    assetToBeMapped.date_metadata_updated = event.timestamp;
+                } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
+                    assetToBeMapped.date_metadata_updated = event.timestamp;
+                    //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
+                    assetToBeMapped.pipeline = event.pipeline;
+                } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
+                    assetToBeMapped.date_asset_deleted = event.timestamp;
+                }
+            }
+            return Optional.of(assetToBeMapped);
+        }
+        return asset;
     }
 
     void validateAsset(Asset asset) {
-        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
+        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.updating_pipeline, asset.institution);
         if (pipelineOpt.isEmpty()) {
             throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
         }
+
         if (asset.asset_guid.equals(asset.parent_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
@@ -144,6 +181,7 @@ public class AssetService {
         if (workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)) {
             throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
         }
+        asset.workstation_id = workstation.workstation_id();
         if(asset.file_formats != null && !asset.file_formats.isEmpty()){
             Set<String> fileFormats = extendableEnumService.getFileFormats();
             for(String s: fileFormats) {
@@ -184,9 +222,10 @@ public class AssetService {
         LocalDateTime validationStart = LocalDateTime.now();
         asset.updateUser = user.username;
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        validateNewAsset(asset);
+        validateNewAssetAndSetIds(asset);
         validateAsset(asset);
         // Create share
+        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection, asset.institution);
         assetsGettingCreated.put(asset.asset_guid, Instant.now());
         LocalDateTime validationEnd = LocalDateTime.now();
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", Duration.between(validationStart, validationEnd).toMillis());
@@ -199,13 +238,69 @@ public class AssetService {
             asset.created_date = Instant.now();
             asset.internal_status = InternalStatus.METADATA_RECEIVED;
             LocalDateTime createAssetStart = LocalDateTime.now();
+            if(!Strings.isNullOrEmpty(asset.digitiser)) {
+                User user1 = userService.ensureExists(new User(asset.digitiser));
+                asset.digitiser_id =user1.dassco_user_id;
+            }
+
             // Create the asset
-            Observation.createNotStarted("persist:create-asset", observationRegistry).observe(() -> {
-                jdbi.onDemand(AssetRepository.class)
-                        .createAsset(asset);
-            });
-            LocalDateTime createAssetEnd = LocalDateTime.now();
-            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
+//            Observation.createNotStarted("persist:create-asset", observationRegistry).observe(() -> {
+//                jdbi.onDemand(AssetRepository.class)
+//                        .createAsset(asset);
+//            });
+            AssetRepository assetRepository = h.attach(AssetRepository.class);
+            EventRepository eventRepository = h.attach(EventRepository.class);
+            UserRepository userRepository = h.attach(UserRepository.class);
+            FundingRepository fundingRepository = h.attach(FundingRepository.class);
+            SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
+//            List<Specimen> specimensByAsset = specimenRepository.findSpecimensByAsset(asset.asset_guid);
+//            Map<String, Specimen> pidSpecimen = new HashMap<>();
+//            for(Specimen specimen: specimensByAsset){
+//                pidSpecimen.put(specimen.specimen_pid(), specimen);
+//            }
+//
+
+            assetRepository.insertBaseAsset(asset);
+            // Handle funds
+            for(String funding: asset.funding) {
+                Funding funding1 = fundingService.ensureExists(funding);
+                fundingRepository.fundAsset(asset.asset_guid,funding1.funding_id());
+            }
+            // Handle digitiser_list
+            for(String s : asset.complete_digitiser_list) {
+                User user1 = userService.ensureExists(new User(s));
+                userRepository.addDigitiser(asset.asset_guid,user1.dassco_user_id);
+            }
+            // Handle specimen
+            for(Specimen specimen: asset.specimens) {
+                Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
+                if(specimensByPID.isEmpty()){
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_type(), specimen.specimen_id(), asset.collection_id);
+                    specimenRepository.insert_specimen(specimenToPersist);
+                    Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
+                    Specimen newSpecimen = newSpecimenOpt.orElseThrow( () -> new RuntimeException("This shouldn't happen"));
+                    specimenRepository.attachSpecimen(asset.asset_guid, newSpecimen.specimen_id());
+                } else {
+                    Specimen existing = specimensByPID.get();
+                    if(!existing.barcode().equals(specimen.barcode()) || !existing.preparation_type().equals(specimen.preparation_type()) ){
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_type(), existing.specimen_id(), asset.collection_id);
+                        specimenRepository.updateSpecimen(updated);
+                    }
+                    specimenRepository.attachSpecimen(asset.asset_guid, existing.specimen_id());
+                }
+
+            }
+            Integer pipelineId = null;
+            if(asset.updating_pipeline != null) {
+                Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName( asset.updating_pipeline,asset.institution);
+                if(pipelineByInstitutionAndName.isPresent()){
+                    pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
+                }
+            }
+            System.out.println("PYPELINE ID " + pipelineId);
+            eventRepository.insertEvent(asset.asset_guid,DasscoEvent.CREATE_ASSET_METADATA, user.dassco_user_id, pipelineId);
+//            LocalDateTime createAssetEnd = LocalDateTime.now();
+//            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
             // Open share
             try {
                 Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
@@ -241,7 +336,7 @@ public class AssetService {
         });
 
 
-        statisticsDataServiceV2.refreshCachedData();
+//        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataServiceV2.addAssetToCache(asset);
         assetsGettingCreated.invalidate(asset.asset_guid);
         return resultAsset;
@@ -307,7 +402,7 @@ public class AssetService {
         preparationTypeCache.clearCache();
         List<String> preparationTypeList = jdbi.withHandle(handle -> {
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-            return specimenRepository.listPreparationTypes();
+            return specimenRepository.listPreparationTypesInternal();
         });
         if (!preparationTypeList.isEmpty()) {
             for (String preparationType : preparationTypeList) {
@@ -417,7 +512,7 @@ public class AssetService {
                 preparationTypeCache.clearCache();
                 List<String> preparationTypeList = jdbi.withHandle(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-                    return specimenRepository.listPreparationTypes();
+                    return specimenRepository.listPreparationTypesInternal();
                 });
                 if (!preparationTypeList.isEmpty()) {
                     for (String preparationType : preparationTypeList) {
@@ -438,7 +533,7 @@ public class AssetService {
         asset.internal_status = InternalStatus.COMPLETED;
         asset.error_message = null;
         asset.error_timestamp = null;
-        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline(), assetUpdateRequest.workstation());
+        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline());
         jdbi.onDemand(AssetRepository.class).updateAssetAndEvent(asset, event);
 
         statisticsDataServiceV2.refreshCachedData();
@@ -467,8 +562,8 @@ public class AssetService {
         if (Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
-        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(audit.user(), event, asset);
+        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id, null);
 
         logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
@@ -569,6 +664,7 @@ public class AssetService {
             throw new RuntimeException(e);
         }
     }
+    //TODO pipeline
     public boolean deleteAsset(String assetGuid, User user) {
         String userId = user.username;
         if (Strings.isNullOrEmpty(userId)) {
@@ -587,8 +683,8 @@ public class AssetService {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
-        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null, null);
-        jdbi.onDemand(AssetRepository.class).setEvent(userId, event, asset);
+        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid,DasscoEvent.DELETE_ASSET_METADATA,user.dassco_user_id,null);
 
         statisticsDataServiceV2.refreshCachedData();
 

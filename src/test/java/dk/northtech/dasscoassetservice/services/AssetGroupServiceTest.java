@@ -276,7 +276,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.add("fail");
         AssetGroup assetGroup = new AssetGroup();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup, user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group needs a name!");
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group needs a funding!");
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
     }

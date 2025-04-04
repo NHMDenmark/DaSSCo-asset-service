@@ -18,6 +18,15 @@ public record Pipeline(
     public Pipeline {
     }
 
+    @Override
+    public String toString() {
+        return "Pipeline{" +
+               "name='" + name + '\'' +
+               ", institution='" + institution + '\'' +
+               ", pipeline_id=" + pipeline_id +
+               '}';
+    }
+
     public Pipeline(String name, String institution) {
         this(name, institution, null);
     }

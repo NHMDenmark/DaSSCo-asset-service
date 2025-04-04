@@ -47,6 +47,7 @@ public class UserService {
                 user.dassco_user_id = existing.dassco_user_id;
                 return user;
             }
+            return existing;
         }
         User persistedUser = persistUser(user);
         user.dassco_user_id = persistedUser.dassco_user_id;

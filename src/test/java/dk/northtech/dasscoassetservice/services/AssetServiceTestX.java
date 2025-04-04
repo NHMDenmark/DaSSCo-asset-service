@@ -384,7 +384,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
     @Test
     void testValidateAssetNoInstitution(){
         Asset asset = new Asset();
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAsset(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution cannot be null");
     }
 
@@ -393,7 +393,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         Asset asset = new Asset();
         asset.institution = "doesnt exist";
         asset.collection = "collection_1";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAsset(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution doesnt exist");
     }
 
@@ -403,7 +403,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         asset.institution = "institution_2";
         asset.digitiser = "Bazviola";
         asset.collection = "doesnt ecksist";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAsset(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");
     }
 
@@ -411,7 +411,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
     void testValidateAssetNoCollection(){
         Asset asset = new Asset();
         asset.institution = "institution_2";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAsset(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection cannot be null");
     }
 

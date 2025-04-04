@@ -16,14 +16,7 @@ import java.util.List;
 public interface EnumRepository extends SqlObject {
 
     static String getUpdateSQL(ExtendableEnumService.ExtendableEnum extendableEnum) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                             MATCH (e:<EnumName> {<propertyName>: $name})
-                             SET e.name = $new_name
-                           $$, #params
-                        ) as (e agtype);""";
+        String sql = "UPDATE <EnumName> SET <EnumName> = :new_name WHERE <EnumName> = :name ";
         return sql.replace("<EnumName>", extendableEnum.enumName);
     }
 
@@ -32,27 +25,13 @@ public interface EnumRepository extends SqlObject {
     }
 
     default void persistEnum(ExtendableEnumService.ExtendableEnum enumToUpdate, String status) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MERGE (e:<EnumName>{<propertyName>: $<propertyName>})
-                            RETURN e.<propertyName>
-                        $$
-                        , #params) as (e agtype);
-                        """;
-
+        String sql = "INSERT INTO <EnumName>(<EnumName>) VALUES(:name)";
         String sqlFormatted = formatSQL(sql, enumToUpdate);
         try {
             withHandle(handle -> {
-                Connection connection = handle.getConnection();
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                AgtypeMap name = new AgtypeMapBuilder().add("name", status).build();
-                Agtype agtype = AgtypeFactory.create(name);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
+
                 handle.createUpdate(sqlFormatted)
-                        .bind("params", agtype)
+                        .bind("name", status)
                         .execute();
                 return handle;
             });
@@ -62,25 +41,15 @@ public interface EnumRepository extends SqlObject {
     }
 
     default List<String> listEnum(ExtendableEnumService.ExtendableEnum extendableEnum) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                             MATCH (e:<EnumName>)
-                             RETURN e.name
-                           $$
-                        ) as (e agtype);""";
+        String sql = "SELECT * FROM <EnumName>";
 
         String formattedSql = formatSQL(sql, extendableEnum);
         try {
             return withHandle(handle -> {
                 // We have to register the type
-                Connection connection = handle.getConnection();
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
+
                 return handle.createQuery(formattedSql)
-                        .map(new EnumMapper()).list();
+                        .mapTo(String.class).list();
             });
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -94,17 +63,10 @@ public interface EnumRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 // We have to register the type
-                Connection connection = handle.getConnection();
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                AgtypeMap name = new AgtypeMapBuilder()
-                        .add("name", oldName)
-                        .add("new_name", newName)
-                        .build();
-                Agtype agtype = AgtypeFactory.create(name);
+
                 handle.createUpdate(updateSQL)
-                        .bind("params", agtype)
+                        .bind("new_name", newName)
+                        .bind("name", oldName)
                         .execute();
                 return handle;
             });

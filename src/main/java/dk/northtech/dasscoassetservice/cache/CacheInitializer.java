@@ -112,7 +112,7 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                 }
                 List<String> preparationTypeList = jdbi.withHandle(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-                    return specimenRepository.listPreparationTypes();
+                    return specimenRepository.listPreparationTypesInternal();
                 });
                 if (!preparationTypeList.isEmpty()){
                     for (String preparationType : preparationTypeList){
