@@ -84,7 +84,7 @@ public class WorkstationService {
         if(!this.initialised) {
             this.initWorkstations();
         }
-        if(!workstationMap.containsKey(institution_name) || !workstationMap.get(institution_name).containsKey(workstation_name)) {
+        if(Strings.isNullOrEmpty(workstation_name) || !workstationMap.containsKey(institution_name) || !workstationMap.get(institution_name).containsKey(workstation_name)) {
             return Optional.empty();
         }
         return Optional.of(workstationMap.get(institution_name).get(workstation_name));

@@ -26,6 +26,7 @@ public interface EventRepository extends SqlObject {
         LEFT JOIN pipeline USING (pipeline_id)
         LEFT JOIN dassco_user USING (dassco_user_id)
     WHERE asset_guid = :assetGuid
+    ORDER BY timestamp DESC
 """)
     List<Event> getAssetEvents(String assetGuid);
 }

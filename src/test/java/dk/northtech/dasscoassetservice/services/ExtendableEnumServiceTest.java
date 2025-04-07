@@ -29,6 +29,9 @@ class ExtendableEnumServiceTest extends AbstractIntegrationTest {
         extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, "NEW_status");
         Set<String> statuses = extendableEnumService.getStatuses();
         assertThat(statuses).contains("NEW_status");
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.SUBJECT, "new sub");
+        Set<String> subjects = extendableEnumService.getSubjects();
+        assertThat(subjects).contains("new sub");
     }
 
     @Test

@@ -5,19 +5,24 @@ import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.core.SecurityContext;
 import joptsimple.internal.Strings;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class UserService {
-
+    private static final String SPRING_ROLE_PREFIX = "ROLE_";
     private Jdbi jdbi;
     private boolean initialised;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -51,6 +56,40 @@ public class UserService {
         }
         User persistedUser = persistUser(user);
         user.dassco_user_id = persistedUser.dassco_user_id;
+        return user;
+    }
+
+    public User from(SecurityContext securityContext) {
+        JwtAuthenticationToken token = (JwtAuthenticationToken) securityContext.getUserPrincipal();
+        Map<String, Object> tokenAttributes = token.getTokenAttributes();
+        User user = new User();
+//        if(securityContext.isUserInRole(SecurityRoles.ADMIN)) {
+//            user.roles.add(SecurityRoles.ADMIN);
+//        }
+//        if(securityContext.isUserInRole(SecurityRoles.USER)) {
+//            user.roles.add(SecurityRoles.USER);
+//        }
+//        if(securityContext.isUserInRole(SecurityRoles.DEVELOPER)) {
+//            user.roles.add(SecurityRoles.DEVELOPER);
+//        }
+//        if(securityContext.isUserInRole(SecurityRoles.SERVICE)) {
+//            user.roles.add(SecurityRoles.SERVICE);
+//        }
+
+        JwtAuthenticationToken userPrincipal = (JwtAuthenticationToken) securityContext.getUserPrincipal();
+        Collection<GrantedAuthority> authorities = userPrincipal.getAuthorities();
+        authorities.stream().map(x -> {
+            String authority = x.getAuthority();
+            if(authority.startsWith(SPRING_ROLE_PREFIX)){
+                return authority.substring(SPRING_ROLE_PREFIX.length());
+            }
+            return authority;
+        }).forEach(role -> user.roles.add(role));
+
+        user.keycloak_id = String.valueOf(tokenAttributes.get("sub"));
+        user.username = String.valueOf(tokenAttributes.get("preferred_username"));
+        user.token = token.getToken().getTokenValue();
+        ensureExists(user);
         return user;
     }
 

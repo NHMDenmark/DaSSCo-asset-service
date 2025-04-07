@@ -11,12 +11,10 @@ import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
 import joptsimple.internal.Strings;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeListBuilder;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
-import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
@@ -25,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.*;
 
 
@@ -39,6 +36,7 @@ public interface AssetRepository extends SqlObject {
             """
             INSERT INTO public.asset(
                      asset_guid
+                    , asset_pid
                     , asset_locked
                     , subject
                     , collection_id
@@ -60,6 +58,7 @@ public interface AssetRepository extends SqlObject {
                     , date_metadata_ingested
                   ) VALUES (
                     :assetGuid
+                    , :asset_pid
                     , :assetLocked
                     , :subject
                     , :collectionId
@@ -86,8 +85,9 @@ public interface AssetRepository extends SqlObject {
         withHandle(handle -> {
             handle.createUpdate(INSERT_BASE_ASSET)
                     .bind("assetGuid", asset.asset_guid)
+                    .bind("asset_pid", asset.asset_pid)
                     .bind("assetLocked", asset.asset_locked)
-                    .bind("subject", asset.subject.toLowerCase())
+                    .bind("subject", asset.subject != null? asset.subject.toLowerCase():null)
                     .bind("collectionId", asset.collection_id)
                     .bind("digitiserId", asset.digitiser_id)
                     .bind("fileFormat", asset.file_format)
@@ -190,14 +190,12 @@ public interface AssetRepository extends SqlObject {
 
     @Transaction
     default Asset updateAssetNoEvent(Asset asset) {
-        boilerplate();
         updateAssetNoEventInternal(asset);
         return asset;
     }
 
     @Transaction
-    default Asset updateAssetAndEvent(Asset asset, Event event) {
-        boilerplate();
+    default Asset updateAssetStatus(Asset asset) {
         updateAssetNoEventInternal(asset);
 //        setEvent(event.user, event, asset);
         return asset;
@@ -480,35 +478,21 @@ public interface AssetRepository extends SqlObject {
     default Asset updateAssetNoEventInternal(Asset asset) {
         String sql =
                 """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (asset:Asset {name: $asset_guid})
-                            MATCH (new_internal_status:Internal_status{name: $new_internal_status})
-                            MATCH (asset)-[eihs:HAS]->(old_internal_status:Internal_status)
-                            DELETE eihs
-                            MERGE (asset)-[newHas:HAS]->(new_internal_status)
-                            SET asset.asset_locked = $asset_locked
-                            , asset.error_message = $error_message
-                            , asset.error_timestamp = $error_timestamp
-                        $$
-                        , #params) as (a agtype);
-                        """;
+                        UPDATE asset SET
+                            internal_status = :internal_status
+                            , asset_locked = :asset_locked
+                            , error_message = :error_message
+                            , error_timestamp = :error_timestamp
+                        WHERE asset_guid = :asset_guid    
+                """;
         try {
             withHandle(handle -> {
-                System.out.println("STATTATATATys " + asset.internal_status);
-                AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                        .add("asset_guid", asset.asset_guid)
-                        .add("new_internal_status", asset.internal_status.name())
-                        .add("error_message", asset.error_message)
-                        .add("asset_locked", asset.asset_locked);
-                if (asset.error_timestamp != null) {
-                    builder.add("error_timestamp", asset.error_timestamp.toEpochMilli());
-                } else {
-                    builder.add("error_timestamp", (String) null);
-                }
-                Agtype agtype = AgtypeFactory.create(builder.build());
                 handle.createUpdate(sql)
-                        .bind("params", agtype)
+                        .bind("internal_status", asset.internal_status)
+                        .bind("error_message", asset.error_message)
+                        .bind("asset_locked", asset.asset_locked)
+                        .bind("error_timestamp", asset.error_timestamp)
+                        .bind("asset_guid", asset.asset_guid)
                         .execute();
                 return handle;
             });
@@ -703,42 +687,35 @@ public interface AssetRepository extends SqlObject {
                 """);
         return sb.toString();
     }
+
+    String UPDATE_ASSET_SQL = """
+            UPDATE asset SET 
+                status = :status
+                , subject = :subject
+                , payload_type = :payload_type
+                , internal_status = :internal_status
+                , tags = :tags::json
+                , asset_locked = :asset_locked
+                , make_public = :make_public
+                , push_to_specify = :push_to_specify
+            WHERE asset_guid = :asset_guid    
+            """;
     default Asset update_asset_internal(Asset asset) {
 
-        AgtypeListBuilder agtypeListBuilder = new AgtypeListBuilder();
-        asset.file_formats.forEach(agtypeListBuilder::add);
-        AgtypeMapBuilder tags = new AgtypeMapBuilder();
-        asset.tags.entrySet().forEach(tag -> tags.add(tag.getKey(), tag.getValue())); //(tag -> tags.add(tag));
-        AgtypeListBuilder restrictedAcces = new AgtypeListBuilder();
-        asset.restricted_access.forEach(role -> restrictedAcces.add(role.name()));
-        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                .add("collection_name", asset.collection)
-                .add("workstation_name", asset.workstation)
-                .add("pipeline_name", asset.pipeline)
-                .add("asset_guid", asset.asset_guid)
-                .add("status", asset.status)
-//                        .add("funding", asset.funding)
-                .add("subject", asset.subject)
-                .add("payload_type", asset.payload_type)
-                .add("file_formats", agtypeListBuilder.build())
-                .add("updated_date", Instant.now().toEpochMilli())
-                .add("internal_status", asset.internal_status.name())
-                .add("parent_id", asset.parent_guid)
-                .add("user", asset.updateUser)
-                .add("tags", tags.build())
-                .add("asset_locked", asset.asset_locked)
-                .add("restricted_access", restrictedAcces.build())
-                .add("make_public", asset.make_public)
-                .add("push_to_specify", asset.push_to_specify);
-        AGEQuery ageQuery = deleteRelations(asset);
-        executeUpdate(ageQuery);
-        String sql = buildUpdateSQL(asset, builder);
-        logger.info(sql);
+
         try {
             withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
+                handle.createUpdate(UPDATE_ASSET_SQL)
+                        .bind("status",asset.status)
+                        .bind("subject",asset.subject)
+                        .bind("payload_type", asset.payload_type)
+//                        .bind("file_f")
+                        .bind("internal_status", asset.internal_status)
+                        .bind("tags", new Gson().toJson(asset.tags))
+                        .bind("asset_locked", asset.asset_locked)
+                        .bind("make_public", asset.make_public)
+                        .bind("push_to_specify", asset.push_to_specify)
+                        .bind("asset_guid",asset.asset_guid)
                         .execute();
                 return handle;
             });

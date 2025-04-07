@@ -15,6 +15,7 @@ public class ExtendableEnumService {
     private Map<String, String> statusCache = new ConcurrentHashMap<>();
 
     private Map<String, String> fileFormatCache = new ConcurrentHashMap<>();
+    private Map<String, String> subjectCache = new ConcurrentHashMap<>();
 
     @Inject
     public ExtendableEnumService(Jdbi jdbi) {
@@ -24,7 +25,8 @@ public class ExtendableEnumService {
     public enum ExtendableEnum {
         FILE_FORMAT("file_format"),
         ISSUE_NAME("issue_name"),
-        STATUS("asset_status");
+        STATUS("asset_status"),
+        SUBJECT("subject");
 
         ExtendableEnum(String enumName) {
             this.enumName = enumName;
@@ -46,6 +48,13 @@ public class ExtendableEnumService {
             initCache(ExtendableEnum.STATUS);
         }
         return new HashSet<>(this.statusCache.values());
+    }
+
+    public Set<String> getSubjects() {
+        if (subjectCache.isEmpty()) {
+            initCache(ExtendableEnum.SUBJECT);
+        }
+        return new HashSet<>(this.subjectCache.values());
     }
 
     public Map<String, String> getFileFormatCache() {
@@ -71,6 +80,10 @@ public class ExtendableEnumService {
                 case FILE_FORMAT -> {
                     this.fileFormatCache.put(s,s);
                 }
+                case SUBJECT -> {
+                    System.out.println("loert" + s);
+                    this.subjectCache.put(s,s);
+                }
                 case STATUS -> {
                     this.statusCache.put(s,s);
                 }
@@ -90,6 +103,11 @@ public class ExtendableEnumService {
                 }
 
             }
+            case SUBJECT -> {
+                if (getSubjects().contains(value)) {
+                    throw new IllegalArgumentException("File format already exists");
+                }
+            }
             case STATUS -> {
                 if (getStatuses().contains(value)) {
                     throw new IllegalArgumentException("File format already exists");
@@ -98,12 +116,15 @@ public class ExtendableEnumService {
         }
         jdbi.withHandle(h -> {
             EnumRepository repository = h.attach(EnumRepository.class);
-            repository.persistEnum(ExtendableEnum.FILE_FORMAT, value);
+            repository.persistEnum(extendableEnum, value);
             return h;
         });
         switch (extendableEnum) {
             case FILE_FORMAT -> {
                 fileFormatCache.put(value,value);
+            }
+            case SUBJECT -> {
+                subjectCache.put(value,value);
             }
             case STATUS -> {
                 statusCache.put(value,value);

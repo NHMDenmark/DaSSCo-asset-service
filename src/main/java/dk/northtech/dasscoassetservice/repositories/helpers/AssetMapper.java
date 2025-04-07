@@ -25,6 +25,7 @@ public class AssetMapper implements RowMapper<Asset> {
 
         // Mapping each column from the ResultSet to the Asset object
         asset.asset_guid = rs.getString("asset_guid");
+        asset.asset_pid = rs.getString("asset_pid");
         asset.asset_locked = rs.getBoolean("asset_locked");
         asset.subject = rs.getString("subject");
         asset.collection_id = rs.getInt("collection_id");
@@ -68,7 +69,9 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.date_asset_finalised = dateAssetFinalised == null ? null : dateAssetFinalised.toInstant();
         asset.initial_metadata_recorded_by = rs.getString("initial_metadata_recorded_by");
         Timestamp dateMetadataIngested = rs.getTimestamp("date_metadata_ingested");
-        asset.date_metadata_ingested = dateMetadataIngested.toInstant();
+        if(dateMetadataIngested != null) {
+            asset.date_metadata_ingested = dateMetadataIngested.toInstant();
+        }
 
         return asset;
     }

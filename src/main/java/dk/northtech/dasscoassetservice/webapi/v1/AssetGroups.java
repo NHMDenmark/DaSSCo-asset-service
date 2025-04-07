@@ -4,7 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.AssetGroupService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -32,12 +32,16 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class AssetGroups {
 
-   private final AssetGroupService assetGroupService;
+    private final AssetGroupService assetGroupService;
+    private final UserService userService;
 
     @Inject
-    public AssetGroups(AssetGroupService assetGroupService){
+    public AssetGroups(AssetGroupService assetGroupService, UserService userService) {
         this.assetGroupService = assetGroupService;
+        this.userService = userService;
     }
+
+
 
     @POST
     @Path("createassetgroup")
@@ -47,8 +51,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, @Context SecurityContext securityContext){
-        return this.assetGroupService.createAssetGroup(assetGroup, UserMapper.from(securityContext));
+    public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, @Context SecurityContext securityContext) {
+        return this.assetGroupService.createAssetGroup(assetGroup, userService.from(securityContext));
     }
 
     @GET
@@ -58,8 +62,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext){
-        return this.assetGroupService.readAssetGroup(groupName, UserMapper.from(securityContext));
+    public List<Asset> getAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext) {
+        return this.assetGroupService.readAssetGroup(groupName, userService.from(securityContext));
     }
 
     @GET
@@ -68,8 +72,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetGroup> getListAssetGroup(@Context SecurityContext securityContext){
-        return this.assetGroupService.readListAssetGroup(UserMapper.from(securityContext));
+    public List<AssetGroup> getListAssetGroup(@Context SecurityContext securityContext) {
+        return this.assetGroupService.readListAssetGroup(userService.from(securityContext));
     }
 
     @GET
@@ -79,8 +83,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetGroup> getOwnListAssetGroup(@Context SecurityContext securityContext){
-        return this.assetGroupService.readOwnedAssetGroups(UserMapper.from(securityContext));
+    public List<AssetGroup> getOwnListAssetGroup(@Context SecurityContext securityContext) {
+        return this.assetGroupService.readOwnedAssetGroups(userService.from(securityContext));
     }
 
     @DELETE
@@ -90,8 +94,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext){
-        this.assetGroupService.deleteAssetGroup(groupName, UserMapper.from(securityContext));
+    public void deleteAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext) {
+        this.assetGroupService.deleteAssetGroup(groupName, userService.from(securityContext));
     }
 
     @PUT
@@ -102,8 +106,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public AssetGroup addAssetsToAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext){
-        return this.assetGroupService.addAssetsToAssetGroup(groupName, assetList, UserMapper.from(securityContext));
+    public AssetGroup addAssetsToAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext) {
+        return this.assetGroupService.addAssetsToAssetGroup(groupName, assetList, userService.from(securityContext));
     }
 
     @PUT
@@ -114,8 +118,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public AssetGroup removeAssetFromAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext){
-        return this.assetGroupService.removeAssetsFromAssetGroup(groupName, assetList, UserMapper.from(securityContext));
+    public AssetGroup removeAssetFromAssetGroup(@PathParam("groupName") String groupName, List<String> assetList, @Context SecurityContext securityContext) {
+        return this.assetGroupService.removeAssetsFromAssetGroup(groupName, assetList, userService.from(securityContext));
     }
 
     @PUT
@@ -126,8 +130,8 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public AssetGroup grantAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext){
-     return this.assetGroupService.grantAccessToAssetGroup(groupName, users, UserMapper.from(securityContext));
+    public AssetGroup grantAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext) {
+        return this.assetGroupService.grantAccessToAssetGroup(groupName, users, userService.from(securityContext));
     }
 
     @PUT
@@ -138,7 +142,7 @@ public class AssetGroups {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public AssetGroup revokeAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext){
-     return this.assetGroupService.revokeAccessToAssetGroup(groupName, users, UserMapper.from(securityContext));
+    public AssetGroup revokeAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext) {
+        return this.assetGroupService.revokeAccessToAssetGroup(groupName, users, userService.from(securityContext));
     }
 }

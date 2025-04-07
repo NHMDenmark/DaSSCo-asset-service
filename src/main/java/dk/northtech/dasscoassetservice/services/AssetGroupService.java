@@ -2,18 +2,11 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
-import dk.northtech.dasscoassetservice.repositories.UserRepository;
-import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
-import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
 import jakarta.inject.Inject;
-import org.checkerframework.checker.nullness.Opt;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
-import java.awt.color.ICC_ColorSpace;
 import java.time.Instant;
 import java.util.*;
 

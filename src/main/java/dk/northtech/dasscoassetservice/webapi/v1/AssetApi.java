@@ -1,11 +1,8 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.services.AssetService;
-import dk.northtech.dasscoassetservice.services.BulkUpdateService;
-import dk.northtech.dasscoassetservice.services.InternalStatusService;
-import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.*;
+//import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -43,15 +40,17 @@ public class AssetApi {
     private final InternalStatusService internalStatusService;
     private final RightsValidationService rightsValidationService;
     private final BulkUpdateService bulkUpdateService;
+    private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
     private AssetService assetService;
 
     @Inject
-    public AssetApi(BulkUpdateService bulkUpdateService, InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService) {
+    public AssetApi(BulkUpdateService bulkUpdateService, InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService, UserService userService) {
         this.internalStatusService = internalStatusService;
         this.assetService = assetService;
         this.rightsValidationService = rightsValidationService;
         this.bulkUpdateService = bulkUpdateService;
+        this.userService = userService;
     }
 
     // TODO: Hidden for now.
@@ -163,7 +162,7 @@ public class AssetApi {
             throw new IllegalArgumentException("There is no such asset");
         }
         Asset asset = assetOpt.get();
-        rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
+        rightsValidationService.checkReadRightsThrowing(userService.from(securityContext), asset.institution, asset.collection);
     }
 
     @POST
@@ -184,7 +183,7 @@ public class AssetApi {
         List<Asset> hasReadAccessTo = new ArrayList<>();
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }
@@ -225,7 +224,7 @@ public class AssetApi {
         List<Asset> hasReadAccessTo = new ArrayList<>();
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }

@@ -93,7 +93,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.institution = "institution_2" ;
         asset.digitiser = "Bazviola" ;
         asset.collection = "doesnt ecksist" ;
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.valiedateAndSetCollectionId(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");
     }
 
@@ -111,6 +111,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.institution = "institution_2" ;
         asset.collection = "i2_c1" ;
         asset.pipeline = "i50_p1250" ;
+        asset.asset_guid = "testValidateAssetNoPipeline";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Pipeline doesnt exist in this institution");
 
@@ -336,6 +337,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.institution = "institution_2" ;
         asset.workstation = "i2_w1" ;
         asset.pipeline = "i2_p1" ;
+        asset.updating_pipeline = "i2p1";
         asset.collection = "i2_c1" ;
         asset.asset_guid = "persistAssetCannotSaveSameAssetTwice" ;
         asset.asset_pid = "pid-persistAssetCannotSaveSameAssetTwice" ;
@@ -396,9 +398,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result, user);
         result.payload_type = "nuclear" ;
         assetService.updateAsset(result, user);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob"), user);
         assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid, user);
+        resultEvents.forEach(x -> System.out.println(x));
         assertThat(resultEvents.size()).isEqualTo(5);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt2.isPresent()).isTrue();
@@ -550,13 +553,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
         //verify that user cant update with read access
         assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("READ_updateAssetNoWritePermission_1")))));
         //verify that it works when user have write access
-        assetService.updateAsset(asset, new User("karl-børge", new HashSet<>(Arrays.asList("WRITE_updateAssetNoWritePermission_1"))));
+        assetService.updateAsset(asset, userService.ensureExists(new User("karl-børge", new HashSet<>(Arrays.asList("WRITE_updateAssetNoWritePermission_1")))));
     }
 
 
     @Test
     void testCompleteAssetAssetDoesntExist() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob"), user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
@@ -564,6 +567,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testCompleteUpload() {
         Asset asset = getTestAsset("assetUploadComplete");
         asset.pipeline = "i2_p1" ;
+        asset.updating_pipeline = "i2_p1" ;
         asset.workstation = "i2_w1" ;
         asset.tags.put("Tag1", "value1");
         asset.institution = "institution_2" ;
@@ -619,7 +623,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> optAsset = assetService.getAsset("assetComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
-        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob"))).isTrue();
+        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob"),user)).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
         assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
@@ -664,6 +668,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testSetAssetStatusUnsupportedStatus() {
         Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
         asset.pipeline = "i2_p1" ;
+        asset.updating_pipeline = "i2_p1" ;
         asset.workstation = "i2_w1" ;
         asset.tags.put("Tag1", "value1");
         asset.institution = "institution_2" ;

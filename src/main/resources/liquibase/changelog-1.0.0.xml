@@ -363,6 +363,9 @@
             <column name="asset_guid" type="text">
                 <constraints primaryKey="true" primaryKeyName="pk_asset"/>
             </column>
+            <column name="asset_pid" type="text">
+                <constraints nullable="false"/>
+            </column>
             <column name="asset_locked" type="boolean">
                 <constraints nullable="false"/>
             </column>
@@ -421,6 +424,12 @@
                 <constraints nullable="true"/>
             </column>
             <column name="date_metadata_ingested" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="error_message" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="error_timestamp" type="timestamp">
                 <constraints nullable="true"/>
             </column>
         </createTable>

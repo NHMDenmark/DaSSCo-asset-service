@@ -37,7 +37,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         assertThat(optAsset.isPresent()).isTrue();
         Asset notAudited = optAsset.get();
         assertThat(notAudited.audited).isFalse();
-        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAsset", null, null, null), "i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAsset", null, null, null), "i2_w1", "i2_p1", "bob"),user);
         assetService.auditAsset(user, new Audit("Not-Karl-Børge"), asset.asset_guid);
         Optional<Asset> optionalAsset = assetService.getAsset("auditAsset");
         assertThat(optionalAsset.isPresent()).isTrue();
@@ -58,7 +58,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         asset.asset_locked = false;
         asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 10);
-        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAssetNoUser", null, null, null), "i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAssetNoUser", null, null, null), "i2_w1", "i2_p1", "bob"),user);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.auditAsset(user,new Audit(""), asset.asset_guid));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Audit must have a user!");
     }
@@ -95,7 +95,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         asset.asset_locked = false;
         asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 10);
-        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt", null, null, null),"i2_w1", "i2_p1", "bob"));
+        assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("auditAssetCannotBeAuditedBySameUserWhoDigitizedIt", null, null, null),"i2_w1", "i2_p1", "bob"), user);
         DasscoIllegalActionException illegalActionException2 = assertThrows(DasscoIllegalActionException.class, () -> assetService.auditAsset(user, new Audit("Karl-Børge"), asset.asset_guid));
         assertThat(illegalActionException2).hasMessageThat().isEqualTo("Audit cannot be performed by the user who digitized the asset");
     }
@@ -240,7 +240,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
         Optional<Asset> optAsset = assetService.getAsset("assetComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
-        assertThat(assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("assetComplete", null, null, null),"i2_w1", "i2_p1", "bob"))).isTrue();
+        assertThat(assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("assetComplete", null, null, null),"i2_w1", "i2_p1", "bob"),user)).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
         assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
@@ -248,7 +248,7 @@ class AssetServiceTestX extends AbstractIntegrationTest {
 
     @Test
     void testCompleteAssetAssetDoesntExist(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("non-existent-asset", null, null, null),"i1_w1", "i1_p1", "bob")));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("non-existent-asset", null, null, null),"i1_w1", "i1_p1", "bob"), user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 

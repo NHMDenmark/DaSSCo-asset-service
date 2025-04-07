@@ -1,12 +1,7 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.services.CollectionService;
 import dk.northtech.dasscoassetservice.services.ExtendableEnumService;
-import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.domain.ListEntry;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
@@ -21,13 +16,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Set;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;

@@ -22,8 +22,9 @@ import java.util.Optional;
 
 public interface SpecimenRepository extends SqlObject {
 
-    @SqlUpdate("INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type)")
-    void insert_specimen(@BindMethods Specimen specimen);
+    @GetGeneratedKeys
+    @SqlUpdate("INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type) RETURNING specimen_id")
+    Integer insert_specimen(@BindMethods Specimen specimen);
 
     @SqlUpdate("""
     INSERT INTO asset_specimen(asset_guid, specimen_id) VALUES (:assetGuid, :specimenId)
@@ -35,12 +36,12 @@ public interface SpecimenRepository extends SqlObject {
     WHERE asset_guid = :assetGuid 
         AND specimen_id = :specimenId
     """)
-    void detachSpecimen(String assetGuid, String specimenId);
+    void detachSpecimen(String assetGuid, Integer specimenId);
 
     @SqlUpdate("""
     UPDATE specimen SET preparation_type = :preparation_type, barcode = :barcode WHERE specimen_id = :specimen_id
 """)
-    void updateSpecimen(Specimen specimen);
+    void updateSpecimen(@BindMethods Specimen specimen);
 
     @SqlQuery("""
             SELECT specimen.*

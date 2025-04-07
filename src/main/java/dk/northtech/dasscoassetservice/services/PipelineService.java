@@ -90,7 +90,8 @@ public class PipelineService {
         if(!this.initialised) {
             this.initPipelines();
         }
-        if(this.pipelineMap.containsKey(institutionName)) {
+
+        if(pipelineName != null && institutionName != null && this.pipelineMap.containsKey(institutionName)) {
             Pipeline pipeline = pipelineMap.get(institutionName).get(pipelineName);
             return pipeline != null ? Optional.of(pipeline) : Optional.empty();
         }

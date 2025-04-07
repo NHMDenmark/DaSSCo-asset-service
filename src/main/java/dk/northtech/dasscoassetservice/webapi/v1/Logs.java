@@ -4,7 +4,7 @@ import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.services.FileService;
 import dk.northtech.dasscoassetservice.services.LogService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,11 +31,14 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class Logs {
     private final LogService logService;
+    private final UserService userService;
 
     @Inject
-    public Logs(LogService logService) {
+    public Logs(LogService logService, UserService userService) {
         this.logService = logService;
+        this.userService = userService;
     }
+
 
     @GET
     @Path("/")
@@ -62,7 +65,7 @@ public class Logs {
             @Context SecurityContext securityContext
             , @PathParam("fileName") String name
     ) {
-        User user = UserMapper.from(securityContext);
+        User user = userService.from(securityContext);
 
         Optional<FileService.FileResult> getFileResult = logService.getFile(name);
         if (getFileResult.isPresent()) {
