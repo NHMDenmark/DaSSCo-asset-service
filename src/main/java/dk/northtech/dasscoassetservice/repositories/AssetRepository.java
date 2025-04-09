@@ -15,6 +15,8 @@ import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
@@ -41,7 +43,7 @@ public interface AssetRepository extends SqlObject {
                     , subject
                     , collection_id
                     , digitiser_id
-                    , file_format
+                    , file_formats
                     , payload_type
                     , status
                     , tags
@@ -90,7 +92,7 @@ public interface AssetRepository extends SqlObject {
                     .bind("subject", asset.subject != null? asset.subject.toLowerCase():null)
                     .bind("collectionId", asset.collection_id)
                     .bind("digitiserId", asset.digitiser_id)
-                    .bind("fileFormat", asset.file_format)
+                    .bindArray("fileFormat", String.class, asset.file_formats)
                     .bind("multiSpecimen", asset.multi_specimen)
                     .bind("payloadType", asset.payload_type)
                     .bind("status", asset.status)
@@ -112,6 +114,23 @@ public interface AssetRepository extends SqlObject {
     };
     @CreateSqlObject
     SpecimenRepository createSpecimenRepository();
+
+    @SqlUpdate("""
+    INSERT INTO parent_child(child_guid, parent_guid)
+    VALUES (:child_guid, :parent_guid)
+    """)
+    void insert_parent_child(String child_guid, String parent_guid);
+
+    @SqlUpdate("""
+    DELETE FROM parent_child 
+    WHERE parent_guid = :parent_guid AND child_guid = :child_guid
+""")
+    void delete_parent_child(String child_guid, String parent_guid);
+
+    @SqlQuery("""
+    SELECT parent_guid FROM parent_child WHERE child_guid = :child_id;
+""")
+    Set<String> getParents(String child_id);
 
     //This must be called once per transaction
     default void boilerplate() {
@@ -178,14 +197,6 @@ public interface AssetRepository extends SqlObject {
     }
 
 
-    @Transaction
-    default Asset updateAsset(Asset asset, List<Specimen> specimenToDetach) {
-        boilerplate();
-        update_asset_internal(asset);
-        connectParentChild(asset.parent_guid, asset.asset_guid);
-//        createSpecimenRepository().persistSpecimens(asset, specimenToDetach);
-        return asset;
-    }
 
 
     @Transaction
@@ -697,7 +708,11 @@ public interface AssetRepository extends SqlObject {
                 , tags = :tags::json
                 , asset_locked = :asset_locked
                 , make_public = :make_public
+                , file_formats = :file_formats
                 , push_to_specify = :push_to_specify
+                , digitiser_id = :digitiser_id
+                , metadata_version = :metadata_version
+                , metadata_source = :metadata_source
             WHERE asset_guid = :asset_guid    
             """;
     default Asset update_asset_internal(Asset asset) {
@@ -709,13 +724,17 @@ public interface AssetRepository extends SqlObject {
                         .bind("status",asset.status)
                         .bind("subject",asset.subject)
                         .bind("payload_type", asset.payload_type)
+                        .bind("digitiser_id", asset.digitiser_id)
 //                        .bind("file_f")
                         .bind("internal_status", asset.internal_status)
+                        .bindArray("file_formats", String.class, asset.file_formats)
                         .bind("tags", new Gson().toJson(asset.tags))
                         .bind("asset_locked", asset.asset_locked)
                         .bind("make_public", asset.make_public)
                         .bind("push_to_specify", asset.push_to_specify)
                         .bind("asset_guid",asset.asset_guid)
+                        .bind("metadata_version", asset.metadata_version)
+                        .bind("metadata_source", asset.metadata_source)
                         .execute();
                 return handle;
             });

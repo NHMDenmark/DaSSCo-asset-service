@@ -1,7 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS age;
-LOAD 'age';
-SET search_path = ag_catalog, "$user", public;
-
 --Institutions
 INSERT INTO institution(institution_name)
 VALUES ('institution_1'),

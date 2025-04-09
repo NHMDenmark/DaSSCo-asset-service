@@ -17,6 +17,8 @@ public class ExtendableEnumService {
     private Map<String, String> fileFormatCache = new ConcurrentHashMap<>();
     private Map<String, String> subjectCache = new ConcurrentHashMap<>();
 
+    private Map<String, String> issueCategoryCache = new ConcurrentHashMap<>();
+
     @Inject
     public ExtendableEnumService(Jdbi jdbi) {
         this.jdbi = jdbi;
@@ -24,7 +26,7 @@ public class ExtendableEnumService {
 
     public enum ExtendableEnum {
         FILE_FORMAT("file_format"),
-        ISSUE_NAME("issue_name"),
+        ISSUE_CATEGORY("issue_category"),
         STATUS("asset_status"),
         SUBJECT("subject");
 
@@ -57,6 +59,13 @@ public class ExtendableEnumService {
         return new HashSet<>(this.subjectCache.values());
     }
 
+    public Set<String> getIssueCategories() {
+        if (issueCategoryCache.isEmpty()) {
+            initCache(ExtendableEnum.ISSUE_CATEGORY);
+        }
+        return new HashSet<>(this.issueCategoryCache.values());
+    }
+
     public Map<String, String> getFileFormatCache() {
         if (fileFormatCache.isEmpty()) {
             initCache(ExtendableEnum.FILE_FORMAT);
@@ -87,6 +96,9 @@ public class ExtendableEnumService {
                 case STATUS -> {
                     this.statusCache.put(s,s);
                 }
+                case ISSUE_CATEGORY -> {
+                    this.issueCategoryCache.put(s,s);
+                }
             }
         });
     }
@@ -101,16 +113,21 @@ public class ExtendableEnumService {
                 if (getFileFormats().contains(value)) {
                     throw new IllegalArgumentException("File format already exists");
                 }
-
             }
             case SUBJECT -> {
                 if (getSubjects().contains(value)) {
-                    throw new IllegalArgumentException("File format already exists");
+                    throw new IllegalArgumentException("Subject already exists");
                 }
             }
             case STATUS -> {
                 if (getStatuses().contains(value)) {
-                    throw new IllegalArgumentException("File format already exists");
+                    throw new IllegalArgumentException("Status already exists");
+                }
+            }
+            case ISSUE_CATEGORY -> {
+                if(issueCategoryCache.containsKey(value)) {
+                    throw new IllegalArgumentException("Issue category already exists");
+
                 }
             }
         }
@@ -129,6 +146,9 @@ public class ExtendableEnumService {
             case STATUS -> {
                 statusCache.put(value,value);
             }
+            case ISSUE_CATEGORY -> {
+                issueCategoryCache.put(value,value);
+            }
         }
     }
 
@@ -139,6 +159,12 @@ public class ExtendableEnumService {
             }
             case STATUS -> {
                 return getStatuses().contains(value);
+            }
+            case SUBJECT -> {
+                return getSubjects().contains(value);
+            }
+            case ISSUE_CATEGORY -> {
+                return getIssueCategories().contains(value);
             }
             default -> {
                 throw new RuntimeException("Enum name is null");
@@ -167,13 +193,5 @@ public class ExtendableEnumService {
                 this.statusCache.put(new_name, new_name);
             }
         }
-    }
-
-    public void deleteFileFormat(ExtendableEnum extendableEnum, String format) {
-        jdbi.withHandle(h -> {
-            EnumRepository repository = h.attach(EnumRepository.class);
-            repository.deleteEnum(extendableEnum,format);
-            return h;
-        });
     }
 }

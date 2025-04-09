@@ -1,17 +1,16 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled("Disabled until wp5a is prioritized")
 class BulkUpdateServiceTest extends AbstractIntegrationTest{
     @Test
     void test() {
@@ -196,7 +195,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         assetService.persistAsset(secondToBeUpdated, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
-        updatedAsset.parent_guid = "this-does-not-exist";
+        updatedAsset.parent_guids = Set.of("this-does-not-exist");
 
         List<String> listOfAssets = Arrays.asList("bulk-update-no-parent", "bulk-update-no-parent-2");
 

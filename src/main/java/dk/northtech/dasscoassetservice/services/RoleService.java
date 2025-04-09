@@ -32,8 +32,11 @@ public class RoleService {
         this.roleCache.add(newRole);
     }
     public void initRoles() {
+        initRoles(false);
+    }
+    public void initRoles(boolean force) {
         synchronized (this) {
-            if (!this.initialised) {
+            if (!this.initialised ||force) {
                 jdbi.withHandle(h -> {
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
                     List<String> strings = roleRepository.listRoles();

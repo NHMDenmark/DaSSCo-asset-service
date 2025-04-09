@@ -106,42 +106,25 @@ public class InternalStatusRepository {
         });
     }
 
-    String assetErrorSQL =
-            """
-                         SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'ASSET_RECEIVED'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                  UNION ALL
-                                  SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'ERDA_ERROR'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                  UNION ALL
-                                  SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'METADATA_RECEIVED'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp, a.error_message, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)                                                        
-                                                      ;
-                    """;
+    String IN_PROGRESS_SQL = """
+                SELECT asset_guid
+                    , status
+                    , error_timestamp
+                    , error_message
+                    , institution
+                    , collection_name AS collection
+                    , parent_guid
+                FROM asset
+                    INNER JOIN collection USING (collection_id)
+                WHERE asset.internal_status IN ('METADATA_RECEIVED', 'ERDA_ERROR', 'ASSET_RECEIVED');         
+            """;
     public List<AssetStatusInfo> getInprogress() {
         return jdbi.withHandle(handle -> {
-            handle.execute(boilerplate);
-            return handle.createQuery(this.assetErrorSQL)
+            return handle.createQuery(IN_PROGRESS_SQL)
                     .map((rs, ctx) -> {
                         Instant errorTimestamp = null;
                         rs.getString("error_timestamp");
                         if (!rs.wasNull()) {
-//                            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
                             errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
                         }
                         return new AssetStatusInfo(rs.getString("asset_guid")

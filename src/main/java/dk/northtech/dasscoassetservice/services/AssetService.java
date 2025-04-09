@@ -105,9 +105,12 @@ public class AssetService {
         if (Strings.isNullOrEmpty(asset.status) || !extendableEnumService.getStatuses().contains(asset.status)) {
             throw new IllegalArgumentException("Status cannot be null");
         }
-        if ("".equals(asset.parent_guid)) {
-            throw new IllegalArgumentException("Parent may not be an empty string");
-        }
+        asset.parent_guids.forEach(parent_guid -> {
+
+            if ("".equals(parent_guid)) {
+                throw new IllegalArgumentException("Parent may not be an empty string");
+            }
+        });
     }
 
     void valiedateAndSetCollectionId(Asset asset) {
@@ -136,20 +139,27 @@ public class AssetService {
     }
 
     public Optional<Asset> getAsset(String assetGuid) {
-        Optional<Asset> asset = jdbi.onDemand(AssetRepository.class).readAssetInternalNew(assetGuid);
-        if (asset.isPresent()) {
+
+//        if (asset.isPresent()) {
+//            Asset assetToBeMapped = asset.get();
+
+        return jdbi.withHandle(h -> {
+            AssetRepository assetRepository = h.attach(AssetRepository.class);
+            Optional<Asset> asset = assetRepository.readAssetInternalNew(assetGuid);
+
+            if (asset.isEmpty()) {
+                return Optional.empty();
+            }
             Asset assetToBeMapped = asset.get();
-            jdbi.withHandle(h -> {
-                EventRepository attach = h.attach(EventRepository.class);
-                assetToBeMapped.events = attach.getAssetEvents(assetGuid);
-                SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
-                assetToBeMapped.specimens = specimenRepository.findSpecimensByAsset(assetGuid);
-                UserRepository userRepository = h.attach(UserRepository.class);
-                assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
-                FundingRepository fundingRepository = h.attach(FundingRepository.class);
-                assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
-                return h;
-            });
+            EventRepository attach = h.attach(EventRepository.class);
+            assetToBeMapped.events = attach.getAssetEvents(assetGuid);
+            SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
+            assetToBeMapped.specimens = specimenRepository.findSpecimensByAsset(assetGuid);
+            UserRepository userRepository = h.attach(UserRepository.class);
+            assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
+            FundingRepository fundingRepository = h.attach(FundingRepository.class);
+            assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
+            assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
             for (Event event : assetToBeMapped.events) {
                 System.out.println(event);
                 if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
@@ -168,14 +178,17 @@ public class AssetService {
                     assetToBeMapped.date_asset_deleted = event.timestamp;
                 }
             }
+
             return Optional.of(assetToBeMapped);
-        }
-        return asset;
+        });
+
+//        }
+
     }
 
     void validateAsset(Asset asset) {
 
-        if (asset.asset_guid.equals(asset.parent_guid)) {
+        if (asset.parent_guids != null && asset.parent_guids.contains(asset.asset_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
         Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
@@ -199,8 +212,10 @@ public class AssetService {
                 }
             }
         }
-        if (asset.parent_guid != null) {
-            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
+        //TODO check for all assets
+        for (String parent_guid : asset.parent_guids) {
+
+            Optional<Asset> parentOpt = getAsset(parent_guid);
             if (parentOpt.isEmpty()) {
                 throw new IllegalArgumentException("Parent doesnt exist");
             }
@@ -241,7 +256,7 @@ public class AssetService {
         logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
-        logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guid);
+        logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guids);
         Asset resultAsset = jdbi.inTransaction(h -> {
             // Default values on creation
             asset.date_metadata_updated = Instant.now();
@@ -300,6 +315,10 @@ public class AssetService {
                 }
 
             }
+            //Handle parents
+            for (String s : asset.parent_guids) {
+                assetRepository.insert_parent_child(asset.asset_guid, s);
+            }
             Integer pipelineId = null;
             if (asset.pipeline != null) {
                 Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
@@ -307,7 +326,6 @@ public class AssetService {
                     pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
                 }
             }
-            System.out.println("PYPELINE ID " + pipelineId);
             eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET_METADATA, user.dassco_user_id, pipelineId);
 //            LocalDateTime createAssetEnd = LocalDateTime.now();
 //            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
@@ -315,7 +333,7 @@ public class AssetService {
             try {
                 Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
                         .observe(() -> {
-                            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guid, asset.institution, asset.collection), user, allocation);
+                            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection), user, allocation);
                         });
             } catch (Exception e) {
                 h.rollback();
@@ -344,7 +362,6 @@ public class AssetService {
             //you are here
             return asset;
         });
-
 
 //        statisticsDataServiceV2.refreshCachedData();
 //        this.statisticsDataServiceV2.addAssetToCache(asset);
@@ -438,10 +455,18 @@ public class AssetService {
         validateAsset(updatedAsset);
         valiedateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
+        Set<String> existingDigitiserList = new HashSet(existing.complete_digitiser_list);
+        Set<String> existingFunding = new HashSet<>(existing.funding);
+        Set<String> newFunding = new HashSet<>(updatedAsset.funding);
+        Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
+        Set<String> existing_parents = new HashSet<>(existing.parent_guids);
         rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
-        Set<String> updatedSpecimenBarcodes = updatedAsset.specimens.stream().map(Specimen::barcode).collect(Collectors.toSet());
-
-        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenBarcodes.contains(s.barcode())).collect(Collectors.toList());
+        if (updatedAsset.digitiser != null && !updatedAsset.digitiser.equals(existing.digitiser)) {
+            User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
+            existing.digitiser_id = digitiser.dassco_user_id;
+        }
+        Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
+        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).collect(Collectors.toList());
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
@@ -457,7 +482,7 @@ public class AssetService {
         existing.restricted_access = updatedAsset.restricted_access;
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
-        existing.parent_guid = updatedAsset.parent_guid;
+        existing.parent_guids = updatedAsset.parent_guids;
         existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         existing.metadata_version = updatedAsset.metadata_version;
@@ -466,7 +491,7 @@ public class AssetService {
         existing.push_to_specify = updatedAsset.push_to_specify;
         existing.digitiser = updatedAsset.digitiser;
         existing.make_public = updatedAsset.make_public;
-
+        existing.digitiser = updatedAsset.digitiser;
         existing.issues = updatedAsset.issues;
         existing.complete_digitiser_list = updatedAsset.complete_digitiser_list;
         existing.funding = updatedAsset.funding;
@@ -480,12 +505,15 @@ public class AssetService {
             AssetRepository repository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
+            UserRepository userRepository = h.attach(UserRepository.class);
+            FundingRepository fundingRepository = h.attach(FundingRepository.class);
             repository.update_asset_internal(existing);
             Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(existing.institution, updatedAsset.pipeline);
             eventRepository.insertEvent(existing.asset_guid
                     , DasscoEvent.UPDATE_ASSET_METADATA
                     , user.dassco_user_id
                     , pipelineByInstitutionAndName.isPresent() ? pipelineByInstitutionAndName.get().pipeline_id() : null);
+            //Specimens
             for (Specimen s : specimensToDetach) {
                 specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
             }
@@ -501,7 +529,43 @@ public class AssetService {
                 }
 
             }
-
+            //Handle digitisers
+            for (String s : existingDigitiserList) {
+                if (!newDigitisers.contains(s)) {
+                    User userRoRemove = userService.ensureExists(new User(s));
+                    userRepository.removeFromDigitiserList(existing.asset_guid, userRoRemove.dassco_user_id);
+                }
+            }
+            for (String s : newDigitisers) {
+                if (!existingDigitiserList.contains(s)) {
+                    User userToAdd = userService.ensureExists(new User(s));
+                    userRepository.addDigitiser(existing.asset_guid, userToAdd.dassco_user_id);
+                }
+            }
+            //Handle funding
+            for (String s : existingFunding) {
+                if (!newFunding.contains(s)) {
+                    Optional<Funding> fundingIfExists = fundingService.getFundingIfExists(s);
+                    fundingIfExists.ifPresent(funding -> fundingRepository.deFundAsset(existing.asset_guid, funding.funding_id()));
+                }
+            }
+            for (String s : newFunding) {
+                if (!existingFunding.contains(s)) {
+                    Funding funding = fundingService.ensureExists(s);
+                    fundingRepository.fundAsset(existing.asset_guid, funding.funding_id());
+                }
+            }
+            //Handle parents
+            for (String s : existing_parents) {
+                if (!existing.parent_guids.contains(s)) {
+                    repository.delete_parent_child(existing.asset_guid, s);
+                }
+            }
+            for (String s : existing.parent_guids) {
+                if (!existing_parents.contains(s)) {
+                    repository.insert_parent_child(existing.asset_guid, s);
+                }
+            }
             return h;
         });
 

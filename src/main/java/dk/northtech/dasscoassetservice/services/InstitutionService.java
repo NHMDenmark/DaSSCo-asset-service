@@ -27,11 +27,12 @@ public class InstitutionService {
     private Jdbi jdbi;
     boolean initialised = false;
     private final ConcurrentHashMap<String, Institution> institutionMap = new ConcurrentHashMap<>();
-
+    private CacheService cacheService;
     @Inject
-    public InstitutionService(Jdbi jdbi,
+    public InstitutionService(Jdbi jdbi, CacheService cacheService,
                               InstitutionCache institutionCache) {
         this.jdbi = jdbi;
+        this.cacheService = cacheService;
         this.institutionCache = institutionCache;
     }
 
@@ -72,7 +73,10 @@ public class InstitutionService {
             //institutionCache.putInstitutionInCache(institution.name(), institution);
             return h;
         });
+        //make sure institution exists in collection service
         this.institutionMap.put(institution.name(), institution);
+        this.cacheService.reloadRoles();
+        this.cacheService.reloadCollections();
         //this.cache.put(institution.name(),institution);
         return institution;
     }

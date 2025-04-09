@@ -73,12 +73,12 @@ public interface BulkUpdateRepository extends SqlObject {
                         WHERE asset.asset_guid IN $asset_guids
                         MATCH (asset)-[existing_has_status:HAS]->(:Status)
                 """);
-        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
-            sb.append("""
-                          MATCH (new_parent:Asset{name: $new_parent_guid})
-                    """);
-            builder.add("new_parent_guid", updatedFields.parent_guid);
-        }
+//        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
+//            sb.append("""
+//                          MATCH (new_parent:Asset{name: $new_parent_guid})
+//                    """);
+//            builder.add("new_parent_guid", updatedFields.parent_guid);
+//        }
         if (!Strings.isNullOrEmpty(updatedFields.status)) {
             sb.append("""
                             MATCH (new_status:Status{name: $new_status})
@@ -92,13 +92,13 @@ public interface BulkUpdateRepository extends SqlObject {
                         OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(:Payload_type)
                         OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(:Subject)
                 """);
-        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
-
-            sb.append("""
-                            DELETE existing_child_of
-                            MERGE (asset)-[:CHILD_OF]->(new_parent)
-                    """);
-        }
+//        if (!Strings.isNullOrEmpty(updatedFields.parent_guid)) {
+//
+//            sb.append("""
+//                            DELETE existing_child_of
+//                            MERGE (asset)-[:CHILD_OF]->(new_parent)
+//                    """);
+//        }
         if (!Strings.isNullOrEmpty(updatedFields.status)) {
             sb.append("""
                             DELETE existing_has_status
@@ -270,16 +270,16 @@ public interface BulkUpdateRepository extends SqlObject {
 
         // Add Event to every asset:
         // TODO: This is a solution for the bulk update, but it takes individual calls.
-        for (Asset asset : assets) {
-            // Set event (individual calls)
-            setEvent(updatedAsset.updateUser, event, asset);
-            // Connect parent and child (individual calls)
-            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
-            // Modify tags
-            if (!updatedAsset.tags.isEmpty()) {
-                setTags(asset);
-            }
-        }
+//        for (Asset asset : assets) {
+//            // Set event (individual calls)
+//            setEvent(updatedAsset.updateUser, event, asset);
+//            // Connect parent and child (individual calls)
+//            connectParentChild(updatedAsset.parent_guid, asset.asset_guid);
+//            // Modify tags
+//            if (!updatedAsset.tags.isEmpty()) {
+//                setTags(asset);
+//            }
+//        }
 
         // Return the List of Assets:
         return this.readMultipleAssetsInternal(assetList);

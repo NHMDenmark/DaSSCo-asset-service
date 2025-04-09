@@ -56,6 +56,10 @@ public interface UserRepository extends SqlObject {
     @SqlUpdate("INSERT INTO digitiser_list(asset_guid, dassco_user_id) VALUES (:assetGuid, :dasscoUserId)")
     void addDigitiser(String assetGuid, int dasscoUserId);
 
+
+    @SqlUpdate("DELETE FROM digitiser_list WHERE asset_guid = :assetGuid AND dassco_user_id = :dasscoUserId")
+    void removeFromDigitiserList(String assetGuid, int dasscoUserId);
+
     @Transaction
     default boolean userHasAccessToAsset(String user, String assetGuid){
         throw new UnsupportedOperationException("Not implemented");

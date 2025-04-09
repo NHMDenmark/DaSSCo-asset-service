@@ -76,6 +76,7 @@ public class CollectionService {
                         throw new IllegalArgumentException("Role cannot be null or empty");
                     }
                     roleRepository.createRole(role.name());
+
                 }
             }
             roleRepository.setRestrictions(RestrictedObjectType.COLLECTION, collection.roleRestrictions(), persistedCollection.collection_id());
@@ -85,7 +86,7 @@ public class CollectionService {
             this.collectionCache.get(persistedCollection.institution()).put(persistedCollection.name(), persistedCollection);
             return h;
         });
-
+        roleService.initRoles(true);
 
         return collection;
     }
@@ -157,11 +158,13 @@ public class CollectionService {
         collectionCache.get(collection.institution()).put(collection.name(), collection);//(collection.institution(), collection.name(), collection);
         return collection;
     }
-
-    // Load all collections and role restrictions into memory
     public void initCollections() {
+        initCollections(false);
+    }
+    // Load all collections and role restrictions into memory
+    public void initCollections(boolean force) {
         synchronized (this) {
-            if (!this.initialised) {
+            if (!this.initialised || force) {
                 jdbi.withHandle(h -> {
 
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
@@ -177,7 +180,10 @@ public class CollectionService {
                     });
 //                    List<InstitutionRoleRestriction> institutionRoleRestrictions = roleRepository.getInstitutionRoleRestriction();
                     this.collectionCache.clear();
-                    this.institutionService.listInstitutions().forEach(i -> this.collectionCache.put(i.name(), new ConcurrentHashMap<>()));
+                    this.institutionService.listInstitutions().forEach(i -> {
+                        System.out.println("Hej" + i);
+                        this.collectionCache.put(i.name(), new ConcurrentHashMap<>());
+                    });
                     for (Collection collection : integerCollectionHashMap.values()) {
                         System.out.println(collection);
                         this.collectionCache

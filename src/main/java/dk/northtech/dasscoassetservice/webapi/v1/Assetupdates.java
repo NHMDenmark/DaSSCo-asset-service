@@ -153,13 +153,13 @@ public class Assetupdates {
             ) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime startTime = LocalDateTime.now();
-        logger.info("#1: POST call to assetmetadata for asset {} with parent {} at {}",asset.asset_guid, asset.parent_guid, startTime.format(formatter));
+        logger.info("#1: POST call to assetmetadata for asset {} with parent {} at {}",asset.asset_guid, asset.parent_guids, startTime.format(formatter));
 
         // Added so if the example is empty "", in the Docs the example will appear as the type "string". This converts it to null.
-        if (asset.parent_guid != null && asset.parent_guid.equals("string")){
-            logger.warn("Received asset with reserved parent GUID, setting it to null");
-            asset.parent_guid = null;
-        }
+//        if (asset.parent_guid != null && asset.parent_guid.equals("string")){
+//            logger.warn("Received asset with reserved parent GUID, setting it to null");
+//            asset.parent_guid = null;
+//        }
         Asset createdAsset = this.assetService.persistAsset(asset, userService.from(securityContext), allocation);
         int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
 

@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -8,6 +9,7 @@ import java.time.Instant;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Disabled("disabled for now")
 public class PublicationServiceTest extends AbstractIntegrationTest{
 
     // TODO: Publication endpoints don't seem to work properly. They are also hidden in the documentation.

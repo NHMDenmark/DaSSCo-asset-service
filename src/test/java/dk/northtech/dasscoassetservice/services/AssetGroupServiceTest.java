@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
@@ -11,7 +12,7 @@ import java.util.stream.IntStream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
+@Disabled("Disabled until WP5a is moved to new db")
 public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
     @Test

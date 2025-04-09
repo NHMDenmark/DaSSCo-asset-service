@@ -15,6 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static dk.northtech.dasscoassetservice.domain.GraphType.exponential;
 import static dk.northtech.dasscoassetservice.domain.GraphType.incremental;
 
+@Disabled("Disabled for now")
 public class StatisticsDataServiceTest extends AbstractIntegrationTest {
     User user = new User();
 

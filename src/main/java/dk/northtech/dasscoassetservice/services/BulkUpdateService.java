@@ -94,7 +94,7 @@ public class BulkUpdateService {
 
         // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
-        for(Asset a : assets) {
+        for (Asset a : assets) {
             System.out.println(a);
         }
 
@@ -109,20 +109,22 @@ public class BulkUpdateService {
 
         // Check that the bulk update will not set the asset to be its own parent:
         for (Asset asset : assets) {
-            if (updatedAsset.parent_guid != null) {
-                if (asset.asset_guid.equals(updatedAsset.parent_guid)) {
-                    throw new IllegalArgumentException("Asset cannot be its own parent");
-                }
+
+            if (asset.parent_guids.contains(asset.asset_guid)) {
+                throw new IllegalArgumentException("Asset cannot be its own parent");
             }
         }
 
         // Parent_guid does not exist:
-        if (updatedAsset.parent_guid != null) {
-            Optional<Asset> optParent = this.getAsset(updatedAsset.parent_guid);
+
+        updatedAsset.parent_guids.forEach(p -> {
+
+            Optional<Asset> optParent = this.getAsset(p);
             if (optParent.isEmpty()) {
                 throw new IllegalArgumentException("asset_parent does not exist!");
             }
-        }
+        });
+
 
         // Do not allow unlocking:
         if (!updatedAsset.asset_locked) {
@@ -195,53 +197,8 @@ public class BulkUpdateService {
 
     }
 
-    void validateAssetFields(Asset asset) {
-        if (Strings.isNullOrEmpty(asset.asset_guid)) {
-            throw new IllegalArgumentException("asset_guid cannot be null");
-        }
-        if (Strings.isNullOrEmpty(asset.asset_pid)) {
-            throw new IllegalArgumentException("asset_pid cannot be null");
-        }
-        if (Strings.isNullOrEmpty(asset.status) ||!extendableEnumService.getStatuses().contains(asset.status)) {
-            throw new IllegalArgumentException("Status cannot be null");
-        }
-        if ("".equals(asset.parent_guid)) {
-            throw new IllegalArgumentException("Parent may not be an empty string");
-        }
-    }
 
-    void validateAsset(Asset asset) {
-        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
-        if (pipelineOpt.isEmpty()) {
-            throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
-        }
-        if (asset.asset_guid.equals(asset.parent_guid)) {
-            throw new IllegalArgumentException("Asset cannot be its own parent");
-        }
-        Optional<Workstation> workstationOpt = workstationService.findWorkstation(asset.institution,asset.workstation);
-        if (workstationOpt.isEmpty()) {
-            throw new IllegalArgumentException("Workstation does not exist");
-        }
-        Workstation workstation = workstationOpt.get();
-        if (workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)) {
-            throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
-        }
-        if(asset.file_formats != null && !asset.file_formats.isEmpty()){
-            Set<String> fileFormats = extendableEnumService.getFileFormats();
-            for(String s: fileFormats) {
-                if(!fileFormats.contains(s)){
-                    throw new IllegalArgumentException(s + " is not a valid file format");
-                }
-            }
-        }
-        if (asset.parent_guid != null) {
-            Optional<Asset> parentOpt = getAsset(asset.parent_guid);
-            if (parentOpt.isEmpty()) {
-                throw new IllegalArgumentException("Parent doesnt exist");
-            }
-        }
 
-    }
 
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
@@ -298,6 +255,7 @@ public class BulkUpdateService {
         }
         return value;
     }
+
     // For Mocking.
     public HttpClient createHttpClient() {
         return HttpClient.newHttpClient();

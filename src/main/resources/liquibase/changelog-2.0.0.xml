@@ -3,13 +3,13 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
-    <changeSet id="VERSION-5.0.0" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0" author="Nicolas Jan" contextFilter="default">
         <sql>
             CREATE SCHEMA IF NOT EXISTS mappings;
         </sql>
     </changeSet>
     
-    <changeSet id="VERSION-5.0.0-CREATE-INSTITUTIONS-SPECIFY" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-INSTITUTIONS-SPECIFY" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="institutions_specify" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -20,7 +20,7 @@
         </createTable>
     </changeSet>
     
-    <changeSet id="VERSION-5.0.0-CREATE-INSTITUTIONS-ARS" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-INSTITUTIONS-ARS" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="institutions_ars" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -31,7 +31,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="VERSION-5.0.0-CREATE-COLLECTIONS-SPECIFY" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-COLLECTIONS-SPECIFY" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="collections_specify" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -42,7 +42,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="VERSION-5.0.0-CREATE-COLLECTIONS-ARS" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-COLLECTIONS-ARS" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="collections_ars" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -53,7 +53,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="VERSION-5.0.0-CREATE-INSTITUTIONS-MAPPING" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-INSTITUTIONS-MAPPING" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="institutions_mapping" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -86,7 +86,7 @@
                 referencedColumnNames="id"/>
     </changeSet>
     
-    <changeSet id="VERSION-5.0.0-CREATE-COLLECTIONS-MAPPING" author="Nicolas Jan" contextFilter="default">
+    <changeSet id="VERSION-2.0.0-CREATE-COLLECTIONS-MAPPING" author="Nicolas Jan" contextFilter="default">
         <createTable tableName="collections_mapping" schemaName="mappings">
             <column name="id" type="int" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -119,7 +119,7 @@
                 referencedColumnNames="id"/>
     </changeSet>
     
-    <changeSet id="VERSION-5.0.0-TAG-DATABASE" author="Nicolas Jan" context="default">
-        <tagDatabase tag="VERSION-5.0.0"/>
+    <changeSet id="VERSION-2.0.0-TAG-DATABASE" author="Nicolas Jan" context="default">
+        <tagDatabase tag="VERSION-2.0.0"/>
     </changeSet>
 </databaseChangeLog>

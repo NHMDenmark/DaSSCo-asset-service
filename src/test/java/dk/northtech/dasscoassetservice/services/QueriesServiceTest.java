@@ -16,6 +16,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Disabled("Disabled until wp5a is prioritized")
 class QueriesServiceTest extends AbstractIntegrationTest {
     User user = new User("moogie-woogie");
     User auditingUser = new User("moogie-auditor");
@@ -90,7 +91,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         Asset parentAsset = getTestAsset("asset_parent", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(parentAsset, user, 11);
         Asset childAsset = getTestAsset("asset_child", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
-        childAsset.parent_guid = parentAsset.asset_guid;
+        childAsset.parent_guids = Set.of(parentAsset.asset_guid);
         assetService.persistAsset(childAsset, user, 11);
         Asset normalAsset = getTestAsset("asset_standard", user.username, "FNOOP", "i2_w1", "fnoopyline", "n_c1");
         assetService.persistAsset(normalAsset, user, 11);

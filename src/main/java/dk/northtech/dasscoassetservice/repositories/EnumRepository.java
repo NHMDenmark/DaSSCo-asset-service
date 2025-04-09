@@ -75,33 +75,4 @@ public interface EnumRepository extends SqlObject {
         }
     };
 
-    default void deleteEnum(ExtendableEnumService.ExtendableEnum enumToDelete, String valueToDelete) {
-        String sql =
-                """
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                             MATCH (e:<EnumName>{<property_name>: $<property_name>)
-                             DELETE e
-                           $$
-                        ) as (e agtype);""";
-
-        String formattedSQL = formatSQL(sql, enumToDelete);
-        try {
-            withHandle(handle -> {
-                // We have to register the type
-                Connection connection = handle.getConnection();
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                AgtypeMap name = new AgtypeMapBuilder().add( "name",valueToDelete).build();
-                Agtype agtype = AgtypeFactory.create(name);
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

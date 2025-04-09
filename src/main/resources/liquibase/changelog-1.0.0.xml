@@ -363,6 +363,9 @@
             <column name="asset_guid" type="text">
                 <constraints primaryKey="true" primaryKeyName="pk_asset"/>
             </column>
+<!--            <column name="parent_guid" type="text">-->
+<!--                <constraints nullable="true"/>-->
+<!--            </column>-->
             <column name="asset_pid" type="text">
                 <constraints nullable="false"/>
             </column>
@@ -378,7 +381,7 @@
             <column name="digitiser_id" type="int">
                 <constraints nullable="true"/>
             </column>
-            <column name="file_format" type="text">
+            <column name="file_formats" type="text[]">
                 <constraints nullable="true"/>
             </column>
             <column name="payload_type" type="text">
@@ -434,8 +437,33 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="1.0.0:ADD_PARENT_CHILD_RELATION" author="Thomas Skov Bornerup">
+        <createTable tableName="parent_child">
+            <column name="parent_child_id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_parent_child"/>
+            </column>
+            <column name="parent_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="child_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 
     <changeSet id="1.0.0:ADD_ASSET_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint
+                baseTableName="parent_child"
+                baseColumnNames="parent_guid"
+                constraintName="fk_parent_child__parent_asset"
+                referencedTableName="asset"
+                referencedColumnNames="asset_guid"/>
+        <addForeignKeyConstraint
+                baseTableName="parent_child"
+                baseColumnNames="child_guid"
+                constraintName="fk_parent_child__child_asset"
+                referencedTableName="asset"
+                referencedColumnNames="asset_guid"/>
         <addForeignKeyConstraint
                 baseTableName="asset"
                 baseColumnNames="subject"
@@ -498,7 +526,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="description" type="text"/>
-            <column name="notest" type="text"/>
+            <column name="notes" type="text"/>
             <column name="solved" type="boolean">
                 <constraints nullable="false"/>
             </column>
