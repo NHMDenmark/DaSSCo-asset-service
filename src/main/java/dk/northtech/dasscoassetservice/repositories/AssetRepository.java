@@ -58,6 +58,7 @@ public interface AssetRepository extends SqlObject {
                     , date_asset_finalised
                     , initial_metadata_recorded_by
                     , date_metadata_ingested
+                    , legality_id
                   ) VALUES (
                     :assetGuid
                     , :asset_pid
@@ -80,6 +81,7 @@ public interface AssetRepository extends SqlObject {
                     , :dateAssetFinalised
                     , :initialMetadataRecordedBy
                     , :dateMetadataIngested
+                    , :legality_id
                   );
     """;
 
@@ -108,6 +110,7 @@ public interface AssetRepository extends SqlObject {
                     .bind("dateAssetFinalised", asset.date_asset_finalised != null ?Timestamp.from(asset.date_asset_finalised):null)
                     .bind("initialMetadataRecordedBy", asset.initial_metadata_recorded_by)
                     .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested): null)
+                    .bind("legality_id", asset.legal != null ? asset.legal.legality_id():null)
                     .execute();
             return handle;
         });
@@ -162,9 +165,13 @@ public interface AssetRepository extends SqlObject {
                 , collection.institution_name
                 , dassco_user.username AS digitiser
                 , workstation.workstation_name 
+                , copyright
+                , license
+                , credit
             FROM asset
             LEFT JOIN collection USING(collection_id)
             LEFT JOIN workstation USING(workstation_id)  
+            LEFT JOIN legality USING(legality_id)
             LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
             """;
 
@@ -293,146 +300,6 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
-    static String buildCreateSQL(Asset asset, AgtypeMapBuilder agBuilder) {
-        StringBuilder sb = new StringBuilder("""
-                SELECT * FROM ag_catalog.cypher('dassco'
-                    , $$
-                        MATCH (i:Institution {name: $institution_name})
-                        MATCH (c:Collection {name: $collection_name})
-                        MATCH (w:Workstation {name: $workstation_name})
-                        MATCH (p:Pipeline {name: $pipeline_name})
-                        MATCH (ist:Internal_status{name: $internal_status})
-                        MATCH (s:Status{name: $status})
-                        MERGE (a:Asset {name: $asset_guid
-                            , asset_pid: $asset_pid
-                            , asset_guid: $asset_guid
-                            , date_asset_taken: $date_asset_taken
-                            , tags: $tags
-                            , asset_locked: $asset_locked
-                            , date_metadata_ingested: $date_metadata_ingested
-                            , date_asset_finalised: $date_asset_finalised
-                            , make_public: $make_public
-                            , push_to_specify: $push_to_specify
-                        })
-                        MERGE (a)-[ahs:HAS]->(s)
-                        MERGE (a)-[ahi:HAS]->(ist)
-                """);
-
-        if (asset.date_asset_taken != null) {
-            agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_taken", (String) null);
-        }
-        if (asset.date_metadata_ingested != null) {
-            System.out.println("D8 is not null");
-            agBuilder.add("date_metadata_ingested", asset.date_metadata_ingested.toEpochMilli());
-        } else {
-            agBuilder.add("date_metadata_ingested", (String) null);
-        }
-        if (asset.date_asset_finalised != null) {
-            agBuilder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_finalised", (String) null);
-        }
-        if (!Strings.isNullOrEmpty(asset.subject)) {
-            sb.append("""
-                            MERGE (sb:Subject{name: $subject})
-                            MERGE (a)-[aha:HAS]->(sb)
-                    """);
-            agBuilder.add("subject", asset.subject);
-
-        }
-        if (!Strings.isNullOrEmpty(asset.camera_setting_control)) {
-            sb.append("""
-                            MERGE (csc:Camera_setting_control{name: $camera_setting_control})
-                            MERGE (a)-[:HAS]->(csc)
-                    """);
-            agBuilder.add("camera_setting_control", asset.camera_setting_control);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_version)) {
-            sb.append("""
-                            MERGE (mv:Metadata_version{name: $metadata_version})
-                            MERGE (a)-[:HAS]->(mv)
-                    """);
-            agBuilder.add("metadata_version", asset.metadata_version);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_source)) {
-            sb.append("""
-                            MERGE (mds:Metadata_source{name: $metadata_source})
-                            MERGE (a)-[:HAS]->(mds)
-                    """);
-            agBuilder.add("metadata_source", asset.metadata_source);
-        }
-
-        if (asset.payload_type != null) {
-            sb.append("""
-                            MERGE (pt:Payload_type{name: $payload_type})
-                            MERGE (a)-[ahp:HAS]->(pt)
-                    """);
-            agBuilder.add("payload_type", asset.payload_type);
-        }
-        if (asset.digitiser != null) {
-            sb.append("""
-                            MERGE (digitiser:Digitiser{name: $digitiser})
-                            MERGE (a)<-[:DIGITISED]-(digitiser)
-                    """);
-            agBuilder.add("digitiser", asset.digitiser);
-        }
-
-        for(int i = 0 ; i < asset.funding.size(); i++) {
-            sb.append("MERGE (funding")
-                    .append(i)
-                    .append(":Funding_entity{name: $funding")
-                    .append(i)
-                    .append("})\n        MERGE (a)<-[:FUNDS]-(funding")
-                    .append(i).append(")");
-            agBuilder.add("funding" + i, asset.funding.get(i));
-        }
-        for(int i = 0 ; i < asset.issues.size(); i++) {
-            sb.append("      MERGE (issues")
-                    .append(i)
-                    .append(":Issue{name: $issues")
-                    .append(i)
-                    .append("})\n        MERGE (a)-[:HAS]->(issues")
-                    .append(i).append(")");
-            agBuilder.add("issues" + i, asset.issues.get(i).issue());
-        }
-        for(int i = 0 ; i < asset.file_formats.size(); i++) {
-            sb.append("      MERGE (new_file_format")
-                    .append(i)
-                    .append(":File_format{name: $new_file_format")
-                    .append(i)
-                    .append("})\n        MERGE (a)-[:HAS]->(new_file_format")
-                    .append(i).append(")");
-            agBuilder.add("new_file_format" + i, asset.file_formats.get(i));
-        }
-        for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
-            sb.append("      MERGE (digitiser")
-                    .append(i)
-                    .append(":Digitiser{name: $digitiser")
-                    .append(i)
-                    .append("})\n        MERGE (a)<-[:WORKED_ON]-(digitiser")
-                    .append(i).append(")");
-            agBuilder.add("digitiser" + i, asset.complete_digitiser_list.get(i));
-        }
-
-        sb.append("""                         
-                        \nMERGE (u:User{user_id: $user, name: $user})
-                        MERGE (e:Event{timestamp: $created_date, event:'CREATE_ASSET_METADATA', name: 'CREATE_ASSET_METADATA'})
-                        MERGE (e)-[uw:USED]->(w)
-                        MERGE (e)-[up:USED]->(p)
-                        MERGE (e)-[pb:INITIATED_BY]->(u)
-                        MERGE (a)-[ca:CHANGED_BY]-(e)
-                        MERGE (a)-[bt:BELONGS_TO]->(i)
-                        MERGE (w)-[sa:STATIONED_AT]->(i)
-                        MERGE (p)-[ub:USED_BY]->(i)
-                        MERGE (a)-[ipf:IS_PART_OF]->(c)
-                    $$
-                        , #params) as (a agtype);
-                """);
-
-        return sb.toString();
-    }
 
 //    default Asset persistAssetNew(Asset asset) {
 //        System.out.println(asset);
@@ -527,177 +394,7 @@ public interface AssetRepository extends SqlObject {
         }
     }
 
-    // We have to delete relations before update because deleting and recreating a relation without changes will result in
-    // erratic behavior from the database. It appears that either relations will be created and not deleted or deleted and not recreated.
-    static AGEQuery deleteRelations(Asset a) {
-        AgtypeMapBuilder builder = new AgtypeMapBuilder();
-        StringBuilder sb = new StringBuilder("""
-                        SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (asset:Asset {name: $asset_guid})
-                            MATCH (asset)-[existing_has_status:HAS]->(status:Status)
-                            OPTIONAL MATCH (asset)-[existing_child_of:CHILD_OF]->(parent:Asset)
-                            OPTIONAL MATCH (asset)<-[existing_worked_on:WORKED_ON]-(:Digitiser)
-                            OPTIONAL MATCH (asset)<-[existing_digitised:DIGITISED]-(:Digitiser)
-                            OPTIONAL MATCH (asset)<-[existing_funds:FUNDS]-(:Funding_entity)
-                            OPTIONAL MATCH (asset)-[existing_has_payload_type:HAS]->(payload_type:Payload_type)
-                            OPTIONAL MATCH (asset)-[existing_has_subject:HAS]->(subject:Subject)
-                            OPTIONAL MATCH (asset)-[existing_has_camera_setting_control:HAS]->(camera_setting_control:Camera_setting_control)
-                            OPTIONAL MATCH (asset)-[existing_has_metadata_version:HAS]->(metadata_version:Metadata_version)
-                            OPTIONAL MATCH (asset)-[existing_has_metadata_source:HAS]->(metadata_source:Metadata_source)
-                            OPTIONAL MATCH (asset)-[existing_has_file_format:HAS]->(file_format:File_format)
-                            DELETE existing_digitised
-                            DELETE existing_worked_on
-                            DELETE existing_has_payload_type
-                            DELETE existing_has_subject
-                            DELETE existing_has_camera_setting_control
-                            DELETE existing_has_metadata_version
-                            DELETE existing_has_metadata_source
-                            DELETE existing_has_file_format
-                            DELETE existing_has_status
-                            DELETE existing_child_of
-                            DELETE existing_funds
-                """);
-        sb.append("""
-                \n$$
-                        , #params) as (a agtype);
-                """);
-        builder.add("asset_guid", a.asset_guid);
-        return new AGEQuery(sb.toString(),builder);
-    }
-    static String buildUpdateSQL(Asset asset, AgtypeMapBuilder agBuilder) {
-        StringBuilder sb = new StringBuilder("""
-                SELECT * FROM ag_catalog.cypher('dassco'
-                        , $$
-                            MATCH (collection:Collection {name: $collection_name})
-                            MATCH (workstation:Workstation {name: $workstation_name})
-                            MATCH (pipeline:Pipeline {name: $pipeline_name})
-                            MATCH (asset:Asset {name: $asset_guid})
-                            MATCH (new_status:Status{name:$status})
-                            MERGE (asset)-[:HAS]->(new_status)
-                            MERGE (user:User{user_id: $user, name: $user})
-                            MERGE (update_event:Event{timestamp: $updated_date, event:'UPDATE_ASSET_METADATA', name: 'UPDATE_ASSET_METADATA'})
-                            MERGE (update_event)-[uw:USED]->(workstation)
-                            MERGE (update_event)-[up:USED]->(pipeline)
-                            MERGE (update_event)-[pb:INITIATED_BY]->(user)
-                            MERGE (asset)-[ca:CHANGED_BY]->(update_event)
-                            SET asset.status = $status
-                            , asset.tags = $tags
-                            , asset.subject = $subject
-                            , asset.payload_type = $payload_type
-                            , asset.restricted_access = $restricted_access
-                            , asset.date_asset_finalised = $date_asset_finalised
-                            , asset.parent_id = $parent_id
-                            , asset.asset_locked = $asset_locked
-                            , asset.internal_status = $internal_status
-                            , asset.date_asset_taken = $date_asset_taken
-                            , asset.date_metadata_ingested = $date_metadata_ingested
-                            , asset.make_public = $make_public
-                            , asset.push_to_specify = $push_to_specify
-                """);
-        if (asset.date_asset_taken != null) {
-            agBuilder.add("date_asset_taken", asset.date_asset_taken.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_taken", (String) null);
-        }
-        if (asset.date_metadata_ingested != null) {
-            agBuilder.add("date_metadata_ingested", asset.date_metadata_ingested.toEpochMilli());
-        } else {
-            agBuilder.add("date_metadata_ingested", (String) null);
-        }
-        if (asset.date_asset_finalised != null) {
-            agBuilder.add("date_asset_finalised", asset.date_asset_finalised.toEpochMilli());
-        } else {
-            agBuilder.add("date_asset_finalised", (String) null);
-        }
-        if (!Strings.isNullOrEmpty(asset.digitiser)) {
-            sb.append("""
-                            MERGE (new_digitiser:Digitiser{name: $new_digitiser})
-                            MERGE (asset)<-[new_digitised:DIGITISED]-(new_digitiser)
-                    """);
-            agBuilder.add("new_digitiser", asset.digitiser);
-        }
-        // Nullable relations
-        if (!Strings.isNullOrEmpty(asset.subject)) {
-            sb.append("""
-                            MERGE (new_subject:Subject{name: $subject})
-                            MERGE (asset)-[new_asset_has_subject:HAS]->(new_subject)
-                    """);
-            agBuilder.add("subject", asset.subject);
 
-        }
-        if (!Strings.isNullOrEmpty(asset.camera_setting_control)) {
-            sb.append("""
-                            MERGE (new_camera_setting_control:Camera_setting_control{name: $camera_setting_control})
-                            MERGE (asset)-[new_has_camera_setting_control:HAS]->(new_camera_setting_control)
-                    """);
-            agBuilder.add("camera_setting_control", asset.camera_setting_control);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_version)) {
-            sb.append("""
-                            MERGE (new_metadata_version:Metadata_version{name: $new_metadata_version})
-                            MERGE (asset)-[new_has_metadata_version:HAS]->(new_metadata_version)
-                    """);
-            agBuilder.add("new_metadata_version", asset.metadata_version);
-        }
-        if (!Strings.isNullOrEmpty(asset.metadata_source)) {
-            sb.append("""
-                            MERGE (new_metadata_source:Metadata_source{name: $metadata_source})
-                            MERGE (asset)-[new_has_metadata_source:HAS]->(new_metadata_source)
-                    """);
-            agBuilder.add("metadata_source", asset.metadata_source);
-        }
-
-        if (asset.payload_type != null) {
-            sb.append("""
-                            MERGE (new_payload_type:Payload_type{name: $payload_type})
-                            MERGE (asset)-[new_has_payload_type:HAS]->(new_payload_type)
-                    """);
-            agBuilder.add("payload_type", asset.payload_type);
-        }
-        // List objects
-        for(int i = 0 ; i < asset.funding.size(); i++) {
-            sb.append("          MERGE (new_funding")
-                    .append(i)
-                    .append(":Funding_entity{name: $new_funding")
-                    .append(i)
-                    .append("})\n        MERGE (asset)<-[:FUNDS]-(new_funding")
-                    .append(i).append(")");
-            agBuilder.add("new_funding" + i, asset.funding.get(i));
-        }
-        for(int i = 0 ; i < asset.issues.size(); i++) {
-            sb.append("      MERGE (new_issues")
-                    .append(i)
-                    .append(":Issue{name: $new_issues")
-                    .append(i)
-                    .append("})\n        MERGE (asset)-[:HAS]->(new_issues")
-                    .append(i).append(")");
-            agBuilder.add("new_issues" + i, asset.issues.get(i).issue());
-        }
-        for(int i = 0 ; i < asset.file_formats.size(); i++) {
-            sb.append("      MERGE (new_file_format")
-                    .append(i)
-                    .append(":File_format{name: $new_file_format")
-                    .append(i)
-                    .append("})\n        MERGE (asset)-[:HAS]->(new_file_format")
-                    .append(i).append(")");
-            agBuilder.add("new_file_format" + i, asset.file_formats.get(i));
-        }
-        for(int i = 0 ; i < asset.complete_digitiser_list.size(); i++) {
-            sb.append("      MERGE (digitiser")
-                    .append(i)
-                    .append(":Digitiser{name: $digitiser")
-                    .append(i)
-                    .append("})\n        MERGE (asset)<-[:WORKED_ON]-(digitiser")
-                    .append(i).append(")");
-            agBuilder.add("digitiser" + i, asset.complete_digitiser_list.get(i));
-        }
-        sb.append("""
-                \n$$
-                        , #params) as (a agtype);
-                """);
-        return sb.toString();
-    }
 
     String UPDATE_ASSET_SQL = """
             UPDATE asset SET 

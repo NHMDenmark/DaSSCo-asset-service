@@ -204,20 +204,7 @@ public class BulkUpdateService {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
 
-    public Optional<Asset> checkUserRights(String assetGuid, User user) {
-        LocalDateTime getAssetStart = LocalDateTime.now();
-        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
-        LocalDateTime getAssetEnd = LocalDateTime.now();
-        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", Duration.between(getAssetStart, getAssetEnd).toMillis());
-        if (optionalAsset.isPresent()) {
-            Asset found = optionalAsset.get();
-            LocalDateTime checkValidationStart = LocalDateTime.now();
-            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
-            LocalDateTime checkValidationEnd = LocalDateTime.now();
-            logger.info("#4.1.3 Validating Asset took {} ms", Duration.between(checkValidationStart, checkValidationEnd).toMillis());
-        }
-        return optionalAsset;
-    }
+
 
     public List<Asset> readMultipleAssets(List<String> assets) {
         return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assets);

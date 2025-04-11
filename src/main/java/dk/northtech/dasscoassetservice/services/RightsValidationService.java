@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import jakarta.inject.Inject;
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.util.Map.entry;
@@ -20,6 +23,7 @@ public class RightsValidationService {
     InstitutionService institutionService;
     CollectionService collectionService;
     AssetGroupService assetGroupService;
+
     private Jdbi jdbi;
 
     public static final String WRITE_ROLE_PREFIX = "WRITE_";
@@ -183,10 +187,11 @@ public class RightsValidationService {
             return true;
         }
 
-        boolean hasAccess = jdbi.onDemand(UserRepository.class).userHasAccessToAsset(user.username, assetGuid);
-        if (hasAccess) {
-            return true;
-        }
+        // TODO WP5a check access to asset groups
+//        boolean hasAccess = jdbi.onDemand(UserRepository.class).userHasAccessToAsset(user.username, assetGuid);
+//        if (hasAccess) {
+//            return true;
+//        }
 
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
         if (collectionOpt.isEmpty()) {
@@ -277,6 +282,21 @@ public class RightsValidationService {
             }
         }
         return institutionNames;
+    }
+
+    public Optional<Asset> checkUserRights(String assetGuid, User user) {
+        LocalDateTime getAssetStart = LocalDateTime.now();
+        Optional<Asset> optionalAsset = jdbi.onDemand(AssetRepository.class).readAssetInternalNew(assetGuid);
+        LocalDateTime getAssetEnd = LocalDateTime.now();
+        LOGGER.info("#4.1.2 Getting complete asset from the DB took {} ms", Duration.between(getAssetStart, getAssetEnd).toMillis());
+        if (optionalAsset.isPresent()) {
+            Asset found = optionalAsset.get();
+            LocalDateTime checkValidationStart = LocalDateTime.now();
+            checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+            LocalDateTime checkValidationEnd = LocalDateTime.now();
+            LOGGER.info("#4.1.3 Validating Asset took {} ms", Duration.between(checkValidationStart, checkValidationEnd).toMillis());
+        }
+        return optionalAsset;
     }
 
     public Map<String, Set<String>> getCollectionRights(Set<String> userRoles) {

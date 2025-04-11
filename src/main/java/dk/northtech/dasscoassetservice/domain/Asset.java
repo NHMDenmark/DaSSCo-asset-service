@@ -99,11 +99,13 @@ public class Asset {
 
     @Schema(description = "Not all assets will necessarily be pushed to Specify. Some are not needed in specify and for others there could be issues found during processing. This field will be populated during image processing with a yes or no.",example = "false",defaultValue = "false")
     public boolean push_to_specify;
-    public List<Issue> issues = new ArrayList<>();
+    //If this is null we will not delete issues. If empty list we will.
+    public List<Issue> issues;
     @Schema(description = "This is the name of the person who created the original asset (e.g., the name of the person who imaged the original specimen). For mass digitisation, this is filled in via the Ingestion Client.", example = "THBO")
     public String digitiser;
     @Schema(description = "Would be for cases where multiple digitiser has worked as a team to digitise an artifact. We do not know who did exactly which part of the digitisation process. All should be given credit for the process. We provide this. It will often be empty or just contain one name from the digitiser list.")
     public List<String> complete_digitiser_list = new ArrayList<>();
+    public Legality legal;
     public String initial_metadata_recorded_by;
 
 //    public List<String> file_formats;

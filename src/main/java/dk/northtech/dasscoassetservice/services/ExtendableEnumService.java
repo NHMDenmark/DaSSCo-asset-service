@@ -90,7 +90,6 @@ public class ExtendableEnumService {
                     this.fileFormatCache.put(s,s);
                 }
                 case SUBJECT -> {
-                    System.out.println("loert" + s);
                     this.subjectCache.put(s,s);
                 }
                 case STATUS -> {
@@ -147,6 +146,7 @@ public class ExtendableEnumService {
                 statusCache.put(value,value);
             }
             case ISSUE_CATEGORY -> {
+                System.out.println(value);
                 issueCategoryCache.put(value,value);
             }
         }

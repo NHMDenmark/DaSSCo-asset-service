@@ -20,10 +20,10 @@ import java.util.List;
 public interface IssueRepository extends SqlObject {
 
     @SqlUpdate("""
-            INSERT INTO issue(asset_guid, category,name,timestamp,status,description, notes, soleved)
+            INSERT INTO issue(asset_guid, category,name,timestamp,status,description, notes, solved)
             VALUES(:asset_guid, :category, :name, :timestamp, :status, :description, :notes, :solved);    
             """)
-    void insert_issue();
+    void insert_issue(@BindMethods Issue issue);
 
     @SqlUpdate("""
             UPDATE issue SET category = :category
@@ -31,7 +31,7 @@ public interface IssueRepository extends SqlObject {
                 , status = :status
                 , description = :description
                 , notes = :notes
-                , soleved = :solved
+                , solved = :solved
             WHERE issue_id = :issue_id
             """)
     void updateIssue(@BindMethods Issue issue);
@@ -40,9 +40,9 @@ public interface IssueRepository extends SqlObject {
     void deleteIssue(Integer issue_id);
 
     @SqlQuery("""
-        SELECT issue_id, asset_guid, category,name,timestamp,status,description, notes, soleved 
+        SELECT issue_id, asset_guid, category,name,timestamp,status,description, notes, solved 
         FROM issue 
         WHERE asset_guid = :asset_guid; 
     """)
-    List<Issue> findIssuesByAssetGuid();
+    List<Issue> findIssuesByAssetGuid(String asset_guid);
 }

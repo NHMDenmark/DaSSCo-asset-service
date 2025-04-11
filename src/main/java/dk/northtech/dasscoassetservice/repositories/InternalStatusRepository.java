@@ -12,10 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,12 +105,10 @@ public class InternalStatusRepository {
 
     String IN_PROGRESS_SQL = """
                 SELECT asset_guid
-                    , status
+                    , internal_status
                     , error_timestamp
                     , error_message
-                    , institution
                     , collection_name AS collection
-                    , parent_guid
                 FROM asset
                     INNER JOIN collection USING (collection_id)
                 WHERE asset.internal_status IN ('METADATA_RECEIVED', 'ERDA_ERROR', 'ASSET_RECEIVED');         
@@ -128,9 +123,9 @@ public class InternalStatusRepository {
                             errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
                         }
                         return new AssetStatusInfo(rs.getString("asset_guid")
-                                , rs.getString("parent_guid")
+                                , null
                                 , errorTimestamp
-                                , InternalStatus.valueOf(rs.getString("status"))
+                                , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                                 );
                     })
@@ -140,24 +135,21 @@ public class InternalStatusRepository {
 
     String assetStatusSQL =
             """
-                         SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {name: $asset_guid})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
-                                                      $$, #params) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                                              
-                                                      ;
+               SELECT asset_guid
+                    , internal_status
+                    , error_timestamp
+                    , error_message
+                    , collection_name AS collection
+                FROM asset
+                    INNER JOIN collection USING (collection_id)
+                WHERE asset.asset_guid = :assetGuid;
                     """;
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
         return jdbi.withHandle(handle -> {
-            handle.execute(boilerplate);
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guid", assetGuid).build();
-            Agtype agtypeParams = AgtypeFactory.create(agParams);
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            Set<String> parents = assetRepository.getParents(assetGuid);
             return handle.createQuery(this.assetStatusSQL)
-                    .bind("params", agtypeParams)
+                    .bind("assetGuid", assetGuid)
                     .map((rs, ctx) -> {
                         Instant errorTimestamp = null;
                         rs.getString("error_timestamp");
@@ -166,9 +158,9 @@ public class InternalStatusRepository {
                             errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
                         }
                         return new AssetStatusInfo(rs.getString("asset_guid")
-                                , rs.getString("parent_guid")
+                                , parents
                                 , errorTimestamp
-                                , InternalStatus.valueOf(rs.getString("status"))
+                                , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                         );
                     })

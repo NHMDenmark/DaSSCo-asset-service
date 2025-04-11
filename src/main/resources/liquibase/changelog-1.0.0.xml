@@ -333,7 +333,7 @@
 
     <changeSet id="1.0.0:CREATE_ISSUE_CATEGORY" author="Thomas Skov Bornerup">
         <createTable tableName="issue_category">
-            <column name="category" type="text">
+            <column name="issue_category" type="text">
                 <constraints primaryKey="true" primaryKeyName="pk_issue_category"/>
             </column>
         </createTable>
@@ -358,6 +358,23 @@
                  , ('TXT')
         </sql>
     </changeSet>
+    <changeSet id="1.0.0:CREATE_LEGALITY" author="Thomas Skov Bornerup">
+        <createTable tableName="legality">
+            <column name="legality_id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_legality"/>
+            </column>
+            <column name="copyright" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="license" type="text">
+                <constraints nullable="true"/>
+            </column>
+            <column name="credit" type="text">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
     <changeSet id="1.0.0:CREATE_ASSET" author="Thomas Skov Bornerup">
         <createTable tableName="asset">
             <column name="asset_guid" type="text">
@@ -435,6 +452,9 @@
             <column name="error_timestamp" type="timestamp">
                 <constraints nullable="true"/>
             </column>
+            <column name="legality_id" type="bigint">
+                <constraints nullable="true"/>
+            </column>
         </createTable>
     </changeSet>
     <changeSet id="1.0.0:ADD_PARENT_CHILD_RELATION" author="Thomas Skov Bornerup">
@@ -452,6 +472,12 @@
     </changeSet>
 
     <changeSet id="1.0.0:ADD_ASSET_FKEYS" author="Thomas Skov Bornerup">
+        <addForeignKeyConstraint
+                baseTableName="asset"
+                baseColumnNames="legality_id"
+                constraintName="fk_asset_legality"
+                referencedTableName="legality"
+                referencedColumnNames="legality_id"/>
         <addForeignKeyConstraint
                 baseTableName="parent_child"
                 baseColumnNames="parent_guid"
@@ -544,7 +570,7 @@
                 baseColumnNames="category"
                 constraintName="fk_issue__issue_category"
                 referencedTableName="issue_category"
-                referencedColumnNames="category"/>
+                referencedColumnNames="issue_category"/>
     </changeSet>
     <changeSet id="1.0.0:CREATE_PUBLISHER" author="Thomas Skov Bornerup">
         <createTable tableName="publisher">
@@ -634,30 +660,7 @@
                 referencedTableName="pipeline"
                 referencedColumnNames="pipeline_id"/>
     </changeSet>
-    <changeSet id="1.0.0:CREATE_LEGAL" author="Thomas Skov Bornerup">
-        <createTable tableName="legal">
-            <column name="legal_id" type="int" autoIncrement="true">
-                <constraints primaryKey="true" primaryKeyName="pk_legal"/>
-            </column>
-            <column name="asset_guid" type="text">
-                <constraints nullable="false"/>
-            </column>
-            <column name="license" type="text">
-                <constraints nullable="true"/>
-            </column>
-            <column name="credit" type="text">
-                <constraints nullable="true"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet id="1.0.0:ADD_LEGAL_FKEY" author="Thomas Skov Bornerup">
-        <addForeignKeyConstraint
-                baseTableName="legal"
-                baseColumnNames="asset_guid"
-                constraintName="fk_legal_asset"
-                referencedTableName="asset"
-                referencedColumnNames="asset_guid"/>
-    </changeSet>
+
     <changeSet id="1.0.0:CREATE_ASSET_FUNDING" author="Thomas Skov Bornerup">
         <createTable tableName="asset_funding">
             <column name="asset_funding_id" type="int" autoIncrement="true">

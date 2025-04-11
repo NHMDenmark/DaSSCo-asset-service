@@ -22,7 +22,7 @@ public class PublicationService {
         this.jdbi = jdbi;
     }
 
-//TODO Test, TODO dont publish restricted access
+// TODO Test, TODO dont publish restricted access
     public PublicationLink publish(PublicationLink publicationLink) {
         if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
             throw new IllegalArgumentException("Asset asset_guid cannot be null or empty");

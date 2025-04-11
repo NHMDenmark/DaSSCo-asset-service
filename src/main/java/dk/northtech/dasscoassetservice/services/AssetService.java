@@ -106,11 +106,28 @@ public class AssetService {
             throw new IllegalArgumentException("Status cannot be null");
         }
         asset.parent_guids.forEach(parent_guid -> {
-
             if ("".equals(parent_guid)) {
                 throw new IllegalArgumentException("Parent may not be an empty string");
             }
         });
+        if (asset.issues != null) {
+            asset.issues.forEach(this::validateIssue);
+        }
+    }
+
+    void validateIssue(Issue issue) {
+        if (Strings.isNullOrEmpty(issue.category())) {
+            throw new IllegalArgumentException("Issue category cannot be null");
+        }
+        if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, issue.category())) {
+            throw new IllegalArgumentException("Issue category doesnt exists");
+        }
+        if (Strings.isNullOrEmpty(issue.status())) {
+            throw new IllegalArgumentException("Issue status cannot be null");
+        }
+        if (issue.solved() == null) {
+            throw new IllegalArgumentException("Issue solved cannot be null");
+        }
     }
 
     void valiedateAndSetCollectionId(Asset asset) {
@@ -158,6 +175,8 @@ public class AssetService {
             UserRepository userRepository = h.attach(UserRepository.class);
             assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
+            IssueRepository issueRepository = h.attach(IssueRepository.class);
+            assetToBeMapped.issues = issueRepository.findIssuesByAssetGuid(assetToBeMapped.asset_guid);
             assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
             assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
             for (Event event : assetToBeMapped.events) {
@@ -212,7 +231,6 @@ public class AssetService {
                 }
             }
         }
-        //TODO check for all assets
         for (String parent_guid : asset.parent_guids) {
 
             Optional<Asset> parentOpt = getAsset(parent_guid);
@@ -257,34 +275,30 @@ public class AssetService {
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guids);
+        if (!Strings.isNullOrEmpty(asset.digitiser)) {
+            User user1 = userService.ensureExists(new User(asset.digitiser));
+            asset.digitiser_id = user1.dassco_user_id;
+        }
         Asset resultAsset = jdbi.inTransaction(h -> {
             // Default values on creation
             asset.date_metadata_updated = Instant.now();
             asset.created_date = Instant.now();
             asset.internal_status = InternalStatus.METADATA_RECEIVED;
             LocalDateTime createAssetStart = LocalDateTime.now();
-            if (!Strings.isNullOrEmpty(asset.digitiser)) {
-                User user1 = userService.ensureExists(new User(asset.digitiser));
-                asset.digitiser_id = user1.dassco_user_id;
-            }
 
-            // Create the asset
-//            Observation.createNotStarted("persist:create-asset", observationRegistry).observe(() -> {
-//                jdbi.onDemand(AssetRepository.class)
-//                        .createAsset(asset);
-//            });
+
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             UserRepository userRepository = h.attach(UserRepository.class);
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
-//            List<Specimen> specimensByAsset = specimenRepository.findSpecimensByAsset(asset.asset_guid);
-//            Map<String, Specimen> pidSpecimen = new HashMap<>();
-//            for(Specimen specimen: specimensByAsset){
-//                pidSpecimen.put(specimen.specimen_pid(), specimen);
-//            }
-//
-
+            IssueRepository issueRepository = h.attach(IssueRepository.class);
+            // Handle legality
+            if (asset.legal != null) {
+                LegalityRepository legalityRepository = h.attach(LegalityRepository.class);
+                asset.legal = legalityRepository.insertLegality(asset.legal);
+            }
+            // Handle the asset itself
             assetRepository.insertBaseAsset(asset);
             // Handle funds
             for (String funding : asset.funding) {
@@ -326,6 +340,13 @@ public class AssetService {
                     pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
                 }
             }
+            //Issues
+            if (asset.issues != null) {
+                for (Issue issue : asset.issues) {
+                    issueRepository.insert_issue(issue);
+                }
+            }
+            //Event
             eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET_METADATA, user.dassco_user_id, pipelineId);
 //            LocalDateTime createAssetEnd = LocalDateTime.now();
 //            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
@@ -369,6 +390,20 @@ public class AssetService {
         return resultAsset;
     }
 
+    public Optional<Asset> checkUserRights(String assetGuid, User user) {
+        LocalDateTime getAssetStart = LocalDateTime.now();
+        Optional<Asset> optionalAsset = getAsset(assetGuid);
+        LocalDateTime getAssetEnd = LocalDateTime.now();
+        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", Duration.between(getAssetStart, getAssetEnd).toMillis());
+        if (optionalAsset.isPresent()) {
+            Asset found = optionalAsset.get();
+            LocalDateTime checkValidationStart = LocalDateTime.now();
+            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+            LocalDateTime checkValidationEnd = LocalDateTime.now();
+            logger.info("#4.1.3 Validating Asset took {} ms", Duration.between(checkValidationStart, checkValidationEnd).toMillis());
+        }
+        return optionalAsset;
+    }
     public void refreshCaches(Asset asset) {
         LocalDateTime cacheStart = LocalDateTime.now();
         if (asset.digitiser != null && !asset.digitiser.isEmpty()) {
@@ -449,9 +484,9 @@ public class AssetService {
         if (assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
-        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
-            throw new IllegalArgumentException("Update user must be provided");
-        }
+//        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
+//            throw new IllegalArgumentException("Update user must be provided");
+//        }
         validateAsset(updatedAsset);
         valiedateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
@@ -460,13 +495,16 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
+
+        Map<Integer, Issue> existing_issues = new HashMap<>();
+        existing.issues.forEach(iss -> existing_issues.put(iss.issue_id(), iss));
         rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
         if (updatedAsset.digitiser != null && !updatedAsset.digitiser.equals(existing.digitiser)) {
             User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
             existing.digitiser_id = digitiser.dassco_user_id;
         }
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
-        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).collect(Collectors.toList());
+        List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
@@ -483,13 +521,12 @@ public class AssetService {
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
         existing.parent_guids = updatedAsset.parent_guids;
-        existing.updateUser = updatedAsset.updateUser;
+//        existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         existing.metadata_version = updatedAsset.metadata_version;
         existing.metadata_source = updatedAsset.metadata_source;
         existing.camera_setting_control = updatedAsset.camera_setting_control;
         existing.push_to_specify = updatedAsset.push_to_specify;
-        existing.digitiser = updatedAsset.digitiser;
         existing.make_public = updatedAsset.make_public;
         existing.digitiser = updatedAsset.digitiser;
         existing.issues = updatedAsset.issues;
@@ -507,6 +544,19 @@ public class AssetService {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
             UserRepository userRepository = h.attach(UserRepository.class);
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
+            IssueRepository issueRepository = h.attach(IssueRepository.class);
+            LegalityRepository legalityRepository = h.attach(LegalityRepository.class);
+            if (updatedAsset.legal != null) {
+                if (updatedAsset.legal.legality_id() != null) {
+                    legalityRepository.updateLegality(updatedAsset.legal);
+                    existing.legal = updatedAsset.legal;
+                } else {
+                    if (existing.legal != null) {
+                        legalityRepository.deleteLegality(existing.legal.legality_id());
+                    }
+                    existing.legal = legalityRepository.insertLegality(updatedAsset.legal);
+                }
+            }
             repository.update_asset_internal(existing);
             Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(existing.institution, updatedAsset.pipeline);
             eventRepository.insertEvent(existing.asset_guid
@@ -566,6 +616,24 @@ public class AssetService {
                     repository.insert_parent_child(existing.asset_guid, s);
                 }
             }
+            //Handle issues
+            if (updatedAsset.issues != null) {
+                Set<Integer> issue_ids = new HashSet<>();
+                for (Issue issue : existing.issues) {
+                    if (issue.issue_id() != null) {
+                        issue_ids.add(issue.issue_id());
+                        issueRepository.updateIssue(issue);
+                    } else {
+                        issueRepository.insert_issue(issue);
+                    }
+                }
+                //remove remaining
+                for (int i : existing_issues.keySet()) {
+                    if (!issue_ids.contains(i)) {
+                        issueRepository.deleteIssue(i);
+                    }
+                }
+            }
             return h;
         });
 
@@ -576,58 +644,6 @@ public class AssetService {
         logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
 //        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
 
-
-//        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-//            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-//                this.subjectCache.clearCache();
-//                List<String> subjectList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listSubjects();
-//                });
-//                if (!subjectList.isEmpty()) {
-//                    for (String subject : subjectList) {
-//                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-//                    }
-//                }
-//            }
-//        }
-
-//        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-//            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-//                this.payloadTypeCache.clearCache();
-//                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listPayloadTypes();
-//                });
-//                if (!payloadTypeList.isEmpty()) {
-//                    for (String payloadType : payloadTypeList) {
-//                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-//                    }
-//                }
-//            }
-//        }
-
-//        boolean prepTypeExists = true;
-//        if (updatedAsset.specimens != null && !updatedAsset.specimens.isEmpty()) {
-//            for (Specimen specimen : updatedAsset.specimens) {
-//                if (!preparationTypeCache.getPreparationTypeMap().containsKey(specimen.preparation_type())) {
-//                    prepTypeExists = false;
-//                    break;
-//                }
-//            }
-//            if (!prepTypeExists) {
-//                preparationTypeCache.clearCache();
-//                List<String> preparationTypeList = jdbi.withHandle(handle -> {
-//                    SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-//                    return specimenRepository.listPreparationTypesInternal();
-//                });
-//                if (!preparationTypeList.isEmpty()) {
-//                    for (String preparationType : preparationTypeList) {
-//                        this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-//                    }
-//                }
-//            }
-//        }
         return existing;
     }
 

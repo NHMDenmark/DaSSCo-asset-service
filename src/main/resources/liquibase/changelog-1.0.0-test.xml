@@ -7,6 +7,9 @@
     <changeSet id="VERSION-1.0.0-CREATE-TEST-DATA" author="Thomas Skov Bornerup" contextFilter="development">
         <sqlFile path="/sql/1.0.0/development-test-data.sql"/>
     </changeSet>
+    <changeSet id="VERSION-1.0.0-CREATE_TEST_ASSETS" author="Thomas Skov Bornerup" contextFilter="development">
+        <sqlFile path="/sql/1.0.0/development-test-assets.sql"/>
+    </changeSet>
 
     <changeSet id="VERSION-1.0.0-TEST-TAG-DATABASE" author="Thomas Skov Bornerup" contextFilter="development">
         <tagDatabase tag="VERSION-1.0.0-TEST"/>

@@ -60,7 +60,7 @@ public interface UserRepository extends SqlObject {
     @SqlUpdate("DELETE FROM digitiser_list WHERE asset_guid = :assetGuid AND dassco_user_id = :dasscoUserId")
     void removeFromDigitiserList(String assetGuid, int dasscoUserId);
 
-    @Transaction
+    @Transaction //Check user access to asset groups
     default boolean userHasAccessToAsset(String user, String assetGuid){
         throw new UnsupportedOperationException("Not implemented");
     }

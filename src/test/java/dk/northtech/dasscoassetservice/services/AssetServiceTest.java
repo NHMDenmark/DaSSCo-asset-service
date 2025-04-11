@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
+import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import org.junit.jupiter.api.BeforeAll;
@@ -11,8 +12,7 @@ import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
@@ -33,13 +33,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testGetEvents() {
         Asset asset = getTestAsset("assetEvents");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-assetEvents" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetEvents";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 10);
         List<Event> events = assetService.getEvents("assetEvents", user);
         assertThat(events.size()).isAtLeast(1);
@@ -57,7 +57,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetFieldsNoAssetPid() {
         Asset asset = new Asset();
-        asset.asset_guid = "validateAssetFieldsNoAssetPid" ;
+        asset.asset_guid = "validateAssetFieldsNoAssetPid";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAssetFields(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("asset_pid cannot be null");
     }
@@ -65,8 +65,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetFieldsNoStatus() {
         Asset asset = new Asset();
-        asset.asset_guid = "validateAssetFieldsNoStatus" ;
-        asset.asset_pid = "pid-validateAssetFieldsNoStatus" ;
+        asset.asset_guid = "validateAssetFieldsNoStatus";
+        asset.asset_pid = "pid-validateAssetFieldsNoStatus";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAssetFields(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Status cannot be null");
     }
@@ -81,8 +81,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetNoInstitutionDoesntExist() {
         Asset asset = new Asset();
-        asset.institution = "doesnt exist" ;
-        asset.collection = "collection_1" ;
+        asset.institution = "doesnt exist";
+        asset.collection = "collection_1";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution doesnt exist");
     }
@@ -90,9 +90,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetCollectionDoesntExist() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.digitiser = "Bazviola" ;
-        asset.collection = "doesnt ecksist" ;
+        asset.institution = "institution_2";
+        asset.digitiser = "Bazviola";
+        asset.collection = "doesnt ecksist";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.valiedateAndSetCollectionId(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");
     }
@@ -100,7 +100,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetNoCollection() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
+        asset.institution = "institution_2";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateNewAssetAndSetIds(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection cannot be null");
     }
@@ -108,9 +108,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetNoPipeline() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.pipeline = "i50_p1250" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i50_p1250";
         asset.asset_guid = "testValidateAssetNoPipeline";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Pipeline doesnt exist in this institution");
@@ -120,11 +120,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetOwnParent() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.asset_guid = "assetOwnParent" ;
-        asset.parent_guids = Set.of("assetOwnParent" );
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        asset.asset_guid = "assetOwnParent";
+        asset.parent_guids = Set.of("assetOwnParent");
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset cannot be its own parent");
     }
@@ -132,10 +132,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetNoWorkstation() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.asset_guid = "assetNoWorkstation" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.pipeline = "i2_p1";
+        asset.asset_guid = "assetNoWorkstation";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Workstation does not exist");
     }
@@ -143,32 +143,36 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testValidateAssetWorkstationOutOfService() {
         Asset asset = new Asset();
-        asset.institution = "institution_1" ;
-        asset.collection = "i1_c1" ;
-        asset.pipeline = "i1_p1" ;
-        asset.asset_guid = "validateAssetWorkstationOutOfService" ;
-        asset.workstation = "i1_w3" ;
+        asset.institution = "institution_1";
+        asset.collection = "i1_c1";
+        asset.pipeline = "i1_p1";
+        asset.asset_guid = "validateAssetWorkstationOutOfService";
+        asset.workstation = "i1_w3";
         DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.validateAsset(asset));
         assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Workstation [OUT_OF_SERVICE] is marked as out of service");
     }
 
     @Test
     void testPersistAsset() {
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "Very big issue");
         Asset createAsset = getTestAsset("createAsset");
-        createAsset.updating_pipeline= "i1_p1" ;
+        createAsset.updating_pipeline = "i1_p1";
         createAsset.complete_digitiser_list = Arrays.asList("Bazviola", "Karl-Børge");
-        createAsset.pipeline = "i1_p1" ;
-        createAsset.workstation = "i1_w1" ;
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.legal = new Legality("Copy-rite", "loicense", "kredit");
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
-        createAsset.institution = "institution_1" ;
+        createAsset.institution = "institution_1";
         createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide", null, null), new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", "pinning", null, null));
-        createAsset.collection = "i1_c1" ;
-        createAsset.asset_pid = "pid-createAsset" ;
-        createAsset.status = "BEING_PROCESSED" ;
-        createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = "BEING_PROCESSED";
+//        createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
         createAsset.funding = Arrays.asList("Hundredetusindvis af dollars", "Jeg er stadig i chok");
         createAsset.file_formats = Arrays.asList("PNG", "PDF");
+        createAsset.issues = Arrays.asList(new Issue(createAsset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+
         assetService.persistAsset(createAsset, user, 10);
 
         Optional<Asset> resultOpt = assetService.getAsset("createAsset");
@@ -215,6 +219,21 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
         assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
+        assertThat(result.legal).isNotNull();
+        assertThat(result.legal.legality_id()).isAtLeast(1);
+        assertThat(result.legal.copyright()).isEqualTo("Copy-rite");
+        assertThat(result.legal.license()).isEqualTo("loicense");
+        assertThat(result.legal.credit()).isEqualTo("kredit");
+        Issue issue = result.issues.get(0);
+        assertThat(issue.issue_id()).isNotNull();
+        assertThat(issue.category()).isEqualTo("Very big issue");
+        assertThat(issue.solved()).isFalse();
+        assertThat(issue.notes()).isEqualTo("Notes");
+        assertThat(issue.description()).isEqualTo("This is an issue");
+        assertThat(issue.timestamp()).isNotNull();
+        assertThat(issue.name()).isEqualTo("issue_1");
+        assertThat(issue.status()).isEqualTo("500 ok");
+
 //        while(true) {
 //            try {
 //                Thread.sleep(10000);
@@ -227,14 +246,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistAssetAllocationCannotBe0() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "i2_c1" ;
-        asset.digitiser = "Dan Digitiser" ;
-        asset.asset_guid = "persistAssetAllocationCannotBe0" ;
-        asset.asset_pid = "pdididid" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.digitiser = "Dan Digitiser";
+        asset.asset_guid = "persistAssetAllocationCannotBe0";
+        asset.asset_pid = "pdididid";
+        asset.status = "BEING_PROCESSED";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 0));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Allocation cannot be 0");
     }
@@ -242,15 +261,15 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistAssetParentMustExist() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_guid = "testPersistAssetParentMustExist" ;
-        asset.asset_pid = "pid_testPersistAssetParentMustExist" ;
-        asset.parent_guids = Set.of("does_not_exist" );
-        asset.digitiser = "Bob" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "testPersistAssetParentMustExist";
+        asset.asset_pid = "pid_testPersistAssetParentMustExist";
+        asset.parent_guids = Set.of("does_not_exist");
+        asset.digitiser = "Bob";
+        asset.status = "BEING_PROCESSED";
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 10));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Parent doesnt exist");
     }
@@ -264,13 +283,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testDeleteAssetAssetIsLocked() {
         Asset asset = getTestAsset("deleteAssetLocked");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-deleteAssetLocked" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-deleteAssetLocked";
+        asset.status = "BEING_PROCESSED";
         asset.asset_locked = true;
         assetService.persistAsset(asset, user, 10);
         DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.deleteAsset("deleteAssetLocked", user));
@@ -280,12 +299,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testDeleteAssetIsAlreadyDeleted() {
         Asset asset = getTestAsset("deleteAssetIsAlreadyDeleted");
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-deleteAssetIsAlreadyDeleted" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-deleteAssetIsAlreadyDeleted";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         assertThat(assetService.deleteAsset("deleteAssetIsAlreadyDeleted", user)).isTrue();
         Optional<Asset> optionalAsset = assetService.getAsset("deleteAssetIsAlreadyDeleted");
@@ -301,29 +320,29 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testParentChildRelationIsNotDeletedWhenUpdatingParent() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_p" ;
-        asset.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_p" ;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_p";
+        asset.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_p";
 //        asset.parent_guid = "does_not_exist";
-        asset.digitiser = "Bob" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.digitiser = "Bob";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 10);
         Asset asset2 = new Asset();
-        asset2.institution = "institution_2" ;
-        asset2.workstation = "i2_w1" ;
-        asset2.pipeline = "i2_p1" ;
-        asset2.collection = "i2_c1" ;
-        asset2.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_c" ;
-        asset2.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_c" ;
+        asset2.institution = "institution_2";
+        asset2.workstation = "i2_w1";
+        asset2.pipeline = "i2_p1";
+        asset2.collection = "i2_c1";
+        asset2.asset_guid = "testParentChildRelationIsNotDeletedWhenUpdatingParent_c";
+        asset2.asset_pid = "pid_testParentChildRelationIsNotDeletedWhenUpdatingParent_c";
         asset2.parent_guids = Set.of(asset.asset_guid);
-        asset2.digitiser = "Bob" ;
-        asset2.status = "BEING_PROCESSED" ;
+        asset2.digitiser = "Bob";
+        asset2.status = "BEING_PROCESSED";
         assetService.persistAsset(asset2, user, 10);
         Asset parent = assetService.getAsset(asset.asset_guid).get();
-        parent.updateUser = "Bob" ;
+        parent.updateUser = "Bob";
         parent.funding = Arrays.asList("Hundredetusindvis af dollar, jeg er stadig i chok");
         assetService.updateAsset(parent, user);
         Asset child = assetService.getAsset(asset2.asset_guid).get();
@@ -334,15 +353,15 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistAssetCannotSaveSameAssetTwice() {
         Asset asset = new Asset();
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
         asset.updating_pipeline = "i2p1";
-        asset.collection = "i2_c1" ;
-        asset.asset_guid = "persistAssetCannotSaveSameAssetTwice" ;
-        asset.asset_pid = "pid-persistAssetCannotSaveSameAssetTwice" ;
-        asset.digitiser = "Karl-Børge" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.collection = "i2_c1";
+        asset.asset_guid = "persistAssetCannotSaveSameAssetTwice";
+        asset.asset_pid = "pid-persistAssetCannotSaveSameAssetTwice";
+        asset.digitiser = "Karl-Børge";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.persistAsset(asset, user, 1));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset persistAssetCannotSaveSameAssetTwice already exists");
@@ -352,24 +371,24 @@ class AssetServiceTest extends AbstractIntegrationTest {
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
-        asset.status = "BEING_PROCESSED" ;
-        asset.digitiser = "Karl-Børge" ;
+        asset.status = "BEING_PROCESSED";
+        asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
-        asset.asset_pid = guid + "_pid" ;
+        asset.asset_pid = guid + "_pid";
         asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder" ;
+        asset.subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
-        asset.payload_type = "nuclear" ;
-        asset.updateUser = "Basviola" ;
-        asset.institution = "institution_2" ;
-        asset.workstation = "i2_w1" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "i2_c1" ;
-        asset.camera_setting_control = "Mom get the camera!" ;
+        asset.payload_type = "nuclear";
+        asset.updateUser = "Basviola";
+        asset.institution = "institution_2";
+        asset.workstation = "i2_w1";
+        asset.pipeline = "i2_p1";
+        asset.collection = "i2_c1";
+        asset.camera_setting_control = "Mom get the camera!";
         asset.date_asset_finalised = Instant.now();
-        asset.metadata_source = "I made it up" ;
-        asset.metadata_version = "1.0.0" ;
+        asset.metadata_source = "I made it up";
+        asset.metadata_version = "1.0.0";
         asset.date_metadata_ingested = Instant.now();
         asset.internal_status = InternalStatus.ASSET_RECEIVED;
         asset.make_public = true;
@@ -381,22 +400,22 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testUpdateAsset() {
         Asset createAsset = getTestAsset("createAssetUpdateAsset");
         createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide", null, null));
-        createAsset.pipeline = "i1_p1" ;
-        createAsset.workstation = "i1_w1" ;
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
-        createAsset.institution = "institution_1" ;
-        createAsset.collection = "i1_c1" ;
-        createAsset.asset_pid = "pid-createAsset" ;
-        createAsset.status = "BEING_PROCESSED" ;
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = "BEING_PROCESSED";
         assetService.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
-        result.updateUser = "Uffe Updater" ;
-        result.payload_type = "conventional" ;
+        result.updateUser = "Uffe Updater";
+        result.payload_type = "conventional";
         assetService.updateAsset(result, user);
-        result.payload_type = "nuclear" ;
+        result.payload_type = "nuclear";
         assetService.updateAsset(result, user);
         assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob"), user);
         assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
@@ -418,6 +437,76 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testUpdateIssuesCreateOnUpdate() {
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "test_issue_create");
+        var issue_1 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_1", Instant.now(), "iss_1_status", "iss_1_description", "iss_1_notest", true);
+        var issue_2 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_2", Instant.now(), "iss_2_status", "iss_2_description", "iss_2_notest", false);
+
+        Asset createAsset = getTestAsset("testUpdateIssuesCreateOnUpdate");
+        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide", null, null));
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
+        createAsset.tags.put("Tag1", "value1");
+        createAsset.tags.put("Tag2", "value2");
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = "BEING_PROCESSED";
+        assetService.persistAsset(createAsset, user, 10);
+        Optional<Asset> resultOpt = assetService.getAsset("testUpdateIssuesCreateOnUpdate");
+        assertThat(resultOpt.isPresent()).isTrue();
+        Asset result = resultOpt.get();
+        assertThat(result.issues).isEmpty();
+        result.issues = Arrays.asList(issue_1, issue_2);
+        assetService.updateAsset(result, user);
+        Optional<Asset> result2 = assetService.getAsset("testUpdateIssuesCreateOnUpdate");
+        Asset asset = result2.get();
+        List<Issue> issues = asset.issues;
+        assertThat(issues.size()).isEqualTo(2);
+        Issue iss_1 = null;
+        for(Issue issue:issues) {
+            if(issue.name().equals("iss_1")) {
+                iss_1 = issue;
+//                var issue_1 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_1", Instant.now(), "iss_1_status", "iss_1_description", "iss_1_notest", true);
+//                var issue_2 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_2", Instant.now(), "iss_2_status", "iss_2_description", "iss_2_notest", true);
+                assertThat(issue.asset_guid()).isEqualTo(asset.asset_guid);
+                assertThat(issue.category()).isEqualTo("test_issue_create");
+                assertThat(issue.timestamp()).isNotNull();
+                assertThat(issue.status()).isEqualTo("iss_1_status");
+                assertThat(issue.description()).isEqualTo("iss_1_description");
+                assertThat(issue.notes()).isEqualTo("iss_1_notest");
+                assertThat(issue.solved()).isTrue();
+                assertThat(issue.issue_id()).isGreaterThan(0);
+
+            } else if (issue.name().equals("iss_2")){
+                assertThat(issue.asset_guid()).isEqualTo(asset.asset_guid);
+                assertThat(issue.category()).isEqualTo("test_issue_create");
+                assertThat(issue.timestamp()).isNotNull();
+                assertThat(issue.status()).isEqualTo("iss_2_status");
+                assertThat(issue.description()).isEqualTo("iss_2_description");
+                assertThat(issue.notes()).isEqualTo("iss_2_notest");
+                assertThat(issue.solved()).isFalse();
+                assertThat(issue.issue_id()).isGreaterThan(0);
+
+            } else {
+                fail("The expected issues were not found");
+            }
+        }
+        asset.issues = List.of(new Issue(issue_1.issue_id(),issue_1.asset_guid(),issue_1.category(),"new_name", Instant.now(), "new_status", "new_desc", "new_notes", false));
+        assetService.updateAsset(asset, user);
+        Optional<Asset> result3Opt = assetService.getAsset("testUpdateIssuesCreateOnUpdate");
+        Asset result3 = result3Opt.get();
+        assertThat(result3.issues.size()).isEqualTo(1);
+        Issue issue = result3.issues.get(0);
+        assertThat(issue.notes()).isEqualTo("new_notes");
+        assertThat(issue.name()).isEqualTo("new_name");
+        assertThat(issue.description()).isEqualTo("new_desc");
+
+    }
+
+
+
+    @Test
     void updateAssetAssetDoesntExist() {
         Asset asset = getTestAsset("updateAssetAssetDoesntExist");
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.updateAsset(asset, user));
@@ -428,17 +517,17 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testUpdateAssetdoNotPermitUnlocking() {
         Asset createAsset = getTestAsset("doNotPermitUnlocking");
-        createAsset.pipeline = "i1_p1" ;
-        createAsset.workstation = "i1_w1" ;
+        createAsset.pipeline = "i1_p1";
+        createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
-        createAsset.institution = "institution_1" ;
-        createAsset.collection = "i1_c1" ;
-        createAsset.asset_pid = "pid-createAsset" ;
-        createAsset.status = "BEING_PROCESSED" ;
+        createAsset.institution = "institution_1";
+        createAsset.collection = "i1_c1";
+        createAsset.asset_pid = "pid-createAsset";
+        createAsset.status = "BEING_PROCESSED";
         createAsset = assetService.persistAsset(createAsset, user, 11);
 
-        createAsset.updateUser = "Uffe Updater" ;
+        createAsset.updateUser = "Uffe Updater";
 
         createAsset.asset_locked = true;
         assetService.updateAsset(createAsset, user);
@@ -453,16 +542,16 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void updateAsset() {
         Asset asset = getTestAsset("updateAsset");
 //        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
-        asset.institution = "institution_1" ;
+        asset.institution = "institution_1";
         asset.specimens = new ArrayList<>(Arrays.asList(new Specimen(asset.institution, "i1_c1", "creatAsset-sp-1", "spid1", "slide", null, null)
                 , new Specimen(asset.institution, "i1_c1", "creatAsset-sp-2", "spid1", "pinning", null, null)));
-        asset.pipeline = "i1_p1" ;
-        asset.workstation = "i1_w1" ;
+        asset.pipeline = "i1_p1";
+        asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");
         asset.tags.put("Tag2", "value2");
-        asset.collection = "i1_c1" ;
-        asset.asset_pid = "pid-updateAsset" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.collection = "i1_c1";
+        asset.asset_pid = "pid-updateAsset";
+        asset.status = "BEING_PROCESSED";
 
         assetService.persistAsset(asset, user, 11);
 
@@ -473,21 +562,21 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.date_metadata_ingested = Instant.now();
         asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", "slide", null, null));
 //        asset.specimens.get()
-        asset.workstation = "i1_w2" ;
-        asset.pipeline = "i1_p2" ;
-        asset.status = "ISSUE_WITH_METADATA" ;
-        asset.subject = "new sub" ;
+        asset.workstation = "i1_w2";
+        asset.pipeline = "i1_p2";
+        asset.status = "ISSUE_WITH_METADATA";
+        asset.subject = "new sub";
         asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
         asset.funding = Arrays.asList("420", "Funding secured");
-        asset.payload_type = "Conventional" ;
-        asset.digitiser = "Diane Digitiser" ;
-        asset.metadata_version = "One point oh-uh" ;
-        asset.metadata_source = "It came to me in a dream" ;
+        asset.payload_type = "Conventional";
+        asset.digitiser = "Diane Digitiser";
+        asset.metadata_version = "One point oh-uh";
+        asset.metadata_source = "It came to me in a dream";
         asset.make_public = false;
         asset.push_to_specify = false;
         asset.file_formats = Arrays.asList("PDF", "PNG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
-        asset.issues = Arrays.asList(new Issue("no issues"));
+//        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
         System.out.println("hej1");
         assetService.updateAsset(asset, user);
@@ -540,14 +629,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void updateAssetNoWritePermission() {
         collectionService.persistCollection(new Collection("updateAssetNoWritePermission_1", "institution_2", Arrays.asList(new Role("updateAssetNoWritePermission_1"))));
         Asset asset = getTestAsset("udateAssetNoWritePermission");
-        asset.asset_pid = "pid-updateAssetNoWritePermission" ;
-        asset.workstation = "i2_w1" ;
-        asset.institution = "institution_2" ;
-        asset.pipeline = "i2_p1" ;
-        asset.collection = "updateAssetNoWritePermission_1" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.asset_pid = "pid-updateAssetNoWritePermission";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.pipeline = "i2_p1";
+        asset.collection = "updateAssetNoWritePermission_1";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
-        asset.updateUser = "karl-børge" ;
+        asset.updateUser = "karl-børge";
         //verify that user cant update without write access
         assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset, user));
         //verify that user cant update with read access
@@ -566,14 +655,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testCompleteUpload() {
         Asset asset = getTestAsset("assetUploadComplete");
-        asset.pipeline = "i2_p1" ;
-        asset.updating_pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.updating_pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-assetUploadComplete" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetUploadComplete";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("assetUploadComplete", null, null, null), "i2_w1", "i2_p1", "bob"), user);
         Optional<Asset> optAsset = assetService.getAsset("assetUploadComplete");
@@ -596,13 +685,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testCompleteUploadAssetIsLocked() {
         Asset asset = getTestAsset("completeUploadAssetIsLocked");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-completeUploadAssetIsLocked" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-completeUploadAssetIsLocked";
+        asset.status = "BEING_PROCESSED";
         asset.asset_locked = true;
         assetService.persistAsset(asset, user, 1);
         DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("completeUploadAssetIsLocked", null, null, null), "i2_w1", "i2_p1", "bob"), user));
@@ -612,18 +701,18 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testCompleteAsset() {
         Asset asset = getTestAsset("assetComplete");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-assetComplete" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetComplete";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         Optional<Asset> optAsset = assetService.getAsset("assetComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
-        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob"),user)).isTrue();
+        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob"), user)).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
         assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
@@ -632,13 +721,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testSetAssetStatus() {
         Asset asset = getTestAsset("setAssetStatus");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-setAssetStatus" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatus";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         assetService.setAssetStatus("setAssetStatus", "ERDA_ERROR", "");
         Optional<Asset> optAsset = assetService.getAsset("setAssetStatus");
@@ -649,13 +738,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testSetAssetStatusInvalidStatus() {
         Asset asset = getTestAsset("setAssetStatusInvalidStatus");
-        asset.pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-setAssetStatusInvalidStatus" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("setAssetStatusInvalidStatus", "INVALID_STATUS", ""));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Invalid status: INVALID_STATUS");
@@ -667,14 +756,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testSetAssetStatusUnsupportedStatus() {
         Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
-        asset.pipeline = "i2_p1" ;
-        asset.updating_pipeline = "i2_p1" ;
-        asset.workstation = "i2_w1" ;
+        asset.pipeline = "i2_p1";
+        asset.updating_pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
-        asset.institution = "institution_2" ;
-        asset.collection = "i2_c1" ;
-        asset.asset_pid = "pid-setAssetStatusUnsupportedStatus" ;
-        asset.status = "BEING_PROCESSED" ;
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusUnsupportedStatus";
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("setAssetStatusUnsupportedStatus", "COMPLETED", ""));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Invalid status: COMPLETED");
@@ -693,13 +782,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testLockUnlockAsset() {
         Asset asset = getTestAsset("lockUnlockAsset");
 //        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
-        asset.pipeline = "i1_p2" ;
-        asset.workstation = "i1_w2" ;
-        asset.institution = "institution_1" ;
-        asset.collection = "i1_c2" ;
-        asset.asset_pid = "pid-lockUnlock" ;
+        asset.pipeline = "i1_p2";
+        asset.workstation = "i1_w2";
+        asset.institution = "institution_1";
+        asset.collection = "i1_c2";
+        asset.asset_pid = "pid-lockUnlock";
         asset.asset_locked = true;
-        asset.status = "BEING_PROCESSED" ;
+        asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 11);
         Optional<Asset> lockedAssetOpt = assetService.getAsset("lockUnlockAsset");
         assertThat(lockedAssetOpt.isPresent()).isTrue();

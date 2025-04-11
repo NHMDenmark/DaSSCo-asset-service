@@ -79,12 +79,13 @@ public class AssetMapper implements RowMapper<Asset> {
         if (dateMetadataIngested != null) {
             asset.date_metadata_ingested = dateMetadataIngested.toInstant();
         }
-
+        long legalityId = rs.getInt("legality_id");
+        if(!rs.wasNull()) {
+            asset.legal = new Legality(legalityId
+                    , rs.getString("copyright")
+                    , rs.getString("license")
+                    , rs.getString("credit"));
+        }
         return asset;
-    }
-
-    Specimen mapSpecimen(AgtypeMap agtype) {
-        AgtypeMap properties = agtype.getMap("properties");
-        return new Specimen(properties.getString("specimen_barcode"), properties.getString("specimen_pid"), properties.getString("preparation_type"));
     }
 }

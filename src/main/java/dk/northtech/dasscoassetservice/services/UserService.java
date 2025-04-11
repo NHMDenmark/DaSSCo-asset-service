@@ -1,7 +1,9 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.PipelineRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import jakarta.inject.Inject;
@@ -14,6 +16,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,7 @@ public class UserService {
     private boolean initialised;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private ConcurrentHashMap<String, User> usernameUserMap = new ConcurrentHashMap<>();
+
     @Inject
     public UserService(Jdbi jdbi) {
         this.jdbi = jdbi;
@@ -89,7 +94,9 @@ public class UserService {
         user.keycloak_id = String.valueOf(tokenAttributes.get("sub"));
         user.username = String.valueOf(tokenAttributes.get("preferred_username"));
         user.token = token.getToken().getTokenValue();
-        ensureExists(user);
+        //Make sure the user has the internal id
+        User userWithId = ensureExists(user);
+        user.dassco_user_id = userWithId.dassco_user_id;
         return user;
     }
 
@@ -125,6 +132,9 @@ public class UserService {
             return h;
         });
     }
+
+
+
 
     public List<String> getDigitiserList(String asset_guid) {
         return jdbi.onDemand(UserRepository.class).getDigitiserList(asset_guid);

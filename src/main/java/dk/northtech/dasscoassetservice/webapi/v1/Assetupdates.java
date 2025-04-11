@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.BulkUpdateService;
+import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -40,13 +41,15 @@ public class Assetupdates {
     private final AssetService assetService;
     private final BulkUpdateService bulkUpdateService;
     private final UserService userService;
+    private final RightsValidationService rightsValidationService;
     private static final Logger logger = LoggerFactory.getLogger(Assetupdates.class);
 
     @Inject
-    public Assetupdates(AssetService assetService, BulkUpdateService bulkUpdateService, UserService userService) {
+    public Assetupdates(AssetService assetService, BulkUpdateService bulkUpdateService, UserService userService, RightsValidationService rightsValidationService) {
         this.assetService = assetService;
         this.bulkUpdateService = bulkUpdateService;
         this.userService = userService;
+        this.rightsValidationService = rightsValidationService;
     }
 
     @POST
@@ -161,6 +164,7 @@ public class Assetupdates {
 //            asset.parent_guid = null;
 //        }
         Asset createdAsset = this.assetService.persistAsset(asset, userService.from(securityContext), allocation);
+
         int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
 
         LocalDateTime endTime = LocalDateTime.now();
@@ -255,7 +259,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.bulkUpdateService.checkUserRights(assetGuid, userService.from(securityContext)).orElse(null);
+        return this.assetService.checkUserRights(assetGuid, userService.from(securityContext)).orElse(null);
     }
 
     @DELETE

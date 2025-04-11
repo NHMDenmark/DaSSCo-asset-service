@@ -79,7 +79,7 @@
             <column name="delete_after_sync" type="boolean" defaultValue="false">
                 <constraints nullable="false"/>
             </column>
-            <column name="file_sync_status" type="text" defaultValue="NEW_FILE">
+            <column name="sync_status" type="text" defaultValue="NEW_FILE">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -167,13 +167,13 @@
         </createTable>
         <sql>
             INSERT INTO file_sync_status(file_sync_status)
-            VALUES ('NEW_FILE'),('SYNCHRONIZED')
+            VALUES ('NEW_FILE'), ('SYNCHRONIZED')
         </sql>
     </changeSet>
 
     <changeSet id="3.0.0:file_fkey" author="Thomas Skov bornerup" context="default">
         <addForeignKeyConstraint baseTableName="file"
-                                 baseColumnNames="file_sync_status"
+                                 baseColumnNames="sync_status"
                                  constraintName="fk_file__file_sync_status"
                                  referencedTableName="file_sync_status"
                                  referencedColumnNames="file_sync_status"/>

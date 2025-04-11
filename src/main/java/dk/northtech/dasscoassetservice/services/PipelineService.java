@@ -59,7 +59,7 @@ public class PipelineService {
         Pipeline pipe = new Pipeline(pipeline.name(), institutionName);
         jdbi.withHandle(handle -> {
             PipelineRepository attach = handle.attach(PipelineRepository.class);
-            Pipeline persistedPipeline = attach.persistPipeline(pipeline);
+            Pipeline persistedPipeline = attach.persistPipeline(pipe);
             // make sure institution exists
             this.pipelineMap.computeIfAbsent(pipe.institution() , x -> new ConcurrentHashMap<>()).put(persistedPipeline.name(),persistedPipeline);
             return persistedPipeline;
