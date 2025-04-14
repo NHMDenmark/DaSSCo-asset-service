@@ -343,6 +343,15 @@ public class AssetService {
             //Issues
             if (asset.issues != null) {
                 for (Issue issue : asset.issues) {
+                    issue = new Issue(issue.issue_id()
+                            , asset.asset_guid
+                            , issue.category()
+                            , issue.name()
+                            , issue.timestamp() != null ? issue.timestamp() : Instant.now()
+                            , issue.status()
+                            , issue.description()
+                            , issue.notes()
+                            , issue.solved());
                     issueRepository.insert_issue(issue);
                 }
             }
@@ -404,6 +413,7 @@ public class AssetService {
         }
         return optionalAsset;
     }
+
     public void refreshCaches(Asset asset) {
         LocalDateTime cacheStart = LocalDateTime.now();
         if (asset.digitiser != null && !asset.digitiser.isEmpty()) {
@@ -532,6 +542,7 @@ public class AssetService {
         existing.issues = updatedAsset.issues;
         existing.complete_digitiser_list = updatedAsset.complete_digitiser_list;
         existing.funding = updatedAsset.funding;
+        existing.mos_id = updatedAsset.mos_id;
 
         // Currently we just add new subject types if they do not exist
         if (!Strings.isNullOrEmpty(existing.subject) && !extendableEnumService.getSubjects().contains(existing.subject)) {
@@ -620,6 +631,17 @@ public class AssetService {
             if (updatedAsset.issues != null) {
                 Set<Integer> issue_ids = new HashSet<>();
                 for (Issue issue : existing.issues) {
+                    //Ensure time is set and asset id is correct
+                    issue = new Issue(issue.issue_id()
+                            , existing.asset_guid
+                            , issue.category()
+                            , issue.name()
+                            , issue.timestamp() != null ? issue.timestamp() : Instant.now()
+                            , issue.status()
+                            , issue.description()
+                            , issue.notes()
+                            , issue.solved());
+
                     if (issue.issue_id() != null) {
                         issue_ids.add(issue.issue_id());
                         issueRepository.updateIssue(issue);
