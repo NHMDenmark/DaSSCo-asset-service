@@ -35,11 +35,11 @@ public class FundingService {
     }
     public Funding ensureExists(String funding) {
         if(Strings.isNullOrEmpty(funding)) {
-            throw new RuntimeException("User was not found");
+            throw new RuntimeException("Funding was not found");
         }
-        Optional<Funding> userIfExists = getFundingIfExists(funding);
-        if(userIfExists.isPresent()){
-            Funding existing = userIfExists.get();
+        Optional<Funding> fundingIfExists = getFundingIfExists(funding);
+        if(fundingIfExists.isPresent()){
+            Funding existing = fundingIfExists.get();
 
             return existing;
         }
