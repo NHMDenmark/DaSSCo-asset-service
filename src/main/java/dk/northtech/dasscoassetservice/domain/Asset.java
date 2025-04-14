@@ -46,6 +46,10 @@ public class Asset {
     public Instant date_asset_taken;
     @Schema(description = "Date and time the asset was marked as deleted in the metadata", example = "2023-05-24T00:00:00.000Z")
     public Instant date_asset_deleted;
+    @Schema(description = "Date and time the asset was last audited", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_audited;
+    @Schema(description = "User from the last audit event", example = "2023-05-24T00:00:00.000Z")
+    public String audited_by;
     @Schema(description = "Date and time the asset was pushed to Specify", example = "2023-05-24T00:00:00.000Z")
     public Instant date_asset_finalised;
     //References

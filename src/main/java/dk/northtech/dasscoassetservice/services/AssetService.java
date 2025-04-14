@@ -172,6 +172,7 @@ public class AssetService {
             assetToBeMapped.events = attach.getAssetEvents(assetGuid);
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
             assetToBeMapped.specimens = specimenRepository.findSpecimensByAsset(assetGuid);
+            assetToBeMapped.multi_specimen = assetToBeMapped.specimens.size() > 1;
             UserRepository userRepository = h.attach(UserRepository.class);
             assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
@@ -180,12 +181,17 @@ public class AssetService {
             assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
             assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
             for (Event event : assetToBeMapped.events) {
-                System.out.println(event);
                 if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                     assetToBeMapped.audited = true;
+                    if(assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
+                        assetToBeMapped.date_audited = event.timestamp;
+                        assetToBeMapped.audited_by = event.user;
+                    }
+
                 } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
                     assetToBeMapped.date_metadata_updated = event.timestamp;
-                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
+
+                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
                     assetToBeMapped.date_metadata_updated = event.timestamp;
                 } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
                     if (assetToBeMapped.date_metadata_updated == null) {
