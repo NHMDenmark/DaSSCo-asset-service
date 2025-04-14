@@ -46,11 +46,36 @@ public class Lists {
     @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Set<String> getInstitutes() {
+    public Set<String> getInstitutions() {
         return extendableEnumService.getFileFormats();
     }
 
+    @GET
+    @Path("statuses")
+    @Operation(summary = "Get list of file formats", description = "Get valid asset statuses")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Set<String> getStatuses() {
+        return extendableEnumService.getStatuses();
+    }
+
+    @GET
+    @Path("issuecategories")
+    @Operation(summary = "Get list of file formats", description = "Get valid file formats for assets")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Set<String> getIssueCategories() {
+        return extendableEnumService.getIssueCategories();
+    }
+
     @POST
+    @Path("fileformats")
     @Operation(summary = "Add file_format", description = """
                 Add a new file format to the list of valid file formats
             """)
@@ -65,19 +90,39 @@ public class Lists {
         return Response.status(Response.Status.CREATED).build();
     }
 
-//    @PUT
-//    @Path("/{collectionName}")
-//    @Operation(summary = "Update role restrictions on collection", description = "Updates the role restrictions on the collection")
-//    @Produces(MediaType.APPLICATION_JSON)
-//    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-//    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
-//    @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
-//    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-//    public Collection updateInstitution(Collection collection
-//            , @PathParam("institutionName") String institutionName
-//            , @PathParam("collectionName") String collectionName) {
-//        return collectionService.updateCollection(collection);
-//    }
+    @POST
+    @Operation(summary = "Add file_format", description = """
+                Add a new file format to the list of valid file formats
+            """)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @Path("status")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Response createStatus(
+            ListEntry status
+    ) {
+        this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, status.name());
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @POST
+    @Operation(summary = "Add file_format", description = """
+                Add a new file format to the list of valid file formats
+            """)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Path("issuecategories")
+    public Response createIssueCategory (
+            ListEntry issueCategory
+    ) {
+        this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, issueCategory.name());
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+
 
     // Hidden until implemented
     @Hidden
@@ -89,6 +134,4 @@ public class Lists {
     public void deleteCollection() {
         throw new UnsupportedOperationException("Not implemented");
     }
-
-
 }

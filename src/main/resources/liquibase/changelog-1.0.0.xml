@@ -452,6 +452,9 @@
             <column name="error_timestamp" type="timestamp">
                 <constraints nullable="true"/>
             </column>
+            <column name="mos_id" type="text">
+                <constraints nullable="true"/>
+            </column>
             <column name="legality_id" type="bigint">
                 <constraints nullable="true"/>
             </column>
@@ -545,7 +548,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="name" type="text"/>
-            <column name="timestamp" type="timestamp" defaultValue="now()">
+            <column name="timestamp" type="timestamp">
                 <constraints nullable="false"/>
             </column>
             <column name="status" type="text">
