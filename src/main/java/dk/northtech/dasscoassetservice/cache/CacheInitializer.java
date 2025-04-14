@@ -92,24 +92,24 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
                         this.digitiserCache.putDigitiserInCacheIfAbsent(digitiser);
                     }
                 }
-                List<String> subjectList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listSubjects();
-                });
-                if (!subjectList.isEmpty()){
-                    for (String subject : subjectList){
-                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-                    }
-                }
-                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listPayloadTypes();
-                });
-                if (!payloadTypeList.isEmpty()){
-                    for (String payloadType : payloadTypeList){
-                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-                    }
-                }
+//                List<String> subjectList = jdbi.withHandle(handle -> {
+//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+//                    return assetRepository.listSubjects();
+//                });
+//                if (!subjectList.isEmpty()){
+//                    for (String subject : subjectList){
+//                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
+//                    }
+//                }
+//                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+//                    return assetRepository.listPayloadTypes();
+//                });
+//                if (!payloadTypeList.isEmpty()){
+//                    for (String payloadType : payloadTypeList){
+//                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
+//                    }
+//                }
                 List<String> preparationTypeList = jdbi.withHandle(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
                     return specimenRepository.listPreparationTypesInternal();

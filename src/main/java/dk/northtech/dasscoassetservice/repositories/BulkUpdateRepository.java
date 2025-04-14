@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static dk.northtech.dasscoassetservice.repositories.AssetRepository.READ_WITHOUT_WHERE;
+
 
 
 
@@ -366,8 +366,8 @@ public interface BulkUpdateRepository extends SqlObject {
                                  , $$
                                       MATCH (asset:Asset)
                                       WHERE asset.asset_guid IN $asset_guids
-                                      """
-                     + READ_WITHOUT_WHERE;
+                                      """;
+//                     + READ_WITHOUT_WHERE;
         return withHandle(handle -> {
             AgtypeListBuilder assetGuidList = new AgtypeListBuilder();
             assets.forEach(assetGuidList::add);

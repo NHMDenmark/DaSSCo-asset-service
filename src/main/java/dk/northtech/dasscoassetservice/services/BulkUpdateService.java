@@ -164,35 +164,35 @@ public class BulkUpdateService {
         logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
 
-        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-                this.subjectCache.clearCache();
-                List<String> subjectList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listSubjects();
-                });
-                if (!subjectList.isEmpty()) {
-                    for (String subject : subjectList) {
-                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-                    }
-                }
-            }
-        }
+//        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
+//            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
+//                this.subjectCache.clearCache();
+//                List<String> subjectList = jdbi.withHandle(handle -> {
+//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+//                    return assetRepository.listSubjects();
+//                });
+//                if (!subjectList.isEmpty()) {
+//                    for (String subject : subjectList) {
+//                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
+//                    }
+//                }
+//            }
+//        }
 
-        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-                this.payloadTypeCache.clearCache();
-                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-                    return assetRepository.listPayloadTypes();
-                });
-                if (!payloadTypeList.isEmpty()) {
-                    for (String payloadType : payloadTypeList) {
-                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-                    }
-                }
-            }
-        }
+//        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
+//            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
+//                this.payloadTypeCache.clearCache();
+//                List<String> payloadTypeList = jdbi.withHandle(handle -> {
+//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
+//                    return assetRepository.listPayloadTypes();
+//                });
+//                if (!payloadTypeList.isEmpty()) {
+//                    for (String payloadType : payloadTypeList) {
+//                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
+//                    }
+//                }
+//            }
+//        }
         return bulkUpdateSuccess;
 
     }

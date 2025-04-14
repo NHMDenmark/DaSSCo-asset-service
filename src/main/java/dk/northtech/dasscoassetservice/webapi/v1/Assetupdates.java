@@ -181,34 +181,77 @@ public class Assetupdates {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class) ))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
-            {
-              "asset_guid": "ti-a01-202305241657",
-              "institution": "test-institution",
-              "parent_guid":  null,
-              "status": "BEING_PROCESSED",
-              "specimens": [
-                    {
-                        "barcode": "bc123456",
-                        "specimen_pid": "spcpid-123",
-                        "preparation_type": "slide"
-                    }
-                ],
-              "funding": "hundredetusindvis af dollars",
-              "subject": "folder",
-              "payload_type": "ct scan",
-              "file_formats": [
-                "TIF"
-              ],
-              "asset_locked": false,
-              "restricted_access": [],
-              "pipeline": "ti-p1",
-              "workstation": "ti-ws1",
-              "digitiser" : "thbo",
-              "updateUser": "thbo",
-              "tags": {
-                  "testtag2": "test-tag"
-              }
-            }
+{
+    "asset_pid": "asdf-12346-3333-100a21",
+    "asset_guid": "tb-institution-01-asset-003",
+    "status": "WORKING_COPY",
+    "specimens": [
+        {
+            "institution": "tb-institution-01",
+            "collection": "tb-plants",
+            "barcode": "tb-plant-02",
+            "specimen_pid": "tb-plant-02-pid",
+            "preparation_type": "pinning"
+        }
+    ],
+    "funding": [
+        "Hundredetusindvis af dollars",
+        "Jeg er stadigvæk i chok"
+    ],
+    "subject": "folder",
+    "payload_type": "ct scan",
+    "file_formats": [
+        "TIF"
+    ],
+    "asset_locked": false,
+    "tags": {
+        "testtag2": "teztific8"
+    },
+    "date_asset_taken": "1998-11-15T16:00:00Z",
+    "parent_guids": [],
+    "internal_status": "METADATA_RECEIVED",
+    "events": [
+        {
+            "user": "thomas@northtech.dk",
+            "timestamp": "2025-04-14T09:42:33.896859Z",
+            "event": "CREATE_ASSET_METADATA",
+            "pipeline": "tb-pipeline-01"
+        }
+    ],
+    "workstation": "tb-workstation-01",
+    "writeAccess": false,
+    "camera_setting_control": "Mom get the camera!",
+    "date_metadata_ingested": null,
+    "metadata_version": "one point uh-oh",
+    "metadata_source": "I made it all up",
+    "mos_id": null,
+    "make_public": false,
+    "push_to_specify": false,
+    "issues": [
+       {
+            "asset_guid": "tb-institution-01-asset-003",
+            "category": "Catastrophic",
+            "name": "name",
+            "timestamp": "2025-04-14T09:42:34.334288Z",
+            "status": "status",
+            "description": "It doesnt work",
+            "notes": "issue",
+            "solved": true
+        }
+    ],
+    "digitiser": "ntech_thbo",
+    "complete_digitiser_list": [
+        "ntech_thbo"
+    ],
+    "legal": {
+        "legality_id": 2,
+        "copyright": "copyright",
+        "license": "You got a loicense for that?",
+        "credit": "My family, friends and coworkers"
+    },
+    "initial_metadata_recorded_by": null,
+    "updating_pipeline": null
+}
             """)}))Asset asset
             , @PathParam("assetGuid") String assetGuid
             , @Context SecurityContext securityContext) {

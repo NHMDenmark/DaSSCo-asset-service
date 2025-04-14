@@ -459,9 +459,9 @@ public class AssetService {
 
     public void reloadAssetCache() {
         subjectCache.clearCache();
-        List<String> subjectList = jdbi.withHandle(handle -> {
+        Set<String> subjectList = jdbi.withHandle(handle -> {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listSubjects();
+            return extendableEnumService.getSubjects();
         });
         if (!subjectList.isEmpty()) {
             for (String subject : subjectList) {
@@ -469,15 +469,15 @@ public class AssetService {
             }
         }
         payloadTypeCache.clearCache();
-        List<String> payloadTypeList = jdbi.withHandle(handle -> {
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-            return assetRepository.listPayloadTypes();
-        });
-        if (!payloadTypeList.isEmpty()) {
-            for (String payloadType : payloadTypeList) {
-                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-            }
-        }
+//        List<String> payloadTypeList = jdbi.withHandle(handle -> {
+//            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+//            return assetRepository.listPayloadTypes();
+//        });
+//        if (!payloadTypeList.isEmpty()) {
+//            for (String payloadType : payloadTypeList) {
+//                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
+//            }
+//        }
         preparationTypeCache.clearCache();
         List<String> preparationTypeList = jdbi.withHandle(handle -> {
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
