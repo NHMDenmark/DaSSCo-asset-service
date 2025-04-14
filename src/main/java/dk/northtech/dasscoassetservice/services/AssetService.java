@@ -286,6 +286,12 @@ public class AssetService {
             User user1 = userService.ensureExists(new User(asset.digitiser));
             asset.digitiser_id = user1.dassco_user_id;
         }
+        for(String list_user : asset.complete_digitiser_list) {
+            userService.ensureExists(new User(list_user));
+        }
+        for(String funds: asset.funding) {
+            fundingService.ensureExists(funds);
+        }
         Asset resultAsset = jdbi.inTransaction(h -> {
             // Default values on creation
             asset.date_metadata_updated = Instant.now();
@@ -512,7 +518,9 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
-
+        for(String funds: newFunding) {
+            fundingService.ensureExists(funds);
+        }
         Map<Integer, Issue> existing_issues = new HashMap<>();
         existing.issues.forEach(iss -> existing_issues.put(iss.issue_id(), iss));
         rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
@@ -520,6 +528,17 @@ public class AssetService {
             User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
             existing.digitiser_id = digitiser.dassco_user_id;
         }
+        if (!Strings.isNullOrEmpty(updatedAsset.digitiser)) {
+            User user1 = userService.ensureExists(new User(updatedAsset.digitiser));
+            updatedAsset.digitiser_id = user1.dassco_user_id;
+        }
+        for(String list_user : updatedAsset.complete_digitiser_list) {
+            userService.ensureExists(new User(list_user));
+        }
+        for(String funds: updatedAsset.funding) {
+            fundingService.ensureExists(funds);
+        }
+
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
         existing.collection_id = updatedAsset.collection_id;

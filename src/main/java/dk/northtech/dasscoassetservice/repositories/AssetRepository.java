@@ -352,9 +352,25 @@ public interface AssetRepository extends SqlObject {
 
     @Transaction
     default void deleteAsset(String assetGuid) {
-        boilerplate();
         // Deletes Asset and removes connections to Specimens and Events.
         // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
+//        String delete_specimen = "DELETE FROM asset_specimen WHERE asset_guid = :assetGuid;";
+//        String delete_digitisers = "DELETE FROM digitiser_list WHERE asset_guid = :assetGuid;";
+//        String delete_publication_link = "DELETE FROM publication_link WHERE asset_guid = :assetGuid;";
+//        String delete_asset_group_asset = "DELETE FROM asset_group_asset WHERE asset_guid = :assetGuid;";
+//        String delete_events = "DELETE FROM event WHERE asset_guid = :assetGuid;";
+//        String delete_issue = "DELETE FROM issue WHERE asset_guid = :assetGuid;";
+//        String delete_file = "DELETE FROM file WHERE asset_guid = :assetGuid;";
+//        withHandle(h -> {
+//           h.createUpdate(delete_specimen).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_digitisers).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_publication_link).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_asset_group_asset).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_events).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_issue).bind("assetGuid", assetGuid).execute();
+//            h.createUpdate(delete_file).bind("assetGuid", assetGuid).execute();
+//            return h;
+//        });
         throw new UnsupportedOperationException("Not implemented!");
     }
 
