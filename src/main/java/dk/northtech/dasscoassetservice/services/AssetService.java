@@ -193,6 +193,7 @@ public class AssetService {
                     }
                     //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
                     assetToBeMapped.pipeline = event.pipeline;
+                    assetToBeMapped.metadata_created_by = event.user;
                 } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
                     assetToBeMapped.date_asset_deleted = event.timestamp;
                 }

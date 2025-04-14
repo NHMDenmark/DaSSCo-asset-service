@@ -107,7 +107,7 @@ public class Asset {
     public List<String> complete_digitiser_list = new ArrayList<>();
     public Legality legal;
     public String initial_metadata_recorded_by;
-
+    public String metadata_created_by;
 //    public List<String> file_formats;
     // Internal ids for database operations
     public transient Integer workstation_id;
