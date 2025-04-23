@@ -18,6 +18,7 @@ public class ExtendableEnumService {
     private Map<String, String> subjectCache = new ConcurrentHashMap<>();
 
     private Map<String, String> issueCategoryCache = new ConcurrentHashMap<>();
+    private Map<String, String> preparationTypeCache = new ConcurrentHashMap<>();
 
     @Inject
     public ExtendableEnumService(Jdbi jdbi) {
@@ -28,7 +29,8 @@ public class ExtendableEnumService {
         FILE_FORMAT("file_format"),
         ISSUE_CATEGORY("issue_category"),
         STATUS("asset_status"),
-        SUBJECT("subject");
+        SUBJECT("subject"),
+        PREPARATION_TYPE("preparation_type");
 
         ExtendableEnum(String enumName) {
             this.enumName = enumName;
@@ -59,6 +61,11 @@ public class ExtendableEnumService {
         return new HashSet<>(this.subjectCache.values());
     }
 
+    public Set<String> getPreparation_types() {
+        return new HashSet<>(this.getPreparationTypeCache().values());
+    }
+
+
     public Set<String> getIssueCategories() {
         if (issueCategoryCache.isEmpty()) {
             initCache(ExtendableEnum.ISSUE_CATEGORY);
@@ -72,6 +79,14 @@ public class ExtendableEnumService {
         }
         return fileFormatCache;
     }
+
+    public Map<String, String> getPreparationTypeCache() {
+        if (preparationTypeCache.isEmpty()) {
+            initCache(ExtendableEnum.PREPARATION_TYPE);
+        }
+        return preparationTypeCache;
+    }
+
     public Map<String, String> getStatusCache() {
         if (statusCache.isEmpty()) {
             initCache(ExtendableEnum.STATUS);
@@ -97,6 +112,9 @@ public class ExtendableEnumService {
                 }
                 case ISSUE_CATEGORY -> {
                     this.issueCategoryCache.put(s,s);
+                }
+                case PREPARATION_TYPE -> {
+                    this.preparationTypeCache.put(s,s);
                 }
             }
         });
@@ -124,8 +142,14 @@ public class ExtendableEnumService {
                 }
             }
             case ISSUE_CATEGORY -> {
-                if(issueCategoryCache.containsKey(value)) {
+                if(getIssueCategories().contains(value)) {
                     throw new IllegalArgumentException("Issue category already exists");
+
+                }
+            }
+            case PREPARATION_TYPE -> {
+                if(getPreparation_types().contains(value)) {
+                    throw new IllegalArgumentException("Preparation_type already exists");
 
                 }
             }
@@ -146,8 +170,10 @@ public class ExtendableEnumService {
                 statusCache.put(value,value);
             }
             case ISSUE_CATEGORY -> {
-                System.out.println(value);
                 issueCategoryCache.put(value,value);
+            }
+            case PREPARATION_TYPE -> {
+                preparationTypeCache.put(value,value);
             }
         }
     }
@@ -165,6 +191,9 @@ public class ExtendableEnumService {
             }
             case ISSUE_CATEGORY -> {
                 return getIssueCategories().contains(value);
+            }
+            case PREPARATION_TYPE -> {
+                return getPreparation_types().contains(value);
             }
             default -> {
                 throw new RuntimeException("Enum name is null");
