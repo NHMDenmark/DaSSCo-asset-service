@@ -1,9 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -160,7 +158,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.complete_digitiser_list = Arrays.asList("Bazviola", "Karl-Børge");
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
-        createAsset.legal = new Legality("Copy-rite", "loicense", "kredit");
+        createAsset.legality = new Legality("Copy-rite", "loicense", "kredit");
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
@@ -219,11 +217,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
         assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
         assertThat(specimen_2.preparation_type()).isEqualTo("pinning");
-        assertThat(result.legal).isNotNull();
-        assertThat(result.legal.legality_id()).isAtLeast(1);
-        assertThat(result.legal.copyright()).isEqualTo("Copy-rite");
-        assertThat(result.legal.license()).isEqualTo("loicense");
-        assertThat(result.legal.credit()).isEqualTo("kredit");
+        assertThat(result.legality).isNotNull();
+        assertThat(result.legality.legality_id()).isAtLeast(1);
+        assertThat(result.legality.copyright()).isEqualTo("Copy-rite");
+        assertThat(result.legality.license()).isEqualTo("loicense");
+        assertThat(result.legality.credit()).isEqualTo("kredit");
         Issue issue = result.issues.get(0);
         assertThat(issue.issue_id()).isNotNull();
         assertThat(issue.category()).isEqualTo("Very big issue");
@@ -552,6 +550,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.asset_pid = "pid-updateAsset";
         asset.status = "BEING_PROCESSED";
+        asset.legality = new Legality("copy", "loicense", "credz");
 
         assetService.persistAsset(asset, user, 11);
 
@@ -576,6 +575,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.push_to_specify = false;
         asset.file_formats = Arrays.asList("PDF", "PNG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
+        asset.legality = new Legality("updcopy", "loicense2", "creds");
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
         System.out.println("hej1");
@@ -613,6 +613,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.funding).contains("420");
         assertThat(result.funding).contains("Funding secured");
         assertThat(result.funding).hasSize(2);
+        assertThat(result.legality).isNotNull();
+        assertThat(result.legality.copyright()).isEqualTo("updcopy");
+        assertThat(result.legality.license()).isEqualTo("loicense2");
+        assertThat(result.legality.credit()).isEqualTo("creds");
+        assertThat(result.legality.legality_id()).isNotNull();
 //        assertThat(result.issues).hasSize(1);
         assertThat(result.specimens).hasSize(1);
         assertThat(result.make_public).isFalse();
@@ -621,8 +626,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
-
-
+        result.legality = null;
+        assetService.updateAsset(result, user);
+        Optional<Asset> result2opt = assetService.getAsset("updateAsset");
+        Asset result2 = result2opt.get();
+        assertThat(result2.legality).isNull();
     }
 
     @Test

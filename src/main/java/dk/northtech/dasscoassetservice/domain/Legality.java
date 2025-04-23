@@ -1,10 +1,11 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import java.util.Objects;
 
-public record Legality(Long legality_id,  String copyright, String license, String credit) {
+public record Legality(@JsonIgnore Long legality_id, String copyright, String license, String credit) {
     @JdbiConstructor
     public Legality {
     }

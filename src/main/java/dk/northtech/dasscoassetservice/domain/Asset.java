@@ -1,6 +1,5 @@
 package dk.northtech.dasscoassetservice.domain;
 
-import com.zaxxer.hikari.util.ConcurrentBag;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -109,7 +108,7 @@ public class Asset {
     public String digitiser;
     @Schema(description = "Would be for cases where multiple digitiser has worked as a team to digitise an artifact. We do not know who did exactly which part of the digitisation process. All should be given credit for the process. We provide this. It will often be empty or just contain one name from the digitiser list.")
     public List<String> complete_digitiser_list = new ArrayList<>();
-    public Legality legal;
+    public Legality legality;
     public String initial_metadata_recorded_by;
     public String metadata_created_by;
 //    public List<String> file_formats;

@@ -53,7 +53,6 @@ public interface AssetRepository extends SqlObject {
                                     , camera_setting_control
                                     , date_asset_taken
                                     , date_asset_finalised
-                                    , initial_metadata_recorded_by
                                     , date_metadata_ingested
                                     , legality_id
                                   ) VALUES (
@@ -76,7 +75,6 @@ public interface AssetRepository extends SqlObject {
                                     , :cameraSettingControl
                                     , :date_asset_taken
                                     , :dateAssetFinalised
-                                    , :initialMetadataRecordedBy
                                     , :dateMetadataIngested
                                     , :legality_id
                                   );
@@ -105,9 +103,8 @@ public interface AssetRepository extends SqlObject {
                     .bind("cameraSettingControl", asset.camera_setting_control)
                     .bind("date_asset_taken", asset.date_asset_taken != null ? Timestamp.from(asset.date_asset_taken) : null)
                     .bind("dateAssetFinalised", asset.date_asset_finalised != null ? Timestamp.from(asset.date_asset_finalised) : null)
-                    .bind("initialMetadataRecordedBy", asset.initial_metadata_recorded_by)
                     .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested) : null)
-                    .bind("legality_id", asset.legal != null ? asset.legal.legality_id() : null)
+                    .bind("legality_id", asset.legality != null ? asset.legality.legality_id() : null)
                     .execute();
             return handle;
         });
@@ -318,6 +315,7 @@ public interface AssetRepository extends SqlObject {
                 , digitiser_id = :digitiser_id
                 , metadata_version = :metadata_version
                 , metadata_source = :metadata_source
+                , legality_id = :legality_id
             WHERE asset_guid = :asset_guid    
             """;
 
@@ -341,6 +339,7 @@ public interface AssetRepository extends SqlObject {
                         .bind("asset_guid", asset.asset_guid)
                         .bind("metadata_version", asset.metadata_version)
                         .bind("metadata_source", asset.metadata_source)
+                        .bind("legality_id", asset.legality == null ? null : asset.legality.legality_id())
                         .execute();
                 return handle;
             });

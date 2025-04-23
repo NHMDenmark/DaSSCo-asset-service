@@ -307,9 +307,9 @@ public class AssetService {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
             IssueRepository issueRepository = h.attach(IssueRepository.class);
             // Handle legality
-            if (asset.legal != null) {
+            if (asset.legality != null) {
                 LegalityRepository legalityRepository = h.attach(LegalityRepository.class);
-                asset.legal = legalityRepository.insertLegality(asset.legal);
+                asset.legality = legalityRepository.insertLegality(asset.legality);
             }
             // Handle the asset itself
             assetRepository.insertBaseAsset(asset);
@@ -583,16 +583,19 @@ public class AssetService {
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
             IssueRepository issueRepository = h.attach(IssueRepository.class);
             LegalityRepository legalityRepository = h.attach(LegalityRepository.class);
-            if (updatedAsset.legal != null) {
-                if (updatedAsset.legal.legality_id() != null) {
-                    legalityRepository.updateLegality(updatedAsset.legal);
-                    existing.legal = updatedAsset.legal;
+            // Handle legality
+            Long legalityToDelete = null;
+            if (updatedAsset.legality != null) {
+                if (existing.legality != null) {
+                    Legality legality = new Legality(existing.legality.legality_id(), updatedAsset.legality.copyright(), updatedAsset.legality.license(), updatedAsset.legality.credit());
+                    legalityRepository.updateLegality(legality);
+                    existing.legality = legality;
                 } else {
-                    if (existing.legal != null) {
-                        legalityRepository.deleteLegality(existing.legal.legality_id());
-                    }
-                    existing.legal = legalityRepository.insertLegality(updatedAsset.legal);
+                    existing.legality = legalityRepository.insertLegality(updatedAsset.legality);
                 }
+            } else if (existing.legality != null){
+                legalityToDelete = existing.legality.legality_id();
+                existing.legality = null;
             }
             repository.update_asset_internal(existing);
             Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(existing.institution, updatedAsset.pipeline);
@@ -680,6 +683,10 @@ public class AssetService {
                     if (!issue_ids.contains(i)) {
                         issueRepository.deleteIssue(i);
                     }
+                }
+
+                if(legalityToDelete != null) {
+                    legalityRepository.deleteLegality(legalityToDelete);
                 }
             }
             return h;

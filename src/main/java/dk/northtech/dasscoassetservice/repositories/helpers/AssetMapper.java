@@ -3,9 +3,6 @@ package dk.northtech.dasscoassetservice.repositories.helpers;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.*;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.type.AgtypeList;
-import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 
@@ -13,11 +10,8 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class AssetMapper implements RowMapper<Asset> {
     private static Gson gson = new Gson();
@@ -74,14 +68,13 @@ public class AssetMapper implements RowMapper<Asset> {
         }
         Timestamp dateAssetFinalised = rs.getTimestamp("date_asset_finalised");
         asset.date_asset_finalised = dateAssetFinalised == null ? null : dateAssetFinalised.toInstant();
-        asset.initial_metadata_recorded_by = rs.getString("initial_metadata_recorded_by");
         Timestamp dateMetadataIngested = rs.getTimestamp("date_metadata_ingested");
         if (dateMetadataIngested != null) {
             asset.date_metadata_ingested = dateMetadataIngested.toInstant();
         }
         long legalityId = rs.getInt("legality_id");
         if(!rs.wasNull()) {
-            asset.legal = new Legality(legalityId
+            asset.legality = new Legality(legalityId
                     , rs.getString("copyright")
                     , rs.getString("license")
                     , rs.getString("credit"));
