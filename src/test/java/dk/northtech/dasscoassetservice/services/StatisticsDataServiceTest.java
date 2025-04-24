@@ -178,7 +178,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.asset_guid = guid;
         asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
+        asset.asset_subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";

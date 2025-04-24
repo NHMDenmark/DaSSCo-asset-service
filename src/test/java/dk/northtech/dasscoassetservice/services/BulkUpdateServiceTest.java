@@ -38,9 +38,9 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         Asset persistedSecondAsset = optionalSecondAsset.get();
 
         assertThat(persistedFirstAsset.events.size()).isEqualTo(1);
-        assertThat(persistedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+        assertThat(persistedFirstAsset.events.getFirst().event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
         assertThat(persistedSecondAsset.events.size()).isEqualTo(1);
-        assertThat(persistedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+        assertThat(persistedSecondAsset.events.getFirst().event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
 
         // Create list of assets to be updated:
         List<String> assetList = new ArrayList<>();
@@ -66,16 +66,16 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         assertThat(unChangedThirdAsset.status).isEqualTo("WORKING_COPY");
         // Events changed (only one event for BULK_UPDATE_ASSET_METADATA):
         assertThat(updatedFirstAsset.events.size()).isEqualTo(2);
-        assertThat(updatedFirstAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        assertThat(updatedFirstAsset.events.getFirst().event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
         assertThat(updatedSecondAsset.events.size()).isEqualTo(2);
-        assertThat(updatedSecondAsset.events.get(0).event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
+        assertThat(updatedSecondAsset.events.getFirst().event).isEqualTo(DasscoEvent.BULK_UPDATE_ASSET_METADATA);
         // Funding changed:
         assertThat(updatedFirstAsset.funding).contains("Hundredetusindvis af dollars");
         assertThat(updatedSecondAsset.funding).contains("Hundredetusindvis af dollars");
         assertThat(unChangedThirdAsset.funding).hasSize(2);
         // Subject changed:
-        assertThat(updatedFirstAsset.subject).isEqualTo("Folder");
-        assertThat(updatedSecondAsset.subject).isEqualTo("Folder");
+        assertThat(updatedFirstAsset.asset_subject).isEqualTo("Folder");
+        assertThat(updatedSecondAsset.asset_subject).isEqualTo("Folder");
         // Payload type changed:
         assertThat(updatedFirstAsset.payload_type).isEqualTo("nuclear");
         assertThat(updatedSecondAsset.payload_type).isEqualTo("nuclear");
@@ -104,7 +104,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         asset.asset_guid = guid;
         asset.status = "WORKING_COPY";
         asset.funding = Arrays.asList("funding has depleted", "Dollaridooz");
-        asset.subject = "subject-non-edited";
+        asset.asset_subject = "subject-non-edited";
         asset.payload_type = "payload-not-edited";
         asset.tags.put("Tag 1", "Value 1");
         asset.tags.put("Tag 2", "Value 2");
@@ -124,7 +124,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         updatedAsset.funding.add("Dark money");
         updatedAsset.status = "BEING_PROCESSED";
         updatedAsset.asset_locked = true;
-        updatedAsset.subject = "New subject";
+        updatedAsset.asset_subject = "New subject";
         updatedAsset.tags.put("Tag 3", "Value 3");
         return updatedAsset;
     }
@@ -138,8 +138,8 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
         asset.asset_pid = guid + "_pid";
         asset.funding.add("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
-        asset.file_formats = Arrays.asList("JPEG");
+        asset.asset_subject = "Folder";
+        asset.file_formats = List.of("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         asset.institution = "institution_2";
@@ -159,7 +159,7 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
 
     @Test
     void testBulkUpdateNoBody(){
-        List<String> assetList = new ArrayList<String>();
+        List<String> assetList = new ArrayList<>();
         assetList.add("bulk-asset-no-body");
         assetList.add("bulk-asset-no-body-2");
         Asset updatedAsset = null;
@@ -171,14 +171,14 @@ class BulkUpdateServiceTest extends AbstractIntegrationTest{
     void testBulkUpdateOneAssetNotFound(){
         // Create three different assets
         Asset firstAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-exists");
-        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
+//        Asset secondAsset = getBulkUpdateAssetToBeUpdated("bulk-asset-does-not");
 
         assetService.persistAsset(firstAsset, user, 1);
 
         Asset updatedAsset = getBulkUpdateAsset();
 
         // Create list of assets to be updated:
-        List<String> assetList = new ArrayList<String>();
+        List<String> assetList = new ArrayList<>();
         assetList.add("bulk-asset-exists");
         assetList.add("bulk-asset-does-not");
         // Update assets with the new asset information:

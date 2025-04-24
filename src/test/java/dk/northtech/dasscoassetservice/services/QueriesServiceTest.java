@@ -2,19 +2,14 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
-import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.text.StringSubstitutor;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.util.Map.entry;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Disabled("Disabled until wp5a is prioritized")
 class QueriesServiceTest extends AbstractIntegrationTest {
@@ -258,7 +253,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         asset.asset_guid = guid;
         asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
+        asset.asset_subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = username;

@@ -377,7 +377,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = guid + "_pid";
         asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
+        asset.asset_subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
@@ -567,7 +567,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.workstation = "i1_w2";
         asset.pipeline = "i1_p2";
         asset.status = "ISSUE_WITH_METADATA";
-        asset.subject = "new sub";
+        asset.asset_subject = "new sub";
         asset.restricted_access = Arrays.asList(InternalRole.ADMIN);
         asset.funding = Arrays.asList("420", "Funding secured");
         asset.payload_type = "Conventional";
@@ -575,6 +575,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.metadata_version = "One point oh-uh";
         asset.metadata_source = "It came to me in a dream";
         asset.make_public = false;
+        Instant date_metadata_ingested = Instant.parse("2025-02-17T09:59:51.312Z");
+        asset.date_metadata_ingested = date_metadata_ingested;
         asset.push_to_specify = false;
         asset.file_formats = Arrays.asList("PDF", "PNG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
@@ -597,7 +599,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.pipeline).isEqualTo("i1_p1");
         assertThat(result.workstation).isEqualTo("i1_w1");
         assertThat(result.status).isEqualTo("ISSUE_WITH_METADATA");
-        assertThat(result.subject).isEqualTo("new sub");
+        assertThat(result.asset_subject).isEqualTo("new sub");
 
 
         assertThat(result.payload_type).isEqualTo("Conventional");
@@ -623,6 +625,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.legality.license()).isEqualTo("loicense2");
         assertThat(result.legality.credit()).isEqualTo("creds");
         assertThat(result.legality.legality_id()).isNotNull();
+        assertThat(result.date_metadata_ingested).isEqualTo(date_metadata_ingested);
 //        assertThat(result.issues).hasSize(1);
         assertThat(result.specimens).hasSize(1);
         assertThat(result.make_public).isFalse();

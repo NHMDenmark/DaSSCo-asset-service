@@ -440,8 +440,8 @@ public class AssetService {
             }
         }
 
-        if (asset.subject != null && !asset.subject.isEmpty()) {
-            subjectCache.putSubjectsInCacheIfAbsent(asset.subject);
+        if (asset.asset_subject != null && !asset.asset_subject.isEmpty()) {
+            subjectCache.putSubjectsInCacheIfAbsent(asset.asset_subject);
         }
 
         if (asset.payload_type != null && !asset.payload_type.isEmpty()) {
@@ -552,7 +552,7 @@ public class AssetService {
             throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
         }
         existing.asset_locked = updatedAsset.asset_locked;
-        existing.subject = updatedAsset.subject;
+        existing.asset_subject = updatedAsset.asset_subject;
         existing.restricted_access = updatedAsset.restricted_access;
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
@@ -561,6 +561,7 @@ public class AssetService {
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         existing.metadata_version = updatedAsset.metadata_version;
         existing.metadata_source = updatedAsset.metadata_source;
+        existing.date_metadata_ingested = updatedAsset.date_metadata_ingested;
         existing.camera_setting_control = updatedAsset.camera_setting_control;
         existing.push_to_specify = updatedAsset.push_to_specify;
         existing.make_public = updatedAsset.make_public;
@@ -571,8 +572,8 @@ public class AssetService {
         existing.mos_id = updatedAsset.mos_id;
 
         // Currently we just add new subject types if they do not exist
-        if (!Strings.isNullOrEmpty(existing.subject) && !extendableEnumService.getSubjects().contains(existing.subject)) {
-            extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.SUBJECT, existing.subject);
+        if (!Strings.isNullOrEmpty(existing.asset_subject) && !extendableEnumService.getSubjects().contains(existing.asset_subject)) {
+            extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.SUBJECT, existing.asset_subject);
         }
         validateAssetFields(existing);
         jdbi.inTransaction(h -> {

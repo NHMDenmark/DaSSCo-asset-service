@@ -5,7 +5,6 @@ import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
-import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -15,12 +14,9 @@ import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
-import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -88,7 +84,7 @@ public interface AssetRepository extends SqlObject {
                     .bind("assetGuid", asset.asset_guid)
                     .bind("asset_pid", asset.asset_pid)
                     .bind("assetLocked", asset.asset_locked)
-                    .bind("subject", asset.subject != null ? asset.subject.toLowerCase() : null)
+                    .bind("subject", asset.asset_subject != null ? asset.asset_subject.toLowerCase() : null)
                     .bind("collectionId", asset.collection_id)
                     .bind("digitiserId", asset.digitiser_id)
                     .bindArray("fileFormat", String.class, asset.file_formats)
@@ -299,6 +295,7 @@ public interface AssetRepository extends SqlObject {
                 , digitiser_id = :digitiser_id
                 , metadata_version = :metadata_version
                 , metadata_source = :metadata_source
+                , date_metadata_ingested = :date_metadata_ingested
                 , legality_id = :legality_id
                 , mos_id = :mos_id
             WHERE asset_guid = :asset_guid    
@@ -311,7 +308,7 @@ public interface AssetRepository extends SqlObject {
             withHandle(handle -> {
                 handle.createUpdate(UPDATE_ASSET_SQL)
                         .bind("status", asset.status)
-                        .bind("subject", asset.subject)
+                        .bind("subject", asset.asset_subject)
                         .bind("payload_type", asset.payload_type)
                         .bind("digitiser_id", asset.digitiser_id)
 //                        .bind("file_f")
@@ -326,6 +323,7 @@ public interface AssetRepository extends SqlObject {
                         .bind("metadata_source", asset.metadata_source)
                         .bind("legality_id", asset.legality == null ? null : asset.legality.legality_id())
                         .bind("mos_id", asset.mos_id)
+                        .bind("date_metadata_ingested", asset.date_metadata_ingested)
                         .execute();
                 return handle;
             });

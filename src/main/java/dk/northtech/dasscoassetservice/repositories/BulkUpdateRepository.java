@@ -113,13 +113,13 @@ public interface BulkUpdateRepository extends SqlObject {
                     """);
             builder.add("digitiser", updatedFields.digitiser);
         }
-        if (!Strings.isNullOrEmpty(updatedFields.subject)) {
+        if (!Strings.isNullOrEmpty(updatedFields.asset_subject)) {
             sb.append("""   
                             DELETE existing_has_subject
                             MERGE(new_subject:Subject{name: $new_subject})
                             MERGE (asset)-[:HAS]->(new_subject)
                     """);
-            builder.add("new_subject", updatedFields.subject);
+            builder.add("new_subject", updatedFields.asset_subject);
         }
         if (!Strings.isNullOrEmpty(updatedFields.payload_type)) {
             sb.append("""

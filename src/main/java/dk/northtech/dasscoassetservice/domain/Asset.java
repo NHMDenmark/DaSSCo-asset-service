@@ -22,7 +22,7 @@ public class Asset {
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
     public List<String> funding = new ArrayList<>();
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
-    public String subject;
+    public String asset_subject;
     @Schema(description = "What the asset represents (image, ct scan, surface scan, document)", example = "ct scan")
     public String payload_type;
     @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
@@ -109,7 +109,6 @@ public class Asset {
     @Schema(description = "Would be for cases where multiple digitiser has worked as a team to digitise an artifact. We do not know who did exactly which part of the digitisation process. All should be given credit for the process. We provide this. It will often be empty or just contain one name from the digitiser list.")
     public List<String> complete_digitiser_list = new ArrayList<>();
     public Legality legality;
-    public String initial_metadata_recorded_by;
     public String metadata_created_by;
 //    public List<String> file_formats;
     // Internal ids for database operations
@@ -134,7 +133,7 @@ public class Asset {
                ", multi_specimen=" + multi_specimen +
                ", specimens=" + specimens +
                ", funding=" + funding +
-               ", subject='" + subject + '\'' +
+               ", subject='" + asset_subject + '\'' +
                ", payload_type='" + payload_type + '\'' +
                ", file_formats=" + file_formats +
                ", asset_locked=" + asset_locked +
@@ -178,11 +177,11 @@ public class Asset {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Asset asset = (Asset) o;
-        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(specimens, asset.specimens) && Objects.equals(funding, asset.funding) && Objects.equals(subject, asset.subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted, asset.date_asset_deleted) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
+        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(specimens, asset.specimens) && Objects.equals(funding, asset.funding) && Objects.equals(asset_subject, asset.asset_subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted, asset.date_asset_deleted) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, specimens, funding, subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
+        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, specimens, funding, asset_subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
     }
 }

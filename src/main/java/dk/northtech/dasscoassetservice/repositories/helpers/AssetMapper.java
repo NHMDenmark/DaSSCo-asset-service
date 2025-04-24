@@ -24,7 +24,7 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.asset_guid = rs.getString("asset_guid");
         asset.asset_pid = rs.getString("asset_pid");
         asset.asset_locked = rs.getBoolean("asset_locked");
-        asset.subject = rs.getString("subject");
+        asset.asset_subject = rs.getString("subject");
         asset.collection_id = rs.getInt("collection_id");
         asset.digitiser_id = rs.getInt("digitiser_id");
         asset.digitiser = rs.getString("digitiser");
