@@ -254,6 +254,7 @@ public class Assetupdates {
 }
             """)}))Asset asset
             , @PathParam("assetGuid") String assetGuid
+            , @QueryParam("pipeline") String pipeline
             , @Context SecurityContext securityContext) {
         if(!Objects.equals(assetGuid, asset.asset_guid)) {
             throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-body");

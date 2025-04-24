@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
+import org.jdbi.v3.core.Jdbi;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -54,7 +55,8 @@ public class AbstractIntegrationTest {
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
     @Inject ExtendableEnumService extendableEnumService;
-
+    @Inject
+    Jdbi jdbi;
     @Inject UserService userService;
     User user = new User();
     @Inject

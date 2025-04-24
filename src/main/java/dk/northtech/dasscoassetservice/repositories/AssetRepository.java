@@ -129,8 +129,6 @@ public interface AssetRepository extends SqlObject {
     Set<String> getParents(String child_id);
 
 
-
-
     String READ_ASSET = """
             SELECT asset.*
                 , collection.collection_name
@@ -265,21 +263,6 @@ public interface AssetRepository extends SqlObject {
         return asset;
     }
 
-    @Transaction
-    default void executeUpdate(AGEQuery ageQuery) {
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(ageQuery.agtypeMapBuilder().build());
-                handle.createUpdate(ageQuery.sql())
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     String UPDATE_ASSET_SQL = """
             UPDATE asset SET 
@@ -339,24 +322,46 @@ public interface AssetRepository extends SqlObject {
     default void deleteAsset(String assetGuid) {
         // Deletes Asset and removes connections to Specimens and Events.
         // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
-//        String delete_specimen = "DELETE FROM asset_specimen WHERE asset_guid = :assetGuid;";
-//        String delete_digitisers = "DELETE FROM digitiser_list WHERE asset_guid = :assetGuid;";
-//        String delete_publication_link = "DELETE FROM publication_link WHERE asset_guid = :assetGuid;";
-//        String delete_asset_group_asset = "DELETE FROM asset_group_asset WHERE asset_guid = :assetGuid;";
-//        String delete_events = "DELETE FROM event WHERE asset_guid = :assetGuid;";
-//        String delete_issue = "DELETE FROM issue WHERE asset_guid = :assetGuid;";
-//        String delete_file = "DELETE FROM file WHERE asset_guid = :assetGuid;";
-//        withHandle(h -> {
-//           h.createUpdate(delete_specimen).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_digitisers).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_publication_link).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_asset_group_asset).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_events).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_issue).bind("assetGuid", assetGuid).execute();
-//            h.createUpdate(delete_file).bind("assetGuid", assetGuid).execute();
-//            return h;
-//        });
-        throw new UnsupportedOperationException("Not implemented!");
+        String delete_asset_specimen = "DELETE FROM asset_specimen WHERE asset_guid = :assetGuid RETURNING specimen_id;";
+        String delete_specimen = """
+                    DELETE FROM specimen
+                    WHERE specimen_id IN (<ids>)
+                        AND NOT EXISTS (
+                            SELECT 1 FROM asset_specimen asp WHERE asp.specimen_id = specimen.specimen_id
+                        )
+                """;
+        String delete_digitisers = "DELETE FROM digitiser_list WHERE asset_guid = :assetGuid;";
+        String delete_publication_link = "DELETE FROM publication_link WHERE asset_guid = :assetGuid;";
+        String delete_asset_group_asset = "DELETE FROM asset_group_asset WHERE asset_guid = :assetGuid;";
+        String delete_events = "DELETE FROM event WHERE asset_guid = :assetGuid;";
+        String delete_issue = "DELETE FROM issue WHERE asset_guid = :assetGuid;";
+        String delete_file = "DELETE FROM file WHERE asset_guid = :assetGuid;";
+        String delete_asset_funding = "DELETE FROM asset_funding WHERE asset_guid = :assetGuid";
+        String delete_asset_metadata = "DELETE FROM asset WHERE asset_guid = :assetGuid";
+        String delete_funding = """
+                    DELETE FROM funding
+                    WHERE funding.funding_id IN (
+                    SELECT funding_id
+                        FROM funding
+                        LEFT JOIN asset_funding USING(funding_id)
+                        WHERE asset_guid IS null 
+                    )
+                """;
+        withHandle(h -> {
+            List<Integer> ids = h.createQuery(delete_asset_specimen)
+                    .bind("assetGuid", assetGuid).mapTo(Integer.class).list();
+            h.createUpdate(delete_specimen).bindList("ids", ids).execute();
+            h.createUpdate(delete_digitisers).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_publication_link).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_asset_group_asset).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_events).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_issue).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_file).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_asset_funding).bind("assetGuid", assetGuid).execute();
+            h.createUpdate(delete_funding).execute();
+            h.createUpdate(delete_asset_metadata).bind("assetGuid", assetGuid).execute();
+            return h;
+        });
     }
 
 

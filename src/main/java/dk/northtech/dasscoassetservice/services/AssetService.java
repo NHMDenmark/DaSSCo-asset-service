@@ -599,11 +599,11 @@ public class AssetService {
                 existing.legality = null;
             }
             repository.update_asset_internal(existing);
-            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(existing.institution, updatedAsset.pipeline);
+            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.pipeline,existing.institution);
             eventRepository.insertEvent(existing.asset_guid
                     , DasscoEvent.UPDATE_ASSET_METADATA
                     , user.dassco_user_id
-                    , pipelineByInstitutionAndName.isPresent() ? pipelineByInstitutionAndName.get().pipeline_id() : null);
+                    , pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
             //Specimens
             for (Specimen s : specimensToDetach) {
                 specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());

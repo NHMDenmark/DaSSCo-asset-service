@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -375,7 +376,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
         asset.asset_pid = guid + "_pid";
-        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
+        asset.funding = new ArrayList<>(List.of("Hundredetusindvis af dollars"));
         asset.date_asset_taken = Instant.now();
         asset.asset_subject = "Folder";
         asset.file_formats = Arrays.asList("JPEG");
@@ -830,6 +831,31 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void testUnlockAssetAssetDoesntExist() {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.unlockAsset("non-existent-asset"));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+    }
+
+    @Test
+    void deleteAssetMetadata() {
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "test-delete-issue");
+        Asset testAsset1 = getTestAsset("deleteAssetMetadata-1");
+        testAsset1.specimens = List.of(new Specimen("barcode-d-1", "delete_specimen-1", "pinning"), new Specimen("barcode-d-2", "dont-delete_specimen-1", "pinning"));
+        testAsset1.issues = List.of(new Issue("deleteAssetMetadata-1","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        testAsset1.funding.add("A whole lot of money");
+        Asset testAsset2 = getTestAsset("deleteAssetMetadata-2");
+        testAsset2.specimens = List.of(new Specimen("barcode-d-2", "dont-delete_specimen-1", "pinning"));
+        testAsset2.issues = List.of(new Issue("deleteAssetMetadata-2","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        assetService.persistAsset(testAsset1,user, 1000);
+        assetService.persistAsset(testAsset2,user, 1000);
+        AssetRepository assetRepository = jdbi.onDemand(AssetRepository.class);
+        assetRepository.deleteAsset("deleteAssetMetadata-1");
+        Optional<Asset> result1 = assetService.getAsset("deleteAssetMetadata-1");
+        assertThat(result1.isEmpty()).isTrue();
+        Optional<Asset> result2 = assetService.getAsset("deleteAssetMetadata-2");
+        assertThat(result2.isPresent()).isTrue();
+        //Check that only correct things are deleted
+        Asset asset = result2.get();
+        assertThat(asset.funding).contains("Hundredetusindvis af dollars");
+        assertThat(asset.specimens).hasSize(1);
+        assertThat(asset.issues).hasSize(1);
     }
 
 }
