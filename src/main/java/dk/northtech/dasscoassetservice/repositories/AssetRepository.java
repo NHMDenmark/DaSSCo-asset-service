@@ -55,6 +55,7 @@ public interface AssetRepository extends SqlObject {
                                     , date_asset_finalised
                                     , date_metadata_ingested
                                     , legality_id
+                                    , mos_id
                                   ) VALUES (
                                     :assetGuid
                                     , :asset_pid
@@ -77,6 +78,7 @@ public interface AssetRepository extends SqlObject {
                                     , :dateAssetFinalised
                                     , :dateMetadataIngested
                                     , :legality_id
+                                    , :mos_id
                                   );
                     """;
 
@@ -105,6 +107,7 @@ public interface AssetRepository extends SqlObject {
                     .bind("dateAssetFinalised", asset.date_asset_finalised != null ? Timestamp.from(asset.date_asset_finalised) : null)
                     .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested) : null)
                     .bind("legality_id", asset.legality != null ? asset.legality.legality_id() : null)
+                    .bind("mos_id", asset.mos_id)
                     .execute();
             return handle;
         });
@@ -129,20 +132,7 @@ public interface AssetRepository extends SqlObject {
             """)
     Set<String> getParents(String child_id);
 
-    //This must be called once per transaction
-    default void boilerplate() {
-        withHandle(handle -> {
-            Connection connection = handle.getConnection();
-            try {
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                return handle;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
+
 
 
     String READ_ASSET = """
@@ -164,7 +154,6 @@ public interface AssetRepository extends SqlObject {
     @Transaction
     default Optional<Asset> readAsset(String assetId) {
 
-        boilerplate();
         Optional<Asset> asset = readAssetInternalNew(assetId);
         if (asset.isEmpty()) {
             return asset;
@@ -213,11 +202,6 @@ public interface AssetRepository extends SqlObject {
         });
     }
 
-    @Transaction
-    default List<Event> readEvents(String guid) {
-        boilerplate();
-        return readEvents_internal(guid);
-    }
 
     default List<Event> readEvents_internal(String guid) {
         String sql =
@@ -316,6 +300,7 @@ public interface AssetRepository extends SqlObject {
                 , metadata_version = :metadata_version
                 , metadata_source = :metadata_source
                 , legality_id = :legality_id
+                , mos_id = :mos_id
             WHERE asset_guid = :asset_guid    
             """;
 
@@ -340,6 +325,7 @@ public interface AssetRepository extends SqlObject {
                         .bind("metadata_version", asset.metadata_version)
                         .bind("metadata_source", asset.metadata_source)
                         .bind("legality_id", asset.legality == null ? null : asset.legality.legality_id())
+                        .bind("mos_id", asset.mos_id)
                         .execute();
                 return handle;
             });

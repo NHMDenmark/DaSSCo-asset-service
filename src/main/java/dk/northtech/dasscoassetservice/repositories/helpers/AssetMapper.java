@@ -59,7 +59,7 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.push_to_specify = rs.getBoolean("push_to_specify");
         asset.metadata_version = rs.getString("metadata_version");
         asset.camera_setting_control = rs.getString("camera_setting_control");
-
+        asset.mos_id = rs.getString("mos_id");
         // Mapping dates (timestamps)
         Timestamp dateAssetTaken = rs.getTimestamp("date_asset_taken");
         if (dateAssetTaken != null) {

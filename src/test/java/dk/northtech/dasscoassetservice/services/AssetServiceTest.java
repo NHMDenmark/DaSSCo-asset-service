@@ -166,6 +166,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
+        createAsset.mos_id = "mos-1";
 //        createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
         createAsset.funding = Arrays.asList("Hundredetusindvis af dollars", "Jeg er stadig i chok");
         createAsset.file_formats = Arrays.asList("PNG", "PDF");
@@ -192,6 +193,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.date_metadata_ingested).isNotNull();
         assertThat(result.date_asset_finalised).isNotNull();
         assertThat(result.push_to_specify).isTrue();
+        assertThat(result.mos_id).isEqualTo("mos-1");
         assertThat(result.make_public).isTrue();
         assertThat(result.payload_type).isEqualTo("nuclear");
         assertThat(result.digitiser).isEqualTo("Karl-Børge");
@@ -550,6 +552,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i1_c1";
         asset.asset_pid = "pid-updateAsset";
         asset.status = "BEING_PROCESSED";
+        asset.mos_id = "mos-ID";
         asset.legality = new Legality("copy", "loicense", "credz");
 
         assetService.persistAsset(asset, user, 11);
@@ -576,6 +579,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList("PDF", "PNG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
         asset.legality = new Legality("updcopy", "loicense2", "creds");
+        asset.mos_id = "moss";
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
         System.out.println("hej1");
@@ -604,6 +608,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.digitiser).isEqualTo("Diane Digitiser");
         assertThat(result.metadata_version).isEqualTo("One point oh-uh");
         assertThat(result.metadata_source).isEqualTo("It came to me in a dream");
+        assertThat(result.mos_id).isEqualTo("moss");
         assertThat(result.complete_digitiser_list).contains("Viola");
         assertThat(result.complete_digitiser_list).contains("Karl-Børge");
         assertThat(result.complete_digitiser_list).hasSize(2);
