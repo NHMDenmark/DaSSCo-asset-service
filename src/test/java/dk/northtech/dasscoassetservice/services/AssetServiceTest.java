@@ -582,6 +582,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
         asset.legality = new Legality("updcopy", "loicense2", "creds");
         asset.mos_id = "moss";
+        asset.camera_setting_control = "Dad get the camera!";
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
         System.out.println("hej1");
@@ -606,7 +607,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.date_asset_finalised).isNotNull();
         assertThat(result.date_asset_taken).isNotNull();
         assertThat(result.date_metadata_ingested).isNotNull();
-
+        assertThat(result.camera_setting_control).isEqualTo("Dad get the camera!");
         assertThat(result.digitiser).isEqualTo("Diane Digitiser");
         assertThat(result.metadata_version).isEqualTo("One point oh-uh");
         assertThat(result.metadata_source).isEqualTo("It came to me in a dream");

@@ -43,7 +43,6 @@ public class Lists {
     @Operation(summary = "Get list of file formats", description = "Get valid file formats for assets")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
-    @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Set<String> getInstitutions() {
@@ -52,10 +51,9 @@ public class Lists {
 
     @GET
     @Path("statuses")
-    @Operation(summary = "Get list of file formats", description = "Get valid asset statuses")
+    @Operation(summary = "Get list of asset statuses", description = "Get valid asset statuses")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
-    @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Set<String> getStatuses() {
@@ -63,11 +61,21 @@ public class Lists {
     }
 
     @GET
-    @Path("issuecategories")
-    @Operation(summary = "Get list of file formats", description = "Get valid file formats for assets")
+    @Path("preparationtypes")
+    @Operation(summary = "Get list of preparation types", description = "Get valid specimen preparation types")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
-    @ApiOperation(value = "List fileformats", notes = "Lists all file formats")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Set<String> getPreparationTypes() {
+        return extendableEnumService.getPreparation_types();
+    }
+
+    @GET
+    @Path("issuecategories")
+    @Operation(summary = "Get list of issue categories", description = "Get valid categories for issues")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Set<String> getIssueCategories() {
@@ -91,8 +99,8 @@ public class Lists {
     }
 
     @POST
-    @Operation(summary = "Add file_format", description = """
-                Add a new file format to the list of valid file formats
+    @Operation(summary = "Add status", description = """
+                Add a new status to the list of valid asset statuses
             """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -107,8 +115,8 @@ public class Lists {
     }
 
     @POST
-    @Operation(summary = "Add file_format", description = """
-                Add a new file format to the list of valid file formats
+    @Operation(summary = "Add issue_category", description = """
+                Add a new issue category to the list of valid issue categories
             """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
@@ -119,6 +127,22 @@ public class Lists {
             ListEntry issueCategory
     ) {
         this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, issueCategory.name());
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @POST
+    @Operation(summary = "Add preparation_type", description = """
+                Add a new preparation_type to the list of valid preparation types
+            """)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Path("preparationtyypes")
+    public Response createPreparationType (
+            ListEntry preparation_type
+    ) {
+        this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, preparation_type.name());
         return Response.status(Response.Status.CREATED).build();
     }
 
