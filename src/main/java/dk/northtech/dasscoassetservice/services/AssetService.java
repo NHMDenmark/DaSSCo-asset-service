@@ -347,8 +347,9 @@ public class AssetService {
                 assetRepository.insert_parent_child(asset.asset_guid, s);
             }
             Integer pipelineId = null;
-            if (asset.pipeline != null) {
-                Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
+            String pipeline = asset.updating_pipeline != null ? asset.updating_pipeline : asset.pipeline;
+            if (pipeline != null) {
+                Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(pipeline, asset.institution);
                 if (pipelineByInstitutionAndName.isPresent()) {
                     pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
                 }
@@ -545,7 +546,7 @@ public class AssetService {
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation = updatedAsset.workstation;
-        existing.pipeline = updatedAsset.pipeline;
+//        existing.pipeline = updatedAsset.pipeline;
         existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
         if (existing.asset_locked && !updatedAsset.asset_locked) {
@@ -599,7 +600,7 @@ public class AssetService {
                 existing.legality = null;
             }
             repository.update_asset_internal(existing);
-            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.pipeline,existing.institution);
+            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline,existing.institution);
             eventRepository.insertEvent(existing.asset_guid
                     , DasscoEvent.UPDATE_ASSET_METADATA
                     , user.dassco_user_id
