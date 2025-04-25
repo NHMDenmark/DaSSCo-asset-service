@@ -138,7 +138,7 @@ public class Lists {
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    @Path("preparationtyypes")
+    @Path("preparationtypes")
     public Response createPreparationType (
             ListEntry preparation_type
     ) {
