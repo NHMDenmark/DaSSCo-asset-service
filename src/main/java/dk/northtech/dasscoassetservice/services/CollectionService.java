@@ -66,11 +66,11 @@ public class CollectionService {
                 throw new IllegalArgumentException("Collection already exists in this institute");
             }
              */
-            Collection col = new Collection(collection.name(), collection.institution(), null, collection.roleRestrictions());
+            Collection col = new Collection(collection.name(), collection.institution(), null, collection.roleRestrictions()== null ? new ArrayList<>(): collection.roleRestrictions());
             Collection persistedCollection = co.persistCollection(col);
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             Set<String> roles = roleService.getRoles();
-            for (Role role : collection.roleRestrictions()) {
+            for (Role role : col.roleRestrictions()) {
                 if (!roles.contains(role.name())) {
                     if (Strings.isNullOrEmpty(role.name())) {
                         throw new IllegalArgumentException("Role cannot be null or empty");
@@ -81,8 +81,7 @@ public class CollectionService {
             }
             roleRepository.setRestrictions(RestrictedObjectType.COLLECTION, collection.roleRestrictions(), persistedCollection.collection_id());
             // restrictiones arent fetched on creation
-            persistedCollection.roleRestrictions().addAll(collection.roleRestrictions());
-            System.out.println("Purr sistetd colelancert " + persistedCollection);
+            persistedCollection.roleRestrictions().addAll(col.roleRestrictions());;
             this.collectionCache.get(persistedCollection.institution()).put(persistedCollection.name(), persistedCollection);
             return h;
         });

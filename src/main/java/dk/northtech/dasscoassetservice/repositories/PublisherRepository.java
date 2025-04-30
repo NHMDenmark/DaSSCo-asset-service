@@ -37,9 +37,9 @@ public interface PublisherRepository extends SqlObject {
         internal_publish(publicationLink);
     }
     @Transaction
-    default void pull(PublicationLink publicationLink) {
+    default void delete(PublicationLink publicationLink) {
         boilerplate();
-        internal_pull(publicationLink);
+        internal_delete(publicationLink);
     }
     @Transaction
     default List<PublicationLink> listPublicationLinks(Publisher publisher) {
@@ -99,7 +99,7 @@ public interface PublisherRepository extends SqlObject {
         });
     }
 
-    default void internal_pull(PublicationLink publicationLink) {
+    default void internal_delete(PublicationLink publicationLink) {
         String cypher = """
                 SELECT * FROM ag_catalog.cypher('dassco'
                          , $$

@@ -22,7 +22,7 @@ public class PublicationService {
         this.jdbi = jdbi;
     }
 
-// TODO Test, TODO dont publish restricted access
+
     public PublicationLink publish(PublicationLink publicationLink) {
         if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
             throw new IllegalArgumentException("Asset asset_guid cannot be null or empty");
@@ -37,14 +37,14 @@ public class PublicationService {
         return publicationLink;
     }
 
-    public void pull(PublicationLink publicationLink) {
+    public void delete(PublicationLink publicationLink) {
         if(Strings.isNullOrEmpty(publicationLink.asset_guid())) {
             throw new IllegalArgumentException("Asset asset_guid cannot be null or empty");
         }
         if(Strings.isNullOrEmpty(publicationLink.link())) {
             throw new IllegalArgumentException("Link cannot be null or empty");
         }
-        jdbi.onDemand(PublisherRepository.class).pull(publicationLink);
+        jdbi.onDemand(PublisherRepository.class).delete(publicationLink);
     }
 
     public List<PublicationLink> list(Publisher publisher) {

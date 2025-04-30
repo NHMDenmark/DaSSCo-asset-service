@@ -45,13 +45,13 @@ public class PublicationServiceTest extends AbstractIntegrationTest{
 
     @Test
     void testPullNoAssetGuid(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> publicationService.pull(new PublicationLink("", "", "", null)));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> publicationService.delete(new PublicationLink("", "", "", null)));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset asset_guid cannot be null or empty");
     }
 
     @Test
     void testPullNoLink(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> publicationService.pull(new PublicationLink("test-publication", "", "", null)));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> publicationService.delete(new PublicationLink("test-publication", "", "", null)));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Link cannot be null or empty");
     }
 }
