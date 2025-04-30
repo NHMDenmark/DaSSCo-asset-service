@@ -54,6 +54,14 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testValidateAssetFileFormat() {
+        Asset testAsset = getTestAsset("valiedateFF");
+        testAsset.file_formats = List.of("TIF", "doesnt exist");
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAsset(testAsset));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("doesnt exist is not a valid file format");
+    }
+
+    @Test
     void testValidateAssetFieldsNoAssetPid() {
         Asset asset = new Asset();
         asset.asset_guid = "validateAssetFieldsNoAssetPid";
@@ -168,9 +176,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
         createAsset.mos_id = "mos-1";
-//        createAsset.issues = Arrays.asList(new Issue("It aint working"), new Issue("Substance abuse"));
         createAsset.funding = Arrays.asList("Hundredetusindvis af dollars", "Jeg er stadig i chok");
-        createAsset.file_formats = Arrays.asList("PNG", "PDF");
+        createAsset.file_formats = Arrays.asList("JPEG", "TIF");
         createAsset.issues = Arrays.asList(new Issue(createAsset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
 
         assetService.persistAsset(createAsset, user, 10);
@@ -204,12 +211,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.funding).hasSize(2);
         assertThat(result.funding).contains("Hundredetusindvis af dollars");
         assertThat(result.funding).contains("Jeg er stadig i chok");
-//        assertThat(result.issues).hasSize(2);
-//        assertThat(result.issues).contains(new Issue("Substance abuse"));
-//        assertThat(result.issues).contains(new Issue("It aint working"));
-//        assertThat(result.file_formats).hasSize(2);
-//        assertThat(result.file_formats).contains("PDF");
-//        assertThat(result.file_formats).contains("PNG");
+        assertThat(result.issues).hasSize(2);
+
+        assertThat(result.file_formats).hasSize(2);
+        assertThat(result.file_formats).contains("TIF");
+        assertThat(result.file_formats).contains("JPEG");
         //Specimens
         assertThat(result.specimens).hasSize(2);
         Specimen specimen_1 = result.specimens.get(0).barcode().equals("creatAsset-sp-1") ? result.specimens.get(0) : result.specimens.get(1);
@@ -579,7 +585,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Instant date_metadata_ingested = Instant.parse("2025-02-17T09:59:51.312Z");
         asset.date_metadata_ingested = date_metadata_ingested;
         asset.push_to_specify = false;
-        asset.file_formats = Arrays.asList("PDF", "PNG");
+        asset.file_formats = Arrays.asList("TIF", "JPEG");
         asset.complete_digitiser_list = Arrays.asList("Karl-Børge", "Viola");
         asset.legality = new Legality("updcopy", "loicense2", "creds");
         asset.mos_id = "moss";
@@ -617,8 +623,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.complete_digitiser_list).contains("Karl-Børge");
         assertThat(result.complete_digitiser_list).hasSize(2);
         assertThat(result.file_formats).hasSize(2);
-        assertThat(result.file_formats).contains("PDF");
-        assertThat(result.file_formats).contains("PNG");
+        assertThat(result.file_formats).contains("TIF");
+        assertThat(result.file_formats).contains("JPEG");
         assertThat(result.funding).contains("420");
         assertThat(result.funding).contains("Funding secured");
         assertThat(result.funding).hasSize(2);

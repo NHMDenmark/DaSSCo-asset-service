@@ -232,7 +232,7 @@ public class AssetService {
         asset.workstation_id = workstation.workstation_id();
         if (asset.file_formats != null && !asset.file_formats.isEmpty()) {
             Set<String> fileFormats = extendableEnumService.getFileFormats();
-            for (String s : fileFormats) {
+            for (String s : asset.file_formats) {
                 if (!fileFormats.contains(s)) {
                     throw new IllegalArgumentException(s + " is not a valid file format");
                 }
