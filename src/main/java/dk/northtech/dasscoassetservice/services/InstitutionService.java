@@ -21,13 +21,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InstitutionService {
 
     private static final Logger logger = LoggerFactory.getLogger(InstitutionService.class);
-    private static final String name_regex = "^[a-zA-ZÆØÅæøå ]+$" ;
+    private static final String name_regex = "^[a-zA-ZÆØÅæøå ]+$";
     private InstitutionCache institutionCache;
 
     private Jdbi jdbi;
     boolean initialised = false;
     private final ConcurrentHashMap<String, Institution> institutionMap = new ConcurrentHashMap<>();
     private CacheService cacheService;
+
     @Inject
     public InstitutionService(Jdbi jdbi, CacheService cacheService,
                               InstitutionCache institutionCache) {
@@ -49,12 +50,14 @@ public class InstitutionService {
             InstitutionRepository repository = h.attach(InstitutionRepository.class);
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             HashSet<String> allRoles = new HashSet<>(roleRepository.listRoles());
-            for(Role role: institution.roleRestrictions()) {
-                if(!allRoles.contains(role.name())){
-                    if(Strings.isNullOrEmpty(role.name())){
-                        throw new IllegalArgumentException("Role name cannot be null or empty");
+            if (institution.roleRestrictions() != null) {
+                for (Role role : institution.roleRestrictions()) {
+                    if (!allRoles.contains(role.name())) {
+                        if (Strings.isNullOrEmpty(role.name())) {
+                            throw new IllegalArgumentException("Role name cannot be null or empty");
+                        }
+                        roleRepository.createRole(role.name());
                     }
-                    roleRepository.createRole(role.name());
                 }
             }
             /*
@@ -82,7 +85,7 @@ public class InstitutionService {
     }
 
     public List<Institution> listInstitutions() {
-        if(institutionMap.isEmpty()) {
+        if (institutionMap.isEmpty()) {
             initInstitutions();
         }
         return new ArrayList<>(institutionMap.values());
@@ -117,7 +120,7 @@ public class InstitutionService {
                     for (Institution institution : institutions) {
                         nameInstitution.put(institution.name(), institution);
                     }
-                    for(InstitutionRoleRestriction institutionRoleRestriction: institutionRoleRestrictions) {
+                    for (InstitutionRoleRestriction institutionRoleRestriction : institutionRoleRestrictions) {
                         nameInstitution.get(institutionRoleRestriction.institution_name()).roleRestrictions().add(institutionRoleRestriction.role());
 
                     }
@@ -139,7 +142,7 @@ public class InstitutionService {
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
 //            roleRepository.removeAllRestrictions(RestrictedObjectType.INSTITUTION, institution.name());
-            roleRepository.setRestrictions(RestrictedObjectType.INSTITUTION, institution.roleRestrictions() ,institution.name());
+            roleRepository.setRestrictions(RestrictedObjectType.INSTITUTION, institution.roleRestrictions(), institution.name());
             institutionCache.put(institution.name(), institution);
             return h;
         });
