@@ -337,6 +337,10 @@ public interface AssetRepository extends SqlObject {
         String delete_issue = "DELETE FROM issue WHERE asset_guid = :assetGuid;";
         String delete_file = "DELETE FROM file WHERE asset_guid = :assetGuid;";
         String delete_asset_funding = "DELETE FROM asset_funding WHERE asset_guid = :assetGuid";
+        String delete_parent_child = """
+            DELETE FROM parent_child 
+            WHERE parent_guid = :parent_guid OR child_guid = :child_guid 
+        """;
         String delete_asset_metadata = "DELETE FROM asset WHERE asset_guid = :assetGuid";
         String delete_funding = """
                     DELETE FROM funding
@@ -344,7 +348,7 @@ public interface AssetRepository extends SqlObject {
                     SELECT funding_id
                         FROM funding
                         LEFT JOIN asset_funding USING(funding_id)
-                        WHERE asset_guid IS null 
+                        WHERE asset_guid IS null
                     )
                 """;
         withHandle(h -> {
@@ -359,6 +363,7 @@ public interface AssetRepository extends SqlObject {
             h.createUpdate(delete_file).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_asset_funding).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_funding).execute();
+            h.createUpdate(delete_parent_child).bind("parent_guid", assetGuid).bind("child_guid", assetGuid).execute();
             h.createUpdate(delete_asset_metadata).bind("assetGuid", assetGuid).execute();
             return h;
         });

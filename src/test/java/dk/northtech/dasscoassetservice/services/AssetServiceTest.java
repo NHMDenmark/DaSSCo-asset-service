@@ -843,14 +843,20 @@ class AssetServiceTest extends AbstractIntegrationTest {
     void deleteAssetMetadata() {
         extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "test-delete-issue");
         Asset testAsset1 = getTestAsset("deleteAssetMetadata-1");
+        Asset parent = getTestAsset("deleteAssetMetadataParent");
         testAsset1.specimens = List.of(new Specimen("barcode-d-1", "delete_specimen-1", "pinning"), new Specimen("barcode-d-2", "dont-delete_specimen-1", "pinning"));
         testAsset1.issues = List.of(new Issue("deleteAssetMetadata-1","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
         testAsset1.funding.add("A whole lot of money");
+        testAsset1.parent_guids = Set.of("deleteAssetMetadataParent");
         Asset testAsset2 = getTestAsset("deleteAssetMetadata-2");
         testAsset2.specimens = List.of(new Specimen("barcode-d-2", "dont-delete_specimen-1", "pinning"));
         testAsset2.issues = List.of(new Issue("deleteAssetMetadata-2","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        assetService.persistAsset(parent, user, 1000);
         assetService.persistAsset(testAsset1,user, 1000);
         assetService.persistAsset(testAsset2,user, 1000);
+        Asset child = getTestAsset("deleteAssetMetadataChild");
+        child.parent_guids = Set.of("deleteAssetMetadata-1", "deleteAssetMetadataParent");
+        assetService.persistAsset(child, user, 1000);
         AssetRepository assetRepository = jdbi.onDemand(AssetRepository.class);
         assetRepository.deleteAsset("deleteAssetMetadata-1");
         Optional<Asset> result1 = assetService.getAsset("deleteAssetMetadata-1");
@@ -862,6 +868,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(asset.funding).contains("Hundredetusindvis af dollars");
         assertThat(asset.specimens).hasSize(1);
         assertThat(asset.issues).hasSize(1);
+        Optional<Asset> child_result_opt = assetService.getAsset("deleteAssetMetadataChild");
+        assertThat(child_result_opt.isPresent()).isTrue();
+        Asset child_result = child_result_opt.get();
+        assertThat(child_result.parent_guids).hasSize(1);
+        assertThat(child_result.parent_guids).contains("deleteAssetMetadataParent");
     }
 
 }
