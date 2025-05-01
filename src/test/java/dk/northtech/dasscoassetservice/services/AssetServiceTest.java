@@ -590,11 +590,9 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.legality = new Legality("updcopy", "loicense2", "creds");
         asset.mos_id = "moss";
         asset.camera_setting_control = "Dad get the camera!";
+        asset.asset_pid = "new_pid_updateAsset";
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
-        System.out.println("hej1");
-        assetService.updateAsset(asset, user);
-        System.out.println("hej2");
 
         Optional<Asset> updateAsset = assetService.getAsset("updateAsset");
         System.out.println("hej3");
@@ -609,7 +607,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.status).isEqualTo("ISSUE_WITH_METADATA");
         assertThat(result.asset_subject).isEqualTo("new sub");
 
-
+        assertThat(result.asset_pid).isEqualTo("new_pid_updateAsset");
         assertThat(result.payload_type).isEqualTo("Conventional");
         assertThat(result.date_asset_finalised).isNotNull();
         assertThat(result.date_asset_taken).isNotNull();

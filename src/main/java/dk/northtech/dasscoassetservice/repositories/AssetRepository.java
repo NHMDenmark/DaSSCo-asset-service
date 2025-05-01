@@ -267,6 +267,7 @@ public interface AssetRepository extends SqlObject {
     String UPDATE_ASSET_SQL = """
             UPDATE asset SET 
                 status = :status
+                , asset_pid = :asset_pid
                 , subject = :subject
                 , payload_type = :payload_type
                 , internal_status = :internal_status
@@ -291,6 +292,7 @@ public interface AssetRepository extends SqlObject {
         try {
             withHandle(handle -> {
                 handle.createUpdate(UPDATE_ASSET_SQL)
+                        .bind("asset_pid", asset.asset_pid)
                         .bind("status", asset.status)
                         .bind("subject", asset.asset_subject)
                         .bind("payload_type", asset.payload_type)
