@@ -113,6 +113,24 @@ public class AssetService {
         if (asset.issues != null) {
             asset.issues.forEach(this::validateIssue);
         }
+        if (asset.specimens != null) {
+            asset.specimens.forEach(this::validateSpecimen);
+        }
+    }
+
+    void validateSpecimen(Specimen specimen) {
+        if(Strings.isNullOrEmpty(specimen.specimen_pid())) {
+            throw new IllegalArgumentException("specimen_pid cannot be null or empty");
+        }
+        if(Strings.isNullOrEmpty(specimen.barcode())) {
+            throw new IllegalArgumentException("Specimen barcode cannot be null");
+        }
+        if(Strings.isNullOrEmpty(specimen.preparation_type())) {
+            throw new IllegalArgumentException("preparation_type cannot be null");
+        }
+        if(!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, specimen.preparation_type())) {
+            throw new IllegalArgumentException(specimen.preparation_type() +" is not a valid preparation_type");
+        }
     }
 
     void validateIssue(Issue issue) {

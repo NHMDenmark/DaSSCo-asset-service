@@ -776,6 +776,37 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testTwoAssetSameSpecimen() {
+        Asset asset = getTestAsset("emptySpecimenPid-1");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset.status = "BEING_PROCESSED";
+        Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", "pinning");
+        asset.specimens = List.of(specimen);
+
+        Asset asset2 = getTestAsset("emptySpecimenPid-2");
+        asset2.pipeline = "i2_p1";
+        asset2.workstation = "i2_w1";
+        asset2.tags.put("Tag1", "value1");
+        asset2.institution = "institution_2";
+        asset2.collection = "i2_c1";
+        asset2.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset2.status = "BEING_PROCESSED";
+        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", "slide"));
+        assetService.persistAsset(asset, user, 1);
+        assetService.persistAsset(asset2, user, 1);
+        Optional<Asset> resultOpt = assetService.getAsset("emptySpecimenPid-1");
+        Asset asset1 = resultOpt.get();
+        // Ensure the specimen is updated
+        assertThat(asset1.specimens.get(0).preparation_type()).isEqualTo("slide");
+
+    }
+
+    @Test
     void testSetAssetStatusUnsupportedStatus() {
         Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
         asset.pipeline = "i2_p1";
@@ -872,5 +903,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(child_result.parent_guids).hasSize(1);
         assertThat(child_result.parent_guids).contains("deleteAssetMetadataParent");
     }
+
+
 
 }
