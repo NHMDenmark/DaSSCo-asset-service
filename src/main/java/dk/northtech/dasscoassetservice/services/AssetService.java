@@ -183,7 +183,7 @@ public class AssetService {
             for (Event event : assetToBeMapped.events) {
                 if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                     assetToBeMapped.audited = true;
-                    if(assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
+                    if (assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
                         assetToBeMapped.date_audited = event.timestamp;
                         assetToBeMapped.audited_by = event.user;
                     }
@@ -257,12 +257,12 @@ public class AssetService {
         }
         //Validation
         LocalDateTime databaseCheckStart = LocalDateTime.now();
-        Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
-            Optional<Asset> assetOpt = getAsset(asset.asset_guid);
-            if (assetOpt.isPresent()) {
-                throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
-            }
-        });
+//        Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
+        Optional<Asset> assetOpt = getAsset(asset.asset_guid);
+        if (assetOpt.isPresent()) {
+            throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
+        }
+//        });
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
@@ -286,10 +286,10 @@ public class AssetService {
             User user1 = userService.ensureExists(new User(asset.digitiser));
             asset.digitiser_id = user1.dassco_user_id;
         }
-        for(String list_user : asset.complete_digitiser_list) {
+        for (String list_user : asset.complete_digitiser_list) {
             userService.ensureExists(new User(list_user));
         }
-        for(String funds: asset.funding) {
+        for (String funds : asset.funding) {
             fundingService.ensureExists(funds);
         }
         Asset resultAsset = jdbi.inTransaction(h -> {
@@ -375,10 +375,10 @@ public class AssetService {
 //            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
             // Open share
             try {
-                Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
-                        .observe(() -> {
-                            asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection), user, allocation);
-                        });
+//                Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
+//                        .observe(() -> {
+                asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection), user, allocation);
+//                        });
             } catch (Exception e) {
                 h.rollback();
                 throw new RuntimeException(e);
@@ -388,12 +388,12 @@ public class AssetService {
 
             if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
 
-                LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-                //TEZT
-                Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry)
-                        .observe(statisticsDataServiceV2::refreshCachedData);
-                LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
-                logger.info("#6 Refreshing the cached data took {} ms", Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
+//                LocalDateTime refreshCachedDataStart = LocalDateTime.now();
+//                //TEZT
+//                Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry)
+//                        .observe(statisticsDataServiceV2::refreshCachedData);
+//                LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
+//                logger.info("#6 Refreshing the cached data took {} ms", Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 
 //            this.statisticsDataService.addAssetToCache(asset);
                 refreshCaches(asset);
@@ -519,7 +519,7 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
-        for(String funds: newFunding) {
+        for (String funds : newFunding) {
             fundingService.ensureExists(funds);
         }
         Map<Integer, Issue> existing_issues = new HashMap<>();
@@ -533,10 +533,10 @@ public class AssetService {
             User user1 = userService.ensureExists(new User(updatedAsset.digitiser));
             updatedAsset.digitiser_id = user1.dassco_user_id;
         }
-        for(String list_user : updatedAsset.complete_digitiser_list) {
+        for (String list_user : updatedAsset.complete_digitiser_list) {
             userService.ensureExists(new User(list_user));
         }
-        for(String funds: updatedAsset.funding) {
+        for (String funds : updatedAsset.funding) {
             fundingService.ensureExists(funds);
         }
 
@@ -595,12 +595,12 @@ public class AssetService {
                 } else {
                     existing.legality = legalityRepository.insertLegality(updatedAsset.legality);
                 }
-            } else if (existing.legality != null){
+            } else if (existing.legality != null) {
                 legalityToDelete = existing.legality.legality_id();
                 existing.legality = null;
             }
             repository.update_asset_internal(existing);
-            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline,existing.institution);
+            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline, existing.institution);
             eventRepository.insertEvent(existing.asset_guid
                     , DasscoEvent.UPDATE_ASSET_METADATA
                     , user.dassco_user_id
@@ -687,7 +687,7 @@ public class AssetService {
                     }
                 }
 
-                if(legalityToDelete != null) {
+                if (legalityToDelete != null) {
                     legalityRepository.deleteLegality(legalityToDelete);
                 }
             }
