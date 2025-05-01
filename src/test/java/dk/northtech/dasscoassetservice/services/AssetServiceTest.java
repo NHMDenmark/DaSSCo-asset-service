@@ -211,7 +211,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.funding).hasSize(2);
         assertThat(result.funding).contains("Hundredetusindvis af dollars");
         assertThat(result.funding).contains("Jeg er stadig i chok");
-        assertThat(result.issues).hasSize(2);
+        assertThat(result.issues).hasSize(1);
 
         assertThat(result.file_formats).hasSize(2);
         assertThat(result.file_formats).contains("TIF");
