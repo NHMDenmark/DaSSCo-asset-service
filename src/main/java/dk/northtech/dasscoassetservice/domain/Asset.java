@@ -108,6 +108,11 @@ public class Asset {
     public String digitiser;
     @Schema(description = "Would be for cases where multiple digitiser has worked as a team to digitise an artifact. We do not know who did exactly which part of the digitisation process. All should be given credit for the process. We provide this. It will often be empty or just contain one name from the digitiser list.")
     public List<String> complete_digitiser_list = new ArrayList<>();
+
+    @Schema(description = "Populated by the integration server, when some information needs to be conveyed about the asset to the Specify user. Does get updated by later syncs, needs discussion on its behaviour when syncing from other side (Specify -> ARS).")
+    public String specify_attachment_remarks;
+    @Schema(description = "Populated by integration server, depending on the type of asset. Does gets updated by later syncs.")
+    public String specify_attachment_title;
     public Legality legality;
     public String metadata_created_by;
 //    public List<String> file_formats;

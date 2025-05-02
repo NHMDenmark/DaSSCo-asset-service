@@ -52,6 +52,8 @@ public interface AssetRepository extends SqlObject {
                                     , date_metadata_ingested
                                     , legality_id
                                     , mos_id
+                                    , specify_attachment_title
+                                    , specify_attachment_remarks
                                   ) VALUES (
                                     :assetGuid
                                     , :asset_pid
@@ -75,6 +77,8 @@ public interface AssetRepository extends SqlObject {
                                     , :dateMetadataIngested
                                     , :legality_id
                                     , :mos_id
+                                    , :specify_attachment_title
+                                    , :specify_attachment_remarks
                                   );
                     """;
 
@@ -104,6 +108,8 @@ public interface AssetRepository extends SqlObject {
                     .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested) : null)
                     .bind("legality_id", asset.legality != null ? asset.legality.legality_id() : null)
                     .bind("mos_id", asset.mos_id)
+                    .bind("specify_attachment_title",asset.specify_attachment_title)
+                    .bind("specify_attachment_remarks", asset.specify_attachment_remarks)
                     .execute();
             return handle;
         });
@@ -283,6 +289,8 @@ public interface AssetRepository extends SqlObject {
                 , legality_id = :legality_id
                 , mos_id = :mos_id
                 , camera_setting_control = :camera_setting_control
+                , specify_attachment_title = :specify_attachment_title
+                , specify_attachment_remarks = :specify_attachment_remarks
             WHERE asset_guid = :asset_guid    
             """;
 
@@ -311,6 +319,8 @@ public interface AssetRepository extends SqlObject {
                         .bind("mos_id", asset.mos_id)
                         .bind("date_metadata_ingested", asset.date_metadata_ingested)
                         .bind("camera_setting_control", asset.camera_setting_control)
+                        .bind("specify_attachment_title", asset.specify_attachment_title)
+                        .bind("specify_attachment_remarks", asset.specify_attachment_remarks)
                         .execute();
                 return handle;
             });

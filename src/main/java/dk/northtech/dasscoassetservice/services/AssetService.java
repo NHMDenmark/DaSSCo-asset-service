@@ -51,7 +51,6 @@ public class AssetService {
     private final PreparationTypeCache preparationTypeCache;
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
-    private final ObservationRegistry observationRegistry;
     private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
     private final UserService userService;
@@ -87,7 +86,6 @@ public class AssetService {
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
-        this.observationRegistry = observationRegistry;
         this.extendableEnumService = extendableEnumService;
         this.userService = userService;
         this.fundingService = fundingService;
@@ -589,6 +587,8 @@ public class AssetService {
         existing.complete_digitiser_list = updatedAsset.complete_digitiser_list;
         existing.funding = updatedAsset.funding;
         existing.mos_id = updatedAsset.mos_id;
+        existing.specify_attachment_remarks = updatedAsset.specify_attachment_remarks;
+        existing.specify_attachment_title = updatedAsset.specify_attachment_title;
 
         // Currently we just add new subject types if they do not exist
         if (!Strings.isNullOrEmpty(existing.asset_subject) && !extendableEnumService.getSubjects().contains(existing.asset_subject)) {

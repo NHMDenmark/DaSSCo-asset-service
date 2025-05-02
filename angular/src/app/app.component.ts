@@ -26,22 +26,6 @@ export class AppComponent {
         const redirect = sessionStorage.getItem('postLoginUrl');
         sessionStorage.removeItem('postLoginUrl');
         this.authService.loginInitialized.next(redirect == null ? true : undefined)
-        /*let roles: string[];
-        try {
-          roles = jwtDecode<KeycloakRolesTokenStub>(loginResponse.accessToken).realm_access?.roles ?? [];
-        } catch (err) {
-          roles = [];
-        }
-
-        this.appState.set({
-          loginInitialized: redirect == null ? true : undefined,
-          isClimbAlongAdmin: roles.includes('ClimbAlongAdmin'),
-          isClimbAlongUser: roles.includes('ClimbAlongUser'),
-          oidcUsername: loginResponse.userData?.preferred_username,
-          oidcEmail: loginResponse.userData?.email,
-          oidcSub: loginResponse.userData?.sub
-        });*/
-
         this.authService.setCheckAuthComplete();
 
         if (redirect && loginResponse.isAuthenticated) {

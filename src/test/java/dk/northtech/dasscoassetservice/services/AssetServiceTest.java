@@ -178,6 +178,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.mos_id = "mos-1";
         createAsset.funding = Arrays.asList("Hundredetusindvis af dollars", "Jeg er stadig i chok");
         createAsset.file_formats = Arrays.asList("JPEG", "TIF");
+        createAsset.specify_attachment_remarks = "attachment_remarks";
+        createAsset.specify_attachment_title = "spezzify 'tachment";
         createAsset.issues = Arrays.asList(new Issue(createAsset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
 
         assetService.persistAsset(createAsset, user, 10);
@@ -212,6 +214,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.funding).contains("Hundredetusindvis af dollars");
         assertThat(result.funding).contains("Jeg er stadig i chok");
         assertThat(result.issues).hasSize(1);
+        assertThat(result.specify_attachment_remarks).isEqualTo("attachment_remarks");
+        assertThat(result.specify_attachment_title).isEqualTo("spezzify 'tachment");
 
         assertThat(result.file_formats).hasSize(2);
         assertThat(result.file_formats).contains("TIF");
@@ -582,6 +586,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.metadata_version = "One point oh-uh";
         asset.metadata_source = "It came to me in a dream";
         asset.make_public = false;
+        asset.specify_attachment_title = "'Attchment tittle";
+        asset.specify_attachment_remarks = "Spezzify remarx";
         Instant date_metadata_ingested = Instant.parse("2025-02-17T09:59:51.312Z");
         asset.date_metadata_ingested = date_metadata_ingested;
         asset.push_to_specify = false;
@@ -636,6 +642,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.specimens).hasSize(1);
         assertThat(result.make_public).isFalse();
         assertThat(result.push_to_specify).isFalse();
+        assertThat(result.specify_attachment_title).isEqualTo("'Attchment tittle");
+        assertThat(result.specify_attachment_remarks).isEqualTo("Spezzify remarx");
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
