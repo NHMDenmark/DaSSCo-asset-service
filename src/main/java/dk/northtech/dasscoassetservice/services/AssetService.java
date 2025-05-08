@@ -13,7 +13,6 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -196,6 +195,8 @@ public class AssetService {
             assetToBeMapped.issues = issueRepository.findIssuesByAssetGuid(assetToBeMapped.asset_guid);
             assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
             assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
+            PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
+            assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
             for (Event event : assetToBeMapped.events) {
                 if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                     assetToBeMapped.audited = true;
@@ -254,6 +255,13 @@ public class AssetService {
                 }
             }
         }
+        if(asset.external_publishers != null) {
+            for(Publication publication: asset.external_publishers) {
+                if(!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, publication.name())) {
+                    throw new IllegalArgumentException("Publisher " + publication.name() + " doesnt exist");
+                }
+            }
+        }
         for (String parent_guid : asset.parent_guids) {
 
             Optional<Asset> parentOpt = getAsset(parent_guid);
@@ -298,16 +306,7 @@ public class AssetService {
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guids);
-        if (!Strings.isNullOrEmpty(asset.digitiser)) {
-            User user1 = userService.ensureExists(new User(asset.digitiser));
-            asset.digitiser_id = user1.dassco_user_id;
-        }
-        for (String list_user : asset.complete_digitiser_list) {
-            userService.ensureExists(new User(list_user));
-        }
-        for (String funds : asset.funding) {
-            fundingService.ensureExists(funds);
-        }
+        ensureValuesExists(asset);
         Asset resultAsset = jdbi.inTransaction(h -> {
             // Default values on creation
             asset.date_metadata_updated = Instant.now();
@@ -357,6 +356,13 @@ public class AssetService {
                     specimenRepository.attachSpecimen(asset.asset_guid, existing.specimen_id());
                 }
 
+            }
+            //Handle external publishers
+            PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
+            if(asset.external_publishers != null) {
+                for(Publication publication: asset.external_publishers) {
+                    publisherRepository.internal_publish(publication);
+                }
             }
             //Handle parents
             for (String s : asset.parent_guids) {
@@ -427,6 +433,20 @@ public class AssetService {
 //        this.statisticsDataServiceV2.addAssetToCache(asset);
         assetsGettingCreated.invalidate(asset.asset_guid);
         return resultAsset;
+    }
+
+    private void ensureValuesExists(Asset asset) {
+        if (!Strings.isNullOrEmpty(asset.digitiser)) {
+            User user1 = userService.ensureExists(new User(asset.digitiser));
+            asset.digitiser_id = user1.dassco_user_id;
+        }
+        for (String list_user : asset.complete_digitiser_list) {
+            userService.ensureExists(new User(list_user));
+        }
+        for (String funds : asset.funding) {
+            fundingService.ensureExists(funds);
+        }
+
     }
 
     public Optional<Asset> checkUserRights(String assetGuid, User user) {
@@ -535,6 +555,7 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
+        Set<Publication> existingPublications = new HashSet<>(existing.external_publishers);
         for (String funds : newFunding) {
             fundingService.ensureExists(funds);
         }
@@ -545,16 +566,7 @@ public class AssetService {
             User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
             existing.digitiser_id = digitiser.dassco_user_id;
         }
-        if (!Strings.isNullOrEmpty(updatedAsset.digitiser)) {
-            User user1 = userService.ensureExists(new User(updatedAsset.digitiser));
-            updatedAsset.digitiser_id = user1.dassco_user_id;
-        }
-        for (String list_user : updatedAsset.complete_digitiser_list) {
-            userService.ensureExists(new User(list_user));
-        }
-        for (String funds : updatedAsset.funding) {
-            fundingService.ensureExists(funds);
-        }
+        ensureValuesExists(updatedAsset);
 
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
@@ -589,7 +601,6 @@ public class AssetService {
         existing.mos_id = updatedAsset.mos_id;
         existing.specify_attachment_remarks = updatedAsset.specify_attachment_remarks;
         existing.specify_attachment_title = updatedAsset.specify_attachment_title;
-
         // Currently we just add new subject types if they do not exist
         if (!Strings.isNullOrEmpty(existing.asset_subject) && !extendableEnumService.getSubjects().contains(existing.asset_subject)) {
             extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.SUBJECT, existing.asset_subject);
@@ -603,6 +614,7 @@ public class AssetService {
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
             IssueRepository issueRepository = h.attach(IssueRepository.class);
             LegalityRepository legalityRepository = h.attach(LegalityRepository.class);
+            PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             // Handle legality
             Long legalityToDelete = null;
             if (updatedAsset.legality != null) {
@@ -676,6 +688,19 @@ public class AssetService {
                     repository.insert_parent_child(existing.asset_guid, s);
                 }
             }
+            //Handle publishers
+            if(updatedAsset.external_publishers != null) {
+                updatedAsset.external_publishers.forEach(extPbl -> {
+                    if(!existingPublications.contains(extPbl)) {
+                        publisherRepository.internal_publish(extPbl);
+                    }
+                });
+                existingPublications.forEach(publication -> {
+                    if(!updatedAsset.external_publishers.contains(publication)) {
+                        publisherRepository.delete(publication.publication_id());
+                    }
+                });
+            }
             //Handle issues
             if (updatedAsset.issues != null) {
                 Set<Integer> issue_ids = new HashSet<>();
@@ -690,7 +715,6 @@ public class AssetService {
                             , issue.description()
                             , issue.notes()
                             , issue.solved());
-
                     if (issue.issue_id() != null) {
                         issue_ids.add(issue.issue_id());
                         issueRepository.updateIssue(issue);

@@ -82,6 +82,17 @@ public class Lists {
         return extendableEnumService.getIssueCategories();
     }
 
+    @GET
+    @Path("externalpublishers")
+    @Operation(summary = "Get list of publishers", description = "Get valid publishers")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Set<String> getExternalPublishers() {
+        return extendableEnumService.getExternalPublishers();
+    }
+
     @POST
     @Path("fileformats")
     @Operation(summary = "Add file_format", description = """
@@ -143,6 +154,22 @@ public class Lists {
             ListEntry preparation_type
     ) {
         this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, preparation_type.name());
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @POST
+    @Operation(summary = "Add a publisher", description = """
+                Add a new publisher to the list of valid publishers
+            """)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Path("externalpublishers")
+    public Response createPublishers (
+            ListEntry preparation_type
+    ) {
+        this.extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, preparation_type.name());
         return Response.status(Response.Status.CREATED).build();
     }
 

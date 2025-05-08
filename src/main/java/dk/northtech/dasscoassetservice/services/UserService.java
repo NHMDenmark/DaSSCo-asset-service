@@ -159,7 +159,7 @@ public class UserService {
                     for(User user: users) {
                         this.usernameUserMap.put(user.username, user);
                     }
-                    logger.info("Loaded {} collections", usernameUserMap.size());
+                    logger.info("Loaded {} users", usernameUserMap.size());
                     return h;
                 });
                 this.initialised = true;

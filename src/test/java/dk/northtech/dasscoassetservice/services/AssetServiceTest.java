@@ -21,7 +21,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @BeforeEach
     void init() {
         if (user == null) {
-
             user = userService.ensureExists(new User("Teztuzer"));
         }
     }
@@ -565,6 +564,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.status = "BEING_PROCESSED";
         asset.mos_id = "mos-ID";
         asset.legality = new Legality("copy", "loicense", "credz");
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, "The Science Pamphlet");
+        asset.external_publishers = List.of(new Publication("updateAsset","descriptive description", "The Science Pamphlet"), new Publication("updateAsset", "Bezkrivelze", "The Science Pamphlet"));
 
         assetService.persistAsset(asset, user, 11);
 
@@ -597,6 +598,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.mos_id = "moss";
         asset.camera_setting_control = "Dad get the camera!";
         asset.asset_pid = "new_pid_updateAsset";
+        asset.external_publishers = List.of(new Publication("updateAsset","New description", "The Science Pamphlet"));
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
 
@@ -648,6 +650,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
+        assertThat(result.external_publishers.size()).isEqualTo(1);
+        Publication publication = result.external_publishers.get(0);
+        assertThat(publication.description()).isEqualTo("New description");
+        assertThat(publication.name()).isEqualTo("The Science Pamphlet");
         result.legality = null;
         assetService.updateAsset(result, user);
         Optional<Asset> result2opt = assetService.getAsset("updateAsset");

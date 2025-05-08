@@ -19,6 +19,7 @@ public class ExtendableEnumService {
 
     private Map<String, String> issueCategoryCache = new ConcurrentHashMap<>();
     private Map<String, String> preparationTypeCache = new ConcurrentHashMap<>();
+    private Map<String, String> externalPublisherCache = new ConcurrentHashMap<>();
 
     @Inject
     public ExtendableEnumService(Jdbi jdbi) {
@@ -30,7 +31,8 @@ public class ExtendableEnumService {
         ISSUE_CATEGORY("issue_category"),
         STATUS("asset_status"),
         SUBJECT("subject"),
-        PREPARATION_TYPE("preparation_type");
+        PREPARATION_TYPE("preparation_type"),
+        EXTERNAL_PUBLISHER("publisher");
 
         ExtendableEnum(String enumName) {
             this.enumName = enumName;
@@ -59,6 +61,13 @@ public class ExtendableEnumService {
             initCache(ExtendableEnum.SUBJECT);
         }
         return new HashSet<>(this.subjectCache.values());
+    }
+
+    public Set<String> getExternalPublishers() {
+        if (externalPublisherCache.isEmpty()) {
+            initCache(ExtendableEnum.EXTERNAL_PUBLISHER);
+        }
+        return new HashSet<>(this.externalPublisherCache.values());
     }
 
     public Set<String> getPreparation_types() {
@@ -116,6 +125,9 @@ public class ExtendableEnumService {
                 case PREPARATION_TYPE -> {
                     this.preparationTypeCache.put(s,s);
                 }
+                case EXTERNAL_PUBLISHER -> {
+                    this.externalPublisherCache.put(s,s);
+                }
             }
         });
     }
@@ -144,13 +156,16 @@ public class ExtendableEnumService {
             case ISSUE_CATEGORY -> {
                 if(getIssueCategories().contains(value)) {
                     throw new IllegalArgumentException("Issue category already exists");
-
                 }
             }
             case PREPARATION_TYPE -> {
                 if(getPreparation_types().contains(value)) {
                     throw new IllegalArgumentException("Preparation_type already exists");
-
+                }
+            }
+            case EXTERNAL_PUBLISHER -> {
+                if(getExternalPublishers().contains(value)) {
+                    throw new IllegalArgumentException("External publisher already exists");
                 }
             }
         }
@@ -175,6 +190,9 @@ public class ExtendableEnumService {
             case PREPARATION_TYPE -> {
                 preparationTypeCache.put(value,value);
             }
+            case EXTERNAL_PUBLISHER -> {
+                externalPublisherCache.put(value, value);
+            }
         }
     }
 
@@ -194,6 +212,9 @@ public class ExtendableEnumService {
             }
             case PREPARATION_TYPE -> {
                 return getPreparation_types().contains(value);
+            }
+            case EXTERNAL_PUBLISHER -> {
+                return getExternalPublishers().contains(value);
             }
             default -> {
                 throw new RuntimeException("Enum name is null");

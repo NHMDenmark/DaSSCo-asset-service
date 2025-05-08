@@ -113,6 +113,8 @@ public class Asset {
     public String specify_attachment_remarks;
     @Schema(description = "Populated by integration server, depending on the type of asset. Does gets updated by later syncs.")
     public String specify_attachment_title;
+
+    public List<Publication> external_publishers;
     public Legality legality;
     public String metadata_created_by;
 //    public List<String> file_formats;
@@ -121,7 +123,6 @@ public class Asset {
     public transient Integer digitiser_id;
     public transient Integer collection_id;
     public transient Integer updating_pipeline_id;
-    public transient String creatorPipeline;
     public String updating_pipeline;
 
     public String getAsset_guid() {

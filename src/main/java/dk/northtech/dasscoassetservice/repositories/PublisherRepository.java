@@ -1,127 +1,42 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.PublicationLink;
-import dk.northtech.dasscoassetservice.domain.Publisher;
-import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
-import dk.northtech.dasscoassetservice.repositories.helpers.PublicationLinkMapper;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeMap;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
+import dk.northtech.dasscoassetservice.domain.Publication;
 import org.jdbi.v3.sqlobject.SqlObject;
-import org.jdbi.v3.sqlobject.transaction.Transaction;
-import org.postgresql.jdbc.PgConnection;
+import org.jdbi.v3.sqlobject.customizer.BindMethods;
+import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
+import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
 public interface PublisherRepository extends SqlObject {
-    default void boilerplate() {
-        withHandle(handle -> {
-            Connection connection = handle.getConnection();
-            try {
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                return handle;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
 
-    @Transaction
-    default void publish(PublicationLink publicationLink) {
-        boilerplate();
-        internal_publish(publicationLink);
-    }
-    @Transaction
-    default void delete(PublicationLink publicationLink) {
-        boilerplate();
-        internal_delete(publicationLink);
-    }
-    @Transaction
-    default List<PublicationLink> listPublicationLinks(Publisher publisher) {
-        boilerplate();
-        return internal_listPublicationLinks(publisher);
-    }
-    default void internal_publish(PublicationLink publicationLink) {
-        String cypher = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                            MATCH (a:Asset{guid: $asset_guid})   
-                            MERGE (p:Publisher{name: $publisher_name})
-                            MERGE (a)-[pb:PUBLISHED_BY{link: $link}]->(p)
-                            SET pb.timestamp = $publication_timestamp
-                        $$
-                        , #params) as (a agtype);
-                """;
 
-        withHandle(handle -> {
-            AgtypeMap params = new AgtypeMapBuilder()
-                    .add("asset_guid", publicationLink.asset_guid())
-                    .add("link", publicationLink.link())
-                    .add("publisher_name", publicationLink.publisher_name())
-                    .add("publication_timestamp", publicationLink.timestamp().toEpochMilli())
-                    .build();
-            Agtype agtype = AgtypeFactory.create(params);
-            handle.createUpdate(cypher)
-                    .bind("params", agtype)
-                    .execute();
-            return handle;
-        });
-    }
+    @SqlUpdate("""
+        INSERT INTO asset_publisher(description, publisher, asset_guid) 
+        VALUES (:description, :name, :asset_guid)
+        RETURNING asset_guid
+        , description
+        , publisher AS name
+        , asset_publisher_id AS publication_id
+    """)
+    @GetGeneratedKeys
+    Publication internal_publish(@BindMethods Publication publication);
 
-    default List<PublicationLink> internal_listPublicationLinks(Publisher publisher) {
-        String cypher = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                            MATCH (p:Publisher{name: $publisher_name})
-                            MATCH (p)<-[pb:PUBLISHED_BY]-(a:Asset)
-                            RETURN a.guid, pb.link, p.name, pb.timestamp
-                        $$
-                        , #params) as (asset_guid agtype
-                        , link agtype
-                        , publisher_name agtype
-                        , publication_timestamp agtype);
-                """;
+    @SqlQuery("""
+    SELECT asset_guid
+        , description
+        , publisher AS name
+        , asset_publisher_id AS publication_id
+       FROM asset_publisher
+    WHERE asset_guid = :assetGuid
+    """)
+    List<Publication> internal_listPublicationLinks(String assetGuid);
 
-        return withHandle(handle -> {
-            AgtypeMap params = new AgtypeMapBuilder()
-                    .add("publisher_name", publisher.name())
-                    .build();
-            Agtype agtype = AgtypeFactory.create(params);
-            return handle.createQuery(cypher)
-                    .bind("params", agtype)
-                    .map(new PublicationLinkMapper())
-                    .list();
-        });
-    }
+    @SqlUpdate("UPDATE asset_publisher SET description = :description WHERE asset_publisher_id = :asset_publication_id" )
+    void update(Publication publication);
 
-    default void internal_delete(PublicationLink publicationLink) {
-        String cypher = """
-                SELECT * FROM ag_catalog.cypher('dassco'
-                         , $$
-                            MATCH (a:Asset{guid: $asset_guid})    
-                            MATCH (p:Publisher{name: $publisher_name})
-                            MATCH (a)-[pb:PUBLISHED_BY{link: $link}]->(p)
-                            DELETE pb
-                        $$
-                        , #params) as (a agtype);
-                """;
+    @SqlUpdate("DELETE FROM asset_publisher WHERE asset_publisher_id = :asset_publisher_id")
+    void delete(long asset_publisher_id);
 
-        withHandle(handle -> {
-            AgtypeMap params = new AgtypeMapBuilder()
-                    .add("asset_guid", publicationLink.asset_guid())
-                    .add("link", publicationLink.link())
-                    .add("publisher_name", publicationLink.publisher_name())
-                    .build();
-            Agtype agtype = AgtypeFactory.create(params);
-            handle.createUpdate(cypher)
-                    .bind("params", agtype)
-                    .execute();
-            return handle;
-        });
-    }
 }
