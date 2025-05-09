@@ -361,7 +361,7 @@ public class AssetService {
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             if(asset.external_publishers != null) {
                 for(Publication publication: asset.external_publishers) {
-                    publisherRepository.internal_publish(publication);
+                    publisherRepository.internal_publish(new Publication(asset.asset_guid,publication.description(), publication.name()));
                 }
             }
             //Handle parents
@@ -570,6 +570,7 @@ public class AssetService {
 
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
+        updatedAsset.external_publishers = updatedAsset.external_publishers.stream().map(publication -> new Publication(existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
