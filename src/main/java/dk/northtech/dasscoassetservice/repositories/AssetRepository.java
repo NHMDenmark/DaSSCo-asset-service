@@ -343,7 +343,7 @@ public interface AssetRepository extends SqlObject {
                         )
                 """;
         String delete_digitisers = "DELETE FROM digitiser_list WHERE asset_guid = :assetGuid;";
-        String delete_publication_link = "DELETE FROM publication_link WHERE asset_guid = :assetGuid;";
+        String delete_publication_link = "DELETE FROM asset_publisher WHERE asset_guid = :assetGuid;";
         String delete_asset_group_asset = "DELETE FROM asset_group_asset WHERE asset_guid = :assetGuid;";
         String delete_events = "DELETE FROM event WHERE asset_guid = :assetGuid;";
         String delete_issue = "DELETE FROM issue WHERE asset_guid = :assetGuid;";
