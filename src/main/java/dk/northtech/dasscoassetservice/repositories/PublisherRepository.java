@@ -33,8 +33,13 @@ public interface PublisherRepository extends SqlObject {
     """)
     List<Publication> internal_listPublicationLinks(String assetGuid);
 
-    @SqlUpdate("UPDATE asset_publisher SET description = :description WHERE asset_publisher_id = :asset_publication_id" )
-    void update(Publication publication);
+    @SqlUpdate("""
+            UPDATE asset_publisher 
+                SET description = :description 
+                , publisher = :name
+                WHERE asset_publisher_id = :publication_id
+            """ )
+    void update(@BindMethods Publication publication);
 
     @SqlUpdate("DELETE FROM asset_publisher WHERE asset_publisher_id = :asset_publisher_id")
     void delete(long asset_publisher_id);

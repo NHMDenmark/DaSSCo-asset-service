@@ -555,6 +555,7 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
+        Set<String> existing_specimens = existing.specimens.stream().map(x -> x.specimen_pid()).collect(Collectors.toSet());
         Set<Publication> existingPublications = new HashSet<>(existing.external_publishers);
         for (String funds : newFunding) {
             fundingService.ensureExists(funds);
@@ -570,7 +571,7 @@ public class AssetService {
 
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
-        updatedAsset.external_publishers = updatedAsset.external_publishers.stream().map(publication -> new Publication(existing.asset_guid, publication.description(), publication.name())).toList();
+        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
@@ -649,6 +650,9 @@ public class AssetService {
                 } else {
                     Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_type(), specimensByPID.get().specimen_id(), existing.collection_id);
                     specimenRepository.updateSpecimen(updated);
+                    if(!existing_specimens.contains(updated.specimen_pid())){
+                        specimenRepository.attachSpecimen(existing.asset_guid, updated.specimen_id());
+                    }
                 }
 
             }

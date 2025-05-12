@@ -40,12 +40,17 @@ public class PublicationService {
         return publicationLink;
     }
 
-    public void delete(Publication publicationLink) {
+    public void delete(Integer publicationId) {
         jdbi.onDemand(PublisherRepository.class)
-                .delete(publicationLink.publication_id());
+                .delete(publicationId);
     }
 
     public List<Publication> list(String assetGuid) {
         return jdbi.onDemand(PublisherRepository.class).internal_listPublicationLinks(assetGuid);
+    }
+
+    public Publication update(Publication publication) {
+        jdbi.onDemand(PublisherRepository.class).update(publication);
+        return publication;
     }
 }

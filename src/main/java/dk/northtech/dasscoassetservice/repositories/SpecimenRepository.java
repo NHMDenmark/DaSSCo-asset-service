@@ -23,7 +23,9 @@ import java.util.Optional;
 public interface SpecimenRepository extends SqlObject {
 
     @GetGeneratedKeys
-    @SqlUpdate("INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type) RETURNING specimen_id")
+    @SqlUpdate("""
+    INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type) RETURNING specimen_id
+    """)
     Integer insert_specimen(@BindMethods Specimen specimen);
 
     @SqlUpdate("""

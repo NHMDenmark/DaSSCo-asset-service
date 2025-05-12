@@ -821,6 +821,40 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void updateAssetAttachExistingAsset() {
+        Asset asset = getTestAsset("updateAssetAttachExistingAsset-1");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset.status = "BEING_PROCESSED";
+        Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", "pinning");
+        asset.specimens = List.of(specimen);
+
+        Asset asset2 = getTestAsset("updateAssetAttachExistingAsset-2");
+        asset2.pipeline = "i2_p1";
+        asset2.workstation = "i2_w1";
+        asset2.tags.put("Tag1", "value1");
+        asset2.institution = "institution_2";
+        asset2.collection = "i2_c1";
+        asset2.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset2.status = "BEING_PROCESSED";
+        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-2", "slide"));
+        assetService.persistAsset(asset, user, 1);
+        assetService.persistAsset(asset2, user, 1);
+        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-2", "slide"),new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-1", "slide"));
+        assetService.updateAsset(asset2, user);
+        Optional<Asset> resultOpt = assetService.getAsset(asset2.asset_guid);
+        assertThat(resultOpt.isPresent()).isTrue();
+        Asset result = resultOpt.get();
+        assertThat(result.specimens).hasSize(2);
+        assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-1"))).isTrue();
+        assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-2"))).isTrue();
+    }
+
+    @Test
     void testSetAssetStatusUnsupportedStatus() {
         Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
         asset.pipeline = "i2_p1";

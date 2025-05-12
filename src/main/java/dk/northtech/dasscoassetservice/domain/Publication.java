@@ -11,7 +11,7 @@ public record Publication(
         Long publication_id,
         @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
         String asset_guid,
-        @Schema(description = "The URL for the publisher site")
+        @Schema(description = "Description of the publication")
         String description,
         @Schema(description = "Name of the publisher")
         String name
