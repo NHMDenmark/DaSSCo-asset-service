@@ -10,8 +10,8 @@
     </parent>
     <groupId>dk.northtech</groupId>
     <artifactId>dassco-asset-service</artifactId>
-    <version>2.1.0</version>
-    <name>dassco-asset-service</name>q:q
+    <version>2.1.1</version>
+    <name>dassco-asset-service</name>
     <description>dassco-asset-service</description>
     <properties>
         <java.version>21</java.version>
