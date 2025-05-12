@@ -47,7 +47,6 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         Instant startDate = ZonedDateTime.now(ZoneOffset.UTC).minusWeeks(1).toInstant();
         DateTimeFormatter nf = DateTimeFormatter.ofPattern("dd-MMM-yyyy").withZone(ZoneId.of("UTC"));
         String currentDate = nf.format(Instant.now());
-        System.out.println(currentDate);
         long duration = ChronoUnit.DAYS.between(startDate, Instant.now()) + 1; // plus 1 as it doesn't count the first date as "between"
 
         Map<GraphType, Map<String, GraphData>> finalData = statisticsDataServicev2.getCachedGraphData(GraphView.WEEK);
@@ -129,7 +128,6 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         int prevInstituteSpecimensExpon = firstData.get(exponential).get(currentDate).getInstitutes().get("institution_1");
 
         Asset newCreateAsset = getTestAsset("new-year-cached-asset", "institution_1", 5);
-        System.out.println(newCreateAsset);
         assetService.persistAsset(newCreateAsset, user,11);
 
         // adds a new asset with 2 specimens

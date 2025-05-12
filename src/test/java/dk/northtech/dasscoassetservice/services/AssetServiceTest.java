@@ -603,7 +603,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(asset, user);
 
         Optional<Asset> updateAsset = assetService.getAsset("updateAsset");
-        System.out.println("hej3");
         assertThat(updateAsset.isPresent()).isTrue();
         Asset result = updateAsset.get();
 

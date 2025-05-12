@@ -88,9 +88,8 @@ public class AbstractIntegrationTest {
 
     @DynamicPropertySource
     static void dataSourceProperties(DynamicPropertyRegistry registry) {
-        System.out.println("POOOOOOOORT "+ postgreSQL.getFirstMappedPort());
+        System.out.println("PORT "+ postgreSQL.getFirstMappedPort());
         // These tests assume the dev dataset, so roll that context on:
-        System.out.println("POOOOOOOOOOORT "+postgreSQL.getFirstMappedPort());
         registry.add("spring.liquibase.contexts", () -> "default, development, test");
         registry.add("datasource.jdbcUrl", () -> "jdbc:postgresql://localhost:" + postgreSQL.getFirstMappedPort() + "/dassco_file_proxy");
     }

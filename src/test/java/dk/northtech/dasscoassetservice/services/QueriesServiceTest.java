@@ -181,7 +181,6 @@ class QueriesServiceTest extends AbstractIntegrationTest {
         assertThat(assets.size()).isAtLeast(2);
         int asset_nnadCount = 0;
         for (Asset asset1 : assets) {
-            System.out.println(asset1);
             if (asset1.asset_guid.equalsIgnoreCase("asset_nnad")) asset_nnadCount++;
         }
         boolean auditedFound = assets.stream().anyMatch(asset -> asset.asset_guid.equalsIgnoreCase("audited"));

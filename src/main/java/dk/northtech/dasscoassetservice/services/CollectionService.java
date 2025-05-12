@@ -180,11 +180,9 @@ public class CollectionService {
 //                    List<InstitutionRoleRestriction> institutionRoleRestrictions = roleRepository.getInstitutionRoleRestriction();
                     this.collectionCache.clear();
                     this.institutionService.listInstitutions().forEach(i -> {
-                        System.out.println("Hej" + i);
                         this.collectionCache.put(i.name(), new ConcurrentHashMap<>());
                     });
                     for (Collection collection : integerCollectionHashMap.values()) {
-                        System.out.println(collection);
                         this.collectionCache
                                 .get(collection.institution())
                                 .put(collection.name(), collection);

@@ -135,8 +135,4 @@ class CollectionServiceTest extends AbstractIntegrationTest {
         assertThat(optCollection.isPresent()).isFalse();
     }
 
-    @Test
-    void dummy() {
-        System.out.println("hell o");
-    }
 }

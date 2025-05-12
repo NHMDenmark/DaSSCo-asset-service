@@ -178,7 +178,6 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         // Creation of Asset Group Assertions:
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        System.out.println(assetGroupList.size());
         int index = 0;
         for (int i = 0; i < assetGroupList.size(); i++){
             if (assetGroupList.get(i).group_name.equals("test-group")){
