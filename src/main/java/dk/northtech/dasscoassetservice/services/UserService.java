@@ -68,18 +68,6 @@ public class UserService {
         JwtAuthenticationToken token = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         Map<String, Object> tokenAttributes = token.getTokenAttributes();
         User user = new User();
-//        if(securityContext.isUserInRole(SecurityRoles.ADMIN)) {
-//            user.roles.add(SecurityRoles.ADMIN);
-//        }
-//        if(securityContext.isUserInRole(SecurityRoles.USER)) {
-//            user.roles.add(SecurityRoles.USER);
-//        }
-//        if(securityContext.isUserInRole(SecurityRoles.DEVELOPER)) {
-//            user.roles.add(SecurityRoles.DEVELOPER);
-//        }
-//        if(securityContext.isUserInRole(SecurityRoles.SERVICE)) {
-//            user.roles.add(SecurityRoles.SERVICE);
-//        }
 
         JwtAuthenticationToken userPrincipal = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         Collection<GrantedAuthority> authorities = userPrincipal.getAuthorities();
