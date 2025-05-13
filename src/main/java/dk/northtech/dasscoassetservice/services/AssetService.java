@@ -205,11 +205,16 @@ public class AssetService {
                         assetToBeMapped.audited_by = event.user;
                     }
 
-                } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && assetToBeMapped.date_metadata_updated == null) {
+                } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
+                           && assetToBeMapped.date_metadata_updated == null) {
                     assetToBeMapped.date_metadata_updated = event.timestamp;
+                    assetToBeMapped.metadata_updated_by = event.user;
 
-                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
+                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
+                           && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
                     assetToBeMapped.date_metadata_updated = event.timestamp;
+                    assetToBeMapped.metadata_updated_by = event.user;
+
                 } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
                     if (assetToBeMapped.date_metadata_updated == null) {
                         assetToBeMapped.date_metadata_updated = event.timestamp;

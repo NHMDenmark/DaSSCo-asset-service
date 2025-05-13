@@ -108,7 +108,7 @@ public interface AssetRepository extends SqlObject {
                     .bind("dateMetadataIngested", asset.date_metadata_ingested != null ? Timestamp.from(asset.date_metadata_ingested) : null)
                     .bind("legality_id", asset.legality != null ? asset.legality.legality_id() : null)
                     .bind("mos_id", asset.mos_id)
-                    .bind("specify_attachment_title",asset.specify_attachment_title)
+                    .bind("specify_attachment_title", asset.specify_attachment_title)
                     .bind("specify_attachment_remarks", asset.specify_attachment_remarks)
                     .execute();
             return handle;
@@ -136,20 +136,20 @@ public interface AssetRepository extends SqlObject {
 
 
     String READ_ASSET = """
-            SELECT asset.*
-                , collection.collection_name
-                , collection.institution_name
-                , dassco_user.username AS digitiser
-                , workstation.workstation_name 
-                , copyright
-                , license
-                , credit
-            FROM asset
-            LEFT JOIN collection USING(collection_id)
-            LEFT JOIN workstation USING(workstation_id)  
-            LEFT JOIN legality USING(legality_id)
-            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-            """;
+        SELECT asset.*
+            , collection.collection_name
+            , collection.institution_name
+            , dassco_user.username AS digitiser
+            , workstation.workstation_name 
+            , copyright
+            , license
+            , credit
+        FROM asset
+        LEFT JOIN collection USING(collection_id)
+        LEFT JOIN workstation USING(workstation_id)  
+        LEFT JOIN legality USING(legality_id)
+        LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+        """;
 
     @Transaction
     default Optional<Asset> readAsset(String assetId) {
@@ -295,8 +295,6 @@ public interface AssetRepository extends SqlObject {
             """;
 
     default Asset update_asset_internal(Asset asset) {
-
-
         try {
             withHandle(handle -> {
                 handle.createUpdate(UPDATE_ASSET_SQL)
@@ -350,9 +348,9 @@ public interface AssetRepository extends SqlObject {
         String delete_file = "DELETE FROM file WHERE asset_guid = :assetGuid;";
         String delete_asset_funding = "DELETE FROM asset_funding WHERE asset_guid = :assetGuid";
         String delete_parent_child = """
-            DELETE FROM parent_child 
-            WHERE parent_guid = :parent_guid OR child_guid = :child_guid 
-        """;
+                    DELETE FROM parent_child 
+                    WHERE parent_guid = :parent_guid OR child_guid = :child_guid 
+                """;
         String delete_asset_metadata = "DELETE FROM asset WHERE asset_guid = :assetGuid";
         String delete_funding = """
                     DELETE FROM funding
