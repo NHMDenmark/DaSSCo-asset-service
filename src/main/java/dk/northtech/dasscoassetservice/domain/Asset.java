@@ -114,7 +114,7 @@ public class Asset {
     @Schema(description = "Populated by integration server, depending on the type of asset. Does gets updated by later syncs.")
     public String specify_attachment_title;
 
-    @Schema(description = "Metadata can be updated manually, via pipelines and via Specify.<br><br>We want to be able to search for this field specifically. It should only contain the last user that did an update. When bulk update the user doing that should also be noted in this field.")
+    @Schema(description = "Metadata can be updated manually, via pipelines and via Specify. We want to be able to search for this field specifically. It should only contain the last user that did an update. When bulk update the user doing that should also be noted in this field.")
     public String metadata_updated_by;
     public List<Publication> external_publishers;
     public Legality legality;
