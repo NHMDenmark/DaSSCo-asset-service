@@ -363,12 +363,16 @@ public class AssetService {
 
             }
             //Handle external publishers
-            PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             if (asset.external_publishers != null) {
-                for (Publication publication : asset.external_publishers) {
-                    publisherRepository.internal_publish(new Publication(asset.asset_guid, publication.description(), publication.name()));
-                }
+                PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
+                // Publication can be POSTED as a list of objects with name only. this ensures the asset_guid is set.
+                asset.external_publishers = asset.external_publishers.stream()
+                        // Publication can be POSTed as a list of objects with name only. this ensures the asset_guid is set.
+                        .map(p -> new Publication(asset.asset_guid, p.description(), p.name()))
+                        .map(publisherRepository::internal_publish)
+                        .toList();
             }
+
             //Handle parents
             for (String s : asset.parent_guids) {
                 assetRepository.insert_parent_child(asset.asset_guid, s);
@@ -576,7 +580,7 @@ public class AssetService {
 
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
-        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(existing.asset_guid, publication.description(), publication.name())).toList();
+        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(),existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
@@ -708,7 +712,6 @@ public class AssetService {
                     } else {
                         publisherRepository.internal_publish(extPbl);
                     }
-
                 });
                 existingPublications.forEach(publication -> {
                     if (!updatedPublishers.contains(publication.publication_id())) {

@@ -36,4 +36,5 @@ public record Publication(
     public int hashCode() {
         return Objects.hash(asset_guid, description, name);
     }
+
 }

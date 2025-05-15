@@ -568,7 +568,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.external_publishers = List.of(new Publication("updateAsset","descriptive description", "The Science Pamphlet"), new Publication("updateAsset", "Bezkrivelze", "The Science Pamphlet"));
 
         assetService.persistAsset(asset, user, 11);
-
+        Long publication_id = asset.external_publishers.get(0).publication_id();
+        assertThat(publication_id).isGreaterThan(0);
         asset.tags.remove("Tag1");
         asset.tags.remove("Tag2");
         asset.date_asset_finalised = Instant.now();
@@ -598,7 +599,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.mos_id = "moss";
         asset.camera_setting_control = "Dad get the camera!";
         asset.asset_pid = "new_pid_updateAsset";
-        asset.external_publishers = List.of(new Publication("updateAsset","New description", "The Science Pamphlet"));
+        asset.external_publishers = List.of(new Publication("updateAsset","New description", "The Science Pamphlet")
+        ,  new Publication(publication_id,"updateAsset","Issue #161 p. 12", "The Science Pamphlet"));
 //        asset.issues = Arrays.asList(new Issue("no issues"));
         assetService.updateAsset(asset, user);
 
@@ -645,14 +647,22 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.push_to_specify).isFalse();
         assertThat(result.specify_attachment_title).isEqualTo("'Attchment tittle");
         assertThat(result.specify_attachment_remarks).isEqualTo("Spezzify remarx");
+
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
         Specimen specimen = result.specimens.get(0);
         assertThat(specimen.preparation_type()).isEqualTo("slide");
         assertThat(specimen.specimen_pid()).isEqualTo("spid2");
-        assertThat(result.external_publishers.size()).isEqualTo(1);
-        Publication publication = result.external_publishers.get(0);
-        assertThat(publication.description()).isEqualTo("New description");
-        assertThat(publication.name()).isEqualTo("The Science Pamphlet");
+        assertThat(result.external_publishers.size()).isEqualTo(2);
+        result.external_publishers.forEach(x -> {
+            if(x.description().equals("New description")) {
+                assertThat(x.name()).isEqualTo("The Science Pamphlet");
+            } else if(x.description().equals("Issue #161 p. 12")) {
+                assertThat(x.name()).isEqualTo("The Science Pamphlet");
+                assertThat(x.publication_id()).isEqualTo(publication_id);
+            } else {
+                fail("Unexpected publication");
+            }
+        });
         result.legality = null;
         assetService.updateAsset(result, user);
         Optional<Asset> result2opt = assetService.getAsset("updateAsset");
