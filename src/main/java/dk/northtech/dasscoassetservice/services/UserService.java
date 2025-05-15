@@ -127,6 +127,7 @@ public class UserService {
     public List<String> getDigitiserList(String asset_guid) {
         return jdbi.onDemand(UserRepository.class).getDigitiserList(asset_guid);
     }
+
     public Optional<User> getUserIfExists(String username) {
         if(!this.initialised) {
             initUsers();

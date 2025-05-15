@@ -116,17 +116,17 @@ public class AssetService {
     }
 
     void validateSpecimen(Specimen specimen) {
-        if(Strings.isNullOrEmpty(specimen.specimen_pid())) {
+        if (Strings.isNullOrEmpty(specimen.specimen_pid())) {
             throw new IllegalArgumentException("specimen_pid cannot be null or empty");
         }
-        if(Strings.isNullOrEmpty(specimen.barcode())) {
+        if (Strings.isNullOrEmpty(specimen.barcode())) {
             throw new IllegalArgumentException("Specimen barcode cannot be null");
         }
-        if(Strings.isNullOrEmpty(specimen.preparation_type())) {
+        if (Strings.isNullOrEmpty(specimen.preparation_type())) {
             throw new IllegalArgumentException("preparation_type cannot be null");
         }
-        if(!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, specimen.preparation_type())) {
-            throw new IllegalArgumentException(specimen.preparation_type() +" is not a valid preparation_type");
+        if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, specimen.preparation_type())) {
+            throw new IllegalArgumentException(specimen.preparation_type() + " is not a valid preparation_type");
         }
     }
 
@@ -260,9 +260,9 @@ public class AssetService {
                 }
             }
         }
-        if(asset.external_publishers != null) {
-            for(Publication publication: asset.external_publishers) {
-                if(!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, publication.name())) {
+        if (asset.external_publishers != null) {
+            for (Publication publication : asset.external_publishers) {
+                if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, publication.name())) {
                     throw new IllegalArgumentException("Publisher " + publication.name() + " doesnt exist");
                 }
             }
@@ -364,9 +364,9 @@ public class AssetService {
             }
             //Handle external publishers
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
-            if(asset.external_publishers != null) {
-                for(Publication publication: asset.external_publishers) {
-                    publisherRepository.internal_publish(new Publication(asset.asset_guid,publication.description(), publication.name()));
+            if (asset.external_publishers != null) {
+                for (Publication publication : asset.external_publishers) {
+                    publisherRepository.internal_publish(new Publication(asset.asset_guid, publication.description(), publication.name()));
                 }
             }
             //Handle parents
@@ -655,7 +655,7 @@ public class AssetService {
                 } else {
                     Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_type(), specimensByPID.get().specimen_id(), existing.collection_id);
                     specimenRepository.updateSpecimen(updated);
-                    if(!existing_specimens.contains(updated.specimen_pid())){
+                    if (!existing_specimens.contains(updated.specimen_pid())) {
                         specimenRepository.attachSpecimen(existing.asset_guid, updated.specimen_id());
                     }
                 }
@@ -699,14 +699,19 @@ public class AssetService {
                 }
             }
             //Handle publishers
-            if(updatedAsset.external_publishers != null) {
+            if (updatedAsset.external_publishers != null) {
+                Set<Long> updatedPublishers = new HashSet<>();
                 updatedAsset.external_publishers.forEach(extPbl -> {
-                    if(!existingPublications.contains(extPbl)) {
+                    if (extPbl.publication_id() != null) {
+                        updatedPublishers.add(extPbl.publication_id());
+                        publisherRepository.update(extPbl);
+                    } else {
                         publisherRepository.internal_publish(extPbl);
                     }
+
                 });
                 existingPublications.forEach(publication -> {
-                    if(!updatedAsset.external_publishers.contains(publication)) {
+                    if (!updatedPublishers.contains(publication.publication_id())) {
                         publisherRepository.delete(publication.publication_id());
                     }
                 });
@@ -738,7 +743,6 @@ public class AssetService {
                         issueRepository.deleteIssue(i);
                     }
                 }
-
                 if (legalityToDelete != null) {
                     legalityRepository.deleteLegality(legalityToDelete);
                 }
@@ -794,7 +798,7 @@ public class AssetService {
             return h;
         });
 
-        //TODO fix stats
+        //WP5a
 //        statisticsDataServiceV2.refreshCachedData();
 
 
