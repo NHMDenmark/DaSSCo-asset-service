@@ -122,11 +122,13 @@ public class AssetService {
         if (Strings.isNullOrEmpty(specimen.barcode())) {
             throw new IllegalArgumentException("Specimen barcode cannot be null");
         }
-        if (Strings.isNullOrEmpty(specimen.preparation_type())) {
+        if (specimen.preparation_types() == null || specimen.preparation_types().isEmpty()) {
             throw new IllegalArgumentException("preparation_type cannot be null");
         }
-        if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, specimen.preparation_type())) {
-            throw new IllegalArgumentException(specimen.preparation_type() + " is not a valid preparation_type");
+        for (String p : specimen.preparation_types()) {
+            if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, p)) {
+                throw new IllegalArgumentException(p + " is not a valid preparation_type");
+            }
         }
     }
 
@@ -347,15 +349,15 @@ public class AssetService {
             for (Specimen specimen : asset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_type(), specimen.specimen_id(), asset.collection_id);
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.specimen_id(), asset.collection_id);
                     specimenRepository.insert_specimen(specimenToPersist);
                     Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
                     Specimen newSpecimen = newSpecimenOpt.orElseThrow(() -> new RuntimeException("This shouldn't happen"));
                     specimenRepository.attachSpecimen(asset.asset_guid, newSpecimen.specimen_id());
                 } else {
                     Specimen existing = specimensByPID.get();
-                    if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_type().equals(specimen.preparation_type())) {
-                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_type(), existing.specimen_id(), asset.collection_id);
+                    if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), existing.specimen_id(), asset.collection_id);
                         specimenRepository.updateSpecimen(updated);
                     }
                     specimenRepository.attachSpecimen(asset.asset_guid, existing.specimen_id());
@@ -482,7 +484,7 @@ public class AssetService {
 
         if (asset.specimens != null && !asset.specimens.isEmpty()) {
             for (Specimen specimen : asset.specimens) {
-                preparationTypeCache.putPreparationTypesInCacheIfAbsent(specimen.preparation_type());
+                specimen.preparation_types().forEach(preparationTypeCache::putPreparationTypesInCacheIfAbsent);
             }
         }
 
@@ -580,7 +582,7 @@ public class AssetService {
 
         Set<String> updatedSpecimenPIDs = updatedAsset.specimens.stream().map(Specimen::specimen_pid).collect(Collectors.toSet());
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
-        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(),existing.asset_guid, publication.description(), publication.name())).toList();
+        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(), existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
         existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
@@ -653,11 +655,11 @@ public class AssetService {
             for (Specimen s : existing.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_type(), s.specimen_id(), existing.collection_id);
+                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.specimen_id(), existing.collection_id);
                     Integer specimen_id = specimenRepository.insert_specimen(newSpecimen);
                     specimenRepository.attachSpecimen(updatedAsset.asset_guid, specimen_id);
                 } else {
-                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_type(), specimensByPID.get().specimen_id(), existing.collection_id);
+                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), specimensByPID.get().specimen_id(), existing.collection_id);
                     specimenRepository.updateSpecimen(updated);
                     if (!existing_specimens.contains(updated.specimen_pid())) {
                         specimenRepository.attachSpecimen(existing.asset_guid, updated.specimen_id());

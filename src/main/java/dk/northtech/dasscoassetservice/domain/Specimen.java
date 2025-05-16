@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
+import java.util.Set;
+
 @Schema(description = "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen")
 public record Specimen(
         @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
@@ -15,21 +17,21 @@ public record Specimen(
         @Schema(description = "Persistent Identifier for the specimen")
         String specimen_pid,
         @Schema(description = "The way that the specimen has been prepared (pinned insect or mounted on a slide)", example = "slide")
-        String preparation_type,
+        Set<String> preparation_types,
         @JsonIgnore
         Integer specimen_id,
         @JsonIgnore
         Integer collection_id
     ) {
-    public Specimen(String barcode, String specimen_pid, String preparation_type) {
-        this(null, null, barcode, specimen_pid, preparation_type, null, null);
+    public Specimen(String barcode, String specimen_pid, Set<String> preparation_types) {
+        this(null, null, barcode, specimen_pid, preparation_types, null, null);
     }
 
     @JdbiConstructor
     public Specimen {
     }
 
-    public Specimen(String institution, String collection, String barcode, String specimen_pid, String preparation_type) {
-        this(institution, collection, barcode, specimen_pid, preparation_type, null, null);
+    public Specimen(String institution, String collection, String barcode, String specimen_pid, Set<String> preparation_types) {
+        this(institution, collection, barcode, specimen_pid, preparation_types, null, null);
     }
 }

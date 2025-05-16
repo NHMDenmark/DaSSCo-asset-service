@@ -180,7 +180,7 @@ public class StatisticsDataServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
-        asset.specimens = Arrays.asList(new Specimen(instituteName, "i1_c1", "creatAsset-sp-" + id, "spid" + id, "slide"), new Specimen(instituteName, "i1_c1", "creatAsset-sp-0" + id, "spid0" + id, "slide"));
+        asset.specimens = Arrays.asList(new Specimen(instituteName, "i1_c1", "creatAsset-sp-" + id, "spid" + id, Set.of("slide")), new Specimen(instituteName, "i1_c1", "creatAsset-sp-0" + id, "spid0" + id, Set.of("slide")));
         asset.pipeline = pipelineName;
         asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");

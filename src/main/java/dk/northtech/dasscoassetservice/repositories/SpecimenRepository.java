@@ -24,7 +24,7 @@ public interface SpecimenRepository extends SqlObject {
 
     @GetGeneratedKeys
     @SqlUpdate("""
-    INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_type) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_type) RETURNING specimen_id
+    INSERT INTO specimen(collection_id, specimen_pid, barcode, preparation_types) VALUES (:collection_id, :specimen_pid, :barcode, :preparation_types) RETURNING specimen_id
     """)
     Integer insert_specimen(@BindMethods Specimen specimen);
 
@@ -41,7 +41,7 @@ public interface SpecimenRepository extends SqlObject {
     void detachSpecimen(String assetGuid, Integer specimenId);
 
     @SqlUpdate("""
-    UPDATE specimen SET preparation_type = :preparation_type, barcode = :barcode WHERE specimen_id = :specimen_id
+    UPDATE specimen SET preparation_types = :preparation_types, barcode = :barcode WHERE specimen_id = :specimen_id
 """)
     void updateSpecimen(@BindMethods Specimen specimen);
 
