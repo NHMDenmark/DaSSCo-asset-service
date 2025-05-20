@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Schema(description = "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen")
@@ -17,21 +18,23 @@ public record Specimen(
         @Schema(description = "Persistent Identifier for the specimen")
         String specimen_pid,
         @Schema(description = "The way that the specimen has been prepared (pinned insect or mounted on a slide)", example = "slide")
-        Set<String> preparation_types,
+        HashSet<String> preparation_types,
+        @Schema(description = "A Specimen can have multiple different preparation_types, this field is used to specify what preparation_type is valid for the asset this specimen is connected to", example = "slide")
+        String asset_preparation_type,
         @JsonIgnore
         Integer specimen_id,
         @JsonIgnore
         Integer collection_id
     ) {
-    public Specimen(String barcode, String specimen_pid, Set<String> preparation_types) {
-        this(null, null, barcode, specimen_pid, preparation_types, null, null);
+    public Specimen(String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
+        this(null, null, barcode, specimen_pid, preparation_types, asset_preparation_type, null, null);
     }
 
     @JdbiConstructor
     public Specimen {
     }
 
-    public Specimen(String institution, String collection, String barcode, String specimen_pid, Set<String> preparation_types) {
-        this(institution, collection, barcode, specimen_pid, preparation_types, null, null);
+    public Specimen(String institution, String collection, String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
+        this(institution, collection, barcode, specimen_pid, preparation_types, asset_preparation_type,null, null);
     }
 }

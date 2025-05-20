@@ -27,7 +27,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 
 @Component
-@Path("/v1/collections/{collectionName}/specimens/")
+@Path("/v1/specimens/")
 @Tag(name = "Specimens", description = "Endpoints related to collection specimens")
 @SecurityRequirement(name = "dassco-idp")
 public class Specimens {
@@ -40,35 +40,16 @@ public class Specimens {
     }
 
     @Hidden
-    @GET
-    @Operation(summary = "Get Specimens", description = "List all specimens in a collection.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Collection> getSpecimen(@PathParam("collectionName") String collectionName) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Hidden
     @POST
-    @Operation(summary = "Create Specimen", description = "Creates a new specimen in a collection, with information such as barcode, specimen_pid and preparation_type")
+    @Path("/{specimenPID}")
+    @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Institution createSpecimen(Specimen specimen, @PathParam("collectionName") String collection) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Hidden
-    @DELETE
-    @Operation(summary = "Delete Specimen", description = "Deletes a specimen from a collection.")
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-//    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteSpecimen(Specimen specimen) {
-        throw new UnsupportedOperationException("Not implemented");
+    public Specimen updateSpacemen(Specimen specimen, @PathParam("specimenPID") String specimenPID) {
+        specimenService.updateSpecimen(specimen);
+        return specimen;
     }
 
     @GET

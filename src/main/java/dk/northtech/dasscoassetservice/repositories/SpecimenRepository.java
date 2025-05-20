@@ -29,9 +29,9 @@ public interface SpecimenRepository extends SqlObject {
     Integer insert_specimen(@BindMethods Specimen specimen);
 
     @SqlUpdate("""
-    INSERT INTO asset_specimen(asset_guid, specimen_id) VALUES (:assetGuid, :specimenId)
+    INSERT INTO asset_specimen(asset_guid, preparation_type, specimen_id) VALUES (:assetGuid, :preparation_type ,:specimenId)
     """)
-    void attachSpecimen(String assetGuid, Integer specimenId);
+    void attachSpecimen(String assetGuid, String preparation_type, Integer specimenId);
 
     @SqlUpdate("""
     DELETE FROM asset_specimen 
@@ -41,12 +41,16 @@ public interface SpecimenRepository extends SqlObject {
     void detachSpecimen(String assetGuid, Integer specimenId);
 
     @SqlUpdate("""
-    UPDATE specimen SET preparation_types = :preparation_types, barcode = :barcode WHERE specimen_id = :specimen_id
+    UPDATE specimen 
+    SET preparation_types = :preparation_types
+      , barcode = :barcode 
+    WHERE specimen_id = :specimen_id
 """)
     void updateSpecimen(@BindMethods Specimen specimen);
 
     @SqlQuery("""
             SELECT specimen.*
+                , asset_specimen.preparation_type AS asset_preparation_type
                 , collection.collection_name AS collection
                 , collection.institution_name AS institution
             FROM specimen
@@ -58,6 +62,7 @@ public interface SpecimenRepository extends SqlObject {
 
     @SqlQuery("""
             SELECT specimen.*
+                , NULL as asset_preparation_type
                 , collection.collection_name AS collection
                 , collection.institution_name AS institution
             FROM specimen

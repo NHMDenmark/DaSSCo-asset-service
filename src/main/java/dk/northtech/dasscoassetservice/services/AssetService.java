@@ -8,12 +8,11 @@ import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
+ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
-import io.micrometer.observation.ObservationRegistry;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -53,6 +52,7 @@ public class AssetService {
     private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
     private final UserService userService;
+    private final SpecimenService specimenService;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -68,10 +68,10 @@ public class AssetService {
             , PayloadTypeCache payloadTypeCache
             , PreparationTypeCache preparationTypeCache
             , FileProxyConfiguration fileProxyConfiguration
-            , ObservationRegistry observationRegistry
             , ExtendableEnumService extendableEnumService
             , UserService userService
-            , FundingService fundingService) {
+            , FundingService fundingService
+            , SpecimenService specimenService ) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -88,6 +88,7 @@ public class AssetService {
         this.extendableEnumService = extendableEnumService;
         this.userService = userService;
         this.fundingService = fundingService;
+        this.specimenService = specimenService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
     }
@@ -111,26 +112,11 @@ public class AssetService {
             asset.issues.forEach(this::validateIssue);
         }
         if (asset.specimens != null) {
-            asset.specimens.forEach(this::validateSpecimen);
+            asset.specimens.forEach(specimenService::validateSpecimen);
         }
     }
 
-    void validateSpecimen(Specimen specimen) {
-        if (Strings.isNullOrEmpty(specimen.specimen_pid())) {
-            throw new IllegalArgumentException("specimen_pid cannot be null or empty");
-        }
-        if (Strings.isNullOrEmpty(specimen.barcode())) {
-            throw new IllegalArgumentException("Specimen barcode cannot be null");
-        }
-        if (specimen.preparation_types() == null || specimen.preparation_types().isEmpty()) {
-            throw new IllegalArgumentException("preparation_type cannot be null");
-        }
-        for (String p : specimen.preparation_types()) {
-            if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, p)) {
-                throw new IllegalArgumentException(p + " is not a valid preparation_type");
-            }
-        }
-    }
+
 
     void validateIssue(Issue issue) {
         if (Strings.isNullOrEmpty(issue.category())) {
@@ -319,9 +305,6 @@ public class AssetService {
             asset.date_metadata_updated = Instant.now();
             asset.created_date = Instant.now();
             asset.internal_status = InternalStatus.METADATA_RECEIVED;
-            LocalDateTime createAssetStart = LocalDateTime.now();
-
-
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             UserRepository userRepository = h.attach(UserRepository.class);
@@ -349,18 +332,21 @@ public class AssetService {
             for (Specimen specimen : asset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.specimen_id(), asset.collection_id);
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(),specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id);
                     specimenRepository.insert_specimen(specimenToPersist);
                     Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
                     Specimen newSpecimen = newSpecimenOpt.orElseThrow(() -> new RuntimeException("This shouldn't happen"));
-                    specimenRepository.attachSpecimen(asset.asset_guid, newSpecimen.specimen_id());
+                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type() ,newSpecimen.specimen_id());
                 } else {
                     Specimen existing = specimensByPID.get();
                     if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
-                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), existing.specimen_id(), asset.collection_id);
+                        specimen.preparation_types().addAll(existing.preparation_types());
+                        System.out.println(existing.preparation_types());
+                        System.out.println(specimen.preparation_types());
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(),specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id);
                         specimenRepository.updateSpecimen(updated);
                     }
-                    specimenRepository.attachSpecimen(asset.asset_guid, existing.specimen_id());
+                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type(), existing.specimen_id());
                 }
 
             }
@@ -561,12 +547,12 @@ public class AssetService {
         validateAsset(updatedAsset);
         valiedateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
-        Set<String> existingDigitiserList = new HashSet(existing.complete_digitiser_list);
+        Set<String> existingDigitiserList = new HashSet<>(existing.complete_digitiser_list);
         Set<String> existingFunding = new HashSet<>(existing.funding);
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
-        Set<String> existing_specimens = existing.specimens.stream().map(x -> x.specimen_pid()).collect(Collectors.toSet());
+//        Set<String> existing_specimens = existing.specimens.stream().map(x -> x.specimen_pid()).collect(Collectors.toSet());
         Set<Publication> existingPublications = new HashSet<>(existing.external_publishers);
         for (String funds : newFunding) {
             fundingService.ensureExists(funds);
@@ -653,17 +639,22 @@ public class AssetService {
                 specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
             }
             for (Specimen s : existing.specimens) {
+                System.out.println("sssssssssssss" + s);
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.specimen_id(), existing.collection_id);
+                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), s.specimen_id(), existing.collection_id);
                     Integer specimen_id = specimenRepository.insert_specimen(newSpecimen);
-                    specimenRepository.attachSpecimen(updatedAsset.asset_guid, specimen_id);
+                    specimenRepository.attachSpecimen(updatedAsset.asset_guid, newSpecimen.asset_preparation_type(), specimen_id);
                 } else {
-                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), specimensByPID.get().specimen_id(), existing.collection_id);
+                    Specimen existing_specimen = specimensByPID.get();
+                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), existing_specimen.specimen_id(), existing.collection_id);
+                    updated.preparation_types().addAll(existing_specimen.preparation_types());
                     specimenRepository.updateSpecimen(updated);
-                    if (!existing_specimens.contains(updated.specimen_pid())) {
-                        specimenRepository.attachSpecimen(existing.asset_guid, updated.specimen_id());
-                    }
+                    System.out.println("upda " + updated);
+                    //detach reattach to make sure asset_preparation_type is in order
+                    specimenRepository.detachSpecimen(existing.asset_guid, existing_specimen.specimen_id());
+                    specimenRepository.attachSpecimen(existing.asset_guid, updated.asset_preparation_type(), updated.specimen_id());
+
                 }
 
             }
