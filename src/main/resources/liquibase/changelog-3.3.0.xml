@@ -14,7 +14,7 @@
     <changeSet id="3.3.0:ADD_PREPARATION_TYPE" author="Thomas Skov Bornerup" context="default">
         <addColumn tableName="asset_specimen">
             <column name="preparation_type" type="text">
-                <constraints nullable="false"/>
+                <constraints nullable="true"/>
             </column>
         </addColumn>
     </changeSet>
@@ -33,8 +33,8 @@
                                  referencedTableName="preparation_type"
                                  referencedColumnNames="preparation_type"/>
     </changeSet>
-<!--    <changeSet id="VERSION-3.3.0" author="Thomas Skov Bornerup" context="default">-->
-<!--        <tagDatabase tag="VERSION-3.3.0"/>-->
-<!--    </changeSet>-->
+    <changeSet id="VERSION-3.3.0" author="Thomas Skov Bornerup" context="default">
+        <tagDatabase tag="VERSION-3.3.0"/>
+    </changeSet>
 
 </databaseChangeLog>
