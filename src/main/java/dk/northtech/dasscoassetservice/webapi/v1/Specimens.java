@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.services.SpecimenService;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -33,13 +36,16 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class Specimens {
 
     private SpecimenService specimenService;
+    private UserService userService;
 
     @Inject
-    public Specimens(SpecimenService specimenService){
+    public Specimens(SpecimenService specimenService, UserService userService) {
         this.specimenService = specimenService;
+        this.userService = userService;
     }
 
-    @Hidden
+
+
     @POST
     @Path("/{specimenPID}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
@@ -47,8 +53,10 @@ public class Specimens {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Specimen updateSpacemen(Specimen specimen, @PathParam("specimenPID") String specimenPID) {
-        specimenService.updateSpecimen(specimen);
+    public Specimen updateSpacemen(Specimen specimen
+            , @PathParam("specimenPID") String specimenPID
+            , @Context SecurityContext securityContext) {
+        specimenService.updateSpecimen(specimen, userService.from(securityContext));
         return specimen;
     }
 

@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.domain.Specimen;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -20,24 +21,31 @@ public class SpecimenService {
 
     private PreparationTypeCache preparationTypeCache;
     private ExtendableEnumService extendableEnumService;
+    private RightsValidationService rightsValidationService;
 
     @Inject
-    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService) {
+    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService) {
         this.jdbi = jdbi;
         this.preparationTypeCache = preparationTypeCache;
         this.extendableEnumService = extendableEnumService;
+        this.rightsValidationService = rightsValidationService;
     }
 
-
-
-    public Specimen updateSpecimen(Specimen specimen) {
-        Optional<Specimen> specimensByPID = jdbi.onDemand(SpecimenRepository.class).findSpecimensByPID(specimen.specimen_pid());
+    public Specimen updateSpecimen(Specimen specimen, User user) {
+        SpecimenRepository specimenRepository = jdbi.onDemand(SpecimenRepository.class);
+        Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
         if(specimensByPID.isEmpty()) {
             throw new IllegalArgumentException("Specimen was not found");
         }
         validateSpecimen(specimen);
         Specimen existing = specimensByPID.get();
-        jdbi.onDemand(SpecimenRepository.class)
+        rightsValidationService.checkWriteRightsThrowing(user, specimen.institution(), specimen.collection());
+        List<String> assetsWithRemovedPreparationType = specimenRepository.getGuidsByPreparationTypeAndSpecimenId(specimen.preparation_types(), existing.specimen_id());
+        if(!assetsWithRemovedPreparationType.isEmpty()) {
+            String errorMessage = "Preparation_type cannot be removed as it is used by the following assets: " + assetsWithRemovedPreparationType;
+            throw new IllegalArgumentException(errorMessage);
+        }
+        specimenRepository
                 .updateSpecimen(new Specimen(existing.institution()
                         , existing.collection()
                         , specimen.barcode()
@@ -73,4 +81,5 @@ public class SpecimenService {
             }
         }
     }
+
 }

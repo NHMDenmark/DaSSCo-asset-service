@@ -8,6 +8,7 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.customizer.BindList;
 import org.jdbi.v3.sqlobject.customizer.BindMethods;
 import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
 import org.jdbi.v3.sqlobject.statement.MapTo;
@@ -19,6 +20,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface SpecimenRepository extends SqlObject {
 
@@ -71,6 +73,11 @@ public interface SpecimenRepository extends SqlObject {
             """)
     Optional<Specimen> findSpecimensByPID(String pid);
 
+    @SqlQuery("""  
+    SELECT asset_guid FROM asset_specimen
+    WHERE specimen_id = :specimenId AND preparation_type NOT IN (<preparationTypes>)
+""")
+    List<String> getGuidsByPreparationTypeAndSpecimenId(@BindList("preparationTypes")Set<String> preparationTypes, Integer specimenId);
 
     @SqlQuery("SELECT * FROM preparation_type")
     List<String> listPreparationTypesInternal();

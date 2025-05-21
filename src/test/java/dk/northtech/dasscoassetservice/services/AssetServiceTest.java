@@ -379,7 +379,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
 
-    public Asset getTestAsset(String guid) {
+    public static Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_locked = false;
         asset.status = "BEING_PROCESSED";
@@ -784,6 +784,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("ERDA_ERROR");
     }
+
 
     @Test
     void testSetAssetStatusInvalidStatus() {

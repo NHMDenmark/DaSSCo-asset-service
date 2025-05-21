@@ -55,6 +55,7 @@ public class AbstractIntegrationTest {
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
     @Inject ExtendableEnumService extendableEnumService;
+    @Inject SpecimenService specimenService;
     @Inject
     Jdbi jdbi;
     @Inject UserService userService;

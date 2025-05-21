@@ -639,7 +639,6 @@ public class AssetService {
                 specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
             }
             for (Specimen s : existing.specimens) {
-                System.out.println("sssssssssssss" + s);
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
                     Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), s.specimen_id(), existing.collection_id);
