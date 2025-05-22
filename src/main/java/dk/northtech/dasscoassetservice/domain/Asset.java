@@ -76,8 +76,6 @@ public class Asset {
     public String error_message;
     @Schema(description = "Date and time that the error happened", example = "2023-05-24T00:00:00.000Z")
     public Instant error_timestamp;
-    @Schema(description = "The name of the event for the Asset", example = "CREATE_ASSET_METADATA")
-    public DasscoEvent event_name;
     @Schema(description = "Whether the current user has write access. Used in frontend operations.", example = "TRUE")
     public boolean writeAccess;
 
@@ -164,7 +162,6 @@ public class Asset {
                ", pipeline='" + pipeline + '\'' +
                ", error_message='" + error_message + '\'' +
                ", error_timestamp=" + error_timestamp +
-               ", event_name=" + event_name +
                ", writeAccess=" + writeAccess +
                ", camera_setting_control='" + camera_setting_control + '\'' +
                ", date_metadata_ingested=" + date_metadata_ingested +

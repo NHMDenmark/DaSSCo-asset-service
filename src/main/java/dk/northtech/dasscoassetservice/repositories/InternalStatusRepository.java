@@ -11,6 +11,7 @@ import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -117,14 +118,10 @@ public class InternalStatusRepository {
         return jdbi.withHandle(handle -> {
             return handle.createQuery(IN_PROGRESS_SQL)
                     .map((rs, ctx) -> {
-                        Instant errorTimestamp = null;
-                        rs.getString("error_timestamp");
-                        if (!rs.wasNull()) {
-                            errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
-                        }
+                        Timestamp error_timestamp = rs.getTimestamp("error_timestamp");
                         return new AssetStatusInfo(rs.getString("asset_guid")
                                 , null
-                                , errorTimestamp
+                                , error_timestamp == null ? null : error_timestamp.toInstant()
                                 , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                                 );
@@ -151,15 +148,10 @@ public class InternalStatusRepository {
             return handle.createQuery(this.assetStatusSQL)
                     .bind("assetGuid", assetGuid)
                     .map((rs, ctx) -> {
-                        Instant errorTimestamp = null;
-                        rs.getString("error_timestamp");
-                        if (!rs.wasNull()) {
-//                            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
-                            errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
-                        }
+                        Timestamp errorTimestamp = rs.getTimestamp("error_timestamp");
                         return new AssetStatusInfo(rs.getString("asset_guid")
                                 , parents
-                                , errorTimestamp
+                                , errorTimestamp == null ? null : errorTimestamp.toInstant()
                                 , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                         );

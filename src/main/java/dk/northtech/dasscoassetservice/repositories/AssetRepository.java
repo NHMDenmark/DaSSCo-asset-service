@@ -332,7 +332,11 @@ public interface AssetRepository extends SqlObject {
     default void deleteAsset(String assetGuid) {
         // Deletes Asset and removes connections to Specimens and Events.
         // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
-        String delete_asset_specimen = "DELETE FROM asset_specimen WHERE asset_guid = :assetGuid RETURNING specimen_id;";
+        String delete_asset_specimen = """
+            DELETE FROM asset_specimen 
+            WHERE asset_guid = :assetGuid 
+            RETURNING specimen_id;
+        """;
         String delete_specimen = """
                     DELETE FROM specimen
                     WHERE specimen_id IN (<ids>)
@@ -362,9 +366,12 @@ public interface AssetRepository extends SqlObject {
                     )
                 """;
         withHandle(h -> {
-            List<Integer> ids = h.createQuery(delete_asset_specimen)
+            List<Integer> specimen_ids = h.createQuery(delete_asset_specimen)
                     .bind("assetGuid", assetGuid).mapTo(Integer.class).list();
-            h.createUpdate(delete_specimen).bindList("ids", ids).execute();
+
+            if(!specimen_ids.isEmpty()) {
+                h.createUpdate(delete_specimen).bindList("ids", specimen_ids).execute();
+            }
             h.createUpdate(delete_digitisers).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_publication_link).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_asset_group_asset).bind("assetGuid", assetGuid).execute();
