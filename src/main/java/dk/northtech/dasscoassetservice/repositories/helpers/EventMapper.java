@@ -18,14 +18,10 @@ public class EventMapper implements RowMapper<Event> {
         Agtype eventType = rs.getObject("event", Agtype.class);
         Agtype eventTimestamp = rs.getObject("timestamp", Agtype.class);
         event.event = DasscoEvent.valueOf(eventType.getString());
-        event.timeStamp = Instant.ofEpochMilli(eventTimestamp.getLong());
+        event.timestamp = Instant.ofEpochMilli(eventTimestamp.getLong());
 
         // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
-        rs.getString("workstation");
-        if (!rs.wasNull()) {
-            Agtype workstation = rs.getObject("workstation", Agtype.class);
-            event.workstation = workstation.getString();
-        }
+
         rs.getString("pipeline");
         if (!rs.wasNull()) {
             Agtype pipeline = rs.getObject("pipeline", Agtype.class);

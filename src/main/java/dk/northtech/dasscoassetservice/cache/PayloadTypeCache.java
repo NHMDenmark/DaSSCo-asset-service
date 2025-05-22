@@ -5,26 +5,23 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class PayloadTypeCache {
 
-    private Map<String, String> payloadTypeMap = new HashMap<>();
+    private final ConcurrentHashMap<String, String> payloadTypeMap = new ConcurrentHashMap<>();
 
-    public Map<String, String> getPayloadTypeMap() {
+    public ConcurrentHashMap<String, String> getPayloadTypeMap() {
         return payloadTypeMap;
-    }
-
-    public void setPayloadTypeMap(Map<String, String> payloadTypeMap) {
-        this.payloadTypeMap = payloadTypeMap;
     }
 
     public List<String> getPayloadTypes() {
         return payloadTypeMap.values().stream().toList();
     }
 
-    public void putPayloadTypesInCache(String payloadType){
-        payloadTypeMap.put(payloadType, payloadType);
+    public void putPayloadTypesInCacheIfAbsent(String payloadType){
+        payloadTypeMap.putIfAbsent(payloadType, payloadType);
     }
 
     public void clearCache(){

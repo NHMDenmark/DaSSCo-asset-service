@@ -64,13 +64,15 @@ public class InternalStatusService {
 
     public List<AssetStatusInfo> getWorkInProgressAssets(boolean onlyFailed) {
         HashMap<String, Integer> guidAllocated = new HashMap<>();
+        // get all open shares
         jdbi.withHandle(h -> {
             DirectoryRepository attach = h.attach(DirectoryRepository.class);
             return attach.getWriteableDirectories();
         }).forEach(x -> guidAllocated.put(x.assetGuid(), x.allocatedStorageMb()));
 
+        HashMap<String, AssetStatusInfo> assetIdStatusInfoHashMap = new HashMap<>();
 
-        return internalStatusRepository.getInprogress().stream()
+        internalStatusRepository.getInprogress().stream()
                 .filter(x -> !onlyFailed || x.status() == InternalStatus.ERDA_ERROR)
                 .map(assetStatusInfo -> new AssetStatusInfo(assetStatusInfo.asset_guid()
                         , assetStatusInfo.parent_guid()
@@ -78,7 +80,13 @@ public class InternalStatusService {
                         , assetStatusInfo.status()
                         , assetStatusInfo.error_message()
                         , guidAllocated.getOrDefault(assetStatusInfo.asset_guid(), null)))
-                .collect(Collectors.toList());
+                .forEach(x -> assetIdStatusInfoHashMap.put(x.asset_guid(), x));
+        // Ugly, The getInprogress method currently doesn't find assets that are COMPLETED but still has open share.
+        // It is safe to assume the remainder of directories has COMPLETED assets, as other statuses are accounted for in the query
+        guidAllocated.forEach((x,y) ->{
+            assetIdStatusInfoHashMap.computeIfAbsent(x, k -> new AssetStatusInfo(x, null, null ,InternalStatus.COMPLETED, null, y));
+        });
+        return new ArrayList<>(assetIdStatusInfoHashMap.values());
     }
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
         Optional<AssetStatusInfo> assetStatus = internalStatusRepository.getAssetStatus(assetGuid);

@@ -20,6 +20,7 @@ export enum QueryDataType {
   , ENUM = 'ENUM'
   , STRING = 'STRING'
   , LIST = 'LIST'
+  , BOOLEAN = 'BOOLEAN'
 }
 
 export interface QueryResponse { // response from the backend (maps are a HASSLE to work with in this case, so..)

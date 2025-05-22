@@ -40,18 +40,13 @@ public class QueriesService {
                 SELECT * FROM ag_catalog.cypher(
                 'dassco'
                     , $$
-                         MATCH (a:Asset) ${asset:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                         MATCH (e:Event)<-[:CHANGED_BY]-(a)
-                         MATCH (u:User)<-[:INITIATED_BY]-(e)
-                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         ${instCollAccess:-}
-                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
-                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-
+                        MATCH (a:Asset) ${asset:-}
+                        MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                        MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                        MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                        MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
+                        ${optionals}
+                      
                           RETURN a.asset_guid
                               , a.asset_pid
                               , a.status
@@ -63,7 +58,7 @@ public class QueriesService {
                               , a.asset_taken_date
                               , a.internal_status
                               , a.asset_locked
-                              , pa.asset_guid AS parent_guid
+                              , parent.asset_guid AS parent_guid
                               , a.restricted_access
                               , a.tags
                               , a.error_message
@@ -79,7 +74,6 @@ public class QueriesService {
                               , a.date_metadata_taken
                               , a.date_asset_taken
                               , ${writeAccess:-null}
-                              , a.synced
                          LIMIT ${limit:-200}
                       $$)
                     AS (asset_guid agtype
@@ -108,8 +102,7 @@ public class QueriesService {
                     , user_name agtype
                     , date_metadata_taken agtype
                     , date_asset_taken agtype
-                    , write_access agtype
-                    , synced agtype);
+                    , write_access agtype);
                   """;
 
     String assetCountSql = """
@@ -117,16 +110,12 @@ public class QueriesService {
                 'dassco'
                     , $$
                          MATCH (a:Asset) ${asset:-}
+                         ${parentIsNull:-}
                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
                          MATCH (e:Event)<-[:CHANGED_BY]-(a)
-                         MATCH (u:User)<-[:INITIATED_BY]-(e)
-                         ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                         ${instCollAccess:-}
-                         OPTIONAL MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}
-                         OPTIONAL MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}
-                         OPTIONAL MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}
-                         OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
+                         MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
+                         ${optionals}
                          RETURN count(DISTINCT a) as count
                          LIMIT ${limit:-200}
                       $$)
@@ -142,6 +131,7 @@ public class QueriesService {
 
     public Map<String, List<String>> getNodeProperties() {
         Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        properties.get("Asset").add("parent_guid");
         properties.get("Asset").addAll(propertiesTimestamps);
         properties.get("Asset").addAll(propertiesDigitiser);
         return properties;
@@ -212,8 +202,7 @@ public class QueriesService {
 
         List<Asset> distinctAssets = new ArrayList<>(new HashSet<>(originalAssets)); // object hash has been set so that not all properties are checked here
 
-        distinctAssets.stream()
-                .filter(asset -> duplicatedAssetGuids.contains(asset.asset_guid))
+        distinctAssets
                 .forEach(asset -> asset.events = readonlyJdbi.onDemand(AssetRepository.class).readEvents_internal(asset.asset_guid)); // setting events for the duplicated assets
 
         return distinctAssets;
@@ -234,65 +223,143 @@ public class QueriesService {
         String collectionString = "";
         String instutionString = "";
 
+        Map<String, String> optionals = getOptionalsMap();
+
         for (Query query: queryReceived.query) {
             if (query.select.equalsIgnoreCase("Asset")) { // a
                 String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
-                if (!StringUtils.isBlank(eventTimestamps)) {
+
+                if (!eventTimestamps.isBlank()) {
                     whereMap.put("assetEvents", "\nWHERE (" + eventTimestamps + ")");
                 }
+
+                List<QueryWhere> parentGuidWhere = query.where.stream().filter(q -> q.property.equalsIgnoreCase("parent_guid")).toList();
+
+                if (!parentGuidWhere.isEmpty()) { // Asset query has to look very different if we're querying the parent_guid
+                    boolean findNull = false;
+                    for (QueryWhere where : parentGuidWhere) {
+                        for (QueryInner inner : where.fields) {
+                            if (inner.operator.equalsIgnoreCase("empty")) {
+                                findNull = true;
+                            }
+                        }
+                    }
+                    String childOfWhere = joinFields(parentGuidWhere, "parent");
+
+                    if (!findNull) {
+                        whereMap.put("childOfOptional", ""); // no longer optional
+                        whereMap.put("childOf", "WHERE (" + childOfWhere + ")");
+                        query.where.removeAll(parentGuidWhere);
+                    }
+                }
                 String where = joinFields(query.where, "a");
-                if (!StringUtils.isBlank(where)) whereMap.put("asset", "\nWHERE (" + where + ")");
+                if (!where.isBlank()) {
+                    if (whereMap.containsKey("asset")) {
+                        whereMap.put("asset", whereMap.get("asset").replace(")\n", " ") + "and " + where + ")");
+                    } else {
+                        whereMap.put("asset", "WHERE (" + where + ")");
+                    }
+                }
             }
             if (query.select.equalsIgnoreCase("Institution")) { // i
                 instutionString = joinFields(query.where, "i");
             }
             if (query.select.equalsIgnoreCase("Workstation")) { // w
                 String where = joinFields(query.where, "w");
-                if (!StringUtils.isBlank(where)) whereMap.put("workstation", "\nWHERE (" + where + ")");
+                if (!where.isBlank()) {
+                    whereMap.put("workstation", "WHERE (" + where + ")\n");
+                }
             }
             if (query.select.equalsIgnoreCase("Pipeline")) { // p
                 String where = joinFields(query.where, "p");
-                if (!StringUtils.isBlank(where)) whereMap.put("pipeline", "\nWHERE (" + where + ")");
+                if (!where.isBlank()) {
+                    String pipelineClause = optionals.remove("pipelineOptional");
+                    LinkedHashMap<String, String> reorderedOptionals = new LinkedHashMap<>();
+                    reorderedOptionals.put("pipelineOptional", pipelineClause);
+                    reorderedOptionals.putAll(optionals);
+                    optionals = reorderedOptionals;
+                    whereMap.put("pipelineOptional", ""); // no longer optional
+                    whereMap.put("pipeline", "WHERE (" + where + ")\n");
+                }
             }
             if (query.select.equalsIgnoreCase("Collection"))  { // c
                 collectionString = joinFields(query.where, "c");
             }
             if (query.select.equalsIgnoreCase("Specimen")) { // s
                 String where = joinFields(query.where, "s");
-                if (!StringUtils.isBlank(where)) whereMap.put("specimen", "\nWHERE (" + where + ")");
+                if (!where.isBlank()) {
+                    whereMap.put("specimen", "WHERE (" + where + ")\n");
+                }
             }
         }
-        if (collectionAccess != null && !collectionAccess.isEmpty()) {
-            String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
-            StringJoiner orJoiner = new StringJoiner(" or ");
 
-            if (!StringUtils.isBlank(instutionString)) {
-                orJoiner.add("(" + instutionString + " AND c.name IN [" + collections + "])");
-            }
-            if (!StringUtils.isBlank(collectionString)) {
-                orJoiner.add("(" + collectionString + " AND c.name IN [" + collections + "])");
-            }
-            if (StringUtils.isBlank(instutionString) && StringUtils.isBlank(collectionString)) {
-                orJoiner.add("(c.name IN [" + collections + "])");
-            }
-            whereMap.put("instCollAccess", "WHERE " + orJoiner.toString());
-        } else if (fullAccess) {
+        if (fullAccess) {
             whereMap.put("writeAccess", "true");
+            if (!instutionString.isBlank() || !collectionString.isBlank()) {
+                whereMap.put("instCollAccess", "WHERE " + setInstitutionAndCollection(instutionString, collectionString, null));
+            }
+        } else {
+            String collections = String.join(", ", collectionAccess.stream().map(coll -> "'" + coll + "'").toList());
+            whereMap.put("instCollAccess", "WHERE " + setInstitutionAndCollection(instutionString, collectionString, collections));
         }
 
-        StringSubstitutor substitutor = new  StringSubstitutor(whereMap);
-        if (count) finalQuery = substitutor.replace(assetCountSql);
-        else finalQuery = substitutor.replace(assetSql);
+        // Combine the optional clauses into a single string
+        StringBuilder optionalsString = new StringBuilder();
+        for (String clause : optionals.values()) {
+            optionalsString.append(clause).append("\n");
+        }
+
+
+        StringSubstitutor substitutor = new StringSubstitutor(whereMap);
+        if (count) {
+            // Replace the placeholder with the combined optionals
+            String tempAssetCountSql = assetCountSql.replace("${optionals}", optionalsString.toString().trim());
+            finalQuery = substitutor.replace(tempAssetCountSql);
+        } else {
+            // Replace the placeholder with the combined optionals
+            String tempAssetSql = assetSql.replace("${optionals}", optionalsString.toString().trim());
+            finalQuery = substitutor.replace(tempAssetSql);
+        }
         return finalQuery;
     }
 
+    private static Map<String, String> getOptionalsMap() {
+        Map<String, String> optionals = new LinkedHashMap<>();
+        optionals.put("childOfOptional", "${childOfOptional:-OPTIONAL} MATCH (a)-[:CHILD_OF]->(parent:Asset) ${childOf:-}");
+        optionals.put("pipelineOptional", "${pipelineOptional:-OPTIONAL} MATCH (p:Pipeline)<-[:USED]-(e) ${pipeline:-}");
+        optionals.put("workstationOptional", "${workstationOptional:-OPTIONAL} MATCH (w:Workstation)<-[:USED]-(e) ${workstation:-}");
+        optionals.put("specimenOptional", "${specimenOptional:-OPTIONAL} MATCH (s:Specimen)-[sss:USED_BY]->(a) ${specimen:-}");
+        return optionals;
+    }
+
     public String joinFields(List<QueryWhere> wheres, String match) {
-        StringJoiner orJoiner = new StringJoiner(" or ");
+        StringJoiner andJoiner = new StringJoiner(" and ");
 
         for (QueryWhere where : wheres) {
-            String property = where.property;
+            StringJoiner orJoiner = new StringJoiner(" or ");
             for (QueryInner inner : where.fields) {
-                orJoiner.add(inner.toBasicQueryString(match, property, inner.dataType));
+                orJoiner.add(inner.toBasicQueryString(match, where.property, inner.dataType));
+            }
+            andJoiner.add("(" + orJoiner + ")");
+        }
+        return andJoiner.toString();
+    }
+
+    public String setInstitutionAndCollection(String instutionString, String collectionString, String accessString) {
+        StringJoiner orJoiner = new StringJoiner(" or ");
+
+        if (!StringUtils.isBlank(instutionString)) {
+            orJoiner.add("(" + instutionString + ")");
+        }
+        if (!StringUtils.isBlank(collectionString)) {
+            orJoiner.add("(" + collectionString + ")");
+        }
+
+        if (accessString != null) {
+            if (!StringUtils.isBlank(instutionString) || !StringUtils.isBlank(collectionString)) {
+                return orJoiner.toString().concat(" AND (c.name IN [" + accessString + "])");
+            } else { // access is limited
+                orJoiner.add("(c.name IN [" + accessString + "])");
             }
         }
         return orJoiner.toString();

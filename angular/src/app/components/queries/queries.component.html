@@ -6,7 +6,7 @@
       <button mat-raised-button class="saved-searches-btn" (click)="savedSearchesDialog()">Saved Searches</button>
     </div>
 
-    <div *ngIf="queryData && queryData.title">
+    <div style="display: contents" *ngIf="queryData && queryData.title">
       <button mat-raised-button class="saved-searches-btn" type="submit" (click)="updateSearch()">Update Search</button>
       <mat-form-field appearance="outline">
         <mat-label>Query Title</mat-label>

@@ -8,7 +8,7 @@ import {AssetGroup, DasscoError} from "../types/types";
   providedIn: 'root'
 })
 export class AssetGroupService {
-  baseUrl = '/api/v1/assetgroups';
+  baseUrl = 'api/v1/assetgroups';
 
   constructor(public oidcSecurityService: OidcSecurityService
     , private http: HttpClient) { }

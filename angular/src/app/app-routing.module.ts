@@ -12,7 +12,6 @@ import {AssetGroupsComponent} from "./components/asset-groups/asset-groups.compo
 
 const routes: Routes = [
   {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
-  {path: 'statistics/:startDate/:endDate/:statValue', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'graphs', component: GraphComponent, canActivate: [AuthenticatedGuard]},
   {path: 'user', component: UserComponent, canActivate: [AuthenticatedGuard]},
   {path: 'docs', component: DocsComponent, canActivate: [AuthenticatedGuard]},
@@ -20,7 +19,7 @@ const routes: Routes = [
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
   {path: 'asset-groups', component: AssetGroupsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'detailed-view/:asset_guid', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
-  {path: '**', redirectTo: 'statistics', pathMatch: 'full'}
+  {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 ];
 
 @NgModule({

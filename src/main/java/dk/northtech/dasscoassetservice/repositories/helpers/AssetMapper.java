@@ -1,127 +1,85 @@
 package dk.northtech.dasscoassetservice.repositories.helpers;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import dk.northtech.dasscoassetservice.domain.*;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.type.AgtypeList;
-import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class AssetMapper implements RowMapper<Asset> {
+    private static Gson gson = new Gson();
 
     @Override
     public Asset map(ResultSet rs, StatementContext ctx) throws SQLException {
         Asset asset = new Asset();
-        Agtype guid = rs.getObject("asset_guid", Agtype.class);
-        Agtype pid = rs.getObject("asset_pid", Agtype.class);
-        Agtype institutionName = rs.getObject("institution_name", Agtype.class);
-        Agtype status = rs.getObject("status", Agtype.class);
-        Agtype fileFormats = rs.getObject("file_formats", Agtype.class);
-        Agtype internalStatus = rs.getObject("internal_status", Agtype.class);
-        Agtype restrictedAccess = rs.getObject("restricted_access", Agtype.class);
-        Agtype tags = rs.getObject("tags", Agtype.class);
 
-        Agtype assetLocked = rs.getObject("asset_locked", Agtype.class);
-        asset.internal_status = InternalStatus.valueOf(internalStatus.getString());
-
-        Agtype specimens = rs.getObject("specimens", Agtype.class);
-
-        asset.asset_guid = guid.getString();
-        asset.asset_pid = pid.getString();
-        asset.status = AssetStatus.valueOf(status.getString());
-        asset.file_formats = fileFormats.getList().stream().map(x -> FileFormat.valueOf(x.toString())).collect(Collectors.toList());
-        asset.multi_specimen = asset.specimens.size() > 1;
-        asset.institution = institutionName.getString();
-        rs.getString("collection_name");
-        if (!rs.wasNull()) {
-            Agtype collection = rs.getObject("collection_name", Agtype.class);
-            asset.collection = collection.getString();
+        // Mapping each column from the ResultSet to the Asset object
+        asset.asset_guid = rs.getString("asset_guid");
+        asset.asset_pid = rs.getString("asset_pid");
+        asset.asset_locked = rs.getBoolean("asset_locked");
+        asset.asset_subject = rs.getString("subject");
+        asset.collection_id = rs.getInt("collection_id");
+        asset.digitiser_id = rs.getInt("digitiser_id");
+        asset.digitiser = rs.getString("digitiser");
+        asset.collection = rs.getString("collection_name");
+        asset.workstation = rs.getString("workstation_name");
+        if (rs.wasNull()) {
+            asset.digitiser_id = null;
         }
-        rs.getString("pipeline_name");
-        if (!rs.wasNull()) {
-            Agtype pipeline = rs.getObject("pipeline_name", Agtype.class);
-            asset.pipeline = pipeline.getString();
+        Array fileFormats = rs.getArray("file_formats");
+        if (fileFormats != null) {
+            asset.file_formats = Arrays.asList((String[]) fileFormats.getArray());
         }
-        rs.getString("workstation_name");
-        if (!rs.wasNull()) {
-            Agtype workstation = rs.getObject("workstation_name", Agtype.class);
-            asset.workstation = workstation.getString();
+        asset.payload_type = rs.getString("payload_type");
+        asset.status = rs.getString("status");
+
+        // Assuming 'tags' is stored as a JSON string in the database, it can be mapped to a String or a Map
+        String tagsJson = rs.getString("tags");
+        if (tagsJson != null) {
+            // Use Gson to deserialize the JSON string into a HashMap
+            asset.tags = gson.fromJson(tagsJson, new TypeToken<HashMap<String, String>>() {
+            }.getType());
         }
 
-        asset.asset_locked = assetLocked.getBoolean();
-        asset.restricted_access = restrictedAccess.getList().stream().map(role -> InternalRole.valueOf(role.toString())).collect(Collectors.toList());
-        Map<String, String> tagsMap = new HashMap<>();
-        tags.getMap().entrySet().forEach(tag -> tagsMap.put(tag.getKey(), tag.getValue() != null ? tag.getValue().toString() : null));
-        asset.tags = tagsMap;
-        AgtypeList list = specimens.getList();
-        asset.specimens = list.stream().map(x -> mapSpecimen((AgtypeMap) x)).collect(Collectors.toList());
-        // We will get a null pointer if we try to read a null Agtype from the result. This is a workaround
-        rs.getString("user_name");
-        if (!rs.wasNull()) {
-            Agtype userName = rs.getObject("user_name", Agtype.class);
-            asset.digitiser = userName.getString();
+        asset.workstation_id = rs.getInt("workstation_id");
+        if (rs.wasNull()) {
+            asset.workstation_id = null;
         }
-        rs.getString("creation_date");
-        if (!rs.wasNull()) {
-            Agtype createdDate = rs.getObject("creation_date", Agtype.class);
-            asset.created_date = Instant.ofEpochMilli(createdDate.getLong());
+        asset.institution = rs.getString("institution_name");
+        asset.internal_status = InternalStatus.valueOf(rs.getString("internal_status"));
+        asset.make_public = rs.getBoolean("make_public");
+        asset.metadata_source = rs.getString("metadata_source");
+        asset.push_to_specify = rs.getBoolean("push_to_specify");
+        asset.metadata_version = rs.getString("metadata_version");
+        asset.camera_setting_control = rs.getString("camera_setting_control");
+        asset.mos_id = rs.getString("mos_id");
+        asset.specify_attachment_title = rs.getString("specify_attachment_title");
+        asset.specify_attachment_remarks = rs.getString("specify_attachment_remarks");
+        // Mapping dates (timestamps)
+        Timestamp dateAssetTaken = rs.getTimestamp("date_asset_taken");
+        if (dateAssetTaken != null) {
+            asset.date_asset_taken = dateAssetTaken.toInstant();
+
         }
-        rs.getString("error_message");
-        if (!rs.wasNull()) {
-            Agtype errorMessage = rs.getObject("error_message", Agtype.class);
-            asset.error_message = errorMessage.getString();
+        Timestamp dateAssetFinalised = rs.getTimestamp("date_asset_finalised");
+        asset.date_asset_finalised = dateAssetFinalised == null ? null : dateAssetFinalised.toInstant();
+        Timestamp dateMetadataIngested = rs.getTimestamp("date_metadata_ingested");
+        if (dateMetadataIngested != null) {
+            asset.date_metadata_ingested = dateMetadataIngested.toInstant();
         }
-        rs.getString("error_timestamp");
-        if (!rs.wasNull()) {
-            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
-            asset.error_timestamp = Instant.ofEpochMilli(dateAssetFinalised.getLong());
-        }
-        rs.getString("date_asset_finalised");
-        if (!rs.wasNull()) {
-            Agtype dateAssetFinalised = rs.getObject("date_asset_finalised", Agtype.class);
-            asset.date_asset_finalised = Instant.ofEpochMilli(dateAssetFinalised.getLong());
-        }
-        rs.getString("date_metadata_taken");
-        if (!rs.wasNull()) {
-            Agtype dateMetaDataTaken = rs.getObject("date_metadata_taken", Agtype.class);
-            asset.date_asset_finalised = Instant.ofEpochMilli(dateMetaDataTaken.getLong());
-        }
-        rs.getString("date_asset_taken");
-        if (!rs.wasNull()) {
-            Agtype assetTakenDate = rs.getObject("date_asset_taken", Agtype.class);
-            asset.date_asset_taken = Instant.ofEpochMilli(assetTakenDate.getLong());
-        }
-        rs.getString("payload_type");
-        if (!rs.wasNull()) {
-            Agtype assetTakenDate = rs.getObject("payload_type", Agtype.class);
-            asset.payload_type = assetTakenDate.getString();
-        }
-        rs.getString("subject");
-        if (!rs.wasNull()) {
-            Agtype subject = rs.getObject("subject", Agtype.class);
-            asset.subject = subject.getString();
-        }
-        rs.getString("funding");
-        if (!rs.wasNull()) {
-            Agtype funding = rs.getObject("funding", Agtype.class);
-            asset.funding = funding.getString();
-        }
-        rs.getString("parent_guid");
-        if (!rs.wasNull()) {
-            Agtype parent_guid = rs.getObject("parent_guid", Agtype.class);
-            asset.parent_guid = parent_guid.getString();
-        }
-        rs.getString("write_access");
-        if (!rs.wasNull()) {
-            Agtype writeAccess = rs.getObject("write_access", Agtype.class);
-            asset.writeAccess = writeAccess.getBoolean();
+        long legalityId = rs.getInt("legality_id");
+        if(!rs.wasNull()) {
+            asset.legality = new Legality(legalityId
+                    , rs.getString("copyright")
+                    , rs.getString("license")
+                    , rs.getString("credit"));
         }
         rs.getString("synced");
         if (!rs.wasNull()) {
@@ -129,10 +87,5 @@ public class AssetMapper implements RowMapper<Asset> {
             asset.synced = synced.getBoolean();
         }
         return asset;
-    }
-
-    Specimen mapSpecimen(AgtypeMap agtype) {
-        AgtypeMap properties = agtype.getMap("properties");
-        return new Specimen(properties.getString("specimen_barcode"), properties.getString("specimen_pid"), properties.getString("preparation_type"));
     }
 }

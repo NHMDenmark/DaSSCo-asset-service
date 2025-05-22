@@ -9,7 +9,7 @@ import {Digitiser} from "../types/types";
   providedIn: 'root'
 })
 export class CacheService {
-  baseUrl = '/api/v1/caches';
+  baseUrl = 'api/v1/caches';
 
   constructor(public oidcSecurityService: OidcSecurityService
     , private http: HttpClient) { }

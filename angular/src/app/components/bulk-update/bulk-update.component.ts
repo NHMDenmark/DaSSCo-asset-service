@@ -2,9 +2,11 @@ import {Component, ElementRef, OnInit, TemplateRef, ViewChild} from '@angular/co
 import {BulkUpdateService} from "../../services/bulk-update.service";
 import {MatSnackBar, MatSnackBarDismiss} from "@angular/material/snack-bar";
 import {HttpErrorResponse, HttpResponse} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {map, Observable} from "rxjs";
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {QueryToOtherPages} from "../../services/query-to-other-pages";
+import {CacheService} from "../../services/cache.service";
+import {Asset} from "../../types/types";
 
 
 @Component({
@@ -17,12 +19,50 @@ export class BulkUpdateComponent implements OnInit {
   @ViewChild('confirmationDialog') confirmationDialog : TemplateRef<any> = {} as TemplateRef<any>;
   private dialogRef!: MatDialogRef<any>;
 
+  dropdownValueMap: Map<string, object[]> | undefined = new Map();
+
   constructor(private bulkUpdateService: BulkUpdateService,
               private _snackBar: MatSnackBar,
               private dialog : MatDialog,
-              private queryToOtherPages : QueryToOtherPages) { }
+              private queryToOtherPages : QueryToOtherPages,
+              private cacheService : CacheService) { }
 
   ngOnInit(): void {
+    this.cacheService.cachedDropdownValues$
+      .pipe(
+        map(values => {
+          if (values){
+            return new Map(Object.entries(values))
+          }
+          return undefined;
+        })
+      ).subscribe(data => {
+        this.dropdownValueMap = data;
+        console.log(this.dropdownValueMap)
+        const ws = this.dropdownValueMap?.get("workstations") as { [key: string]: any } | undefined;
+        if (ws){
+         Object.keys(ws).forEach(key => {
+           const workstation = ws[key];
+           this.workstationList.push(workstation.name)
+         })
+        }
+        const pl = this.dropdownValueMap?.get("pipelines") as { [key: string] : any } | undefined;
+        if (pl) {
+          Object.keys(pl).forEach(key => {
+            const pipeline = pl[key];
+            this.pipelineList.push(pipeline.name);
+          })
+        }
+    });
+    this.assetList = this.queryToOtherPages.getFullAssets();
+
+    this.allAssetsLocked = this.assetList.every(asset => asset.asset_locked);
+    if (this.allAssetsLocked){
+      this.assetLocked = "true";
+    }
+    if (!this.allAssetsLocked){
+      this.someAssetsLocked = this.assetList.some(asset => asset.asset_locked);
+    }
   }
 
   // TAGS:
@@ -37,9 +77,11 @@ export class BulkUpdateComponent implements OnInit {
   status: string = "";
 
   // Asset List
-  assetList : string[] = this.queryToOtherPages.getAssets();
+  assetList : Asset[] = [];
 
   // ASSET_LOCKED:
+  allAssetsLocked! : boolean;
+  someAssetsLocked : boolean = false;
   assetLocked: string = "";
 
   // SUBJECT:
@@ -56,6 +98,12 @@ export class BulkUpdateComponent implements OnInit {
 
   // DIGITISER
   digitiser: string = "";
+
+  workstation: string = "";
+  workstationList: string[] = [];
+
+  pipeline: string = "";
+  pipelineList: string[] = [];
 
   add(event: any): void {
     event.preventDefault();
@@ -78,12 +126,11 @@ export class BulkUpdateComponent implements OnInit {
   }
 
   updateAssets(){
-
     // Creation of the JSON Body:
     const json = this.createJson();
 
     // Creation of the url:
-    const assets : string = this.assetList.map(item => `assets=${item}`).join('&');
+    const assets : string = this.assetList.map(item => `assets=${item.asset_guid}`).join('&');
 
     this.bulkUpdateService.updateAssets(json, assets).subscribe({
       next: (response: HttpResponse<any>) => {
@@ -120,11 +167,8 @@ export class BulkUpdateComponent implements OnInit {
     if (!isEmpty(this.payloadType)) jsonObject['payload_type'] = this.payloadType;
     if (!isEmpty(this.parentGuid)) jsonObject['parent_guid'] = this.parentGuid;
     if (!isEmpty(this.digitiser)) jsonObject['digitiser'] = this.digitiser;
-
-    // TODO: FIND A WAY TO GET THIS FROM THE LOGGED IN USER OR THE LIST OF ASSETS TO BE UPDATED
-    // TODO: THIS IS MOCK-UP DATA:
-    jsonObject['pipeline'] = "i2_p1";
-    jsonObject['workstation'] = "i2_w1";
+    jsonObject['pipeline'] = this.pipeline;
+    jsonObject['workstation'] = this.workstation;
 
     return jsonObject;
 
@@ -140,16 +184,18 @@ export class BulkUpdateComponent implements OnInit {
     return snackBarRef.afterDismissed();
   }
 
-  openConfirmationDialog() {
-    this.dialogRef = this.dialog.open(this.confirmationDialog, {
-      data: { assets: this.assetList }
-    });
+  onSubmit(form : any) {
+    if (form.valid) {
+      this.dialogRef = this.dialog.open(this.confirmationDialog, {
+        data: { assets: this.assetList.map(asset => asset.asset_guid) }
+      });
 
-    this.dialogRef.afterClosed().subscribe(result => {
-      if (result === 'proceed') {
-        this.updateAssets();
-      }
-    });
+      this.dialogRef.afterClosed().subscribe(result => {
+        if (result === 'proceed') {
+          this.updateAssets();
+        }
+      });
+    }
   }
 
   onCancel(): void {
@@ -168,6 +214,8 @@ export class BulkUpdateComponent implements OnInit {
     this.payloadType = "";
     this.parentGuid = "";
     this.digitiser = "";
+    this.workstation = "";
+    this.pipeline = "";
   }
 
 }

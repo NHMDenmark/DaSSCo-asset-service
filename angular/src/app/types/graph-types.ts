@@ -18,17 +18,26 @@ export interface InternalStatusDataSource {
   no: number;
 }
 
-export enum ViewV2 {
+export enum ViewV3 {
   WEEK = 1,
   MONTH = 2,
   YEAR = 3,
-  EXPONENTIAL = 4
+  EXPONENTIAL = 4,
+  CUSTOM = 5
+}
+
+export enum ViewV2 {
+  WEEK = 'week',
+  MONTH = 'month',
+  YEAR = 'year',
+  EXPONENTIAL = 'exponential',
+  CUSTOM = 'custom'
 }
 
 export enum StatValue {
-  INSTITUTE,
-  PIPELINE,
-  WORKSTATION
+  INSTITUTION = 'institution',
+  PIPELINE = 'pipeline',
+  WORKSTATION = 'workstation'
 }
 
 export enum ChartDataTypes {
@@ -36,7 +45,7 @@ export enum ChartDataTypes {
   EXPONENTIAL = 'exponential'
 }
 
-export const defaultView = 1; // Weekly fluctuation.
+export const defaultView = ViewV2.WEEK; // Weekly fluctuation.
 
 export const CUSTOM_DATE_FORMAT = {
   parse: {

@@ -8,12 +8,12 @@
     <include file="/liquibase/changelog-0.0.0.xml"/>
     <include file="/liquibase/changelog-1.0.0.xml"/>
     <include file="/liquibase/changelog-1.0.0-test.xml"/>
-    <include file="/liquibase/changelog-1.0.1.xml"/>
-    <include file="/liquibase/changelog-1.1.0.xml"/>
-    <include file="/liquibase/changelog-1.1.1.xml"/>
     <include file="/liquibase/changelog-2.0.0.xml"/>
-    <include file="/liquibase/changelog-2.0.0-test.xml"/>
     <include file="/liquibase/changelog-3.0.0.xml"/>
+    <include file="/liquibase/changelog-3.1.0.xml"/>
+    <include file="/liquibase/changelog-3.2.0.xml"/>
+    <include file="/liquibase/changelog-3.3.0.xml"/>
     <include file="/liquibase/changelog-4.0.0.xml"/>
     <include file="/liquibase/changelog-4.0.0-test.xml"/>
+
 </databaseChangeLog>

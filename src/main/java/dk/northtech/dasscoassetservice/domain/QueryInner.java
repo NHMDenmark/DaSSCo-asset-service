@@ -2,8 +2,7 @@ package dk.northtech.dasscoassetservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import static dk.northtech.dasscoassetservice.domain.QueryDataType.DATE;
-import static dk.northtech.dasscoassetservice.domain.QueryDataType.LIST;
+import static dk.northtech.dasscoassetservice.domain.QueryDataType.*;
 
 public class QueryInner {
     @Schema(description = "The operator type", example = "=")
@@ -31,6 +30,18 @@ public class QueryInner {
     public String toBasicQueryString(String match, String property, QueryDataType dataType) {
         match = match.concat(".");
 
+        if (operator.equalsIgnoreCase("equal")) {
+            operator = "=";
+        }
+
+        if (operator.equalsIgnoreCase("empty")) {
+            if (property.equalsIgnoreCase("parent_guid")) {
+                return "NOT EXISTS ((a)-[:CHILD_OF]->(:Asset))";
+            }
+            operator = " IS NULL";
+            return match + property + operator;
+        }
+
         if (match.contains("c")) { // is collection name, which means the value is sent as "inst_name.coll_name"
             String[] splitValue = value.split("\\.");
             if (splitValue.length > 1) {
@@ -39,18 +50,29 @@ public class QueryInner {
         }
 
         if (dataType.equals(LIST)) {
-             return value + "'" + " IN " + match + property;
+             return "'" + value + "'" + " IN " + match + property;
+        }
+
+        if (dataType.equals(BOOLEAN)) {
+             return match + property + operator + value;
         }
 //        if (property.equalsIgnoreCase("tags")) {
 //            System.out.println("whelp"); // todo
 //        }
         if (dataType.equals(DATE)) {
-            if (operator.equalsIgnoreCase("range")) {
-                String[] dates = value.split("#"); // if range, the value is {timestampStart}#{timestampEnd}
-                return match + property + " >= " + dates[0] + " and " + match + property + " <= " + dates[1];
-            } else {
-                return  match + property + " " + operator + " " + value; // no '' on timestamps
-            }
+            return switch (operator.toLowerCase()) {
+                case "between" -> {
+                    String[] dates = value.split("#"); // if between, the value is {timestampStart}#{timestampEnd}
+                    yield match + property + " >= " + dates[0] + " and " + match + property + " <= " + dates[1]; // if between, the value is {timestampStart}#{timestampEnd}
+                }
+                case "before" -> match + property + " <= " + value; // no '' on timestamps
+                case "after" -> match + property + " >= " + value; // no '' on timestamps
+                default -> match + property + " " + operator + " " + value; // no '' on timestamps
+            };
+        }
+
+        if (match.contains("parent")) {
+            return "toLower(" + match + "asset_guid" + ") " + operator + " toLower('" + value + "')";
         }
 
         return "toLower(" + match + property + ") " + operator + " toLower('" + value + "')";

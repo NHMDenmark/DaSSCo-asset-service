@@ -9,10 +9,10 @@ import {Asset} from "../types/types";
   providedIn: 'root'
 })
 export class QueriesService {
-  baseUrl = '/api/v1/queries';
+  baseUrl = 'api/v1/queries';
 
   constructor(public oidcSecurityService: OidcSecurityService
-            , private http: HttpClient) { }
+            , private http: HttpClient) {}
 
   nodeProperties$
     = this.oidcSecurityService.getAccessToken()

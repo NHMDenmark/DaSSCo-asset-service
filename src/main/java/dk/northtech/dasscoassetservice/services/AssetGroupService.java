@@ -2,17 +2,11 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.repositories.UserRepository;
-import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
-import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
+import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
 import jakarta.inject.Inject;
-import org.checkerframework.checker.nullness.Opt;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Service;
 
-import java.awt.color.ICC_ColorSpace;
 import java.time.Instant;
 import java.util.*;
 
@@ -22,12 +16,14 @@ public class AssetGroupService {
     private final Jdbi jdbi;
 
     private final RightsValidationService rightsValidationService;
-
+    private UserService userService;
     @Inject
     public AssetGroupService(Jdbi jdbi,
+                             UserService userService,
                              RightsValidationService rightsValidationService){
         this.jdbi = jdbi;
         this.rightsValidationService = rightsValidationService;
+        this.userService = userService;
     }
 
     public Optional<AssetGroup> createAssetGroup(AssetGroup assetGroup, User user){
@@ -48,7 +44,7 @@ public class AssetGroupService {
         // Lowercase the asset group name for case-insensitivity:
         assetGroup.group_name = assetGroup.group_name.toLowerCase();
 
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
+        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
         if (assets.size() != assetGroup.assets.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -78,7 +74,7 @@ public class AssetGroupService {
 
             // Check if all the users exist!
             for (String username : assetGroup.hasAccess){
-                if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+                if(jdbi.onDemand(UserService.class).getUserIfExists(username).isEmpty()){
                     throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
                 }
             }
@@ -114,7 +110,7 @@ public class AssetGroupService {
         if (assetGroupOptional.isPresent()){
             AssetGroup assetGroup = assetGroupOptional.get();
             rightsValidationService.checkReadRightsThrowing(user, assetGroup);
-            return jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetGroup.assets);
+            return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
@@ -161,7 +157,7 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset Group has to have assets!");
         }
 
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -220,7 +216,7 @@ public class AssetGroupService {
         Set<String> assetSet = new HashSet<>(assetList); // Keep unique.
         assetList = new ArrayList<>(assetSet);
 
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(assetList);
+        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
         if (assets.size() != assetList.size()){
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -251,7 +247,7 @@ public class AssetGroupService {
 
         // Check if all the users exist!
         for (String username : users){
-            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+            if(userService.getUserIfExists(username).isEmpty()){
                 throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
             }
         }
@@ -262,7 +258,7 @@ public class AssetGroupService {
         }
 
         AssetGroup found = assetGroupOptional.get();
-        List<Asset> assets = jdbi.onDemand(AssetRepository.class).readMultipleAssets(found.assets);
+        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(found.assets);
         if (!assets.isEmpty()){
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset: assets){
@@ -294,7 +290,7 @@ public class AssetGroupService {
 
         // Check if all the users exist!
         for (String username : users){
-            if(!jdbi.onDemand(UserRepository.class).getUserByUsername(username)){
+            if(userService.getUserIfExists(username).isEmpty()){
                 throw new IllegalArgumentException("One or more users to share the Asset Group were not found");
             }
         }

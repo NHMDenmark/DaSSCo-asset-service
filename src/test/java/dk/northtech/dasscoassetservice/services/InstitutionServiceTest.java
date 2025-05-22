@@ -21,7 +21,7 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testCreateInstitutionIllegalName() {
-        InstitutionService institutionService = new InstitutionService(null, null);
+        InstitutionService institutionService = new InstitutionService(null, null,null);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("")));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
     }
@@ -51,12 +51,12 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
         }).findAny();
         assertThat(result.isPresent()).isTrue();
         Institution institution = result.get();
-        assertThat(institution.roleRestriction()).hasSize(2);
+        assertThat(institution.roleRestrictions()).hasSize(2);
         Institution institution1 = new Institution(institution.name(), new ArrayList<>());
         institutionService.updateInstitution(institution1);
         Optional<Institution> resultOpt = institutionService.getIfExists("teztitution_rolez");
         Institution resultLast = resultOpt.orElseThrow(RuntimeException::new);
-        assertThat(resultLast.roleRestriction()).isEmpty();
+        assertThat(resultLast.roleRestrictions()).isEmpty();
     }
 
     @Test

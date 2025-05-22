@@ -5,7 +5,7 @@ import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.CollectionService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -33,12 +33,14 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/v1/institutions/{institutionName}/collections/")
 @SecurityRequirement(name = "dassco-idp")
 public class Collections {
+    private final UserService userService;
     private CollectionService collectionService;
     private RightsValidationService rightsValidationService;
 
     @Inject
-    public Collections(CollectionService collectionService, RightsValidationService rightsValidationService) {
+    public Collections(CollectionService collectionService, UserService userService, RightsValidationService rightsValidationService) {
         this.collectionService = collectionService;
+        this.userService = userService;
         this.rightsValidationService = rightsValidationService;
     }
 
@@ -53,12 +55,16 @@ public class Collections {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
             , @Context SecurityContext securityContext) {
-        rightsValidationService.checkReadRights(UserMapper.from(securityContext),institutionName);
-        return this.collectionService.listCollections(new Institution(institutionName), UserMapper.from(securityContext));
+        rightsValidationService.checkReadRights(userService.from(securityContext),institutionName);
+        return this.collectionService.listCollections(new Institution(institutionName), userService.from(securityContext));
     }
 
     @POST
-    @Operation(summary = "Create Collection", description = "Creates a new collection under an institution.")
+    @Operation(summary = "Create Collection", description = """
+        Creates a new collection under an institution.
+        Collections can have a list of Roles, that restricts access to the collection. 
+        If a collection have the role restriction PLANTS users with the role PLANTS_WRITE has read/write access and users with the role PLANTS_READ only have read access.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -68,16 +74,16 @@ public class Collections {
             @PathParam("institutionName") String institutionName
             , Collection collection
             , @Context SecurityContext securityContext) {
-        rightsValidationService.checkWriteRightsThrowing(UserMapper.from(securityContext), institutionName);
+        rightsValidationService.checkWriteRightsThrowing(userService.from(securityContext), institutionName);
         return this.collectionService.persistCollection(collection);
     }
 
     @PUT
     @Path("/{collectionName}")
-    @Operation(summary = "Update Collection", description = "Updates the Collection.")
+    @Operation(summary = "Update role restrictions on collection", description = "Updates the role restrictions on the collection")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Collection updateInstitution(Collection collection

@@ -148,15 +148,15 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         } else {
           nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
         }
-      })
+      });
       const qv2s = Array.from(nodeMap).map((value) => {
         return {select: value[0], where: value[1]} as Query;
-      })
+      });
 
       const response: QueryResponse = {id: parseInt(key), query: qv2s};
       queryResponses.push(response);
       this.selection.clear();
-    })
+    });
 
     this.queriesService.getAssetsFromQuery(queryResponses, this.limit)
       .subscribe(result => {
@@ -349,7 +349,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.getFile("assets.csv")
+            let guid : string = response.body;
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
               {
                 next: (data) => {
@@ -364,7 +365,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
                   document.body.removeChild(link);
                   window.URL.revokeObjectURL(url);
 
-                  this.detailedViewService.deleteFile()
+                  this.detailedViewService.deleteFile(guid)
                     .subscribe({
                       next: () => {
                       },
@@ -391,11 +392,12 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (response) => {
           if (response.status == 200){
-            this.detailedViewService.postZip(assetGuids)
+            let guid : string = response.body;
+            this.detailedViewService.postZip(guid, assetGuids)
               .subscribe({
                 next: (response) => {
                   if (response.status == 200){
-                    this.detailedViewService.getFile("assets.zip").subscribe(
+                    this.detailedViewService.getFile(guid, "assets.zip").subscribe(
                       {
                         next: (data) => {
                           const url = window.URL.createObjectURL(data);
@@ -409,7 +411,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
                           document.body.removeChild(link);
                           window.URL.revokeObjectURL(url);
 
-                          this.detailedViewService.deleteFile()
+                          this.detailedViewService.deleteFile(guid)
                             .subscribe({
                               next: () => {
                               },
@@ -437,8 +439,8 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   bulkUpdate(){
-    const assetGuids = this.selection.selected.map(asset => asset.asset_guid!)
-    this.queryToOtherPages.setAssets(assetGuids)
+    const assets = this.selection.selected
+    this.queryToOtherPages.setFullAssets(assets)
     this.queryToOtherPages.setDataSource(this.dataSource);
     this.router.navigate(['bulk-update'])
   }

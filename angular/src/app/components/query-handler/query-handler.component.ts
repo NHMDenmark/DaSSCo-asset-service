@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output, ViewChild, ViewContainerRef} from '@angular/core';
-import {QueryBuilderComponent} from "../query-builder/query-builder.component";
-import {QueryView} from "../../types/query-types";
+import {QueryBuilderComponent} from '../query-builder/query-builder.component';
+import {QueryView} from '../../types/query-types';
 
 @Component({
   selector: 'dassco-query-handler',
@@ -21,13 +21,11 @@ export class QueryHandlerComponent implements OnInit {
     this.nodeMap = nodes;
   }
 
-  constructor() { }
-
   ngOnInit(): void {
     if (this.savedQuery) {
       this.savedQuery.forEach(query => {
         this.addWhere(query);
-      })
+      });
     } else {
       this.addWhere(undefined);
     }

@@ -9,7 +9,7 @@ import {OidcSecurityService} from "angular-auth-oidc-client";
 })
 export class BulkUpdateService {
   // TODO: GET ASSETS FROM THE FRONTEND! THIS IS JUST MOCK DATA!
-  baseUrl = "/api/v1/assetmetadata/bulkUpdate?"
+  baseUrl = "api/v1/assetmetadata/bulkUpdate?"
 
   constructor(public oidcSecurityService: OidcSecurityService,
               private http: HttpClient) { }

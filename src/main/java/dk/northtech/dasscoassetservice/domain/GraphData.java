@@ -1,16 +1,20 @@
 package dk.northtech.dasscoassetservice.domain;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class GraphData {
-    Map<String, Integer> institutes;
-    Map<String, Integer> pipelines;
-    Map<String, Integer> workstations;
+    Map<String, Integer> institutes = new HashMap<>();
+    Map<String, Integer> pipelines = new HashMap<>();
+    Map<String, Integer> workstations = new HashMap<>();
 
     public GraphData(Map<String, Integer> institutes, Map<String, Integer> pipelines, Map<String, Integer> workstations) {
         this.institutes = institutes;
         this.pipelines = pipelines;
         this.workstations = workstations;
+    }
+
+    public GraphData() {
     }
 
     public Map<String, Integer> getInstitutes() {

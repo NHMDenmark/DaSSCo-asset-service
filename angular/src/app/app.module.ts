@@ -51,6 +51,7 @@ import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dial
 import { AssetGroupsComponent } from './components/asset-groups/asset-groups.component';
 import { NewGroupDialogComponent } from './components/dialogs/new-group-dialog/new-group-dialog.component';
 import { IllegalAssetGroupDialogComponent } from './components/dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
+import {NgOptimizedImage} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -111,7 +112,8 @@ import { IllegalAssetGroupDialogComponent } from './components/dialogs/illegal-a
     MatAutocompleteModule,
     MatMenuModule,
     MatSortModule,
-    MatRippleModule
+    MatRippleModule,
+    NgOptimizedImage
   ],
   schemas: [
     CUSTOM_ELEMENTS_SCHEMA

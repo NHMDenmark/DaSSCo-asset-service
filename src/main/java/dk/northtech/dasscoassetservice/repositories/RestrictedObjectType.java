@@ -1,11 +1,11 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 public enum RestrictedObjectType {
-    ASSET("Asset","guid")
-    , COLLECTION("Collection","name")
-    , GROUP("Group","name")
-    , INSTITUTION("Institution","name")
-    , SPECIMEN("Specimen","specimen_barcode");
+    ASSET("asset","asset_guid")
+    , COLLECTION("Collection","collection_id")
+    , GROUP("asset_group","asset_group_id")
+    , INSTITUTION("institution","institution_name")
+    , SPECIMEN("specimen","specimen_barcode");
     public final String objectName;
     public final String identifierName;
 
@@ -13,4 +13,7 @@ public enum RestrictedObjectType {
         this.identifierName = identifierName;
         this.objectName = objectName;
     }
+
+
+
 }

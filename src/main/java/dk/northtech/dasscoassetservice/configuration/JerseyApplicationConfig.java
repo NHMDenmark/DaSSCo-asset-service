@@ -24,12 +24,15 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(ClientAbortInterceptor.class);
     register(Pipelines.class);
     register(Workstations.class);
-    register(Publishers.class);
     register(Assetupdates.class);
     register(Queries.class);
     register(IllegalArguementExceptionMapper.class);
     register(DasscoIllegalActionExceptionMapper.class);
     register(Caches.class);
     register(AssetGroups.class);
+    register(Logs.class);
+    register(Externalpublishers.class);
+    register(Mappings.class);
+    register(Lists.class);
   }
 }

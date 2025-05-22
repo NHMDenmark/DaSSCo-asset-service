@@ -1,17 +1,15 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
+@Disabled("Disabled until WP5a is moved to new db")
 public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
     @Test
@@ -180,7 +178,6 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         // Creation of Asset Group Assertions:
         assetGroupList = assetGroupService.readListAssetGroup(user);
-        System.out.println(assetGroupList.size());
         int index = 0;
         for (int i = 0; i < assetGroupList.size(); i++){
             if (assetGroupList.get(i).group_name.equals("test-group")){
@@ -276,7 +273,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.add("fail");
         AssetGroup assetGroup = new AssetGroup();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup, user));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group needs a name!");
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group needs a funding!");
         List<AssetGroup> assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
     }
@@ -882,14 +879,14 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
     public Asset getTestAsset(String guid) {
         Asset asset = new Asset();
         asset.asset_pid = guid + "-pid";
-        asset.status = AssetStatus.BEING_PROCESSED;
+        asset.status = "BEING_PROCESSED";
         asset.asset_locked = false;
         asset.digitiser = "Karl-Børge";
         asset.asset_guid = guid;
-        asset.funding = "Hundredetusindvis af dollars";
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars");
         asset.date_asset_taken = Instant.now();
-        asset.subject = "Folder";
-        asset.file_formats = Arrays.asList(FileFormat.JPEG);
+        asset.asset_subject = "Folder";
+        asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
         return asset;

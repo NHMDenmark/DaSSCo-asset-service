@@ -15,14 +15,14 @@ class PipelineServiceTest extends AbstractIntegrationTest {
     @Test
     void testPersistPipeline() {
         pipelineService.persistPipeline(new Pipeline("persistPipeline", "institution_1"), "institution_1");
-        Optional<Pipeline> persistPipeline = pipelineService.findPipeline("persistPipeline");
+        Optional<Pipeline> persistPipeline = pipelineService.findPipelineByInstitutionAndName("persistPipeline","institution_1");
         assertThat(persistPipeline.isPresent()).isTrue();
     }
 
     @Test
     void testPersistPipelineInstitutionDoesNotExist(){
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> pipelineService.persistPipeline(new Pipeline("failed-pipeline", "non-existent-institution"), "non_existent_institution"));
-        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institute doesnt exist");
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Institution doesnt exist");
     }
 
     @Test
@@ -57,7 +57,7 @@ class PipelineServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testFindPipeline(){
-        Optional<Pipeline> optPipeline = pipelineService.findPipeline("i1_p1");
+        Optional<Pipeline> optPipeline = pipelineService.findPipelineByInstitutionAndName("i1_p1", "institution_1");
         assertThat(optPipeline.isPresent()).isTrue();
         Pipeline pipeline = optPipeline.get();
         assertThat(pipeline.name()).isEqualTo("i1_p1");
@@ -66,7 +66,7 @@ class PipelineServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testFindPipelinePipelineDoesNotExist(){
-        Optional<Pipeline> optPipeline = pipelineService.findPipeline("non-existent-pipeline");
+        Optional<Pipeline> optPipeline = pipelineService.findPipelineByInstitutionAndName("non-existent-pipeline", "institution_1");
         assertThat(optPipeline.isPresent()).isFalse();
     }
 

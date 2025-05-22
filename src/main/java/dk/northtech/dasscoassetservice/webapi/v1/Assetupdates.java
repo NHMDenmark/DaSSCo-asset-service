@@ -2,14 +2,17 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetService;
-import dk.northtech.dasscoassetservice.services.InternalStatusService;
+import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,13 +20,15 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.print.attribute.standard.Media;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.Objects;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -34,10 +39,17 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class Assetupdates {
 
     private final AssetService assetService;
+    private final BulkUpdateService bulkUpdateService;
+    private final UserService userService;
+    private final RightsValidationService rightsValidationService;
+    private static final Logger logger = LoggerFactory.getLogger(Assetupdates.class);
 
     @Inject
-    public Assetupdates(AssetService assetService) {
+    public Assetupdates(AssetService assetService, BulkUpdateService bulkUpdateService, UserService userService, RightsValidationService rightsValidationService) {
         this.assetService = assetService;
+        this.bulkUpdateService = bulkUpdateService;
+        this.userService = userService;
+        this.rightsValidationService = rightsValidationService;
     }
 
     @POST
@@ -55,7 +67,7 @@ public class Assetupdates {
     public void auditAsset(@PathParam("assetGuid") String assetGuid
             , Audit audit
             , @Context SecurityContext securityContext) {
-        assetService.auditAsset(UserMapper.from(securityContext),audit, assetGuid);
+        assetService.auditAsset(userService.from(securityContext),audit, assetGuid);
     }
 
     @PUT
@@ -76,11 +88,12 @@ public class Assetupdates {
             "Required information is: shareName and a MinimalAsset with asset_guid.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Hidden
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void assetReceived(@Context SecurityContext securityContext, AssetUpdateRequest assetSmbRequest) {
-        User user = UserMapper.from(securityContext);
+        User user = userService.from(securityContext);
         assetService.completeUpload(assetSmbRequest, user);
     }
 
@@ -94,8 +107,8 @@ public class Assetupdates {
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void completeAsset(AssetUpdateRequest assetUpdateRequest) {
-        this.assetService.completeAsset(assetUpdateRequest);
+    public void completeAsset(@Context SecurityContext securityContext, AssetUpdateRequest assetUpdateRequest) {
+        this.assetService.completeAsset(assetUpdateRequest, userService.from(securityContext));
     }
 
     @PUT
@@ -123,7 +136,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Event> getEvents(@PathParam("assetGuid") String assetGuid
          , @Context SecurityContext securityContext) {
-        return this.assetService.getEvents(assetGuid, UserMapper.from(securityContext));
+        return this.assetService.getEvents(assetGuid, userService.from(securityContext));
     }//check Rights
 
     @POST
@@ -141,12 +154,21 @@ public class Assetupdates {
             , @Context SecurityContext securityContext
             , @QueryParam("allocation_mb") int allocation
             ) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime startTime = LocalDateTime.now();
+        logger.info("#1: POST call to assetmetadata for asset {} with parent {} at {}",asset.asset_guid, asset.parent_guids, startTime.format(formatter));
+
         // Added so if the example is empty "", in the Docs the example will appear as the type "string". This converts it to null.
-        if (asset.parent_guid != null && asset.parent_guid.equals("string")){
-            asset.parent_guid = null;
-        }
-        Asset createdAsset = this.assetService.persistAsset(asset, UserMapper.from(securityContext), allocation);
+//        if (asset.parent_guid != null && asset.parent_guid.equals("string")){
+//            logger.warn("Received asset with reserved parent GUID, setting it to null");
+//            asset.parent_guid = null;
+//        }
+        Asset createdAsset = this.assetService.persistAsset(asset, userService.from(securityContext), allocation);
+
         int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
+
+        LocalDateTime endTime = LocalDateTime.now();
+        logger.info("API call completed at: {}. Total time: {} ms", endTime.format(formatter), java.time.Duration.between(startTime, endTime).toMillis());
         return Response.status(httpCode).entity(createdAsset).build();
     }
 
@@ -156,30 +178,120 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class) ))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Asset updateAsset(Asset asset
+    public Asset updateAsset(@RequestBody(required = true, content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+{
+    "asset_pid": "asdf-12346-3333-100a21",
+    "asset_guid": "tb-institution-01-asset-003",
+    "status": "WORKING_COPY",
+    "specimens": [
+        {
+            "institution": "tb-institution-01",
+            "collection": "tb-plants",
+            "barcode": "tb-plant-02",
+            "specimen_pid": "tb-plant-02-pid",
+            "preparation_type": "pinning"
+        }
+    ],
+    "funding": [
+        "Hundredetusindvis af dollars",
+        "Jeg er stadigvæk i chok"
+    ],
+    "subject": "folder",
+    "payload_type": "ct scan",
+    "file_formats": [
+        "TIF"
+    ],
+    "asset_locked": false,
+    "tags": {
+        "testtag2": "teztific8"
+    },
+    "date_asset_taken": "1998-11-15T16:00:00Z",
+    "parent_guids": [],
+    "internal_status": "METADATA_RECEIVED",
+    "events": [
+        {
+            "user": "thomas@northtech.dk",
+            "timestamp": "2025-04-14T09:42:33.896859Z",
+            "event": "CREATE_ASSET_METADATA",
+            "pipeline": "tb-pipeline-01"
+        }
+    ],
+    "workstation": "tb-workstation-01",
+    "writeAccess": false,
+    "camera_setting_control": "Mom get the camera!",
+    "date_metadata_ingested": null,
+    "metadata_version": "one point uh-oh",
+    "metadata_source": "I made it all up",
+    "mos_id": null,
+    "make_public": false,
+    "push_to_specify": false,
+    "issues": [
+       {
+            "asset_guid": "tb-institution-01-asset-003",
+            "category": "Catastrophic",
+            "name": "name",
+            "timestamp": "2025-04-14T09:42:34.334288Z",
+            "status": "status",
+            "description": "It doesnt work",
+            "notes": "issue",
+            "solved": true
+        }
+    ],
+    "digitiser": "ntech_thbo",
+    "complete_digitiser_list": [
+        "ntech_thbo"
+    ],
+    "legal": {
+        "legality_id": 2,
+        "copyright": "copyright",
+        "license": "You got a loicense for that?",
+        "credit": "My family, friends and coworkers"
+    },
+    "initial_metadata_recorded_by": null,
+    "updating_pipeline": null
+}
+            """)}))Asset asset
             , @PathParam("assetGuid") String assetGuid
+            , @QueryParam("pipeline") String pipeline
             , @Context SecurityContext securityContext) {
-        asset.asset_guid = assetGuid;
-        return this.assetService.updateAsset(asset, UserMapper.from(securityContext));
+        if(!Objects.equals(assetGuid, asset.asset_guid)) {
+            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-body");
+        }
+        return this.assetService.updateAsset(asset, userService.from(securityContext));
     }
 
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @PUT
     @Path("/bulkUpdate")
-    @Operation(summary = "Bulk Update Assets", description = "Update metadata in many assets at the same time. Takes a list of assets and a body of properties to be updated.")
+    @Operation(summary = "Bulk Update Assets", description = """
+    Update metadata in many assets at the same time. Takes a list of asse_guid and a body of properties to be updated.
+    All assets in the list will have their properties overwritten by the values in the postbody. 
+    """)
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset>  bulkUpdate(Asset asset
+    public List<Asset>  bulkUpdate(@RequestBody(description = "The fields to update", required = true, content = @Content(schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
+            {
+              "status": "BEING_PROCESSED",
+              "asset_locked": false,
+              "subject": "Folder",
+              "funding": "Hundredetusindvis af dollars",
+              "payload_type": "CT scan",
+              "digitiser": "Doris Digitiser",
+              "pipeline": "tb-pipeline-10",
+              "workstation": "tb-workstation-101",
+              "updateUser": "thomas@northtech.dk"
+            }
+            """)})) Asset asset
             , @QueryParam("assets") List<String> assetGuids
             , @Context SecurityContext securityContext){
         // Pass an asset (the fields to be updated) and a list of assets to be updated.
         // Return type?
         // Roles Allowed?
-        return this.assetService.bulkUpdate(assetGuids, asset, UserMapper.from(securityContext));
+        return this.bulkUpdateService.bulkUpdate(assetGuids, asset, userService.from(securityContext));
     }
 
     @GET
@@ -191,18 +303,21 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.assetService.checkUserRights(assetGuid, UserMapper.from(securityContext)).orElse(null);
+        return this.assetService.checkUserRights(assetGuid, userService.from(securityContext)).orElse(null);
     }
 
     @DELETE
-    @Operation(summary = "Delete Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA).")
+    @Operation(summary = "Mark asset as deleted", description = """
+    Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (DELETE_ASSET_METADATA). 
+    Assets marked as deleted are not included in statistics but metadata and assets files are not deleted.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public void deleteAsset(@PathParam("assetGuid") String assetGuid , @Context SecurityContext securityContext) {
-        this.assetService.deleteAsset(assetGuid, UserMapper.from(securityContext));
+        this.assetService.deleteAsset(assetGuid, userService.from(securityContext));
     }
 
     @DELETE
@@ -213,6 +328,6 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid
            , @Context SecurityContext securityContext){
-        this.assetService.deleteAssetMetadata(assetGuid, UserMapper.from(securityContext));
+        this.assetService.deleteAssetMetadata(assetGuid, userService.from(securityContext));
     }
 }

@@ -1,11 +1,8 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.services.AssetService;
-import dk.northtech.dasscoassetservice.services.InternalStatusService;
-import dk.northtech.dasscoassetservice.services.RightsValidationService;
-import dk.northtech.dasscoassetservice.services.StatisticsDataService;
-import dk.northtech.dasscoassetservice.webapi.UserMapper;
+import dk.northtech.dasscoassetservice.services.*;
+//import dk.northtech.dasscoassetservice.webapi.UserMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -42,26 +39,18 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class AssetApi {
     private final InternalStatusService internalStatusService;
     private final RightsValidationService rightsValidationService;
+    private final BulkUpdateService bulkUpdateService;
+    private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(AssetApi.class);
     private AssetService assetService;
 
     @Inject
-    public AssetApi(InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService) {
+    public AssetApi(BulkUpdateService bulkUpdateService, InternalStatusService internalStatusService, RightsValidationService rightsValidationService, AssetService assetService, UserService userService) {
         this.internalStatusService = internalStatusService;
         this.assetService = assetService;
         this.rightsValidationService = rightsValidationService;
-    }
-
-    @GET
-    @Operation(summary = "Get Assets", description = "Returns a list of assets.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = AssetV1.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetV1> getAssets() {
-        List<AssetV1> list = new ArrayList<>();
-        list.add(new AssetV1("",Instant.now(),"","","","","",Instant.now(),"",new ArrayList<>(),new ArrayList<>(),"","",Instant.now(),new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),"","", Instant.now(),"","","","","","","","","","","","","","","","","","","","","","","","","","","","","",new ArrayList<>(),"","","","","","","",new ArrayList<>(),"",""));
-        return list;
+        this.bulkUpdateService = bulkUpdateService;
+        this.userService = userService;
     }
 
     // TODO: Hidden for now.
@@ -143,26 +132,27 @@ public class AssetApi {
 
     @GET
     @Path("/statusList")
-    @Operation(summary = "Get Asset Status List", description = "Returns a list of the existing asset status in the system")
+    @Operation(summary = "Get enumeration AssetStatus", description = "Get List of status that can be set in the status field in asset metadata")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetStatus.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<AssetStatus> getAssetStatus(){
-        return assetService.listStatus();
+        return Arrays.asList(AssetStatus.values());
     }
 
     @GET
     @Path("/restricted_access")
-    @Operation(summary = "Get Restricted Access List", description = "Returns a list of the restricted access that the Assets in the system have")
+    @Operation(summary = "Get enum of default Dassco roles", description = "Returns list of roles, values are USER, ADMIN, SERVICE, DEVELOPER additional roles can be created by adding restrictions to institutions and collections")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ArrayList.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<InternalRole> getRestrictedAccess(){
-        return assetService.listRestrictedAccess();
+        return new ArrayList<>(Arrays.asList(InternalRole.values()));
     }
 
     @POST
     @Path("/readaccess")
+    @Hidden
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get Access Permission", description = "Checks if User has access or not to certain assets.")
     public void checkAccess(@QueryParam("assetGuid") String asset_guid
@@ -172,18 +162,19 @@ public class AssetApi {
             throw new IllegalArgumentException("There is no such asset");
         }
         Asset asset = assetOpt.get();
-        rightsValidationService.checkReadRightsThrowing(UserMapper.from(securityContext), asset.institution, asset.collection);
+        rightsValidationService.checkReadRightsThrowing(userService.from(securityContext), asset.institution, asset.collection);
     }
 
     @POST
     @Path("/readaccessforcsv")
     @Produces(APPLICATION_JSON)
-    @Operation(summary =  "Create CSV String for Multiple Assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
+    @Hidden
+    @Operation(summary =  "Checks read access for multiple assets", description = "Checks if the User has access or not to many assets. Returns a CSV String to create the CSV file for the assets if the User has access to all the Assets or returns Forbidden + the list of assets that the User does not have permission to see.")
     public Response CsvMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
@@ -192,7 +183,7 @@ public class AssetApi {
         List<Asset> hasReadAccessTo = new ArrayList<>();
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }
@@ -210,20 +201,21 @@ public class AssetApi {
         } else {
             // Return the csv String:
             return Response.status(200)
-                    .entity(assetService.createCSVString(hasReadAccessTo))
+                    .entity(bulkUpdateService.createCSVString(hasReadAccessTo))
                     .build();
         }
     }
 
     @POST
     @Path("/readaccessforzip")
+    @Hidden
     @Produces(APPLICATION_JSON)
     @Operation(summary =  "Check Read Access For Zip File Creation", description = "Checks if the User has access or not to many assets. Returns an Asset object consisting only on Institution, Collection and Asset Guid or Forbidden + the list of assets that the User does not have permission to see.")
     public Response ZipMultipleAssets(List<String> assets, @Context SecurityContext securityContext){
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = assetService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
@@ -232,7 +224,7 @@ public class AssetApi {
         List<Asset> hasReadAccessTo = new ArrayList<>();
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(UserMapper.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }

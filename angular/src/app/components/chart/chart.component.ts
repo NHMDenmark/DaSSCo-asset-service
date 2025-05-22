@@ -24,7 +24,7 @@ export class ChartComponent {
   readonly chartDataSubjectV2 = new BehaviorSubject<Map<string, Map<string, GraphStatsV2>> | undefined>(undefined);
   titleSubject = new BehaviorSubject<string>('');
   clickedLabels: string[] = [];
-  statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTE);
+  statValueSubject = new BehaviorSubject<StatValue>(StatValue.INSTITUTION);
 
   @Input()
   set setChartDataV2(chartdata: Map<string, Map<string, GraphStatsV2>>) {
@@ -113,7 +113,7 @@ export class ChartComponent {
 
   getKey(stats: GraphStatsV2, statValue: StatValue): Map<string, number> {
     // as I want to reuse the datasetcreation code, but don't know if we're looking at institute, pipeline, or workstation
-    if (statValue === StatValue.INSTITUTE) return stats.institutes;
+    if (statValue === StatValue.INSTITUTION) return stats.institutes;
     if (statValue === StatValue.PIPELINE) return stats.pipelines;
     return stats.workstations;
   }

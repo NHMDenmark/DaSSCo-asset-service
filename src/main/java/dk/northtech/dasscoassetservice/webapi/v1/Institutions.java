@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 import dk.northtech.dasscoassetservice.domain.Institution;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.InstitutionService;
+import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -28,10 +31,11 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @SecurityRequirement(name = "dassco-idp")
 public class Institutions {
     private InstitutionService institutionService;
-
+    private UserService userService;
     @Inject
-    public Institutions(InstitutionService institutionService) {
+    public Institutions(InstitutionService institutionService, UserService userService) {
         this.institutionService = institutionService;
+        this.userService = userService;
     }
 
     @GET
@@ -59,7 +63,7 @@ public class Institutions {
 
     @PUT
     @Path("/{institutionName}")
-    @Operation(summary = "Update Institution", description = "Updates the institution.")
+    @Operation(summary = "Update role restrictions on Institution", description = "Updates the role restrictions of the institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
@@ -72,13 +76,18 @@ public class Institutions {
     }
 
     @POST
-    @Operation(summary = "Create Institution", description = "Registers a new institution.")
+    @Operation(summary = "Create Institution", description = """
+        Registers a new institution.
+        Institutions can have a list of roles, that restricts access to the assets within the institution.
+        If an institution have the role restriction NHMD users with the role NHMD_WRITE has read/write access and users with the role NHMD_READ only have read access.
+    """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Institution createInstitution(Institution in) {
+    public Institution createInstitution(Institution in, @Context SecurityContext securityContext) {
+        userService.from(securityContext);
         return institutionService.createInstitution(in);
     }
 }

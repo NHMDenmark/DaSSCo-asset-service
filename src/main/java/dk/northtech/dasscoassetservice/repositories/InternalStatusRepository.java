@@ -12,10 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,26 +34,29 @@ public class InternalStatusRepository {
 
     String statusBaseSql = // I know this looks insane but I'm not good enough at neo4j to find a better way yet :C
             """
-                SELECT * from cypher('dassco', $$
-                    OPTIONAL MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
-                        WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED']
-                        AND NOT EXISTS((:Event {name: 'DELETE_ASSET_METADATA'})-[:CHANGED_BY]-(a)) #and#
-            
-                        WITH
-                            count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] THEN 1 END) as pending,
-                            count(CASE WHEN a.internal_status = 'COMPLETED' THEN 1 END) as completed,
-                            count(CASE WHEN a.internal_status IN ['SMB_ERROR', 'ERDA_ERROR', 'ERDA_FAILED'] THEN 1 END) as failed
-
-                        RETURN
-                            pending,
-                            completed,
-                            failed
-
-                $$, #params) as (pending agtype, completed agtype, failed agtype);
+               SELECT * from cypher('dassco', $$
+                    MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
+               	 WHERE a.internal_status IN ['ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'ERDA_ERROR', 'ERDA_FAILED']  #and# 	 \s
+               	 OPTIONAL MATCH (a)-[:CHANGED_BY]->(ed:Event {name: 'DELETE_ASSET_METADATA'})
+                    WITH
+                        count(CASE WHEN a.internal_status IN ['ASSET_RECEIVED', 'METADATA_RECEIVED'] AND ed is null THEN 1 END) as pending,
+                        count(CASE WHEN a.internal_status = 'COMPLETED'  AND ed is null THEN 1 END) as completed,
+                        count(CASE WHEN a.internal_status IN ['ERDA_ERROR', 'ERDA_FAILED']  AND ed is null THEN 1 END) as failed
+                    RETURN
+                        pending,
+                        completed,
+                        failed
+               $$, #params) as (pending agtype, completed agtype, failed agtype);
             """;
 
     String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");
     String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
+
+    /**
+     * get a map with asset status for current day with keys "failed", "pending" and "completed" and their respective count as values.
+     * @param currMillisecs
+     * @return
+     */
 
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
@@ -103,48 +103,29 @@ public class InternalStatusRepository {
         });
     }
 
-    String assetErrorSQL =
-            """
-                         SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'ASSET_RECEIVED'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                  UNION ALL
-                                  SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'ERDA_ERROR'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                  UNION ALL
-                                  SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {internal_status: 'METADATA_RECEIVED'})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp, a.error_message, i.name, c.name, pa.asset_guid
-                                                      $$) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)                                                        
-                                                      ;
-                    """;
+    String IN_PROGRESS_SQL = """
+                SELECT asset_guid
+                    , internal_status
+                    , error_timestamp
+                    , error_message
+                    , collection_name AS collection
+                FROM asset
+                    INNER JOIN collection USING (collection_id)
+                WHERE asset.internal_status IN ('METADATA_RECEIVED', 'ERDA_ERROR', 'ASSET_RECEIVED');         
+            """;
     public List<AssetStatusInfo> getInprogress() {
         return jdbi.withHandle(handle -> {
-            handle.execute(boilerplate);
-            return handle.createQuery(this.assetErrorSQL)
+            return handle.createQuery(IN_PROGRESS_SQL)
                     .map((rs, ctx) -> {
                         Instant errorTimestamp = null;
                         rs.getString("error_timestamp");
                         if (!rs.wasNull()) {
-//                            Agtype dateAssetFinalised = rs.getObject("error_timestamp", Agtype.class);
                             errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
                         }
                         return new AssetStatusInfo(rs.getString("asset_guid")
-                                , rs.getString("parent_guid")
+                                , null
                                 , errorTimestamp
-                                , InternalStatus.valueOf(rs.getString("status"))
+                                , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                                 );
                     })
@@ -154,24 +135,21 @@ public class InternalStatusRepository {
 
     String assetStatusSQL =
             """
-                         SELECT * FROM cypher('dassco', $$
-                                                          MATCH (a:Asset {name: $asset_guid})
-                                                          MATCH (i:Institution)<-[:BELONGS_TO]-(a)
-                                                          MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                                                          OPTIONAL MATCH (a)-[:CHILD_OF]->(pa:Asset)
-                                                          return a.asset_guid, a.internal_status, a.error_timestamp,a.error_message, i.name, c.name , pa.asset_guid
-                                                      $$, #params) as (asset_guid text, status text, error_timestamp agtype, error_message text, institution text, collection text, parent_guid text)
-                                                              
-                                                      ;
+               SELECT asset_guid
+                    , internal_status
+                    , error_timestamp
+                    , error_message
+                    , collection_name AS collection
+                FROM asset
+                    INNER JOIN collection USING (collection_id)
+                WHERE asset.asset_guid = :assetGuid;
                     """;
     public Optional<AssetStatusInfo> getAssetStatus(String assetGuid) {
         return jdbi.withHandle(handle -> {
-            handle.execute(boilerplate);
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guid", assetGuid).build();
-            Agtype agtypeParams = AgtypeFactory.create(agParams);
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            Set<String> parents = assetRepository.getParents(assetGuid);
             return handle.createQuery(this.assetStatusSQL)
-                    .bind("params", agtypeParams)
+                    .bind("assetGuid", assetGuid)
                     .map((rs, ctx) -> {
                         Instant errorTimestamp = null;
                         rs.getString("error_timestamp");
@@ -180,9 +158,9 @@ public class InternalStatusRepository {
                             errorTimestamp = Instant.ofEpochMilli(rs.getLong("error_timestamp"));
                         }
                         return new AssetStatusInfo(rs.getString("asset_guid")
-                                , rs.getString("parent_guid")
+                                , parents
                                 , errorTimestamp
-                                , InternalStatus.valueOf(rs.getString("status"))
+                                , InternalStatus.valueOf(rs.getString("internal_status"))
                                 , rs.getString("error_message")
                         );
                     })

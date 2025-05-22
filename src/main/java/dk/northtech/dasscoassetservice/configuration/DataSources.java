@@ -2,7 +2,7 @@ package dk.northtech.dasscoassetservice.configuration;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import dk.northtech.dasscoassetservice.domain.Directory;
+import dk.northtech.dasscoassetservice.domain.*;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.core.statement.HashPrefixSqlParser;
@@ -52,7 +52,22 @@ public class DataSources {
             .installPlugin(new SqlObjectPlugin())
             .installPlugin(new Jackson2Plugin())
             .registerRowMapper(ConstructorMapper.factory(Directory.class))
-            .setSqlParser(new HashPrefixSqlParser());
+            .registerRowMapper(ConstructorMapper.factory(Institution.class))
+            .registerRowMapper(ConstructorMapper.factory(Collection.class))
+            .registerRowMapper(ConstructorMapper.factory(Workstation.class))
+            .registerRowMapper(ConstructorMapper.factory(Pipeline.class))
+            .registerRowMapper(ConstructorMapper.factory(Role.class))
+            .registerRowMapper(ConstructorMapper.factory(User.class))
+            .registerRowMapper(ConstructorMapper.factory(InstitutionRoleRestriction.class))
+            .registerRowMapper(ConstructorMapper.factory(CollectionRoleRestriction.class))
+            .registerRowMapper(ConstructorMapper.factory(Specimen.class))
+            .registerRowMapper(ConstructorMapper.factory(Event.class))
+            .registerRowMapper(ConstructorMapper.factory(Funding.class))
+            .registerRowMapper(ConstructorMapper.factory(Legality.class))
+            .registerRowMapper(ConstructorMapper.factory(Issue.class))
+            .registerRowMapper(ConstructorMapper.factory(Publication.class))
+            .registerColumnMapper(Role.class, (rs, col, ctx) -> new Role(rs.getString("role")))
+           ;
   }
 
   @Bean

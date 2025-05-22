@@ -12,13 +12,9 @@ import {QueryToOtherPages} from "../../services/query-to-other-pages";
   styleUrls: ['./detailed-view.component.scss']
 })
 export class DetailedViewComponent implements OnInit {
-  // TODO: Connection with Query page. The Query should pass the Asset[] from the search (in order!) so we can move back and forth between the assets.
-  // TODO: The connection with the query page has to include the creation of the method to save the Asset[] in the actual list here.
-  // TODO: Files are now grabbed from the local machine. This is problematic, as an asset could be complete, therefore no local instance of the file would exist. We need to create an endpoint, get the API to call ERDA directly and get the file we want (for the thumbnail we can just get it directly, for the zip download we need to download it, zip it, send it, delete it).
   // Asset Guid is retrieved from the URL:
   assetGuid: string = "";
   currentIndex : number = -1;
-  // TODO: PLACEHOLDERS! ⬇ Change as soon as we have the connection to the Query page.
   assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
 
@@ -29,6 +25,7 @@ export class DetailedViewComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
       this.assetGuid = params['asset_guid'];
+      console.log(this.assetGuid)
       this.initializeCurrentAsset(this.assetGuid);
     })
   }
@@ -124,7 +121,8 @@ export class DetailedViewComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.status === 200){
-            this.detailedViewService.getFile("assets.csv")
+            let guid : string = response.body;
+            this.detailedViewService.getFile(guid, "assets.csv")
               .subscribe(
                 {
                   next: (data) => {
@@ -139,7 +137,7 @@ export class DetailedViewComponent implements OnInit {
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    this.detailedViewService.deleteFile()
+                    this.detailedViewService.deleteFile(guid)
                       .subscribe({
                         next: () => {
                         },
@@ -165,12 +163,13 @@ export class DetailedViewComponent implements OnInit {
       this.detailedViewService.postCsv(currentAsset)
         .subscribe({
           next: (response) => {
+            let guid: string = response.body
             if (response.status === 200){
-              this.detailedViewService.postZip(currentAsset)
+              this.detailedViewService.postZip(guid, currentAsset)
                 .subscribe({
                   next: (response) => {
                     if (response.status === 200){
-                      this.detailedViewService.getFile("assets.zip")
+                    this.detailedViewService.getFile(guid, "assets.zip")
                         .subscribe({
                           next: (data) => {
                             const url = window.URL.createObjectURL(data);
@@ -184,7 +183,7 @@ export class DetailedViewComponent implements OnInit {
                             document.body.removeChild(link);
                             window.URL.revokeObjectURL(url);
 
-                            this.detailedViewService.deleteFile()
+                            this.detailedViewService.deleteFile(guid)
                               .subscribe({
                                 error: () => {
                                   this.openSnackBar("There has been an error deleting the ZIP file", "Close");
