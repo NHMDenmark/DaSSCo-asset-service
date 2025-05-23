@@ -45,6 +45,8 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
     @Test
     void testInstitutionRoles() {
         institutionService.createInstitution(new Institution("teztitution_rolez", Arrays.asList(new Role("super-burger"), new Role("super-duper-bruger"))));
+        // Verify that institutions can be initialized correct
+        institutionService.initInstitutions(true);
         List<Institution> institutions = institutionService.listInstitutions();
         Optional<Institution> result = institutions.stream().filter(institution -> {
             return institution.name().equals("teztitution_rolez");
