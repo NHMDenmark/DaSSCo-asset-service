@@ -924,7 +924,6 @@ public class AssetService {
         }
     }
 
-    //TODO pipeline
     public boolean deleteAsset(String assetGuid, User user) {
         String userId = user.username;
         if (Strings.isNullOrEmpty(userId)) {

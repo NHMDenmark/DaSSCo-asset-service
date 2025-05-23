@@ -147,6 +147,17 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void testNoSpecimen() {
+        Asset asset = getTestAsset("testNoSpecimen");
+        asset.specimens = new ArrayList<>();
+        assetService.persistAsset(asset, user, 777);
+        jdbi.onDemand(AssetRepository.class).deleteAsset("testNoSpecimen");
+        Optional<Asset> result = assetService.getAsset("testNoSpecimen");
+        assertThat(result.isPresent()).isFalse();
+    }
+
+
+    @Test
     void testValidateAssetWorkstationOutOfService() {
         Asset asset = new Asset();
         asset.institution = "institution_1";
