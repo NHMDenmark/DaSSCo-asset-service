@@ -73,7 +73,7 @@ public class InternalStatusService {
         HashMap<String, AssetStatusInfo> assetIdStatusInfoHashMap = new HashMap<>();
 
         internalStatusRepository.getInprogress().stream()
-                .filter(x -> !onlyFailed || x.status() == InternalStatus.ERDA_ERROR)
+                .filter(x -> !onlyFailed || (x.status() == InternalStatus.ERDA_FAILED ||InternalStatus.SPECIFY_SYNC_FAILED == x.status()))
                 .map(assetStatusInfo -> new AssetStatusInfo(assetStatusInfo.asset_guid()
                         , assetStatusInfo.parent_guid()
                         , assetStatusInfo.error_timestamp()
@@ -83,8 +83,9 @@ public class InternalStatusService {
                 .forEach(x -> assetIdStatusInfoHashMap.put(x.asset_guid(), x));
         // Ugly, The getInprogress method currently doesn't find assets that are COMPLETED but still has open share.
         // It is safe to assume the remainder of directories has COMPLETED assets, as other statuses are accounted for in the query
+        //TODO WP2a handle this
         guidAllocated.forEach((x,y) ->{
-            assetIdStatusInfoHashMap.computeIfAbsent(x, k -> new AssetStatusInfo(x, null, null ,InternalStatus.COMPLETED, null, y));
+            assetIdStatusInfoHashMap.computeIfAbsent(x, k -> new AssetStatusInfo(x, null, null ,InternalStatus.ERDA_SYNCHRONISED, null, y));
         });
         return new ArrayList<>(assetIdStatusInfoHashMap.values());
     }

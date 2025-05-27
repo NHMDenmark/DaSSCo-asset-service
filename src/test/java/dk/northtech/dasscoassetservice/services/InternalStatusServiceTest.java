@@ -27,12 +27,12 @@ class InternalStatusServiceTest extends AbstractIntegrationTest{
     void testAssetStatus() {
         Asset asset = getTestAsset("testAssetStatus");
         assetService.persistAsset(asset, user, 777);
-        assetService.setAssetStatus("testAssetStatus", InternalStatus.ERDA_ERROR.name(), "Epic fail");
+        assetService.setAssetStatus("testAssetStatus", InternalStatus.ERDA_FAILED.name(), "Epic fail");
         Optional<AssetStatusInfo> testAssetStatus = internalStatusService.getAssetStatus("testAssetStatus");
         assertThat(testAssetStatus.isPresent()).isTrue();
         AssetStatusInfo assetStatusInfo = testAssetStatus.get();
         assertThat(assetStatusInfo.error_message()).isEqualTo("Epic fail");
-        assertThat(assetStatusInfo.status()).isEqualTo(InternalStatus.ERDA_ERROR);
+        assertThat(assetStatusInfo.status()).isEqualTo(InternalStatus.ERDA_FAILED);
     }
 
     @Test
@@ -41,7 +41,7 @@ class InternalStatusServiceTest extends AbstractIntegrationTest{
         Asset not_failed = getTestAsset("testGetFailedAssets_not_failed");
         assetService.persistAsset(asset, user, 777);
         assetService.persistAsset(not_failed, user, 777);
-        assetService.setAssetStatus("testGetFailedAssets_failed", InternalStatus.ERDA_ERROR.name(), "Oh no");
+        assetService.setAssetStatus("testGetFailedAssets_failed", InternalStatus.ERDA_FAILED.name(), "Oh no");
         List<AssetStatusInfo> workInProgressAssets = internalStatusService.getWorkInProgressAssets(true);
         Optional<AssetStatusInfo> testGetFailedAssets = workInProgressAssets.stream()
                 .filter(x -> x.asset_guid().equals("testGetFailedAssets_failed"))

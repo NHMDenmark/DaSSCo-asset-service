@@ -112,7 +112,7 @@ public class InternalStatusRepository {
                     , collection_name AS collection
                 FROM asset
                     INNER JOIN collection USING (collection_id)
-                WHERE asset.internal_status IN ('METADATA_RECEIVED', 'ERDA_ERROR', 'ASSET_RECEIVED');         
+                WHERE asset.internal_status IN ('METADATA_RECEIVED', 'ERDA_FAILED', 'ASSET_RECEIVED', 'SPECIFY_SYNC_SCHEDULED', 'SPECIFY_SYNC_FAILED', 'SHARE_REOPENED');
             """;
     public List<AssetStatusInfo> getInprogress() {
         return jdbi.withHandle(handle -> {

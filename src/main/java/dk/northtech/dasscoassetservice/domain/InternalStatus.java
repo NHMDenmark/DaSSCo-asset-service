@@ -6,7 +6,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum InternalStatus {
     METADATA_RECEIVED
     , ASSET_RECEIVED
-    , COMPLETED
+//    , COMPLETED
     , ERDA_FAILED
-    , ERDA_ERROR
+ //   , ERDA_ERROR
+    , ERDA_SYNCHRONISED
+    , SPECIFY_SYNC_SCHEDULED
+    , SPECIFY_SYNC_FAILED
+    , SPECIFY_SYNCHRONISED
 }

@@ -775,7 +775,7 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        asset.internal_status = InternalStatus.COMPLETED;
+        asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
         asset.error_message = null;
         asset.error_timestamp = null;
         Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(), asset.institution);
@@ -814,7 +814,8 @@ public class AssetService {
         }
         Asset asset = optAsset.get();
         rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
-        if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+        // Asset cannot have work in progress when auditing
+        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
         if (Objects.equals(asset.digitiser, audit.user())) {
@@ -866,7 +867,7 @@ public class AssetService {
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
         return true;
     }
-
+    private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
     public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
@@ -874,7 +875,7 @@ public class AssetService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
-        if (assetStatus != InternalStatus.ERDA_ERROR && assetStatus != InternalStatus.ASSET_RECEIVED) {
+        if (!permitted_statuses.contains(assetStatus)) {
             throw new IllegalArgumentException("Invalid status: " + status);
         }
         Optional<Asset> optAsset = getAsset(assetGuid);
