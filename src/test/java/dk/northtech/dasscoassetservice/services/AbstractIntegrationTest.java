@@ -63,10 +63,8 @@ public class AbstractIntegrationTest {
     @Inject
     void setAssetService(AssetService assetService, AssetService assetService2) {
         AssetService spyAssetService = spy(assetService);
-        AssetService spyAssetService2 = spy(assetService2);
         HttpInfo success = new HttpInfo("/", "host.dk", 10000, 20000, 9990, 10, "success", HttpAllocationStatus.SUCCESS);
         doReturn(success).when(spyAssetService).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
-        doReturn(success).when(spyAssetService2).openHttpShare(any(MinimalAsset.class), any(User.class), anyInt());
 
         HttpResponse<String> mockResponse = mock(HttpResponse.class);
         when(mockResponse.statusCode()).thenReturn(200);
@@ -79,10 +77,8 @@ public class AbstractIntegrationTest {
             e.printStackTrace();
         }
         doReturn(mockHttpClient).when(spyAssetService).createHttpClient();
-//        doReturn(mockHttpClient).when(spyAssetService2).createHttpClient();
 
         this.assetService = spyAssetService;
-        this.assetService = spyAssetService2;
     }
 
 

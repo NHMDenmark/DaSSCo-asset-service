@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.*;
@@ -14,6 +15,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AssetServiceTest extends AbstractIntegrationTest {
+
+    @Autowired
+    private FundingService fundingService;
 
     //    @Inject
 //    AssetService assetService;
@@ -99,7 +103,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.institution = "institution_2";
         asset.digitiser = "Bazviola";
         asset.collection = "doesnt ecksist";
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.valiedateAndSetCollectionId(asset));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.validateAndSetCollectionId(asset));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Collection doesnt exist");
     }
 
@@ -528,6 +532,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
 
 
+
     @Test
     void updateAssetAssetDoesntExist() {
         Asset asset = getTestAsset("updateAssetAssetDoesntExist");
@@ -953,7 +958,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         testAsset1.specimens = List.of(new Specimen("barcode-d-1", "delete_specimen-1", new HashSet<>(Set.of("pinning")),"pinning")
                 , new Specimen("barcode-d-2", "dont-delete_specimen-1", new HashSet<>(Set.of("pinning")),"pinning"));
         testAsset1.issues = List.of(new Issue("deleteAssetMetadata-1","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
-        testAsset1.funding.add("A whole lot of money");
+        testAsset1.funding.add("A wad of cash");
         testAsset1.parent_guids = Set.of("deleteAssetMetadataParent");
         Asset testAsset2 = getTestAsset("deleteAssetMetadata-2");
         testAsset2.specimens = List.of(new Specimen("barcode-d-2", "dont-delete_specimen-1", new HashSet<>(Set.of("pinning")), "pinning"));
@@ -965,12 +970,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
         child.parent_guids = Set.of("deleteAssetMetadata-1", "deleteAssetMetadataParent");
         assetService.persistAsset(child, user, 1000);
         AssetRepository assetRepository = jdbi.onDemand(AssetRepository.class);
-        assetRepository.deleteAsset("deleteAssetMetadata-1");
+        assetService.deleteAssetMetadata("deleteAssetMetadata-1",user);
         Optional<Asset> result1 = assetService.getAsset("deleteAssetMetadata-1");
         assertThat(result1.isEmpty()).isTrue();
         Optional<Asset> result2 = assetService.getAsset("deleteAssetMetadata-2");
         assertThat(result2.isPresent()).isTrue();
-        //Check that only correct things are deleted
+
+        // Check that only correct things are deleted
         Asset asset = result2.get();
         assertThat(asset.funding).contains("Hundredetusindvis af dollars");
         assertThat(asset.specimens).hasSize(1);
@@ -980,5 +986,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset child_result = child_result_opt.get();
         assertThat(child_result.parent_guids).hasSize(1);
         assertThat(child_result.parent_guids).contains("deleteAssetMetadataParent");
+
+        // Verify funding cache is reset
+        Optional<Funding> aWholeLotOfMoney = fundingService.getFundingIfExists("A wad of cash");
+        assertThat(aWholeLotOfMoney.isEmpty()).isTrue();
+
     }
 }

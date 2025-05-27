@@ -133,7 +133,7 @@ public class AssetService {
         }
     }
 
-    void valiedateAndSetCollectionId(Asset asset) {
+    void validateAndSetCollectionId(Asset asset) {
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection, asset.institution);
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
@@ -273,8 +273,6 @@ public class AssetService {
             throw new DasscoIllegalActionException("Asset " + asset.asset_guid + " is already being processed");
         }
         //Validation
-        LocalDateTime databaseCheckStart = LocalDateTime.now();
-//        Observation.createNotStarted("persist:checkAssetExists", observationRegistry).observe(() -> {
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if (assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
@@ -283,19 +281,14 @@ public class AssetService {
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
-        LocalDateTime databaseCheckEnd = LocalDateTime.now();
-        logger.info("#2: Database call to check if Asset existed took {} ms", Duration.between(databaseCheckStart, databaseCheckEnd).toMillis());
-        LocalDateTime validationStart = LocalDateTime.now();
+
         asset.updateUser = user.username;
         rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        valiedateAndSetCollectionId(asset);
+        validateAndSetCollectionId(asset);
         validateNewAssetAndSetIds(asset);
         validateAsset(asset);
         // Create share
-        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection, asset.institution);
         assetsGettingCreated.put(asset.asset_guid, Instant.now());
-        LocalDateTime validationEnd = LocalDateTime.now();
-        logger.info("#3: Validation took {} ms (Check Write Rights, Validate Asset Fields, Validate Asset)", Duration.between(validationStart, validationEnd).toMillis());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guids);
@@ -511,23 +504,7 @@ public class AssetService {
         payloadTypeCache.clearCache();
 //        List<String> payloadTypeList = jdbi.withHandle(handle -> {
 //            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//            return assetRepository.listPayloadTypes();
-//        });
-//        if (!payloadTypeList.isEmpty()) {
-//            for (String payloadType : payloadTypeList) {
-//                this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-//            }
-//        }
-        preparationTypeCache.clearCache();
-        List<String> preparationTypeList = jdbi.withHandle(handle -> {
-            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-            return specimenRepository.listPreparationTypesInternal();
-        });
-        if (!preparationTypeList.isEmpty()) {
-            for (String preparationType : preparationTypeList) {
-                this.preparationTypeCache.putPreparationTypesInCacheIfAbsent(preparationType);
-            }
-        }
+//
     }
 
     //This is here for mocking
@@ -545,7 +522,7 @@ public class AssetService {
 //            throw new IllegalArgumentException("Update user must be provided");
 //        }
         validateAsset(updatedAsset);
-        valiedateAndSetCollectionId(updatedAsset);
+        validateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
         Set<String> existingDigitiserList = new HashSet<>(existing.complete_digitiser_list);
         Set<String> existingFunding = new HashSet<>(existing.funding);
@@ -908,17 +885,19 @@ public class AssetService {
                 .DELETE()
                 .build();
 
-        HttpClient httpClient = createHttpClient();
-        try {
+
+        try (HttpClient httpClient = createHttpClient();) {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 404) {
                 Asset asset = optAsset.get();
                 rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
                 jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
-
+                // Make sure deleted funding is removed from cache
+                fundingService.forceRefreshCache();
                 // Refresh cache:
                 reloadAssetCache();
             }
+            System.out.println(response.statusCode() + " lolololort");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
