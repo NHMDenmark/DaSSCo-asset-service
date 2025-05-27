@@ -8,7 +8,7 @@ import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
- import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
@@ -334,8 +334,6 @@ public class AssetService {
                     Specimen existing = specimensByPID.get();
                     if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
                         specimen.preparation_types().addAll(existing.preparation_types());
-                        System.out.println(existing.preparation_types());
-                        System.out.println(specimen.preparation_types());
                         Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(),specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id);
                         specimenRepository.updateSpecimen(updated);
                     }
@@ -626,7 +624,6 @@ public class AssetService {
                     Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), existing_specimen.specimen_id(), existing.collection_id);
                     updated.preparation_types().addAll(existing_specimen.preparation_types());
                     specimenRepository.updateSpecimen(updated);
-                    System.out.println("upda " + updated);
                     //detach reattach to make sure asset_preparation_type is in order
                     specimenRepository.detachSpecimen(existing.asset_guid, existing_specimen.specimen_id());
                     specimenRepository.attachSpecimen(existing.asset_guid, updated.asset_preparation_type(), updated.specimen_id());
@@ -897,7 +894,6 @@ public class AssetService {
                 // Refresh cache:
                 reloadAssetCache();
             }
-            System.out.println(response.statusCode() + " lolololort");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -943,6 +939,7 @@ public class AssetService {
         return true;
     }
 
+    // For testing
     public HttpClient createHttpClient() {
         return HttpClient.newHttpClient();
     }
