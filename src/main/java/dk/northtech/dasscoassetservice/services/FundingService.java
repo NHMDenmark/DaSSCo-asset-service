@@ -35,16 +35,10 @@ public class FundingService {
     }
     public Funding ensureExists(String funding) {
         if(Strings.isNullOrEmpty(funding)) {
-            throw new RuntimeException("Funding was not found");
+            throw new RuntimeException("Funding cannot be an empty string");
         }
         Optional<Funding> fundingIfExists = getFundingIfExists(funding);
-        if(fundingIfExists.isPresent()){
-            Funding existing = fundingIfExists.get();
-
-            return existing;
-        }
-        Funding persistFunding = persistFunding(funding);
-        return persistFunding;
+        return fundingIfExists.orElseGet(() -> persistFunding(funding));
     }
 
     public Funding persistFunding(String funding) {
@@ -63,7 +57,6 @@ public class FundingService {
             fundingMap.put(persistedFunding.funding(), persistedFunding);
             return persistedFunding;
         });
-        // return orig user as it may have keycloak token for later use.
     }
 
 
