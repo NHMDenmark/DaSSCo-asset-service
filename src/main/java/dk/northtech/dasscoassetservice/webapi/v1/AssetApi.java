@@ -71,15 +71,15 @@ public class AssetApi {
         }
     }
 
-    // TODO: Hidden for now. Apparently it does not work yet, there's some change needed in the Database.
-    @Hidden
+
     @GET
     @Path("/inprogress")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<AssetStatusInfo> getInternalStatusAmt(@QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {
+    public List<AssetStatusInfo> getInternalStatusAmt(
+            @QueryParam("onlyFailed") @DefaultValue("false") boolean onlyFailed ) {
         return this.internalStatusService.getWorkInProgressAssets(onlyFailed);
     }
 

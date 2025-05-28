@@ -86,7 +86,7 @@ public class InstitutionService {
 
     public List<Institution> listInstitutions() {
         if (institutionMap.isEmpty()) {
-            initInstitutions();
+            initInstitutions(false);
         }
         return new ArrayList<>(institutionMap.values());
     }
@@ -97,7 +97,7 @@ public class InstitutionService {
         }
         if (this.institutionMap.isEmpty()) {
             // There should always be institution in the db so this shouldn't be a problem
-            initInstitutions();
+            initInstitutions(false);
         }
         Institution institution = this.institutionMap.get(institutionName);
         if (institution == null) {
@@ -107,9 +107,9 @@ public class InstitutionService {
         }
     }
 
-    public void initInstitutions() {
+    public void initInstitutions(boolean force) {
         synchronized (this) {
-            if (!this.initialised) {
+            if (!this.initialised || force) {
                 jdbi.withHandle(h -> {
                     this.institutionMap.clear();
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
