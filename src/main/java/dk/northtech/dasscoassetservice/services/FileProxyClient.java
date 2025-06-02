@@ -87,8 +87,6 @@ public class FileProxyClient {
             throw new RuntimeException(e);
         }
     }
-
-
     public HttpInfo openHttpShare(MinimalAsset asset1, User user, int allocation) {
         HttpShareRequest httpShareRequest = new HttpShareRequest();
         httpShareRequest.assets.add(asset1);

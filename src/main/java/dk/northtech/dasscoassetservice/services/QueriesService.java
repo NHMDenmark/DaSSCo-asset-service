@@ -371,6 +371,7 @@ public class QueriesService {
         StringJoiner updatedJoiner = new StringJoiner(" and ");
         StringJoiner auditedJoiner = new StringJoiner(" and ");
         List<QueryWhere> toRemove = new ArrayList<>();
+        
 
         for (QueryWhere where : wheres) {
             if (propertiesDigitiser.contains(where.property)) {

@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -53,6 +54,7 @@ public class AssetService {
     Cache<String, Instant> assetsGettingCreated;
     private final UserService userService;
     private final SpecimenService specimenService;
+    private final AssetSyncService assetSyncService;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -70,6 +72,7 @@ public class AssetService {
             , FileProxyConfiguration fileProxyConfiguration
             , ExtendableEnumService extendableEnumService
             , UserService userService
+            , AssetSyncService assetSyncService
             , FundingService fundingService
             , SpecimenService specimenService ) {
         this.institutionService = institutionService;
@@ -82,6 +85,7 @@ public class AssetService {
         this.digitiserCache = digitiserCache;
         this.subjectCache = subjectCache;
         this.payloadTypeCache = payloadTypeCache;
+        this.assetSyncService = assetSyncService;
         this.rightsValidationService = rightsValidationService;
         this.preparationTypeCache = preparationTypeCache;
         this.fileProxyConfiguration = fileProxyConfiguration;
@@ -839,6 +843,8 @@ public class AssetService {
 
         logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
+        // when asset is completed, it's going to be synced to Specify
+        assetSyncService.sendAssetToQueue(asset);
         return true;
     }
     private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);

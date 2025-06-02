@@ -49,11 +49,13 @@ public class AbstractIntegrationTest {
     @Inject BulkUpdateService bulkUpdateService;
 
     AssetService assetService;
-//    AssetService assetService;
     @Inject FileProxyClient fileProxyClient;
+    @Inject SpecifyAdapterClient specifyAdapterClient;
     @Inject PublicationService publicationService;
     @Inject QueriesService queriesService;
     @Inject AssetGroupService assetGroupService;
+    @Inject AssetSyncService assetSyncService;
+
     @Inject ExtendableEnumService extendableEnumService;
     @Inject SpecimenService specimenService;
     @Inject

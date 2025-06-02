@@ -81,6 +81,11 @@ public class AssetMapper implements RowMapper<Asset> {
                     , rs.getString("license")
                     , rs.getString("credit"));
         }
+        rs.getString("synced");
+        if (!rs.wasNull()) {
+            Agtype synced = rs.getObject("synced", Agtype.class);
+            asset.synced = synced.getBoolean();
+        }
         return asset;
     }
 }

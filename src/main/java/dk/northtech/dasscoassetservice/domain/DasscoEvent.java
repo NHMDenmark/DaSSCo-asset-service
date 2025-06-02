@@ -15,4 +15,5 @@ public enum DasscoEvent {
     DELETE_ASSET_METADATA,
     METADATA_TAKEN,
     ASSET_FINALISED,
+    ASSET_SYNCED,
 }

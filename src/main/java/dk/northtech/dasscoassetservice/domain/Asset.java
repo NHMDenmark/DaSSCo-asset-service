@@ -78,6 +78,8 @@ public class Asset {
     public Instant error_timestamp;
     @Schema(description = "Whether the current user has write access. Used in frontend operations.", example = "TRUE")
     public boolean writeAccess;
+    @Schema(description = "Whether the asset is synced to Specify.", example = "TRUE")
+    public boolean synced;
 
 
     // new fields

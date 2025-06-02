@@ -53,7 +53,7 @@
                    , ('ERDA_ERROR')
         </sql>
     </changeSet>
-    
+
     <changeSet id="1.0.0:CREATE_INSTITUTION" author="Thomas Skov Bornerup">
         <createTable tableName="institution">
             <column name="institution_name" type="text">
