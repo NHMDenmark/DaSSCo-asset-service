@@ -99,7 +99,7 @@ public class Assetupdates {
 
     @POST
     @Path("{assetGuid}/complete")
-    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n\n" +
+    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n" +
             "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA."
     )
     @Consumes(APPLICATION_JSON)

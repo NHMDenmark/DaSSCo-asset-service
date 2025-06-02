@@ -781,7 +781,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob"), user)).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
-        assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
+        assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("ERDA_SYNCHRONISED");
     }
 
     @Test
@@ -795,10 +795,10 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-setAssetStatus";
         asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
-        assetService.setAssetStatus("setAssetStatus", "ERDA_ERROR", "");
+        assetService.setAssetStatus("setAssetStatus", "ERDA_FAILED", "");
         Optional<Asset> optAsset = assetService.getAsset("setAssetStatus");
         assertThat(optAsset.isPresent()).isTrue();
-        assertThat(optAsset.get().internal_status.toString()).isEqualTo("ERDA_ERROR");
+        assertThat(optAsset.get().internal_status.toString()).isEqualTo("ERDA_FAILED");
     }
 
 
@@ -909,7 +909,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testSetAssetAssetDoesntExist() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("non-existent-asset", "ERDA_ERROR", ""));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.setAssetStatus("non-existent-asset", "ERDA_FAILED", ""));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
