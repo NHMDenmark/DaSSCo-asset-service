@@ -723,6 +723,7 @@ public class AssetService {
             return h;
         });
 
+        this.assetSyncService.checkAndSync(existing);
 
         //TODO fix queries
 //        statisticsDataServiceV2.refreshCachedData();
@@ -847,7 +848,9 @@ public class AssetService {
         assetSyncService.sendAssetToQueue(asset);
         return true;
     }
+
     private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
+
     public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {

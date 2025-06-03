@@ -12,14 +12,12 @@ import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.apache.commons.text.StringSubstitutor;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public interface AssetSyncRepository extends SqlObject {
     String completedAssetsSql =
@@ -195,4 +193,13 @@ public interface AssetSyncRepository extends SqlObject {
                     .findOne();
         });
     }
+
+    @SqlQuery("""
+        SELECT asset_guid
+        FROM asset
+        WHERE asset.push_to_specify
+            AND asset.asset_locked
+            AND asset.internal_status = 'ERDA_SYNCHRONISED'
+        """)
+    Set<String> findAssetsForSpecifySync();
 }

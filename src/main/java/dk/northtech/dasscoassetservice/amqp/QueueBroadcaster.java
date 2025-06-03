@@ -97,10 +97,10 @@ public class QueueBroadcaster extends AbstractIdleService {
         return rmqCF;
     }
 
-    public void sendAssets(List<Asset> assets) {
+    public void sendAssets(Asset asset) {
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
         try {
-            String json = ow.writeValueAsString(assets);
+            String json = ow.writeValueAsString(asset);
             LOGGER.info("Sending asset {}", json);
             sender.send(textMessage(this.session, json));
         } catch (JsonProcessingException | JMSException e) {
