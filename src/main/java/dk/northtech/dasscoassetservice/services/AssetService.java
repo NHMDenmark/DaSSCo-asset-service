@@ -759,7 +759,6 @@ public class AssetService {
         asset.error_timestamp = null;
         Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(), asset.institution);
 
-        Event event = new Event(assetUpdateRequest.digitiser(), Instant.now(), DasscoEvent.CREATE_ASSET, assetUpdateRequest.pipeline());
 
         jdbi.withHandle(h -> {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
@@ -850,7 +849,7 @@ public class AssetService {
     }
 
     private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
-
+    private static final Set<InternalStatus> errorStatuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED);
     public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
@@ -868,7 +867,7 @@ public class AssetService {
         Asset asset = optAsset.get();
         asset.internal_status = assetStatus;
         asset.error_message = errorMessage;
-        if (!InternalStatus.ASSET_RECEIVED.equals(asset.internal_status)) {
+        if (errorStatuses.contains(assetStatus))  {
             asset.error_timestamp = Instant.now();
         }
         jdbi.onDemand(AssetRepository.class)

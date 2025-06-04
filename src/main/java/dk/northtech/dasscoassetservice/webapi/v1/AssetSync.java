@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.springframework.stereotype.Component;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -29,26 +30,38 @@ public class AssetSync {
         this.assetSyncService = assetSyncService;
     }
 
-    @POST
-    @Path("/sync/all")
-    @Operation(summary = "Synchronises all completed assets to Specify.", description = "Synchronises all completed assets to Specify regardless of 'synced' property.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public String synchroniseAllAssets() {
-        assetSyncService.sendAllAssetsToQueue(false);
-        return "hej";
-    }
+//    @POST
+//    @Path("/sync/all")
+//    @Operation(summary = "Synchronises all completed assets to Specify.", description = "Synchronises all completed assets to Specify regardless of 'synced' property.")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
+//    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+//    public String synchroniseAllAssets() {
+//        assetSyncService.sendAllAssetsToQueue(false);
+//        return "hej";
+//    }
 
     @POST
     @Path("/sync")
-    @Operation(summary = "Synchronises all un-synced, completed assets to Specify.", description = "Synchronises all un-synced, completed assets to Specify.")
+    @Operation(summary = "Synchronises all assets awaiting sync", description = "Synchronises all assets awaiting sync")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public String synchroniseAssets() {
-        assetSyncService.sendAllAssetsToQueue(true);
-        return "hej";
+    public Response synchroniseAssets() {
+        assetSyncService.syncAssets();
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
+
+    @POST
+    @Path("/sync/{guid}")
+    @Operation(summary = "Synchronise asset", description = "Synchronises asset with given guid to specify.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Response synchroniseAsset(@PathParam("guid") String guid) {
+        assetSyncService.syncAsset();
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
 
 }

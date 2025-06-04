@@ -929,13 +929,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(lockedAssetOpt.isPresent()).isTrue();
         Asset locked = lockedAssetOpt.get();
         assertThat(locked.asset_locked).isTrue();
-//        while(true) {
-//            try {
-//                Thread.sleep(10000);
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
+
         assetService.unlockAsset(asset.asset_guid);
 
         Optional<Asset> unlockedAssetOpt = assetService.getAsset("lockUnlockAsset");

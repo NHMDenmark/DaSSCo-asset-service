@@ -1,5 +1,10 @@
 package dk.northtech.dasscoassetservice.services;
 
+import dk.northtech.dasscoassetservice.amqp.AcknowledgeQueueListener;
+import dk.northtech.dasscoassetservice.amqp.AssetQueueListener;
+import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
+import dk.northtech.dasscoassetservice.amqp.QueueListener;
+import dk.northtech.dasscoassetservice.configuration.Services;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
@@ -7,9 +12,11 @@ import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -83,6 +90,18 @@ public class AbstractIntegrationTest {
         this.assetService = spyAssetService;
     }
 
+
+    @MockitoBean
+    QueueBroadcaster queueBroadcaster;
+
+    @MockitoBean
+    AssetQueueListener assetQueueListener;
+
+    @MockitoBean
+    Services services;
+
+    @MockitoBean
+    AcknowledgeQueueListener acknowledgeQueueListener;
 
 
     @DynamicPropertySource
