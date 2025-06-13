@@ -35,4 +35,7 @@
             WHERE internal_status = 'COMPLETED'
         </sql>
     </changeSet>
+    <changeSet id="VERSION-3.4.0" author="Thomas Skov Bornerup" context="default">
+        <tagDatabase tag="VERSION-3.4.0"/>
+    </changeSet>
 </databaseChangeLog>
