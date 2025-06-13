@@ -20,12 +20,12 @@ public class Services {
     private static final Logger LOGGER = LoggerFactory.getLogger(Services.class);
     private final ServiceManager serviceManager;
     private final AcknowledgeQueueListener acknowledgeQueueListener;
-    private final AssetQueueListener assetQueueListener;
+//    private final AssetQueueListener assetQueueListener;
 
-    public Services(QueueBroadcaster queueBroadcaster, AssetQueueListener assetQueueListener, AcknowledgeQueueListener acknowledgeQueueListener) {
+    public Services(QueueBroadcaster queueBroadcaster, AcknowledgeQueueListener acknowledgeQueueListener) {
         this.acknowledgeQueueListener = acknowledgeQueueListener;
-        this.assetQueueListener = assetQueueListener;
-        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, assetQueueListener, acknowledgeQueueListener));
+//        this.assetQueueListener = assetQueueListener;
+        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, acknowledgeQueueListener));
     }
 
     @PostConstruct

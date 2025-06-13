@@ -16,4 +16,5 @@ public enum DasscoEvent {
     METADATA_TAKEN,
     ASSET_FINALISED,
     ASSET_SYNCED,
+    SYNCHRONISE_SPECIFY,
 }

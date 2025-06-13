@@ -1,9 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.domain.Acknowledge;
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.InternalStatus;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import jakarta.inject.Inject;
@@ -14,7 +12,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +23,7 @@ public class AssetSyncService {
     private final QueueBroadcaster queueBroadcaster;
     private static final Logger LOGGER = LoggerFactory.getLogger(AssetSyncService.class);
     private final AssetService assetService;
+
     @Inject
     public AssetSyncService(Jdbi jdbi, QueueBroadcaster queueBroadcaster, @Lazy AssetService assetService) {
         this.jdbi = jdbi;
@@ -57,8 +56,29 @@ public class AssetSyncService {
         this.queueBroadcaster.sendAssets(asset);
     }
 
-    public Optional<Acknowledge> handleAcknowledge(Acknowledge acknowledge, String username) {
-        return jdbi.onDemand(AssetSyncRepository.class).persistAcknowledge(acknowledge, username);
+    public void handleAcknowledge(Acknowledge acknowledge, String username) {
+        jdbi.inTransaction(handle -> {
+            String error_message = null;
+            InternalStatus status = InternalStatus.SPECIFY_SYNCHRONISED;
+            if (acknowledge == null) {
+                LOGGER.error("acknowledge is null");
+                return handle;
+            } else if (acknowledge.status() != AcknowledgeStatus.SUCCESS) {
+                error_message = acknowledge.status().toString() + " " + acknowledge.message();
+                status = InternalStatus.SPECIFY_SYNC_FAILED;
+            }
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            Optional<Asset> assetOpt = assetService.getAsset(acknowledge.asset_guid());
+            if (assetOpt.isPresent()) {
+                Asset asset = assetOpt.get();
+                asset.internal_status = status;
+                asset.error_message = error_message;
+                assetRepository.updateAssetNoEventInternal(asset);
+                Event event = new Event(acknowledge.username(), Instant.now(),DasscoEvent.SYNCHRONISE_SPECIFY);
+            }
+            return handle;
+        });
+        return;
     }
 
     public List<Asset> getAllCompletedAssets() {
@@ -93,21 +113,18 @@ public class AssetSyncService {
         });
     }
 
-    public void syncAsset() {
+    public void syncAsset(String guid) {
+        LOGGER.info("Syncing asset {}", guid);
         jdbi.withHandle(h -> {
-            AssetSyncRepository assetSyncRepository = h.attach(AssetSyncRepository.class);
             AssetRepository assetRepository = h.attach(AssetRepository.class);
-
-            Set<String> assetsForSpecifySync = assetSyncRepository.findAssetsForSpecifySync();
-            for (String assetGuid : assetsForSpecifySync) {
-                Optional<Asset> assetOpt = assetService.getAsset(assetGuid);
+                Optional<Asset> assetOpt = assetService.getAsset(guid);
                 if (assetOpt.isPresent()) {
                     Asset asset = assetOpt.get();
                     sendAssetToQueue(asset);
                     asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
                     assetRepository.updateAssetNoEvent(asset);
                 }
-            }
+
             return h;
         });
     }

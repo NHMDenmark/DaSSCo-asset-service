@@ -257,7 +257,7 @@ public class Assetupdates {
             , @QueryParam("pipeline") String pipeline
             , @Context SecurityContext securityContext) {
         if(!Objects.equals(assetGuid, asset.asset_guid)) {
-            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-body");
+            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-message");
         }
         return this.assetService.updateAsset(asset, userService.from(securityContext));
     }
@@ -267,7 +267,7 @@ public class Assetupdates {
     @PUT
     @Path("/bulkUpdate")
     @Operation(summary = "Bulk Update Assets", description = """
-    Update metadata in many assets at the same time. Takes a list of asse_guid and a body of properties to be updated.
+    Update metadata in many assets at the same time. Takes a list of asse_guid and a message of properties to be updated.
     All assets in the list will have their properties overwritten by the values in the postbody. 
     """)
     @Consumes(APPLICATION_JSON)

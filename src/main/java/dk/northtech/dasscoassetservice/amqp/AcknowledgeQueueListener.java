@@ -9,6 +9,7 @@ import dk.northtech.dasscoassetservice.domain.Acknowledge;
 import dk.northtech.dasscoassetservice.domain.AcknowledgeStatus;
 import dk.northtech.dasscoassetservice.services.AssetSyncService;
 import dk.northtech.dasscoassetservice.services.KeycloakService;
+import dk.northtech.dasscoassetservice.services.UserService;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,14 +37,11 @@ public class AcknowledgeQueueListener extends QueueListener {
             Acknowledge acknowledge = or.readValue(message);
             System.out.println("received the ack object:");
             System.out.println(acknowledge);
-            if (acknowledge.status().equals(AcknowledgeStatus.SUCCESS)) {
-                Optional<Acknowledge> ack = this.assetSyncService.handleAcknowledge(acknowledge, "service-user");
-                if (ack.isPresent()) {
-                    System.out.println("all is well my dude");
-                }
-            } else {
-                System.out.println("bruh status is weird, it's: " + acknowledge.status());
-            }
+//            if (acknowledge.status().equals(AcknowledgeStatus.SUCCESS)) {
+            this.assetSyncService.handleAcknowledge(acknowledge, "service-user");
+//            } else {
+//                System.out.println("bruh status is weird, it's: " + acknowledge.status());
+//            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("There was an error when converting the message to an Acknowledge object.", e);
         }

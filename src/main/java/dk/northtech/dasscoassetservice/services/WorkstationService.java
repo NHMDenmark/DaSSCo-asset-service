@@ -94,7 +94,7 @@ public class WorkstationService {
     public Workstation createWorkStation(String institutionName, Workstation workstation) {
 
         if (Objects.isNull(workstation)){
-            throw new IllegalArgumentException("POST request requires a body");
+            throw new IllegalArgumentException("POST request requires a message");
         }
 
         if (workstation.status() == null) {
@@ -129,7 +129,7 @@ public class WorkstationService {
     public void updateWorkstation(Workstation workstation, String institutionName) {
 
         if (Objects.isNull(workstation)){
-            throw new IllegalArgumentException("UPDATE request requires a body");
+            throw new IllegalArgumentException("UPDATE request requires a message");
         }
 
         if (workstation.status() == null){

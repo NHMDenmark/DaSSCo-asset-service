@@ -3,25 +3,27 @@ package dk.northtech.dasscoassetservice.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
-import java.util.List;
 
 public record Acknowledge(
-    @Schema(description = "The guids of the assets we're gonna handle.", example = "[\"guid_1\"]")
-    List<String> assetGuids,
+    @Schema(description = "The guid of the asset that has been processed by the Specify adapter", example = "Guid-1234")
+    String asset_guid,
     @Schema(description = "The status of the operation.", example = "FILE_UPLOAD_ERROR")
     AcknowledgeStatus status,
-    @Schema(description = "The body of the overall status and a possible explanation on a bad status.", example = "File for asset could not be uploaded.")
-    String body,
+    @Schema(description = "The message of the overall status and a possible explanation on a bad status.", example = "File for asset could not be uploaded.")
+    String message,
     @Schema(description = "The date the object was created.", example = "2023-05-24T00:00:00.000Z")
-    Instant date) {
+    Instant date,
+    @Schema(description = "The user that made the last update before Specify sync", example = "svc-user-1234")
+    String username) {
 
     @Override
     public String toString() {
         return "Acknowledge{" +
-                "assetGuids=" + assetGuids +
-                ", status=" + status +
-                ", body='" + body + '\'' +
-                ", date=" + date +
-                '}';
+               "assetGuid='" + asset_guid + '\'' +
+               ", status=" + status +
+               ", message='" + message + '\'' +
+               ", date=" + date +
+               ", username='" + username + '\'' +
+               '}';
     }
 }

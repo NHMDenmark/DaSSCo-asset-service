@@ -22,6 +22,17 @@
             WHERE internal_status = 'ERDA_ERROR'
         </sql>
     </changeSet>
-
-
+    <changeSet id="3.4.0:INSERT_SPECIFY_EVENT" author="Thomas Skov Bornerup">
+        <sql>
+            INSERT INTO event_type (event)
+            VALUES ('SYNCHRONISE_SPECIFY');
+        </sql>
+    </changeSet>
+    <changeSet id="3.4.0:SET_INTERNAL_STATUS_ERDA_SYNCHRONISED" author="Thomas Skov Bornerup" context="default">
+        <sql>
+            UPDATE asset
+            SET internal_status = 'ERDA_SYNCHRONISED'
+            WHERE internal_status = 'COMPLETED'
+        </sql>
+    </changeSet>
 </databaseChangeLog>

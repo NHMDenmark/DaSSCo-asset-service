@@ -59,7 +59,7 @@ public class AssetSync {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Response synchroniseAsset(@PathParam("guid") String guid) {
-        assetSyncService.syncAsset();
+        assetSyncService.syncAsset(guid);
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 

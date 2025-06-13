@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import dk.northtech.dasscoassetservice.domain.ARSUpdate;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.services.KeycloakService;
 import jakarta.inject.Inject;
@@ -15,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -28,6 +31,7 @@ public class QueueBroadcaster extends AbstractIdleService {
     QueueSender sender;
     QueueSession session;
     QueueConnection queueConnection;
+    private Instant lastRestart;
 
     @Inject
     public QueueBroadcaster(KeycloakService keycloakService, AMQPConfig amqpConfig) {
@@ -62,19 +66,21 @@ public class QueueBroadcaster extends AbstractIdleService {
             Queue queue = session.createQueue(queueName());
             sender = session.createSender(queue);
             sender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            lastRestart = Instant.now();
         } catch (JMSException e) {
             throw new RuntimeException("QueueBroadcaster failed to connect to the queue", e);
         }
 
     }
 
-    private QueueConnectionFactory getQueueConnectionFactory(){
-        return (QueueConnectionFactory)getConnectionFactory();
+    private QueueConnectionFactory getQueueConnectionFactory() {
+        return (QueueConnectionFactory) getConnectionFactory();
     }
 
     private ConnectionFactory getConnectionFactory() {
         RMQConnectionFactory rmqCF = new RMQConnectionFactory() {
             private static final long serialVersionUID = 1L;
+
             @Override
             public Connection createConnection(String userName, String password) throws JMSException {
                 if (!isSecure()) {
@@ -98,9 +104,15 @@ public class QueueBroadcaster extends AbstractIdleService {
     }
 
     public void sendAssets(Asset asset) {
+        synchronized (this) {
+            if (lastRestart.plus(58, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+                this.shutDown();
+                this.startUp();
+            }
+        }
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
         try {
-            String json = ow.writeValueAsString(asset);
+            String json = ow.writeValueAsString(new ARSUpdate(asset));
             LOGGER.info("Sending asset {}", json);
             sender.send(textMessage(this.session, json));
         } catch (JsonProcessingException | JMSException e) {
