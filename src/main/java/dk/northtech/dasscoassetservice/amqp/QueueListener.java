@@ -89,7 +89,7 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
         MessageConsumer messageConsumer = session.createConsumer(queue);
 
         while (isRunning()) {
-            if (lastRestart.plus(1, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+            if (lastRestart.plus(58, ChronoUnit.MINUTES).isBefore(Instant.now())) {
                 try {
                     if (lastError == null || lastError.plus(1, ChronoUnit.MINUTES).isBefore(Instant.now())) {
                         lastError = null;
@@ -108,7 +108,6 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
                 }
             } else {
                 try {
-                    System.out.println(Instant.now());
                     Message message = messageConsumer.receive(2000L);
                     if (message != null) {
                         LOGGER.info("Received a message on {}", this.getClass().getSimpleName());
