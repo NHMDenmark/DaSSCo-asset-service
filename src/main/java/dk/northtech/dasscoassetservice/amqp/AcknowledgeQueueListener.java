@@ -35,10 +35,8 @@ public class AcknowledgeQueueListener extends QueueListener {
         try {
             ObjectReader or = new ObjectMapper().registerModule(new JavaTimeModule()).readerFor(Acknowledge.class);
             Acknowledge acknowledge = or.readValue(message);
-            System.out.println("received the ack object:");
-            System.out.println(acknowledge);
 //            if (acknowledge.status().equals(AcknowledgeStatus.SUCCESS)) {
-            this.assetSyncService.handleAcknowledge(acknowledge, "service-user");
+            this.assetSyncService.handleAcknowledge(acknowledge);
 //            } else {
 //                System.out.println("bruh status is weird, it's: " + acknowledge.status());
 //            }

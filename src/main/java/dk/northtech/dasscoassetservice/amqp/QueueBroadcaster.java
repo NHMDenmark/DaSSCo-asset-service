@@ -60,7 +60,7 @@ public class QueueBroadcaster extends AbstractIdleService {
     protected void startUp() {
         LOGGER.info("Initializing {}", this.getClass().getSimpleName());
         try {
-            queueConnection = getQueueConnectionFactory().createQueueConnection("", token());
+            queueConnection = getQueueConnectionFactory().createQueueConnection("",token());
             queueConnection.start();
             this.session = queueConnection.createQueueSession(false, Session.DUPS_OK_ACKNOWLEDGE);
             Queue queue = session.createQueue(queueName());
@@ -103,7 +103,7 @@ public class QueueBroadcaster extends AbstractIdleService {
         return rmqCF;
     }
 
-    public void sendAssets(Asset asset) {
+    public void sendAssets(ARSUpdate arsUpdate) {
         synchronized (this) {
             if (lastRestart.plus(58, ChronoUnit.MINUTES).isBefore(Instant.now())) {
                 this.shutDown();
@@ -112,7 +112,7 @@ public class QueueBroadcaster extends AbstractIdleService {
         }
         ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
         try {
-            String json = ow.writeValueAsString(new ARSUpdate(asset));
+            String json = ow.writeValueAsString(arsUpdate);
             LOGGER.info("Sending asset {}", json);
             sender.send(textMessage(this.session, json));
         } catch (JsonProcessingException | JMSException e) {

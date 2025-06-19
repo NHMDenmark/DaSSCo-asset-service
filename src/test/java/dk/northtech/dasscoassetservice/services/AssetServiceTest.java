@@ -821,35 +821,22 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testTwoAssetSameSpecimen() {
-        Asset asset = getTestAsset("testTwoAssetSameSpecimen-1");
+    void testDoNotUpdateSynchronisingAsset() {
+        Asset asset = getTestAsset("testDoNotUpdateSynchronisingAsset-1");
         asset.pipeline = "i2_p1";
         asset.workstation = "i2_w1";
         asset.tags.put("Tag1", "value1");
         asset.institution = "institution_2";
         asset.collection = "i2_c1";
-        asset.asset_pid = "pid-setAssetStatusInvalidStatus";
+        asset.asset_pid = "pid-testDoNotUpdateSynchronisingAsset";
         asset.status = "BEING_PROCESSED";
         Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("pinning")), "pinning");
         asset.specimens = List.of(specimen);
-
-        Asset asset2 = getTestAsset("testTwoAssetSameSpecimen-2");
-        asset2.pipeline = "i2_p1";
-        asset2.workstation = "i2_w1";
-        asset2.tags.put("Tag1", "value1");
-        asset2.institution = "institution_2";
-        asset2.collection = "i2_c1";
-        asset2.asset_pid = "pid-setAssetStatusInvalidStatus";
-        asset2.status = "BEING_PROCESSED";
-        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("slide")), "slide"));
         assetService.persistAsset(asset, user, 1);
-        assetService.persistAsset(asset2, user, 1);
-        Optional<Asset> resultOpt = assetService.getAsset("testTwoAssetSameSpecimen-1");
-        Asset asset1 = resultOpt.get();
-        // Ensure the specimen is updated
-        assertThat(asset1.specimens.get(0).preparation_types()).contains("slide");
-        // Verify that specimens are added to and not overwritten
-        assertThat(asset1.specimens.get(0).preparation_types()).hasSize(2);
+        asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
+        jdbi.onDemand(AssetRepository.class).updateAssetStatus(asset);
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.updateAsset(asset, user));
+        assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Asset is synchronising to specify, please await completion");
 
     }
 

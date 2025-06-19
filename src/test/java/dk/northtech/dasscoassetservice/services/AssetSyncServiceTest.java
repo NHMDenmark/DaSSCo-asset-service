@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static dk.northtech.dasscoassetservice.services.AssetServiceTest.getTestAsset;
 
 //@Disabled("Disabled 4 now")
@@ -34,6 +35,26 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("testSendAssets", null, null, null),null,"i2_p1", "syncuser"),user);
         assetSyncService.syncAssets();
 
+    }
+
+    @Test
+    public void testAcknowledgeAsset() {
+        Asset asset = getTestAsset("testAcknowledgeAsset");
+        assetService.persistAsset(asset, user, 777);
+//        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("testAcknowledgeAsset", null, null, null),null,"i2_p1", "syncuser"),user);
+        asset.asset_locked = true;
+
+        assetService.updateAsset(asset, user);
+        assetService.getAsset("testAcknowledgeAsset");
+        assetSyncService.handleAcknowledge(new Acknowledge(asset.asset_guid, AcknowledgeStatus.SUCCESS, "Halli hallå", Instant.now()));
+        Optional<Asset> resultOpt = assetService.getAsset("testAcknowledgeAsset");
+        assertThat(resultOpt.isPresent()).isTrue();
+        Asset result = resultOpt.get();
+        assertThat(result.internal_status).isEqualTo(InternalStatus.SPECIFY_SYNCHRONISED);
+        Optional<Event> sync_event = result.events.stream().filter(x -> x.event == DasscoEvent.SYNCHRONISE_SPECIFY).findFirst();
+        assertWithMessage("The expected event doesnt exist").that(sync_event.isPresent()).isTrue();
+        assertThat(result.error_message)
+                .isNull();
     }
 
 //    @Test

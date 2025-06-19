@@ -526,6 +526,9 @@ public class AssetService {
         validateAsset(updatedAsset);
         validateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
+        if(existing.internal_status.equals(InternalStatus.SPECIFY_SYNC_SCHEDULED)) {
+            throw new DasscoIllegalActionException("Asset is synchronising to specify, please await completion");
+        }
         Set<String> existingDigitiserList = new HashSet<>(existing.complete_digitiser_list);
         Set<String> existingFunding = new HashSet<>(existing.funding);
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
@@ -844,7 +847,7 @@ public class AssetService {
         logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
         // when asset is completed, it's going to be synced to Specify
-        assetSyncService.sendAssetToQueue(asset);
+        assetSyncService.sendAssetToQueue(new ARSUpdate(asset));
         return true;
     }
 

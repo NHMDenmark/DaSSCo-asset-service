@@ -12,9 +12,7 @@ public record Acknowledge(
     @Schema(description = "The message of the overall status and a possible explanation on a bad status.", example = "File for asset could not be uploaded.")
     String message,
     @Schema(description = "The date the object was created.", example = "2023-05-24T00:00:00.000Z")
-    Instant date,
-    @Schema(description = "The user that made the last update before Specify sync", example = "svc-user-1234")
-    String username) {
+    Instant date) {
 
     @Override
     public String toString() {
@@ -23,7 +21,6 @@ public record Acknowledge(
                ", status=" + status +
                ", message='" + message + '\'' +
                ", date=" + date +
-               ", username='" + username + '\'' +
                '}';
     }
 }
