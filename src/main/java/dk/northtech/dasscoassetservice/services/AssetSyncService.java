@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import dk.northtech.dasscoassetservice.repositories.EventRepository;
+import dk.northtech.dasscoassetservice.repositories.FileRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -79,6 +80,12 @@ public class AssetSyncService {
                 asset.error_message = error_message;
                 assetRepository.updateAssetNoEventInternal(asset);
                 if (acknowledge.status() == AcknowledgeStatus.SUCCESS) {
+                    FileRepository fileRepository = handle.attach(FileRepository.class);
+                    for(DasscoFile file: acknowledge.updatedFiles()) {
+                        if(file.specifyAttachmentId() != null) {
+                            fileRepository.setSpecifyAttachmentId(file.fileId(), file.specifyAttachmentId());
+                        }
+                    }
                     EventRepository attach = handle.attach(EventRepository.class);
                     // Insert event with info about the user that caused the sync
                     Event event = null;
@@ -142,6 +149,8 @@ public class AssetSyncService {
             Optional<Asset> assetOpt = assetService.getAsset(guid);
             if (assetOpt.isPresent()) {
                 Asset asset = assetOpt.get();
+                FileRepository fileRepository = h.attach(FileRepository.class);
+                fileRepository.getFilesByAssetGuid(asset.asset_guid);
                 sendAssetToQueue(new ARSUpdate(asset));
                 asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
                 assetRepository.updateAssetNoEvent(asset);

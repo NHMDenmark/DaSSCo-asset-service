@@ -74,7 +74,6 @@ public class Assetupdates {
     @Path("{assetGuid}/unlock")
     @Operation(summary = "Unlock Asset", description = "Unlocks an asset.")
     @Produces(MediaType.APPLICATION_JSON)
-    // TODO: I changed Roles Allowed from ADMIN only to Admin + Service.
     @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))

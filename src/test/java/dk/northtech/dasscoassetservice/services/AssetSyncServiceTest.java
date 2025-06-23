@@ -46,7 +46,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
 
         assetService.updateAsset(asset, user);
         assetService.getAsset("testAcknowledgeAsset");
-        assetSyncService.handleAcknowledge(new Acknowledge(asset.asset_guid, AcknowledgeStatus.SUCCESS, "Halli hallå", Instant.now()));
+        assetSyncService.handleAcknowledge(new Acknowledge(asset.asset_guid, AcknowledgeStatus.SUCCESS, "Halli hallå", Instant.now(), new ArrayList<>()));
         Optional<Asset> resultOpt = assetService.getAsset("testAcknowledgeAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
