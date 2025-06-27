@@ -74,7 +74,7 @@ public class AssetService {
             , UserService userService
             , AssetSyncService assetSyncService
             , FundingService fundingService
-            , SpecimenService specimenService ) {
+            , SpecimenService specimenService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -119,7 +119,6 @@ public class AssetService {
             asset.specimens.forEach(specimenService::validateSpecimen);
         }
     }
-
 
 
     void validateIssue(Issue issue) {
@@ -329,16 +328,16 @@ public class AssetService {
             for (Specimen specimen : asset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(),specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id);
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id);
                     specimenRepository.insert_specimen(specimenToPersist);
                     Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
                     Specimen newSpecimen = newSpecimenOpt.orElseThrow(() -> new RuntimeException("This shouldn't happen"));
-                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type() ,newSpecimen.specimen_id());
+                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type(), newSpecimen.specimen_id());
                 } else {
                     Specimen existing = specimensByPID.get();
                     if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
                         specimen.preparation_types().addAll(existing.preparation_types());
-                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(),specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id);
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id);
                         specimenRepository.updateSpecimen(updated);
                     }
                     specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type(), existing.specimen_id());
@@ -526,7 +525,7 @@ public class AssetService {
         validateAsset(updatedAsset);
         validateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
-        if(existing.internal_status.equals(InternalStatus.SPECIFY_SYNC_SCHEDULED)) {
+        if (existing.internal_status.equals(InternalStatus.SPECIFY_SYNC_SCHEDULED)) {
             throw new DasscoIllegalActionException("Asset is synchronising to specify, please await completion");
         }
         Set<String> existingDigitiserList = new HashSet<>(existing.complete_digitiser_list);
@@ -623,12 +622,12 @@ public class AssetService {
             for (Specimen s : existing.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), s.specimen_id(), existing.collection_id);
+                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), existing.collection_id);
                     Integer specimen_id = specimenRepository.insert_specimen(newSpecimen);
                     specimenRepository.attachSpecimen(updatedAsset.asset_guid, newSpecimen.asset_preparation_type(), specimen_id);
                 } else {
                     Specimen existing_specimen = specimensByPID.get();
-                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(),s.asset_preparation_type(), existing_specimen.specimen_id(), existing.collection_id);
+                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), existing_specimen.specimen_id(), existing.collection_id);
                     updated.preparation_types().addAll(existing_specimen.preparation_types());
                     specimenRepository.updateSpecimen(updated);
                     //detach reattach to make sure asset_preparation_type is in order
@@ -853,6 +852,7 @@ public class AssetService {
 
     private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
     private static final Set<InternalStatus> errorStatuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED);
+
     public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
         try {
@@ -870,7 +870,7 @@ public class AssetService {
         Asset asset = optAsset.get();
         asset.internal_status = assetStatus;
         asset.error_message = errorMessage;
-        if (errorStatuses.contains(assetStatus))  {
+        if (errorStatuses.contains(assetStatus)) {
             asset.error_timestamp = Instant.now();
         }
         jdbi.onDemand(AssetRepository.class)
@@ -929,13 +929,11 @@ public class AssetService {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
-        Event event = new Event(userId, Instant.now(), DasscoEvent.DELETE_ASSET_METADATA, null);
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
 
-        statisticsDataServiceV2.refreshCachedData();
-
-        logger.info("Adding Digitiser to Cache if absent in Delete Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
+        if (asset.specify_attachment_id != null) {
+            assetSyncService.syncAsset(asset.asset_guid);
+        }
 
         return true;
     }

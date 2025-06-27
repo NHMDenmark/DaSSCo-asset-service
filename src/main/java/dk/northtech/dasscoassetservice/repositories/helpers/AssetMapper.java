@@ -62,6 +62,8 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.mos_id = rs.getString("mos_id");
         asset.specify_attachment_title = rs.getString("specify_attachment_title");
         asset.specify_attachment_remarks = rs.getString("specify_attachment_remarks");
+        int specifyAttachmentId = rs.getInt("specify_attachment_id");
+        asset.specify_attachment_id = rs.wasNull() ? null : specifyAttachmentId;
         // Mapping dates (timestamps)
         Timestamp dateAssetTaken = rs.getTimestamp("date_asset_taken");
         if (dateAssetTaken != null) {

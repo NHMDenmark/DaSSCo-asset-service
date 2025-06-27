@@ -126,6 +126,7 @@ public class Asset {
     public transient Integer collection_id;
     public transient Integer updating_pipeline_id;
     public String updating_pipeline;
+    public Integer specify_attachment_id;
 
     public String getAsset_guid() {
         return asset_guid;

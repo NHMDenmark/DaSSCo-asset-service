@@ -5,7 +5,6 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import dk.northtech.dasscoassetservice.repositories.EventRepository;
-import dk.northtech.dasscoassetservice.repositories.FileRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -14,7 +13,6 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +25,7 @@ public class AssetSyncService {
     private final AssetService assetService;
     private final PipelineService pipelineService;
     private final UserService userService;
+
     @Inject
     public AssetSyncService(Jdbi jdbi, QueueBroadcaster queueBroadcaster, @Lazy AssetService assetService, PipelineService pipelineService, UserService userService) {
         this.jdbi = jdbi;
@@ -63,29 +62,24 @@ public class AssetSyncService {
 
     public void handleAcknowledge(Acknowledge acknowledge) {
         jdbi.inTransaction(handle -> {
-            String error_message = null;
-            InternalStatus status = InternalStatus.SPECIFY_SYNCHRONISED;
-            if (acknowledge == null) {
-                LOGGER.error("acknowledge is null");
-                return handle;
-            } else if (acknowledge.status() != AcknowledgeStatus.SUCCESS) {
-                error_message = acknowledge.status().toString() + " " + acknowledge.message();
-                status = InternalStatus.SPECIFY_SYNC_FAILED;
-            }
-            AssetRepository assetRepository = handle.attach(AssetRepository.class);
             Optional<Asset> assetOpt = assetService.getAsset(acknowledge.asset_guid());
+            AssetRepository assetRepository = handle.attach(AssetRepository.class);
             if (assetOpt.isPresent()) {
+                String error_message = null;
+                InternalStatus status = InternalStatus.SPECIFY_SYNCHRONISED;
                 Asset asset = assetOpt.get();
+                if (acknowledge.status() != AcknowledgeStatus.SUCCESS) {
+                    error_message = acknowledge.status().toString() + " " + acknowledge.message();
+                    status = InternalStatus.SPECIFY_SYNC_FAILED;
+                } else {
+                    asset.specify_attachment_id = acknowledge.specify_attachment_id();
+
+                }
                 asset.internal_status = status;
                 asset.error_message = error_message;
+
                 assetRepository.updateAssetNoEventInternal(asset);
                 if (acknowledge.status() == AcknowledgeStatus.SUCCESS) {
-                    FileRepository fileRepository = handle.attach(FileRepository.class);
-                    for(DasscoFile file: acknowledge.updatedFiles()) {
-                        if(file.specifyAttachmentId() != null) {
-                            fileRepository.setSpecifyAttachmentId(file.fileId(), file.specifyAttachmentId());
-                        }
-                    }
                     EventRepository attach = handle.attach(EventRepository.class);
                     // Insert event with info about the user that caused the sync
                     Event event = null;
@@ -99,7 +93,7 @@ public class AssetSyncService {
                     if (event != null) {
                         Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(asset.institution, event.pipeline);
                         Optional<User> userIfExists = userService.getUserIfExists(event.user);
-                        if(userIfExists.isPresent()) {
+                        if (userIfExists.isPresent()) {
                             Integer dasscoUserId = userIfExists.get().dassco_user_id;
                             attach.insertEvent(asset.asset_guid, DasscoEvent.SYNCHRONISE_SPECIFY, dasscoUserId, pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
                         }
@@ -143,25 +137,29 @@ public class AssetSyncService {
     }
 
     public void syncAsset(String guid) {
-        LOGGER.info("Syncing asset {}", guid);
-        jdbi.withHandle(h -> {
-            AssetRepository assetRepository = h.attach(AssetRepository.class);
+//        LOGGER.info("Syncing asset {}", guid);
             Optional<Asset> assetOpt = assetService.getAsset(guid);
             if (assetOpt.isPresent()) {
                 Asset asset = assetOpt.get();
-                FileRepository fileRepository = h.attach(FileRepository.class);
-                fileRepository.getFilesByAssetGuid(asset.asset_guid);
-                sendAssetToQueue(new ARSUpdate(asset));
-                asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
-                assetRepository.updateAssetNoEvent(asset);
+                syncAsset(asset);
+            } else {
+                throw new IllegalArgumentException("Asset doesnt exist");
             }
-
-            return h;
-        });
     }
 
+    public void syncAsset(Asset asset) {
+        LOGGER.info("Syncing asset {}", asset.asset_guid);
+        jdbi.withHandle(h -> {
+                AssetRepository assetRepository = h.attach(AssetRepository.class);
+                sendAssetToQueue(new ARSUpdate(asset, false));
+                asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
+                assetRepository.updateAssetNoEvent(asset);
+            return h;
+            });
+        }
+
     public void checkAndSync(Asset asset) {
-        if (asset.asset_locked && asset.push_to_specify && InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status)) {
+        if (asset.asset_locked && asset.push_to_specify && (InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status) )) {
             try {
                 sendAssetToQueue(new ARSUpdate(asset));
                 asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;

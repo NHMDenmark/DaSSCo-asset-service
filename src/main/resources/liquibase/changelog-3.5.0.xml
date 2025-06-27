@@ -4,12 +4,9 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
 
-    <changeSet id="3.5.0:ADD_SPECIFY_ID_AND_DELETED" author="Thomas Skov Bornerup" context="default">
-        <addColumn tableName="pg_file_settings">
-            <column name="deleted" defaultValue="false" type="boolean">
-                <constraints nullable="false"/>
-            </column>
-            <column type="bigint" name="specifyAttachmentId">
+    <changeSet id="3.5.0:ADD_SPECIFY_ATTACHMENT_ID" author="Thomas Skov Bornerup" context="default">
+        <addColumn tableName="asset">
+            <column name="specify_attachment_id" type="bigint">
                 <constraints nullable="true"/>
             </column>
         </addColumn>

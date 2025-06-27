@@ -4,14 +4,14 @@ import java.util.List;
 
 public class ARSUpdate {
     public Asset asset;
-    public List<DasscoFile> files;
+    public boolean deleteAttachment = false;
 
     public ARSUpdate(Asset asset) {
         this.asset = asset;
     }
 
-    public ARSUpdate(Asset asset, List<DasscoFile> files) {
+    public ARSUpdate(Asset asset, Boolean deleteAttachment) {
         this.asset = asset;
-        this.files = files;
+        this.deleteAttachment = deleteAttachment;
     }
 }
