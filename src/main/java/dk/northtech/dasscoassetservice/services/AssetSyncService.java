@@ -5,6 +5,7 @@ import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetSyncRepository;
 import dk.northtech.dasscoassetservice.repositories.EventRepository;
+import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ public class AssetSyncService {
         jdbi.inTransaction(handle -> {
             Optional<Asset> assetOpt = assetService.getAsset(acknowledge.asset_guid());
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
+            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
             if (assetOpt.isPresent()) {
                 String error_message = null;
                 InternalStatus status = InternalStatus.SPECIFY_SYNCHRONISED;
@@ -72,8 +74,15 @@ public class AssetSyncService {
                     error_message = acknowledge.status().toString() + " " + acknowledge.message();
                     status = InternalStatus.SPECIFY_SYNC_FAILED;
                 } else {
-                    asset.specify_attachment_id = acknowledge.specify_attachment_id();
-
+                    acknowledge.specimensWithSpecifyIds().forEach(specimen -> {
+                        if(specimen.asset_detached()) {
+                            specimenRepository.deleteAssetSpecimen(asset.asset_guid, specimen.specimen_id());
+                            // Delete junction
+                        } else {
+                           specimenRepository.updateAssetSpecimen(asset.asset_guid, specimen.specimen_id(), specimen.specify_collection_object_attachment_id(), specimen.asset_preparation_type());
+                        }
+                    });
+//                    asset.specify_attachment_id = acknowledge.specify_attachment_id();
                 }
                 asset.internal_status = status;
                 asset.error_message = error_message;

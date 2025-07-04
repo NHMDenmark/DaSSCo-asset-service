@@ -36,7 +36,8 @@ public interface SpecimenRepository extends SqlObject {
     void attachSpecimen(String assetGuid, String preparation_type, Integer specimenId);
 
     @SqlUpdate("""
-    DELETE FROM asset_specimen 
+    UPDATE asset_specimen
+    SET detached = true
     WHERE asset_guid = :assetGuid 
         AND specimen_id = :specimenId
     """)
@@ -53,6 +54,8 @@ public interface SpecimenRepository extends SqlObject {
     @SqlQuery("""
             SELECT specimen.*
                 , asset_specimen.preparation_type AS asset_preparation_type
+                , asset_specimen.specify_collection_object_attachment_id
+                , asset_specimen.asset_detached
                 , collection.collection_name AS collection
                 , collection.institution_name AS institution
             FROM specimen
@@ -65,6 +68,8 @@ public interface SpecimenRepository extends SqlObject {
     @SqlQuery("""
             SELECT specimen.*
                 , NULL as asset_preparation_type
+                , false AS asset_detached
+                , NULL AS specify_collection_object_attachment_id             
                 , collection.collection_name AS collection
                 , collection.institution_name AS institution
             FROM specimen
@@ -82,4 +87,19 @@ public interface SpecimenRepository extends SqlObject {
     @SqlQuery("SELECT * FROM preparation_type")
     List<String> listPreparationTypesInternal();
 
+    @SqlUpdate("""
+    DELETE FROM asset_specimen 
+    WHERE asset_guid = :assetGuid 
+        AND specimen_id = :specimenId
+    """)
+    void deleteAssetSpecimen(String assetGuid, Integer specimenId);
+
+    @SqlUpdate("""
+    UPDATE asset_specimen
+    SET specify_collection_object_attachment_id = :collectionObjectAttachmentId
+        , preparation_type = :preparation_type
+    WHERE asset_guid = :assetGuid
+        AND specimen_id = :specimenId
+    """)
+    void updateAssetSpecimen(String assetGuid, Integer specimenId, Long collectionObjectAttachmentId, String preparation_type);
 }
