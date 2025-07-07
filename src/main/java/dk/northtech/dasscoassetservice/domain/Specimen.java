@@ -21,11 +21,13 @@ public record Specimen(
         HashSet<String> preparation_types,
         @Schema(description = "A Specimen can have multiple different preparation_types, this field is used to specify what preparation_type is valid for the asset this specimen is connected to", example = "slide")
         String asset_preparation_type,
-        @JsonIgnore
+//        @JsonIgnore
         Integer specimen_id,
         @JsonIgnore
         Integer collection_id,
+        @Schema(description = "The id that connects an attachment to a Collection Object in specify, can be seen as an analogue to the asset_specimen junction in ARS", example = "1234")
         Long specify_collection_object_attachment_id,
+        @Schema(description = "If a Specimen has been detached from an Asset in ARS after it have been synchronized to Specify this is set to true until specify has been synchronised again and the asset_specimen connection can be safely deleted")
         boolean asset_detached
     ) {
     public Specimen(String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
