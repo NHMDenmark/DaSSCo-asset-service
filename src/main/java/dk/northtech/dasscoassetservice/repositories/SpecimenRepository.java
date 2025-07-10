@@ -37,7 +37,7 @@ public interface SpecimenRepository extends SqlObject {
 
     @SqlUpdate("""
     UPDATE asset_specimen
-    SET detached = true
+    SET asset_detached = true
     WHERE asset_guid = :assetGuid 
         AND specimen_id = :specimenId
     """)
