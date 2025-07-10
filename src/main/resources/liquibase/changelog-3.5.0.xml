@@ -33,4 +33,7 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet id="VERSION-3.5.0" author="Thomas Skov Bornerup" context="default">
+        <tagDatabase tag="VERSION-3.5.0"/>
+    </changeSet>
 </databaseChangeLog>
