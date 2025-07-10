@@ -26,7 +26,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -328,7 +327,7 @@ public class AssetService {
             for (Specimen specimen : asset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id);
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id, null, false);
                     specimenRepository.insert_specimen(specimenToPersist);
                     Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
                     Specimen newSpecimen = newSpecimenOpt.orElseThrow(() -> new RuntimeException("This shouldn't happen"));
@@ -337,7 +336,7 @@ public class AssetService {
                     Specimen existing = specimensByPID.get();
                     if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
                         specimen.preparation_types().addAll(existing.preparation_types());
-                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id);
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id, null, false);
                         specimenRepository.updateSpecimen(updated);
                     }
                     specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type(), existing.specimen_id());
@@ -551,7 +550,7 @@ public class AssetService {
         List<Specimen> specimensToDetach = existing.specimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid())).toList();
         updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(), existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
-        existing.specimens = updatedAsset.specimens;
+//        existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation = updatedAsset.workstation;
 //        existing.pipeline = updatedAsset.pipeline;
@@ -616,27 +615,53 @@ public class AssetService {
                     , user.dassco_user_id
                     , pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
             //Specimens
+            List<Specimen> finalSpecimen = new ArrayList<>();
             for (Specimen s : specimensToDetach) {
-                specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
+                //If a specify id is connected to the specimen we can first delete the conenction to the asset when specify is synchronized
+                if (s.specify_collection_object_attachment_id() != null) {
+                    specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
+                    //makde sure detached specimen is included in specify update
+                    finalSpecimen.add(new Specimen(s.institution(), s.collection(), s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), s.collection_id(), s.specify_collection_object_attachment_id(), true));
+                } else {
+                    specimenRepository.deleteAssetSpecimen(existing.asset_guid, s.specimen_id());
+                }
             }
-            for (Specimen s : existing.specimens) {
+
+
+//            Set<String> pids = existing.specimens.stream().map(s -> s.specimen_pid()).collect(Collectors.toSet());
+            Map<String, Specimen> pidExistingSpecimen = existing.specimens.stream().collect(Collectors.toMap(Specimen::specimen_pid, s -> s));
+            for (Specimen s : updatedAsset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), existing.collection_id);
+                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), existing.collection_id, null, false);
                     Integer specimen_id = specimenRepository.insert_specimen(newSpecimen);
                     specimenRepository.attachSpecimen(updatedAsset.asset_guid, newSpecimen.asset_preparation_type(), specimen_id);
+                    finalSpecimen.add(newSpecimen);
                 } else {
                     Specimen existing_specimen = specimensByPID.get();
-                    Specimen updated = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), existing_specimen.specimen_id(), existing.collection_id);
+                    Specimen updated = new Specimen(existing.institution
+                            , existing.collection
+                            , s.barcode()
+                            , s.specimen_pid()
+                            , s.preparation_types()
+                            , s.asset_preparation_type()
+                            , existing_specimen.specimen_id()
+                            , existing.collection_id
+                            , pidExistingSpecimen.containsKey(s.specimen_pid()) ? pidExistingSpecimen.get(s.specimen_pid()).specify_collection_object_attachment_id() : null
+                            , false);
                     updated.preparation_types().addAll(existing_specimen.preparation_types());
                     specimenRepository.updateSpecimen(updated);
-                    //detach reattach to make sure asset_preparation_type is in order
-                    specimenRepository.detachSpecimen(existing.asset_guid, existing_specimen.specimen_id());
-                    specimenRepository.attachSpecimen(existing.asset_guid, updated.asset_preparation_type(), updated.specimen_id());
-
+                    finalSpecimen.add(updated);
+                    //Handle preptype for asset
+                    if (pidExistingSpecimen.containsKey(updated.specimen_pid())) {
+                        specimenRepository.updateAssetSpecimen(existing.asset_guid, existing_specimen.specimen_id(), existing_specimen.specify_collection_object_attachment_id(), updated.asset_preparation_type());
+                    } else {
+                        specimenRepository.attachSpecimen(existing.asset_guid, updated.asset_preparation_type(), updated.specimen_id());
+                    }
                 }
 
             }
+            existing.specimens = finalSpecimen;
             //Handle digitisers
             for (String s : existingDigitiserList) {
                 if (!newDigitisers.contains(s)) {
@@ -931,7 +956,8 @@ public class AssetService {
 
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
 
-        if (asset.specify_attachment_id != null) {
+        Optional<Specimen> specimenWithSpecifyId = asset.specimens.stream().filter(specimen -> specimen.specify_collection_object_attachment_id() != null).findAny();
+        if (specimenWithSpecifyId.isPresent()) {
             assetSyncService.syncAsset(asset.asset_guid);
         }
 

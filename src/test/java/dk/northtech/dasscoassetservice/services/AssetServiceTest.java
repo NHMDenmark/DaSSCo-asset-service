@@ -185,8 +185,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide", null, null)
-                , new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning", null, null));
+        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide")
+                , new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning"));
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
@@ -425,7 +425,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testUpdateAsset() {
         Asset createAsset = getTestAsset("createAssetUpdateAsset");
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide", null, null));
+        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide"));
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
@@ -469,7 +469,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         var issue_2 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_2", Instant.now(), "iss_2_status", "iss_2_description", "iss_2_notest", false);
 
         Asset createAsset = getTestAsset("testUpdateIssuesCreateOnUpdate");
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide", null, null));
+        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide"));
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
@@ -570,8 +570,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset asset = getTestAsset("updateAsset");
 //        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
         asset.institution = "institution_1";
-        asset.specimens = new ArrayList<>(Arrays.asList(new Specimen(asset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide", null, null)
-                , new Specimen(asset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning", null, null)));
+        asset.specimens = new ArrayList<>(Arrays.asList(new Specimen(asset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide")
+                , new Specimen(asset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning")));
         asset.pipeline = "i1_p1";
         asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");
@@ -592,7 +592,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.date_asset_finalised = Instant.now();
         asset.date_asset_taken = Instant.now();
         asset.date_metadata_ingested = Instant.now();
-        asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide", null, null));
+        asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide"));
 //        asset.specimens.get()
         asset.workstation = "i1_w2";
         asset.pipeline = "i1_p2";
@@ -684,7 +684,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
             }
         });
         result.legality = null;
-        result.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide", null, null));
+        result.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide"));
         assetService.updateAsset(result, user);
         Optional<Asset> result2opt = assetService.getAsset("updateAsset");
         Asset result2 = result2opt.get();
@@ -865,11 +865,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset, user, 1);
         assetService.persistAsset(asset2, user, 1);
         asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-2", new HashSet<>(Set.of("slide")), "slide")
-                ,new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("slide")),"slide"));
+                ,new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("slide")),"slide"));
         assetService.updateAsset(asset2, user);
         Optional<Asset> resultOpt = assetService.getAsset(asset2.asset_guid);
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
+        System.out.println(result.specimens);
         assertThat(result.specimens).hasSize(2);
         assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-1"))).isTrue();
         assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-2"))).isTrue();

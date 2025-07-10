@@ -250,7 +250,6 @@ public interface AssetRepository extends SqlObject {
                                     , asset_locked = :asset_locked
                                     , error_message = :error_message
                                     , error_timestamp = :error_timestamp
-                                    , specify_attachment_id = :specify_attachment_id
                                 WHERE asset_guid = :asset_guid    
                         """;
         try {
@@ -261,7 +260,6 @@ public interface AssetRepository extends SqlObject {
                         .bind("asset_locked", asset.asset_locked)
                         .bind("error_timestamp", asset.error_timestamp)
                         .bind("asset_guid", asset.asset_guid)
-                        .bind("specify_attachment_id", asset.specify_attachment_id)
                         .execute();
                 return handle;
             });

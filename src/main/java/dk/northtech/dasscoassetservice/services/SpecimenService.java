@@ -53,7 +53,9 @@ public class SpecimenService {
                         , specimen.preparation_types()
                         ,null
                         , existing.specimen_id()
-                        , existing.collection_id()));
+                        , existing.collection_id()
+                        , null
+                        , false));
         
         return specimen;
     }
