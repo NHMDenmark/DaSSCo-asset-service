@@ -45,7 +45,7 @@ public class QueueBroadcaster extends AbstractIdleService {
     }
 
     private String token() {
-        return this.keycloakService.getUserServiceToken();
+        return this.keycloakService.getQueueToken().accessToken();
     }
 
     private String hostname() {

@@ -23,7 +23,9 @@ public class LogService {
     }
 
     public List<String> listLogs() {
-        return Arrays.stream(new File(LOG_LOCATION).listFiles()).map(f -> f.getName()).toList();
+        return Arrays.stream(new File(LOG_LOCATION).listFiles())
+                .map(f -> f.getName())
+                .toList();
     }
 
     public Optional<FileService.FileResult> getFile(String name) {

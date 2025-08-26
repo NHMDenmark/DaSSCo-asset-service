@@ -121,9 +121,6 @@ public class UserService {
         });
     }
 
-
-
-
     public List<String> getDigitiserList(String asset_guid) {
         return jdbi.onDemand(UserRepository.class).getDigitiserList(asset_guid);
     }
@@ -138,6 +135,7 @@ public class UserService {
         }
         return Optional.of(user);
     }
+
     private void initUsers(boolean force) {
         synchronized (this) {
             if (!this.initialised || force) {

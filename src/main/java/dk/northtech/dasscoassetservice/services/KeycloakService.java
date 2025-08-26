@@ -117,5 +117,7 @@ public class KeycloakService {
         }
 
     }
-
+    public KeycloakToken getQueueToken(){
+        return newAccessToken();
+    }
 }
