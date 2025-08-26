@@ -164,6 +164,8 @@ public interface AssetRepository extends SqlObject {
         for (Event event : events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
+            } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (asset1.date_pushed_to_specify == null) || asset1.date_pushed_to_specify.isAfter(event.timestamp)) {
+                asset1.date_pushed_to_specify = event.timestamp;
             } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
                 asset1.date_metadata_updated = event.timestamp;
             } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && asset1.date_metadata_updated == null) {
