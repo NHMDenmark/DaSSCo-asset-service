@@ -51,6 +51,8 @@ public class Asset {
     public String audited_by;
     @Schema(description = "Date and time the asset was pushed to Specify", example = "2023-05-24T00:00:00.000Z")
     public Instant date_asset_finalised;
+    @Schema(description = "Date and time the pushed to specify for the first time", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_pushed_to_specify;
     //References
     @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
     public String institution;
