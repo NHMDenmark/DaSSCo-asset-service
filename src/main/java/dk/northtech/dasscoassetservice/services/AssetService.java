@@ -195,7 +195,7 @@ public class AssetService {
                         assetToBeMapped.audited_by = event.user;
                     }
 
-                } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (assetToBeMapped.date_pushed_to_specify == null) || assetToBeMapped.date_pushed_to_specify.isAfter(event.timestamp)) {
+                } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (assetToBeMapped.date_pushed_to_specify == null || assetToBeMapped.date_pushed_to_specify.isAfter(event.timestamp))) {
                     assetToBeMapped.date_pushed_to_specify = event.timestamp;
                 } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
                            && assetToBeMapped.date_metadata_updated == null) {
