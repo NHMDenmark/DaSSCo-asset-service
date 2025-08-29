@@ -36,7 +36,7 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
     }
 
     String token() {
-        return this.keycloakService.getUserServiceToken();
+        return this.keycloakService.getQueueToken().accessToken();
     }
 
     private String hostname() {
@@ -85,6 +85,7 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
 
     @Override
     protected void run() throws JMSException {
+        LOGGER.info("In run method");
         Queue queue = session.createQueue(queueName());
         MessageConsumer messageConsumer = session.createConsumer(queue);
 
@@ -165,6 +166,7 @@ public abstract class QueueListener extends AbstractExecutionThreadService {
         public void onException(JMSException exception) {
             logger.info("Connection ExceptionListener fired, exiting");
             logger.warn(exception.getMessage());
+            throw new RuntimeException(exception);
         }
     }
 }
