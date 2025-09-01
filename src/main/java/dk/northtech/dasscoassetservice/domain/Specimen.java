@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Schema(description = "Specimens are created together with Assets and inherit the institution and collection from the asset it was created with. If another asset is created with a specimen containing the same information it will be linked to the previously created specimen")
@@ -28,17 +30,19 @@ public record Specimen(
         @Schema(description = "The id that connects an attachment to a Collection Object in specify, can be seen as an analogue to the asset_specimen junction in ARS", example = "1234")
         Long specify_collection_object_attachment_id,
         @Schema(description = "If a Specimen has been detached from an Asset in ARS after it have been synchronized to Specify this is set to true until specify has been synchronised again and the asset_specimen connection can be safely deleted")
-        boolean asset_detached
+        boolean asset_detached,
+        List<Role> role_restrictions
     ) {
     public Specimen(String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
-        this(null, null, barcode, specimen_pid, preparation_types, asset_preparation_type, null, null, null, false);
+        this(null, null, barcode, specimen_pid, preparation_types, asset_preparation_type, null, null, null, false, new ArrayList<>());
     }
 
     @JdbiConstructor
     public Specimen {
+        role_restrictions = new ArrayList<>();
     }
 //    new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning",
     public Specimen(String institution, String collection, String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
-        this(institution, collection, barcode, specimen_pid, preparation_types, asset_preparation_type,null, null, null, false);
+        this(institution, collection, barcode, specimen_pid, preparation_types, asset_preparation_type,null, null, null, false, new ArrayList<>());
     }
 }

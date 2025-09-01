@@ -4,6 +4,8 @@ import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
+import dk.northtech.dasscoassetservice.repositories.RoleRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -32,7 +34,8 @@ public class SpecimenService {
     }
 
     public Specimen updateSpecimen(Specimen specimen, User user) {
-        SpecimenRepository specimenRepository = jdbi.onDemand(SpecimenRepository.class);
+        return jdbi.inTransaction(h -> {
+        SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
         Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
         if(specimensByPID.isEmpty()) {
             throw new IllegalArgumentException("Specimen was not found");
@@ -41,6 +44,10 @@ public class SpecimenService {
         Specimen existing = specimensByPID.get();
         rightsValidationService.checkWriteRightsThrowing(user, specimen.institution(), specimen.collection());
         List<String> assetsWithRemovedPreparationType = specimenRepository.getGuidsByPreparationTypeAndSpecimenId(specimen.preparation_types(), existing.specimen_id());
+        if(specimen.role_restrictions() != null && !existing.role_restrictions().equals(specimen.role_restrictions())) {
+            RoleRepository roleRepository = h.attach(RoleRepository.class);
+            roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimen.role_restrictions(),existing.specimen_id());
+        }
         if(!assetsWithRemovedPreparationType.isEmpty()) {
             String errorMessage = "Preparation_type cannot be removed as it is used by the following assets: " + assetsWithRemovedPreparationType;
             throw new IllegalArgumentException(errorMessage);
@@ -55,9 +62,11 @@ public class SpecimenService {
                         , existing.specimen_id()
                         , existing.collection_id()
                         , null
-                        , false));
-        
+                        , false
+                        , specimen.role_restrictions()));
+
         return specimen;
+        });
     }
 
     public List<String> listPreparationTypes(){
