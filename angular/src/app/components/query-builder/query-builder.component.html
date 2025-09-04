@@ -13,9 +13,14 @@
             <mat-select-trigger>
               {{queryForm.controls.node.value?.node}} -> {{queryForm.controls.node.value?.property}}
             </mat-select-trigger>
-            <mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
+            <!--<mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
               <mat-option *ngFor="let property of n.value" [value]="{node: n.key, property: property}">
                 {{property}}
+              </mat-option>
+            </mat-optgroup>-->
+            <mat-optgroup *ngFor="let queryItem of queryItems" [label]="queryItem.name">
+              <mat-option *ngFor="let property of queryItem.properties" [value]="{node: queryItem.name, property: property.name}">
+                {{property.name}}
               </mat-option>
             </mat-optgroup>
           </mat-select>

@@ -4,6 +4,7 @@ import {FormArray, FormBuilder, FormControl, Validators} from '@angular/forms';
 import {Moment} from 'moment-timezone';
 import {BehaviorSubject, map, Observable} from 'rxjs';
 import {CacheService} from '../../services/cache.service';
+import {QueryItem} from "../../types/queryItem";
 
 @Component({
   selector: 'dassco-query-builder',
@@ -68,6 +69,7 @@ export class QueryBuilderComponent implements OnInit {
       );
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
+  @Input() queryItems: QueryItem[] = [];
   @Input() savedQuery: QueryView | undefined;
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();

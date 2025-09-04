@@ -129,12 +129,93 @@ public class QueriesService {
         this.readonlyJdbi = readonlyJdbi;
     }
 
-    public Map<String, List<String>> getNodeProperties() {
-        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
-        properties.get("Asset").add("parent_guid");
+    public List<QueryItem> getNodeProperties() {
+//        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
+
+        /*properties.get("Asset").add("parent_guid");
         properties.get("Asset").addAll(propertiesTimestamps);
-        properties.get("Asset").addAll(propertiesDigitiser);
-        return properties;
+        properties.get("Asset").addAll(propertiesDigitiser);*/
+
+
+
+        /*
+        QueryParent -> {
+            table: String
+            List<Property> properties
+
+        }
+
+        Property -> {
+            nam: string
+            dateType: String
+            table: String
+        }
+        */
+
+        List<QueryItem> queryItems = new ArrayList<>();
+        queryItems.add(new QueryItem("asset", List.of(
+                new QueryProperty("asset_guid", "string", "asset"),
+                new QueryProperty("asset_locked", "string", "asset"),
+                new QueryProperty("asset_pid", "string", "asset"),
+                new QueryProperty("subject????", "???", "???"),
+                new QueryProperty("specimens", "specimen", "specimen"),
+                new QueryProperty("collection", "collection", "collection"),
+                new QueryProperty("digitiser", "digitiser", "digitiser"),
+                new QueryProperty("V2 feature external_publisher", "???", "???"),
+                new QueryProperty("file_format", "string", "asset"),
+                new QueryProperty("funding", "???", "???"),
+                new QueryProperty("institution", "institution", "institution"),
+                new QueryProperty("multi_specimen", "???", "???"),
+                new QueryProperty("parent_guid", "???", "???"),
+                new QueryProperty("payload_type", "string", "asset"),
+                new QueryProperty("restricted_access", "???", "???"),
+                new QueryProperty("status", "string", "asset"),
+                new QueryProperty("workstation", "workstation", "workstation"),
+                new QueryProperty("update_user", "string", "???"),
+                new QueryProperty("pipeline", "???", "???"),
+                new QueryProperty("internal_status", "string", "asset"),
+                new QueryProperty("make_public", "bool", "asset"),
+                new QueryProperty("metadata_source", "string", "asset"),
+                new QueryProperty("push_to_specify", "bool", "asset"),
+                new QueryProperty("push_to_specify", "bool", "asset"),
+                new QueryProperty("metadata_version", "string", "asset"),
+                new QueryProperty("complete_digitiser_list", "???", "???"),
+                new QueryProperty("camera_setting_control", "string", "asset"),
+                new QueryProperty("mos_id", "string", "asset"),
+                new QueryProperty("specify_attachment_remarks", "string", "asset"),
+                new QueryProperty("specify_attachment_title", "string", "asset"),
+                new QueryProperty("date_asset_taken", "???", "???"),
+                new QueryProperty("date_asset_finalised", "???", "???"),
+                new QueryProperty("date_metadata_ingested", "???", "???"),
+                new QueryProperty("legal", "???", "???"),
+                new QueryProperty("issues", "???", "???")
+        )));
+        queryItems.add(new QueryItem("event", List.of(
+//                new QueryProperty("audited", "bool", "event"), // EVENT TYPE
+//                new QueryProperty("asset_created_by", "???", "???"), // EVENT USER
+                new QueryProperty("date_asset_created_ars", "???", "event"), // EVENT TYPE + TIME
+//                new QueryProperty("asset_updated_by", "string", "???"), // EVENT USER
+                new QueryProperty("date_asset_updated_ars", "???", "event"), // EVENT TYPE + TIME
+//                new QueryProperty("asset_deleted_by", "string", "???"), // EVENT USER
+                new QueryProperty("date_asset_deleted_ars", "???", "???"), // EVENT TYPE + TIME
+//                new QueryProperty("audited_by", "string", "???"), // EVENT USER
+                new QueryProperty("date_audited", "???", "???"), // EVENT TYPE + TIME
+//                new QueryProperty("metadata_created_by", "string", "???"), // EVENT USER
+                new QueryProperty("date_metadata_created_ars", "???", "???"), // EVENT TYPE + TIME
+//                new QueryProperty("metadata_updated_by", "string", "???"), // EVENT USER
+                new QueryProperty("date_metadata_updated_ars", "???", "???"), // EVENT TYPE + TIME
+                new QueryProperty("date_pushed_to_specify", "???", "???") // EVENT TYPE + TIME
+        )));
+
+
+
+
+
+
+
+
+        return queryItems;
+//        return properties;
     }
 
     public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
@@ -159,10 +240,9 @@ public class QueriesService {
         return allAssets;
     }
 
-    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
-        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+    public List<QueryResultAsset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
         Map<String, Set<String>> accessMap = null;
-
         boolean fullAccess = checkRights(user);
         if (!fullAccess) {
             accessMap = accessCache.get(user);
@@ -170,24 +250,58 @@ public class QueriesService {
                     .values().stream()
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
+        } else {
+            collectionsAccess = null;
         }
-
-        List<Asset> allAssets = new ArrayList<>();
-
-        for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
+        /*for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
+            var s = unwrapToPostgresqlQuery(received, limit, false, collectionsAccess, fullAccess);
+            System.out.println(s);
             String query = unwrapQuery(received, limit, false, collectionsAccess, fullAccess);
             if (query != null && !StringUtils.isBlank(query)) {
                 logger.info("Getting assets from query.");
                 System.out.println(query);
+
                 List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
                 List<Asset> distinctAssets = handleDuplicatedAssets(assets);
 
                 applyWriteAccess(accessMap, distinctAssets);
-                allAssets.addAll(distinctAssets);
             }
-        }
+        }*/
 
-        return allAssets;
+        String whereFilters = queries.stream().map(received -> received.toPostgreSQL(limit, false, collectionsAccess, fullAccess)).collect(Collectors.joining(" and "));
+        String sql = """
+            select
+                asset_guid,
+                collection.institution_name as institution,
+                collection_name as collection,
+                file_formats,
+                now() as created_date
+            from asset
+            left join collection using(collection_id)
+            left join asset_specimen using(asset_guid)
+            left join specimen using(specimen_id)
+            left join event using (asset_guid)
+            left join dassco_user on dassco_user.dassco_user_id = asset.digitiser_id
+            left join asset_funding using (asset_guid)
+            left join funding using (funding_id)
+            left join parent_child on parent_child.child_guid = asset.asset_guid
+            left join workstation using (workstation_id)
+            left join pipeline using (pipeline_id)
+            left join legality using (legality_id)
+            left join issue using (asset_guid)
+            #where#
+            limit 200
+        """.replace("#where#", "where " + whereFilters);
+
+
+        return readonlyJdbi.withHandle(h ->
+                h.createQuery(sql)
+//                        .bindMap()
+                        .mapTo(QueryResultAsset.class)
+                        .list()
+        );
+
+//        return allAssets;
     }
 
     public List<Asset> handleDuplicatedAssets(List<Asset> originalAssets) {
@@ -214,6 +328,10 @@ public class QueriesService {
                     .filter(asset -> accessMap.get("write").contains(asset.collection))
                     .forEach(asset -> asset.writeAccess = true);
         }
+    }
+
+    public String unwrapToPostgresqlQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess, boolean fullAccess){
+        return queryReceived.toPostgreSQL(limit, count, collectionAccess, fullAccess);
     }
 
     public String unwrapQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess, boolean fullAccess) {

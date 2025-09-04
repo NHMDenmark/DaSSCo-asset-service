@@ -2,6 +2,8 @@ package dk.northtech.dasscoassetservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.List;
+
 import static dk.northtech.dasscoassetservice.domain.QueryDataType.*;
 
 public class QueryInner {
@@ -25,6 +27,58 @@ public class QueryInner {
                 ", value='" + value + '\'' +
                 ", dataType=" + dataType +
                 '}';
+    }
+
+    public String toBasicPostgreSQLQueryString(String column, String table, int index) {
+        String eventfiler = table.equals("event") ? "(#BASE# and event = '%s')".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
+        if(table.equals("event")) {
+            column = "event.timestamp::date";
+        }
+
+
+        if(operator.equalsIgnoreCase("equal")) {
+            operator = "=";
+            return eventfiler.replace("#BASE#","%s %s '%s'".formatted(column, operator, value));
+        }
+        if(operator.equalsIgnoreCase("starts with")) {
+            operator = "ILIKE";
+            return eventfiler.replace("#BASE#","%s %s '%s%%'".formatted(column, operator, value));
+        }
+        if(operator.equalsIgnoreCase("ends with")) {
+            operator = "ILIKE";
+            return eventfiler.replace("#BASE#","%s %s '%%%s'".formatted(column, operator, value));
+        }
+        if(operator.equalsIgnoreCase("contains")) {
+            operator = "ILIKE";
+            return eventfiler.replace("#BASE#","%s %s '%%%s%%'".formatted(column, operator, value));
+        }
+        if(operator.equalsIgnoreCase("empty")) {
+            operator = " IS NULL";
+            return eventfiler.replace("#BASE#","%s %s".formatted(column, operator));
+        }
+        if(operator.equalsIgnoreCase("in")) {
+            operator = "IN ";
+            return eventfiler.replace("#BASE#","%s %s (%s)".formatted(column, operator, value));
+        }
+        if(operator.equalsIgnoreCase("after")) {
+            operator = "<";
+            return eventfiler.replace("#BASE#","%s %s to_timestamp(%s)".formatted(column, operator, (Long.parseLong(value)/1000)));
+        }
+        if(operator.equalsIgnoreCase("before")) {
+            operator = ">";
+            return eventfiler.replace("#BASE#","%s %s to_timestamp(%s)".formatted(column, operator, (Long.parseLong(value)/1000)));
+        }
+        if(operator.equalsIgnoreCase("between")) {
+            operator = "BETWEEN";
+            String[] times = value.split("#");
+            if(times.length == 2) {
+                var first = Long.parseLong(times[0])/1000;
+                var second = Long.parseLong(times[1])/1000;
+                return eventfiler.replace("#BASE#","%s %s to_timestamp(%s) and to_timestamp(%s)".formatted(column, operator, first, second));
+            }
+        }
+
+        return "";
     }
 
     public String toBasicQueryString(String match, String property, QueryDataType dataType) {
@@ -76,5 +130,18 @@ public class QueryInner {
         }
 
         return "toLower(" + match + property + ") " + operator + " toLower('" + value + "')";
+    }
+
+    public String eventTypeByMetadataColumn(String column) {
+        switch (column) {
+            case "date_asset_created_ars": return "CREATE_ASSET";
+            case "date_asset_updated_ars": return "UPDATE_ASSET";
+            case "date_asset_deleted_ars": return "DELETE_ASSET";
+            case "date_audited": return "AUDIT_ASSET_METADATA";
+            case "date_metadata_created_ars": return "CREATE_ASSET_METADATA";
+            case "date_metadata_updated_ars": return "UPDATE_ASSET_METADATA";
+            case "date_pushed_to_specify": return "SYNCHRONISE_SPECIFY";
+            default: return "";
+        }
     }
 }

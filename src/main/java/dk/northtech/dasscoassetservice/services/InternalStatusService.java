@@ -45,9 +45,9 @@ public class InternalStatusService {
                             Map<String, Integer> statuses = new HashMap<>();
 
                             if (key.equals(InternalStatusTimeFrame.total)) {
-                                statuses = getInternalStatusAmt(false).get();
+                                statuses = getInternalStatusAmt(false).orElse(new HashMap<>());
                             } else if (key.equals(InternalStatusTimeFrame.daily)) {
-                                statuses = getInternalStatusAmt(true).get();
+                                statuses = getInternalStatusAmt(true).orElse(new HashMap<>());
                             }
                             return statuses;
                         }
