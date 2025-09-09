@@ -27,20 +27,4 @@ public class QueriesReceived {
                 ", query=" + query +
                 '}';
     }
-
-    public String toPostgreSQL(int limit, boolean count, Set<String> collectionAccess, boolean fullAccess){
-        AtomicInteger counter = new AtomicInteger();
-        Map<String, String> params = new HashMap<>();
-        return this.query.stream().map(query ->
-            query.where.stream().map(queryWhere -> {
-                var table = query.select;
-                var column = queryWhere.property;
-                return "(" + queryWhere.fields.stream().map(queryInner -> {
-                    var index = counter.getAndIncrement();
-                    params.put("%s__%s".formatted(column, index), queryInner.value);
-                    return queryInner.toBasicPostgreSQLQueryString(column, table, index);
-                }).collect(Collectors.joining(" or ")) + ")";
-            }
-        ).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
-    }
 }

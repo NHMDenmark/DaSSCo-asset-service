@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.domain;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Map;
 
 import static dk.northtech.dasscoassetservice.domain.QueryDataType.*;
 
@@ -29,7 +30,7 @@ public class QueryInner {
                 '}';
     }
 
-    public String toBasicPostgreSQLQueryString(String column, String table, int index) {
+    public Map<String, Map<String, Object>> toBasicPostgreSQLQueryString(String column, String table, int index) {
         String eventfiler = table.equals("event") ? "(#BASE# and event = '%s')".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
         if(table.equals("event")) {
             column = "event.timestamp::date";
@@ -38,47 +39,65 @@ public class QueryInner {
 
         if(operator.equalsIgnoreCase("equal")) {
             operator = "=";
-            return eventfiler.replace("#BASE#","%s %s '%s'".formatted(column, operator, value));
+            String preparedParam = "%s_%s".formatted(column, index);
+            String sql = eventfiler.replace("#BASE#", "%s %s '%s'".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("starts with")) {
             operator = "ILIKE";
-            return eventfiler.replace("#BASE#","%s %s '%s%%'".formatted(column, operator, value));
+            String preparedParam = "%s_%s".formatted(column, index);
+            String sql = eventfiler.replace("#BASE#", "%s %s %s || '%%'".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("ends with")) {
             operator = "ILIKE";
-            return eventfiler.replace("#BASE#","%s %s '%%%s'".formatted(column, operator, value));
+            String preparedParam = "%s_%s".formatted(column, index);
+            String sql = eventfiler.replace("#BASE#", "%s %s '%%' || %s".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("contains")) {
             operator = "ILIKE";
-            return eventfiler.replace("#BASE#","%s %s '%%%s%%'".formatted(column, operator, value));
+            String preparedParam = "%s_%s".formatted(column, index);
+            String sql = eventfiler.replace("#BASE#", "%s %s '%%' || %s || '%%'".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("empty")) {
-            operator = " IS NULL";
-            return eventfiler.replace("#BASE#","%s %s".formatted(column, operator));
+            operator = "IS NULL";
+            String sql = eventfiler.replace("#BASE#", "%s %s".formatted(column, operator));
+            return Map.of(sql, Map.of());
         }
         if(operator.equalsIgnoreCase("in")) {
             operator = "IN ";
-            return eventfiler.replace("#BASE#","%s %s (%s)".formatted(column, operator, value));
+            String preparedParam = "%s_%s".formatted(column, index);
+            String sql = eventfiler.replace("#BASE#", "%s %s (%s)".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("after")) {
             operator = "<";
-            return eventfiler.replace("#BASE#","%s %s to_timestamp(%s)".formatted(column, operator, (Long.parseLong(value)/1000)));
+            String preparedParam = "%s_%s".formatted("after", index);
+            String sql = eventfiler.replace("#BASE#", "%s %s to_timestamp(%s)".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, (Long.parseLong(value) / 1000)));
         }
         if(operator.equalsIgnoreCase("before")) {
             operator = ">";
-            return eventfiler.replace("#BASE#","%s %s to_timestamp(%s)".formatted(column, operator, (Long.parseLong(value)/1000)));
+            String preparedParam = "%s_%s".formatted("before", index);
+            String sql = eventfiler.replace("#BASE#", "%s %s to_timestamp(%s)".formatted(column, operator, ":" + preparedParam));
+            return Map.of(sql, Map.of(preparedParam, (Long.parseLong(value) / 1000)));
         }
         if(operator.equalsIgnoreCase("between")) {
             operator = "BETWEEN";
+            String preparedParamFirst = "%s1_%s".formatted("start_date", index);
+            String preparedParamSecond = "%s2_%s".formatted("end_data", index);
             String[] times = value.split("#");
             if(times.length == 2) {
                 var first = Long.parseLong(times[0])/1000;
                 var second = Long.parseLong(times[1])/1000;
-                return eventfiler.replace("#BASE#","%s %s to_timestamp(%s) and to_timestamp(%s)".formatted(column, operator, first, second));
+                String sql = eventfiler.replace("#BASE#", "%s %s to_timestamp(%s) and to_timestamp(%s)".formatted(column, operator, ":" + preparedParamFirst, ":" + preparedParamSecond));
+                return Map.of(sql, Map.of(preparedParamFirst, first, preparedParamSecond, second));
             }
         }
 
-        return "";
+        return Map.of();
     }
 
     public String toBasicQueryString(String match, String property, QueryDataType dataType) {

@@ -81,8 +81,7 @@ public class DataSources {
             .registerRowMapper(ConstructorMapper.factory(Directory.class))
             .registerRowMapper(ConstructorMapper.factory(QueryResultAsset.class))
             .registerRowMapper(ConstructorMapper.factory(Specimen.class))
-            .registerRowMapper(ConstructorMapper.factory(Event.class))
-            .setSqlParser(new HashPrefixSqlParser());
+            .registerRowMapper(ConstructorMapper.factory(Event.class));
   }
 }
 

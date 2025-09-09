@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -268,7 +269,22 @@ public class QueriesService {
             }
         }*/
 
-        String whereFilters = queries.stream().map(received -> received.toPostgreSQL(limit, false, collectionsAccess, fullAccess)).collect(Collectors.joining(" and "));
+//        String whereFilters = queries.stream().map(received -> received.toPostgreSQL(limit, false, collectionsAccess, fullAccess).collect(Collectors.joining(" and "));
+        Map<String, Object> paramMap = new HashMap<>();
+        AtomicInteger counter = new AtomicInteger();
+        String whereFilters = queries.stream().map(queryReceived -> queryReceived.query.stream().map(query -> query.where.stream().map(queryWhere -> {
+            var table = query.select;
+            var column = queryWhere.property;
+            return  "(" + queryWhere.fields.stream().map(queryInner -> {
+                var index = counter.getAndIncrement();
+                var queryInnerResult = queryInner.toBasicPostgreSQLQueryString(column, table, index);
+                var queryInnerResultEntry = queryInnerResult.entrySet().iterator().next();
+                paramMap.putAll(queryInnerResultEntry.getValue());
+                return queryInnerResultEntry.getKey();
+            }).collect(Collectors.joining(" or ")) + ")";
+        }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
+//        String whereFilters = "";
+//        var whereQueries = queries.stream().map(received -> received.toPostgreSQL(limit, false, collectionsAccess, fullAccess));
         String sql = """
             select
                 asset_guid,
@@ -290,13 +306,14 @@ public class QueriesService {
             left join legality using (legality_id)
             left join issue using (asset_guid)
             #where#
-            limit 200
+            limit :limit
         """.replace("#where#", "where " + whereFilters);
 
 
         return readonlyJdbi.withHandle(h ->
                 h.createQuery(sql)
-//                        .bindMap()
+                        .bindMap(paramMap)
+                        .bind("limit", Math.min(limit, 10000))
                         .mapTo(QueryResultAsset.class)
                         .list()
         );
@@ -328,10 +345,6 @@ public class QueriesService {
                     .filter(asset -> accessMap.get("write").contains(asset.collection))
                     .forEach(asset -> asset.writeAccess = true);
         }
-    }
-
-    public String unwrapToPostgresqlQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess, boolean fullAccess){
-        return queryReceived.toPostgreSQL(limit, count, collectionAccess, fullAccess);
     }
 
     public String unwrapQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess, boolean fullAccess) {
