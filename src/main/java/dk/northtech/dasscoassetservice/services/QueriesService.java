@@ -283,8 +283,6 @@ public class QueriesService {
                 return queryInnerResultEntry.getKey();
             }).collect(Collectors.joining(" or ")) + ")";
         }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
-//        String whereFilters = "";
-//        var whereQueries = queries.stream().map(received -> received.toPostgreSQL(limit, false, collectionsAccess, fullAccess));
         String sql = """
             select
                 asset_guid,

@@ -75,8 +75,8 @@ public class Queries {
     public int getAssetCount(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
         User user = userService.from(securityContext);
         if (queries.length == 0) return 0;
-        return 0;
-//        return this.queriesService.getAssetCountFromQuery(Arrays.asList(queries), limit, user);
+        // The frontend should just use the getNodeProperties and count them
+        return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user).size();
     }
 
     @POST
