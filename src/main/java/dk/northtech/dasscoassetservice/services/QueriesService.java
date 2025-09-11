@@ -305,9 +305,11 @@ public class QueriesService {
             left join pipeline using (pipeline_id)
             left join legality using (legality_id)
             left join issue using (asset_guid)
-            #where#
+            #where# #collectionAccess#
             limit :limit
-        """.replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters);
+        """
+                .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
+                .replace("#collectionAccess#", fullAccess ? "" : (whereFilters.isEmpty() ? "where" : " and collection_name in (%s)".formatted(collectionsAccess.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))));
 
 
         return readonlyJdbi.withHandle(h ->
