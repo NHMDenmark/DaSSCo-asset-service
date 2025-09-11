@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -131,9 +132,9 @@ public class QueriesService {
     }
 
     public List<QueryItem> getNodeProperties() {
-//        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
+        /*Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
 
-        /*properties.get("Asset").add("parent_guid");
+        properties.get("Asset").add("parent_guid");
         properties.get("Asset").addAll(propertiesTimestamps);
         properties.get("Asset").addAll(propertiesDigitiser);*/
 
@@ -153,59 +154,59 @@ public class QueriesService {
         }
         */
 
+
         List<QueryItem> queryItems = new ArrayList<>();
         queryItems.add(new QueryItem("asset", List.of(
-                new QueryProperty("asset_guid", "string", "asset"),
-                new QueryProperty("asset_locked", "string", "asset"),
-                new QueryProperty("asset_pid", "string", "asset"),
-                new QueryProperty("subject????", "???", "???"),
-                new QueryProperty("specimens", "specimen", "specimen"),
-                new QueryProperty("collection", "collection", "collection"),
-                new QueryProperty("digitiser", "digitiser", "digitiser"),
-                new QueryProperty("V2 feature external_publisher", "???", "???"),
-                new QueryProperty("file_format", "string", "asset"),
-                new QueryProperty("funding", "???", "???"),
-                new QueryProperty("institution", "institution", "institution"),
-                new QueryProperty("multi_specimen", "???", "???"),
-                new QueryProperty("parent_guid", "???", "???"),
-                new QueryProperty("payload_type", "string", "asset"),
-                new QueryProperty("restricted_access", "???", "???"),
-                new QueryProperty("status", "string", "asset"),
-                new QueryProperty("workstation", "workstation", "workstation"),
-                new QueryProperty("update_user", "string", "???"),
-                new QueryProperty("pipeline", "???", "???"),
-                new QueryProperty("internal_status", "string", "asset"),
-                new QueryProperty("make_public", "bool", "asset"),
-                new QueryProperty("metadata_source", "string", "asset"),
-                new QueryProperty("push_to_specify", "bool", "asset"),
-                new QueryProperty("push_to_specify", "bool", "asset"),
-                new QueryProperty("metadata_version", "string", "asset"),
-                new QueryProperty("complete_digitiser_list", "???", "???"),
-                new QueryProperty("camera_setting_control", "string", "asset"),
-                new QueryProperty("mos_id", "string", "asset"),
-                new QueryProperty("specify_attachment_remarks", "string", "asset"),
-                new QueryProperty("specify_attachment_title", "string", "asset"),
-                new QueryProperty("date_asset_taken", "???", "???"),
-                new QueryProperty("date_asset_finalised", "???", "???"),
-                new QueryProperty("date_metadata_ingested", "???", "???"),
-                new QueryProperty("legal", "???", "???"),
-                new QueryProperty("issues", "???", "???")
-        )));
+                new QueryProperty(QueryItemField.ASSET_GUID.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.ASSET_LOCKED.getDisplayName(), "boolean", "asset"),
+                new QueryProperty(QueryItemField.ASSET_PID.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.SPECIMENS.getDisplayName(), "specimen", "specimen"),
+                new QueryProperty(QueryItemField.COLLECTION.getDisplayName(), "collection", "collection"),
+                new QueryProperty(QueryItemField.DIGITISER.getDisplayName(), "digitiser", "digitiser"),
+//                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.FILE_FORMAT.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.FUNDING.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.INSTITUTION.getDisplayName(), "institution", "institution"),
+                new QueryProperty(QueryItemField.MULTI_SPECIMEN.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.PARENT_GUID.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.PAYLOAD_TYPE.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.RESTRICTED_ACCESS.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", "workstation"),
+                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", "???"),
+                new QueryProperty(QueryItemField.PIPELINE.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.INTERNAL_STATUS.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.MAKE_PUBLIC.getDisplayName(), "boolean", "asset"),
+                new QueryProperty(QueryItemField.METADATA_SOURCE.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.PUSH_TO_SPECIFY.getDisplayName(), "boolean", "asset"),
+                new QueryProperty(QueryItemField.METADATA_VERSION.getDisplayName(), "String", "asset"),
+//                new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(), "???", "???"),
+                new QueryProperty(QueryItemField.CAMERA_SETTING_CONTROL.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.MOS_ID.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_REMARKS.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_TITLE.getDisplayName(), "String", "asset"),
+                new QueryProperty(QueryItemField.DATE_ASSET_TAKEN.getDisplayName(), "Instant", "asset"),
+                new QueryProperty(QueryItemField.DATE_ASSET_FINALISED.getDisplayName(), "Instant", "asset"),
+                new QueryProperty(QueryItemField.DATE_METADATA_INGESTED.getDisplayName(), "Instant", "asset")
+//                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "???", "???"),
+//                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "???", "???")
+                )));
         queryItems.add(new QueryItem("event", List.of(
 //                new QueryProperty("audited", "bool", "event"), // EVENT TYPE
 //                new QueryProperty("asset_created_by", "???", "???"), // EVENT USER
-                new QueryProperty("date_asset_created_ars", "???", "event"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", "event"), // EVENT TYPE + TIME
 //                new QueryProperty("asset_updated_by", "string", "???"), // EVENT USER
-                new QueryProperty("date_asset_updated_ars", "???", "event"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", "event"), // EVENT TYPE + TIME
 //                new QueryProperty("asset_deleted_by", "string", "???"), // EVENT USER
-                new QueryProperty("date_asset_deleted_ars", "???", "???"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", "event"), // EVENT TYPE + TIME
 //                new QueryProperty("audited_by", "string", "???"), // EVENT USER
-                new QueryProperty("date_audited", "???", "???"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_AUDITED.getDisplayName(), "???", "Instant"), // EVENT TYPE + TIME
 //                new QueryProperty("metadata_created_by", "string", "???"), // EVENT USER
-                new QueryProperty("date_metadata_created_ars", "???", "???"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_METADATA_CERATED_ARS.getDisplayName(), "Instant", "event"), // EVENT TYPE + TIME
 //                new QueryProperty("metadata_updated_by", "string", "???"), // EVENT USER
-                new QueryProperty("date_metadata_updated_ars", "???", "???"), // EVENT TYPE + TIME
-                new QueryProperty("date_pushed_to_specify", "???", "???") // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_METADATA_UPDATED_ARS.getDisplayName(), "Instant", "event"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_PUSHED_TO_SPECIFY.getDisplayName(), "Instant", "event") // EVENT TYPE + TIME
         )));
 
 
@@ -285,7 +286,7 @@ public class QueriesService {
         }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
         String sql = """
             select
-                asset_guid,
+                DISTINCT asset_guid,
                 collection.institution_name as institution,
                 collection_name as collection,
                 file_formats,
@@ -295,7 +296,8 @@ public class QueriesService {
             left join asset_specimen using(asset_guid)
             left join specimen using(specimen_id)
             left join event using (asset_guid)
-            left join dassco_user on dassco_user.dassco_user_id = asset.digitiser_id
+            left join digitiser_list using (asset_guid)
+            left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id
             left join asset_funding using (asset_guid)
             left join funding using (funding_id)
             left join parent_child on parent_child.child_guid = asset.asset_guid
@@ -305,18 +307,94 @@ public class QueriesService {
             left join issue using (asset_guid)
             #where#
             limit :limit
-        """.replace("#where#", "where " + whereFilters);
+        """.replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters);
 
 
         return readonlyJdbi.withHandle(h ->
-                h.createQuery(sql)
-                        .bindMap(paramMap)
-                        .bind("limit", Math.min(limit, 10000))
-                        .mapTo(QueryResultAsset.class)
-                        .list()
-        );
+                {
+                    List<QueryResultAsset> queryResultAssets = h.createQuery(sql)
+                            .bindMap(paramMap)
+                            .bind("limit", Math.min(limit, 10000))
+                            .mapTo(QueryResultAsset.class)
+                            .list();
 
-//        return allAssets;
+                    List<String> assetGuids = queryResultAssets.stream().map(QueryResultAsset::asset_guid).toList();
+
+                    Map<String, List<Event>> assetEvents = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
+                                    select asset_guid, username, timestamp, event, pipeline_name from event
+                                    left join dassco_user using (dassco_user_id)
+                                    left join pipeline using (pipeline_id)
+                                    where asset_guid in (<assetGuids>)
+                                    """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Event>> assetEventsTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String username = rs.getString("username");
+                                        Timestamp timestamp = rs.getTimestamp("timestamp");
+                                        String event = rs.getString("event");
+                                        String pipelineName = rs.getString("pipeline_name");
+                                        Event newEvent = new Event(
+                                            username,
+                                            timestamp != null ? timestamp.toInstant() : null,
+                                            event != null ? DasscoEvent.valueOf(event) : null,
+                                            pipelineName
+                                        );
+                                        assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
+                                    }
+                                    return assetEventsTemp;
+                                }
+                            });
+
+                    Map<String, List<Specimen>> assetSpecimens = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
+                            select asset_guid, institution_name, collection_name, barcode, specimen_pid, preparation_types, preparation_type, specimen_id, collection_id, specify_collection_object_attachment_id, asset_detached from asset_specimen
+                            inner join specimen using (specimen_id)
+                            left join collection using (collection_id)
+                            where asset_guid in (<assetGuids>)
+                            """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Specimen>> assetSpecimensTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String institutionName = rs.getString("institution_name");
+                                        String collectionName = rs.getString("collection_name");
+                                        String barcode = rs.getString("barcode");
+                                        String specimenPid = rs.getString("specimen_pid");
+                                        String preparationTypes = rs.getString("preparation_types");
+                                        String preparationType = rs.getString("preparation_type");
+                                        int specimenId = rs.getInt("specimen_id");
+                                        int collectionId = rs.getInt("collection_id");
+                                        Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
+                                        boolean assetDetached = rs.getBoolean("asset_detached");
+                                        Specimen newSpecimen = new Specimen(
+                                                institutionName,
+                                                collectionName,
+                                                barcode,
+                                                specimenPid,
+                                                new HashSet<>(Arrays.asList(preparationTypes.split(","))),
+                                                preparationType,
+                                                specimenId,
+                                                collectionId,
+                                                specifyCollectionObjectAttachmentId,
+                                                assetDetached
+                                        );
+                                        assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newSpecimen);
+                                    }
+                                    return assetSpecimensTemp;
+                                }
+                            });
+
+                    return queryResultAssets.stream().map(queryResultAsset ->
+                            queryResultAsset
+                                    .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
+                                    .withSpeciments(assetSpecimens.get(queryResultAsset.asset_guid()))
+                    ).toList();
+                }
+        );
     }
 
     public List<Asset> handleDuplicatedAssets(List<Asset> originalAssets) {

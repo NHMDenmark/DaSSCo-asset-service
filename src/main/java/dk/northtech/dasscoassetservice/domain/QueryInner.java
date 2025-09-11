@@ -34,6 +34,11 @@ public class QueryInner {
         String eventfiler = table.equals("event") ? "(#BASE# and event = '%s')".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
         if(table.equals("event")) {
             column = "event.timestamp::date";
+        }else{
+            QueryItemField queryItemField = QueryItemField.fromDisplayName(column);
+            if(queryItemField != null) {
+                column = queryItemField.getFieldName();
+            }
         }
 
 
@@ -67,9 +72,9 @@ public class QueryInner {
             return Map.of(sql, Map.of());
         }
         if(operator.equalsIgnoreCase("in")) {
-            operator = "IN ";
+            operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
-            String sql = eventfiler.replace("#BASE#", "%s %s (%s)".formatted(column, operator, ":" + preparedParam));
+            String sql = eventfiler.replace("#BASE#", "upper(%s) %s any(%s)".formatted(":" + preparedParam, operator, column));
             return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("after")) {

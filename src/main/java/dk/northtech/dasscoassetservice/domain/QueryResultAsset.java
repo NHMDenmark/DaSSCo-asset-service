@@ -1,8 +1,10 @@
 package dk.northtech.dasscoassetservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.annotation.Nullable;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public record QueryResultAsset(
@@ -17,8 +19,19 @@ public record QueryResultAsset(
         @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
         List<String> file_formats,
         @Schema(description = "Date and time the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z")
-        Instant created_date
-        /*@Schema(description = "List of the events associated with an asset")
-        List<Event> events*/
+        Instant created_date,
+        @Schema(description = "List of the events associated with an asset")
+        @Nullable
+        List<Event> events,
+        @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
+        @Nullable
+        List<Specimen> specimens
 ) {
+
+        public QueryResultAsset withEvents(List<Event> events) {
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, specimens);
+        }
+        public QueryResultAsset withSpeciments(List<Specimen> speciments) {
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, speciments);
+        }
 }
