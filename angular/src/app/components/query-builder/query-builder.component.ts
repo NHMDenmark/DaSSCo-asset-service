@@ -182,7 +182,7 @@ export class QueryBuilderComponent implements OnInit {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
     } else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-    } else if (nodeProperty.property.includes('asset_locked')) {
+    } else if (nodeProperty.property.includes('asset_locked') || nodeProperty.property.includes('audited')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
     } else {

@@ -31,9 +31,9 @@ public class QueryInner {
     }
 
     public Map<String, Map<String, Object>> toBasicPostgreSQLQueryString(String column, String table, int index) {
-        String eventfiler = table.equals("event") ? "(#BASE# and event = '%s')".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
-        if(table.equals("event")) {
-            column = "event.timestamp::date";
+        String eventfiler = table.equals("event") ? "(#BASE# and %s)".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
+        if(table.equals("event") && List.of("after", "before", "between").contains(operator.toLowerCase())) {
+            column = "event.timestamp::date"; // move it to QueryItem?
         }else{
             QueryItemField queryItemField = QueryItemField.fromDisplayName(column);
             if(queryItemField != null) {
@@ -42,7 +42,7 @@ public class QueryInner {
         }
 
 
-        if(operator.equalsIgnoreCase("equal")) {
+        if(operator.equalsIgnoreCase("equal") && ((!table.equals("event")) || !dataType.name().equals("BOOLEAN"))) {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
             String sql = eventfiler.replace("#BASE#", "%s %s '%s'".formatted(column, operator, ":" + preparedParam));
@@ -101,6 +101,9 @@ public class QueryInner {
                 return Map.of(sql, Map.of(preparedParamFirst, first, preparedParamSecond, second));
             }
         }
+        if(table.equals("event")) {
+            return Map.of(eventfiler.replace("#BASE# and ", ""), Map.of());
+        }
 
         return Map.of();
     }
@@ -158,13 +161,16 @@ public class QueryInner {
 
     public String eventTypeByMetadataColumn(String column) {
         switch (column) {
-            case "date_asset_created_ars": return "CREATE_ASSET";
-            case "date_asset_updated_ars": return "UPDATE_ASSET";
-            case "date_asset_deleted_ars": return "DELETE_ASSET";
-            case "date_audited": return "AUDIT_ASSET_METADATA";
-            case "date_metadata_created_ars": return "CREATE_ASSET_METADATA";
-            case "date_metadata_updated_ars": return "UPDATE_ASSET_METADATA";
-            case "date_pushed_to_specify": return "SYNCHRONISE_SPECIFY";
+            case "asset_created_by": return " event = 'CREATE_ASSET'";
+            case "asset_updated_by", "date_asset_updated_ars": return " event = 'UPDATE_ASSET'";
+            case "audited": return " event %s 'AUDIT_ASSET'".formatted(value.equalsIgnoreCase("true") ? "=" : "!=");
+            case "audited_by": return " event = 'AUDIT_ASSET'";
+            case "date_asset_created_ars": return "event = 'CREATE_ASSET'";
+            case "date_asset_deleted_ars": return " event = 'DELETE_ASSET'";
+            case "date_audited": return " event = 'AUDIT_ASSET_METADATA'";
+            case "date_metadata_created_ars": return " event = 'CREATE_ASSET_METADATA'";
+            case "date_metadata_updated_ars": return " event = 'UPDATE_ASSET_METADATA'";
+            case "date_pushed_to_specify": return " event = 'SYNCHRONISE_SPECIFY'";
             default: return "";
         }
     }

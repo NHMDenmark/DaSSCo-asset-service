@@ -137,53 +137,56 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.ASSET_GUID.getDisplayName(), "String", QueryItemField.ASSET_GUID.getTableName()),
                 new QueryProperty(QueryItemField.ASSET_LOCKED.getDisplayName(), "boolean", QueryItemField.ASSET_LOCKED.getTableName()),
                 new QueryProperty(QueryItemField.ASSET_PID.getDisplayName(), "String", QueryItemField.ASSET_PID.getTableName()),
-                new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", QueryItemField.SUBJECT.getTableName()),
-                new QueryProperty(QueryItemField.SPECIMENS.getDisplayName(), "specimen", QueryItemField.SPECIMENS.getTableName()),
+                new QueryProperty(QueryItemField.CAMERA_SETTING_CONTROL.getDisplayName(), "String", QueryItemField.CAMERA_SETTING_CONTROL.getTableName()),
                 new QueryProperty(QueryItemField.COLLECTION.getDisplayName(), "collection", QueryItemField.COLLECTION.getTableName()),
+//                new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(), "???", QueryItemField.COMPLETE_DIGITISER_LIST.getTableName()),
+                new QueryProperty(QueryItemField.DATE_ASSET_FINALISED.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_FINALISED.getTableName()),
+                new QueryProperty(QueryItemField.DATE_ASSET_TAKEN.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_TAKEN.getTableName()),
+                new QueryProperty(QueryItemField.DATE_METADATA_INGESTED.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_INGESTED.getTableName()),
                 new QueryProperty(QueryItemField.DIGITISER.getDisplayName(), "digitiser", QueryItemField.DIGITISER.getTableName()),
-//                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "???", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.FILE_FORMAT.getDisplayName(), "String", QueryItemField.FILE_FORMAT.getTableName()),
                 new QueryProperty(QueryItemField.FUNDING.getDisplayName(), "String", QueryItemField.FUNDING.getTableName()),
+//                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "???", QueryItemField.ISSUES.getTableName())
                 new QueryProperty(QueryItemField.INSTITUTION.getDisplayName(), "institution", QueryItemField.INSTITUTION.getTableName()),
-                new QueryProperty(QueryItemField.MULTI_SPECIMEN.getDisplayName(), "boolean", QueryItemField.MULTI_SPECIMEN.getTableName()),
-                new QueryProperty(QueryItemField.PARENT_GUID.getDisplayName(), "String", QueryItemField.PARENT_GUID.getTableName()),
-                new QueryProperty(QueryItemField.PAYLOAD_TYPE.getDisplayName(), "String", QueryItemField.PAYLOAD_TYPE.getTableName()),
-                new QueryProperty(QueryItemField.RESTRICTED_ACCESS.getDisplayName(), "???", QueryItemField.RESTRICTED_ACCESS.getTableName()),
-                new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", QueryItemField.STATUS.getTableName()),
-                new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName()),
-                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
-                new QueryProperty(QueryItemField.PIPELINE.getDisplayName(), "String", QueryItemField.PIPELINE.getTableName()),
                 new QueryProperty(QueryItemField.INTERNAL_STATUS.getDisplayName(), "String", QueryItemField.INTERNAL_STATUS.getTableName()),
+//                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "???", QueryItemField.LEGAL.getTableName()),
                 new QueryProperty(QueryItemField.MAKE_PUBLIC.getDisplayName(), "boolean", QueryItemField.MAKE_PUBLIC.getTableName()),
                 new QueryProperty(QueryItemField.METADATA_SOURCE.getDisplayName(), "String", QueryItemField.METADATA_SOURCE.getTableName()),
-                new QueryProperty(QueryItemField.PUSH_TO_SPECIFY.getDisplayName(), "boolean", QueryItemField.PUSH_TO_SPECIFY.getTableName()),
                 new QueryProperty(QueryItemField.METADATA_VERSION.getDisplayName(), "String", QueryItemField.METADATA_VERSION.getTableName()),
-//                new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(), "???", QueryItemField.COMPLETE_DIGITISER_LIST.getTableName()),
-                new QueryProperty(QueryItemField.CAMERA_SETTING_CONTROL.getDisplayName(), "String", QueryItemField.CAMERA_SETTING_CONTROL.getTableName()),
                 new QueryProperty(QueryItemField.MOS_ID.getDisplayName(), "String", QueryItemField.MOS_ID.getTableName()),
+                new QueryProperty(QueryItemField.MULTI_SPECIMEN.getDisplayName(), "boolean", QueryItemField.MULTI_SPECIMEN.getTableName()),
+                //multi_specimen
+                new QueryProperty(QueryItemField.PARENT_GUID.getDisplayName(), "String", QueryItemField.PARENT_GUID.getTableName()),
+                new QueryProperty(QueryItemField.PAYLOAD_TYPE.getDisplayName(), "String", QueryItemField.PAYLOAD_TYPE.getTableName()),
+                new QueryProperty(QueryItemField.PIPELINE.getDisplayName(), "String", QueryItemField.PIPELINE.getTableName()),
+                new QueryProperty(QueryItemField.PUSH_TO_SPECIFY.getDisplayName(), "boolean", QueryItemField.PUSH_TO_SPECIFY.getTableName()),
+                //new QueryProperty(QueryItemField.RESTRICTED_ACCESS.getDisplayName(), "???", QueryItemField.RESTRICTED_ACCESS.getTableName()),
                 new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_REMARKS.getDisplayName(), "String", QueryItemField.SPECIFY_ATTACHMENT_REMARKS.getTableName()),
                 new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_TITLE.getDisplayName(), "String", QueryItemField.SPECIFY_ATTACHMENT_TITLE.getTableName()),
-                new QueryProperty(QueryItemField.DATE_ASSET_TAKEN.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_TAKEN.getTableName()),
-                new QueryProperty(QueryItemField.DATE_ASSET_FINALISED.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_FINALISED.getTableName()),
-                new QueryProperty(QueryItemField.DATE_METADATA_INGESTED.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_INGESTED.getTableName())
-//                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "???", QueryItemField.LEGAL.getTableName()),
-//                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "???", QueryItemField.ISSUES.getTableName())
+                new QueryProperty(QueryItemField.SPECIMENS.getDisplayName(), "specimen", QueryItemField.SPECIMENS.getTableName()),
+                new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", QueryItemField.STATUS.getTableName()),
+                new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", QueryItemField.SUBJECT.getTableName()),
+                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
+//                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "???", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
+                new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName())
+
                 )));
+        //
         queryItems.add(new QueryItem("event", List.of(
-//                new QueryProperty("audited", "bool", "event"), // EVENT TYPE
-//                new QueryProperty("asset_created_by", "???", "???"), // EVENT USER
-                new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_CREATED_ARS.getTableName()), // EVENT TYPE + TIME
-//                new QueryProperty("asset_updated_by", "string", "???"), // EVENT USER
-                new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
-//                new QueryProperty("asset_deleted_by", "string", "???"), // EVENT USER
-                new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_DELETED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.ASSET_CERATED_BY.getDisplayName(), "String", QueryItemField.ASSET_CERATED_BY.getTableName()), // EVENT USER
+//                new QueryProperty(QueryItemField.ASSET_DELETED_BY.getDisplayName(), "String", QueryItemField.ASSET_DELETED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.ASSET_UPDATED_BY.getDisplayName(), "String", QueryItemField.ASSET_UPDATED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.AUDITED.getDisplayName(), "boolean", QueryItemField.AUDITED.getTableName()), // EVENT TYPE
 //                new QueryProperty("audited_by", "string", "???"), // EVENT USER
+                new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_CREATED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_DELETED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_AUDITED.getDisplayName(), "???", "Instant"), // EVENT TYPE + TIME
-//                new QueryProperty("metadata_created_by", "string", "???"), // EVENT USER
                 new QueryProperty(QueryItemField.DATE_METADATA_CERATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_CERATED_ARS.getTableName()), // EVENT TYPE + TIME
-//                new QueryProperty("metadata_updated_by", "string", "???"), // EVENT USER
                 new QueryProperty(QueryItemField.DATE_METADATA_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_PUSHED_TO_SPECIFY.getDisplayName(), "Instant", QueryItemField.DATE_PUSHED_TO_SPECIFY.getTableName()) // EVENT TYPE + TIME
+//                new QueryProperty("metadata_created_by", "string", "???"), // EVENT USER
+//                new QueryProperty("metadata_updated_by", "string", "???"), // EVENT USER
         )));
 
         return queryItems;
@@ -258,6 +261,7 @@ public class QueriesService {
         for(String tableUsed : tablesUsed) {
             if(tableUsed.equals("event")) {
                 leftJoins.append(" left join event using (asset_guid)");
+                leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
             }
             if(tableUsed.equals("digitiser_user")) {
                 leftJoins.append(" left join digitiser_list using (asset_guid)");
