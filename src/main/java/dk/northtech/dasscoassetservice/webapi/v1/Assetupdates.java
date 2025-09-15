@@ -302,7 +302,7 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")
     public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.assetService.checkUserRights(assetGuid, userService.from(securityContext)).orElse(null);
+        return this.assetService.getAsset(assetGuid, userService.from(securityContext)).orElse(null);
     }
 
     @DELETE

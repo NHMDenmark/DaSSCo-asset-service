@@ -4,6 +4,7 @@ import {catchError, Observable, of, switchMap} from "rxjs";
 import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {Digitiser} from "../types/types";
+import {QueryItem} from "../types/queryItem";
 
 @Injectable({
   providedIn: 'root'
@@ -58,6 +59,20 @@ export class CacheService {
   setNodeProperties(properties: Map<string, string[]> ) {
     localStorage.setItem('node-properties', JSON.stringify(properties));
     this.setSetupTime();
+  }
+
+  setQueryItems(queryItems: QueryItem[]) {
+    localStorage.setItem('query-items', JSON.stringify(queryItems));
+    this.setSetupTime();
+  }
+
+  getQueryItems(): QueryItem[] | undefined {
+    const queryItems = localStorage.getItem('query-items');
+    this.checkSetupTime();
+    if (queryItems) {
+      return JSON.parse(queryItems);
+    }
+    return undefined;
   }
 
   getNodeProperties(): Map<string, string[]> | undefined {

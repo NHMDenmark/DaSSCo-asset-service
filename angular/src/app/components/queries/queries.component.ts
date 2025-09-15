@@ -24,6 +24,7 @@ import {
 } from "../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component";
 import {QueryToOtherPages} from "../../services/query-to-other-pages";
 import {Router} from "@angular/router";
+import {QueryItem} from "../../types/queryItem";
 
 @Component({
   selector: 'dassco-queries',
@@ -43,6 +44,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   limit: number = 200;
   queries: Map<string, QueryView[]> = new Map;
   nodes: Map<string, string[]> = new Map();
+  queryItems: QueryItem[] = [];
   queryUpdatedTitle: string | undefined;
   loadingAssetCount: boolean = false;
   assetCount: string | undefined = undefined;
@@ -71,12 +73,42 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     })
   )
 
+  queryItemsCall$: Observable<QueryItem[] | undefined>
+    = this.queriesService.queryItems$
+    .pipe(
+      filter(isNotUndefined),
+      map(queryItems => {
+        this.cacheService.setQueryItems(queryItems);
+        this.queryItems = queryItems;
+        return queryItems;
+      })
+    )
+
+  queryItemsCached$
+    = of (this.cacheService.getQueryItems()).pipe(
+    map(properties => {
+      if (properties) {
+        this.queryItems = properties;
+        return properties;
+      }
+      return [];
+    })
+  )
+
   nodes$: Observable<Map<string, string[]> | undefined>
   = iif(() => { // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
       return this.cacheService.getNodeProperties() == undefined;
     },
     this.propertiesCall$, // if it's undefined
     this.propertiesCached$ // if it's not undefined
+  );
+
+  queryItems$: Observable<QueryItem[] | undefined>
+    = iif(() => { // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
+      return this.cacheService.getQueryItems() == undefined;
+    },
+    this.queryItemsCall$, // if it's undefined
+    this.queryItemsCached$ // if it's not undefined
   );
 
   constructor(private queriesService: QueriesService
@@ -90,7 +122,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit(): void {
-    this.nodes$.pipe(filter(isNotUndefined),take(1))
+    /*this.nodes$.pipe(filter(isNotUndefined),take(1))
       .subscribe(_nodes => {
         const cachedQueries = this.cacheService.getQueries();
 
@@ -102,7 +134,20 @@ export class QueriesComponent implements OnInit, AfterViewInit {
         } else {
           this.newSelect(undefined);
         }
-      })
+      })*/
+
+    this.queryItems$.pipe(filter(isNotUndefined),take(1))
+      .subscribe(_queryItems => {
+        const cachedQueries = this.cacheService.getQueries()
+        if (cachedQueries) {
+          this.queryData = cachedQueries;
+          this.addSelectFromData(this.queryData.map);
+          this.queries = this.queryData.map;
+          this.queryUpdatedTitle = this.queryData.title;
+        } else {
+          this.newSelect(undefined);
+        }
+      });
 
     if (this.queryToOtherPages.getDataSource().filteredData.length > 0){
       this.dataSource = this.queryToOtherPages.getDataSource();
@@ -119,6 +164,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     if (this.queryHandlerEle) {
       const handlerComponent = this.queryHandlerEle.createComponent(QueryHandlerComponent, {index: this.queryHandlerEle.length});
       handlerComponent.instance.nodes = this.nodes;
+      handlerComponent.instance.queryItemsInput = this.queryItems;
       handlerComponent.instance.savedQuery = savedQuery;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;

@@ -41,7 +41,50 @@ public interface QueriesRepository extends SqlObject {
     }
 
     default Map<String, List<String>> getNodeProperties() {
-        boilerplate();
+
+        Map<String, List<String>> aa = new HashMap<>();
+        /*
+        QueryParent -> {
+            table: String
+            List<Property> properties
+
+        }
+
+        Property -> {
+            nam: string
+            dateType: String
+            table: String
+        }
+
+        */
+
+        return withHandle(h -> {
+            h.execute("SET search_path TO ag_catalog, public");
+            List<String> tables = withHandle(handle ->
+                    handle.createQuery("select * from ag_catalog.ag_graph")
+                            .mapTo(String.class)
+                            .list()
+            );
+
+            tables.forEach(System.out::println);
+
+            return h.createQuery("""
+                    SELECT table_name, ARRAY_AGG (column_name) as column_names
+                    FROM information_schema.columns
+                    WHERE table_name in ('asset', 'institution', 'collection')
+                    group by table_name
+            """).reduceRows(new HashMap<>(), (map, rowView) -> {
+                String table = rowView.getColumn("table_name", String.class);
+                String[] cols = rowView.getColumn("column_names", String[].class);
+                map.put(table, Arrays.asList(cols));
+                return map;
+            });
+
+        });
+
+
+
+        /*boilerplate();
 //                WHERE NOT 'Event' IN labels(n)
         String sql =
             """
@@ -70,11 +113,11 @@ public interface QueriesRepository extends SqlObject {
                     l.putAll(r);
                     return l;
                 }, Collector.Characteristics.IDENTITY_FINISH));
-        });
+        });*/
     }
 
     default List<Asset> getAssetsFromQuery(String query) {
-        boilerplate();
+//        boilerplate();
         return withHandle(handle -> {
             return handle.createQuery(query)
                     .map(new AssetMapper())

@@ -49,8 +49,10 @@ public class Asset {
     public Instant date_audited;
     @Schema(description = "User from the last audit event", example = "2023-05-24T00:00:00.000Z")
     public String audited_by;
-    @Schema(description = "Date and time the asset was pushed to Specify", example = "2023-05-24T00:00:00.000Z")
+    @Schema(description = "The date when an asset was finalised (the asset_locked metadata field should change to true at same time). Finalised means that all processing has been completed and that the asset cannot be changed at all, but the metadata still can.", example = "2023-05-24T00:00:00.000Z")
     public Instant date_asset_finalised;
+    @Schema(description = "Date and time the asset was pushed to specify for the first time", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_pushed_to_specify;
     //References
     @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
     public String institution;

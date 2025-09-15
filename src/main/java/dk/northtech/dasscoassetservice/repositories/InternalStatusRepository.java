@@ -33,7 +33,7 @@ public class InternalStatusRepository {
         this.jdbi = jdbi;
     }
 
-    String statusBaseSql = // I know this looks insane but I'm not good enough at neo4j to find a better way yet :C
+    String statusBaseCypherSql = // I know this looks insane but I'm not good enough at neo4j to find a better way yet :C
             """
                SELECT * from cypher('dassco', $$
                     MATCH (a:Asset)-[:CHANGED_BY]->(e:Event {name: 'CREATE_ASSET_METADATA'})
@@ -50,8 +50,22 @@ public class InternalStatusRepository {
                $$, #params) as (pending agtype, completed agtype, failed agtype);
             """;
 
+    String totalAmountCypherSql = statusBaseCypherSql.replaceAll("#and#|, #params", "");
+    String dailyAmountCypherSql = statusBaseCypherSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
+
+    String statusBaseSql = """
+            select
+            	count(*) filter (where a.internal_status IN ('ASSET_RECEIVED','METADATA_RECEIVED') and e.event_id is null) as pending,
+            	count(*) filter (where a.internal_status = 'COMPLETED' and e.event_id is null) as completed,
+            	count(*) filter (where a.internal_status IN ('ERDA_ERROR','ERDA_FAILED') and e.event_id is null) as failed
+            from asset a
+            left join event e on e.asset_guid = a.asset_guid and e.event = 'DELETE_ASSET_METADATA'
+            where a.internal_status in ('ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'ERDA_ERROR', 'ERDA_FAILED') #and#
+            """;
+
     String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");
-    String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
+    String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp::date >= CURRENT_DATE"));
+
 
     /**
      * get a map with asset status for current day with keys "failed", "pending" and "completed" and their respective count as values.
@@ -61,11 +75,8 @@ public class InternalStatusRepository {
 
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
-            AgtypeMap today = new AgtypeMapBuilder().add("today", currMillisecs).build();
-            Agtype agtype = AgtypeFactory.create(today);
-            handle.execute(boilerplate);
+//            handle.execute(boilerplate);
             return handle.createQuery(dailyAmountSql)
-                    .bind("params", agtype)
                     .map((rs, ctx) -> {
                         Map<String, Integer> amountMap = new HashMap<>();
 
@@ -85,7 +96,7 @@ public class InternalStatusRepository {
 
     public Optional<Map<String, Integer>> getTotalInternalStatusAmt() {
         return jdbi.withHandle(handle -> {
-            handle.execute(boilerplate);
+//            handle.execute(boilerplate);
             return handle.createQuery(totalAmountSql)
                     .map((rs, ctx) -> {
                         Map<String, Integer> amountMap = new HashMap<>();

@@ -37,7 +37,6 @@ public class KeycloakService {
         this.keycloakUserConfig = keycloakUserConfig;
         this.module.addDeserializer(KeycloakToken.class, new CustomKeycloakTokenDeserializer());
         this.objectMapper.registerModule(module);
-
     }
 
     public String getUserServiceToken() {
@@ -117,5 +116,7 @@ public class KeycloakService {
         }
 
     }
-
+    public KeycloakToken getQueueToken(){
+        return newAccessToken();
+    }
 }

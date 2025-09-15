@@ -77,6 +77,7 @@ public class StatisticsDataApi {
         if (EnumUtils.isValidEnum(GraphView.class, timeFrame)) {
             logger.info("Getting data for time frame {}.", timeFrame);
             finalData = statisticsDataServiceV2.getCachedGraphData(GraphView.valueOf(timeFrame));
+//            finalData = new ListOrderedMap<>();
         } else {
             logger.warn("Received time frame {} is invalid.", timeFrame);
             return Response.status(Response.Status.BAD_REQUEST).build();

@@ -79,7 +79,9 @@ public class DataSources {
             .installPlugin(new SqlObjectPlugin())
             .installPlugin(new Jackson2Plugin())
             .registerRowMapper(ConstructorMapper.factory(Directory.class))
-            .setSqlParser(new HashPrefixSqlParser());
+            .registerRowMapper(ConstructorMapper.factory(QueryResultAsset.class))
+            .registerRowMapper(ConstructorMapper.factory(Specimen.class))
+            .registerRowMapper(ConstructorMapper.factory(Event.class));
   }
 }
 
