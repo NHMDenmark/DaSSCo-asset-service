@@ -43,7 +43,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , new HashSet<>(Set.of("pinning"))
                 , null);
 
-        specimenService.updateSpecimen(update, user);
+        specimenService.putSpecimen(update, user);
         Optional<Asset> result2 = assetService.getAsset("updateSpecimen");
         Specimen specimen2 = result2.get().specimens.getFirst();
         assertThat(specimen2.preparation_types().size()).isEqualTo(1);
@@ -71,7 +71,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , null);
 
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> {
-            specimenService.updateSpecimen(update, user);
+            specimenService.putSpecimen(update, user);
         });
         assertThat(illegalArgumentException.getMessage()).isEqualTo("Preparation_type cannot be removed as it is used by the following assets: [updateSpecimenDoNotRemovePrepTypeInUse]");
     }
@@ -106,9 +106,9 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , null);
 
         DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> {
-            specimenService.updateSpecimen(specimen, user);
+            specimenService.putSpecimen(specimen, user);
         });
-        specimenService.updateSpecimen(specimen, restrictedUser);
+        specimenService.putSpecimen(specimen, restrictedUser);
     }
 
 }

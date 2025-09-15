@@ -315,6 +315,11 @@ public class AssetService {
             }
             // Handle the asset itself
             assetRepository.insertBaseAsset(asset);
+            // role_restrictions
+            if(asset.role_restrictions != null && !asset.role_restrictions.isEmpty()) {
+                RoleRepository attach = h.attach(RoleRepository.class);
+                attach.setRestrictions(RestrictedObjectType.ASSET,asset.role_restrictions, asset.asset_guid);
+            }
             // Handle funds
             for (String funding : asset.funding) {
                 Funding funding1 = fundingService.ensureExists(funding);
@@ -329,7 +334,7 @@ public class AssetService {
             for (Specimen specimen : asset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id, null, false);
+                    Specimen specimenToPersist = new Specimen(asset.institution, asset.collection, specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), specimen.specimen_id(), asset.collection_id, null, false, specimen.role_restrictions());
                     specimenRepository.insert_specimen(specimenToPersist);
                     Optional<Specimen> newSpecimenOpt = specimenRepository.findSpecimensByPID(specimenToPersist.specimen_pid());
                     Specimen newSpecimen = newSpecimenOpt.orElseThrow(() -> new RuntimeException("This shouldn't happen"));
@@ -338,7 +343,7 @@ public class AssetService {
                     Specimen existing = specimensByPID.get();
                     if (!existing.barcode().equals(specimen.barcode()) || !existing.preparation_types().equals(specimen.preparation_types())) {
                         specimen.preparation_types().addAll(existing.preparation_types());
-                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id, null, false);
+                        Specimen updated = new Specimen(asset.institution, asset.collection, specimen.barcode(), existing.specimen_pid(), specimen.preparation_types(), specimen.asset_preparation_type(), existing.specimen_id(), asset.collection_id, null, false, specimen.role_restrictions());
                         specimenRepository.updateSpecimen(updated);
                     }
                     specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type(), existing.specimen_id());
@@ -610,6 +615,11 @@ public class AssetService {
                 legalityToDelete = existing.legality.legality_id();
                 existing.legality = null;
             }
+            //Role restrictions
+            if(!Objects.equals(existing.role_restrictions,updatedAsset.role_restrictions) && updatedAsset.role_restrictions != null){
+                RoleRepository attach = h.attach(RoleRepository.class);
+                attach.setRestrictions(RestrictedObjectType.ASSET, updatedAsset.role_restrictions, existing.asset_guid);
+            }
             repository.update_asset_internal(existing);
             Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline, existing.institution);
             eventRepository.insertEvent(existing.asset_guid
@@ -623,19 +633,18 @@ public class AssetService {
                 if (s.specify_collection_object_attachment_id() != null) {
                     specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id());
                     //makde sure detached specimen is included in specify update
-                    finalSpecimen.add(new Specimen(s.institution(), s.collection(), s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), s.collection_id(), s.specify_collection_object_attachment_id(), true));
+                    finalSpecimen.add(new Specimen(s.institution(), s.collection(), s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), s.collection_id(), s.specify_collection_object_attachment_id(), true, s.role_restrictions()));
                 } else {
                     specimenRepository.deleteAssetSpecimen(existing.asset_guid, s.specimen_id());
                 }
             }
-
 
 //            Set<String> pids = existing.specimens.stream().map(s -> s.specimen_pid()).collect(Collectors.toSet());
             Map<String, Specimen> pidExistingSpecimen = existing.specimens.stream().collect(Collectors.toMap(Specimen::specimen_pid, s -> s));
             for (Specimen s : updatedAsset.specimens) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(s.specimen_pid());
                 if (specimensByPID.isEmpty()) {
-                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), existing.collection_id, null, false);
+                    Specimen newSpecimen = new Specimen(existing.institution, existing.collection, s.barcode(), s.specimen_pid(), s.preparation_types(), s.asset_preparation_type(), s.specimen_id(), existing.collection_id, null, false, s.role_restrictions());
                     Integer specimen_id = specimenRepository.insert_specimen(newSpecimen);
                     specimenRepository.attachSpecimen(updatedAsset.asset_guid, newSpecimen.asset_preparation_type(), specimen_id);
                     finalSpecimen.add(newSpecimen);
@@ -650,7 +659,8 @@ public class AssetService {
                             , existing_specimen.specimen_id()
                             , existing.collection_id
                             , pidExistingSpecimen.containsKey(s.specimen_pid()) ? pidExistingSpecimen.get(s.specimen_pid()).specify_collection_object_attachment_id() : null
-                            , false);
+                            , false
+                            , s.role_restrictions());
                     updated.preparation_types().addAll(existing_specimen.preparation_types());
                     specimenRepository.updateSpecimen(updated);
                     finalSpecimen.add(updated);
@@ -661,7 +671,6 @@ public class AssetService {
                         specimenRepository.attachSpecimen(existing.asset_guid, updated.asset_preparation_type(), updated.specimen_id());
                     }
                 }
-
             }
             existing.specimens = finalSpecimen;
             //Handle digitisers

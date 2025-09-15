@@ -46,7 +46,7 @@ public class Specimens {
 
 
 
-    @POST
+    @PUT
     @Path("/{specimenPID}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
@@ -56,7 +56,7 @@ public class Specimens {
     public Specimen updateSpacemen(Specimen specimen
             , @PathParam("specimenPID") String specimenPID
             , @Context SecurityContext securityContext) {
-        specimenService.updateSpecimen(specimen, userService.from(securityContext));
+        specimenService.putSpecimen(specimen, userService.from(securityContext));
         return specimen;
     }
 
