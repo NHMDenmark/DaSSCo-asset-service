@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
+import dk.northtech.dasscoassetservice.domain.AssetSpecimen;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.Specimen;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
@@ -29,29 +31,56 @@ public class SpecimenService {
     private PreparationTypeCache preparationTypeCache;
     private ExtendableEnumService extendableEnumService;
     private RightsValidationService rightsValidationService;
+    private CollectionService collectionService;
 
-    LoadingCache<Integer,List<String>> roleRestrictionCache = Caffeine.newBuilder() // <user, <"read", ["collection2"]>>
+    LoadingCache<String, Specimen> pidSpecimen = Caffeine.newBuilder() // <user, <"read", ["collection2"]>>
             .expireAfterWrite(12, TimeUnit.HOURS)
-            .build(specimen_id -> {
-                return getRoleRestictions(specimen_id);
+            .maximumSize(25000)
+            .build(specimen_pid -> {
+                return getSpecimen(specimen_pid);
             });
 
     @Inject
-    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService) {
+    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService, CollectionService collectionService) {
         this.jdbi = jdbi;
         this.preparationTypeCache = preparationTypeCache;
         this.extendableEnumService = extendableEnumService;
         this.rightsValidationService = rightsValidationService;
+        this.collectionService = collectionService;
     }
 
-    private List<String> getRoleRestictions(Integer specimen_id) {
-        RoleRepository roleRepository = jdbi.onDemand(RoleRepository.class);
-        return roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, specimen_id);
-
+    Optional<Specimen> findSpecimen(String pid) {
+        Specimen specimen = pidSpecimen.get(pid);
+        if (specimen == null) {
+            return Optional.empty();
+        } else {
+            return Optional.of(specimen);
+        }
     }
 
-    public Specimen getSpecimen(String specimen_pid){
+    public List<AssetSpecimen> findAssetSpecimens(String asset_guid) {
+        SpecimenRepository specimenRepository = jdbi.onDemand(SpecimenRepository.class);
+        List<AssetSpecimen> assetSpecimens = specimenRepository.findAssetSpecimens(asset_guid);
+        assetSpecimens.forEach(assetSpecimen -> {
+            Optional<Specimen> specimen = findSpecimen(assetSpecimen.specimen_pid);
+            specimen.ifPresent(value -> assetSpecimen.specimen = value);
+        });
+        return assetSpecimens;
+    }
 
+    private Specimen getSpecimen(String specimen_pid) {
+        return jdbi.withHandle(handle -> {
+            RoleRepository roleRepository = handle.attach(RoleRepository.class);
+            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+            Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen_pid);
+            if (!specimensByPID.isPresent()) {
+                return null;
+            } else {
+                Specimen specimen = specimensByPID.get();
+                specimen.role_restrictions().addAll(roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, specimen.specimen_id()));
+                return specimen;
+            }
+        });
     }
 
     public Specimen putSpecimen(Specimen specimen, User user) {
@@ -61,19 +90,26 @@ public class SpecimenService {
             Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
             validateSpecimen(specimen);
             if (specimensByPID.isEmpty()) {
-                Integer specimen_id = specimenRepository.insert_specimen(specimen);
-                if (!specimen.role_restrictions().isEmpty()) {
+                Optional<Collection> collectionInternal = collectionService.findCollectionInternal(specimen.collection(), specimen.institution());
+                if (!collectionInternal.isPresent()) {
+                    throw new IllegalArgumentException("CollectionNotFound not found");
+                }
+                Specimen specimenWithCollectionId = new Specimen(specimen, null, collectionInternal.get().collection_id());
+                Integer specimen_id = specimenRepository.insert_specimen(specimenWithCollectionId);
+
+                if (!specimenWithCollectionId.role_restrictions().isEmpty()) {
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
-                    roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimen.role_restrictions(), specimen_id);
+                    roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimenWithCollectionId.role_restrictions(), specimen_id);
 
                 }
-                return specimen;
+                pidSpecimen.put(specimenWithCollectionId.specimen_pid(), new Specimen(specimenWithCollectionId, specimen_id, specimenWithCollectionId.collection_id()));
+                return specimenWithCollectionId;
             } else {
+
                 return updateSpecimen(specimen, specimensByPID.get(), user);
             }
         });
     }
-
 
 
     public Specimen updateSpecimen(Specimen specimen, Specimen existing, User user) {
@@ -90,25 +126,36 @@ public class SpecimenService {
                 String errorMessage = "Preparation_type cannot be removed as it is used by the following assets: " + assetsWithRemovedPreparationType;
                 throw new IllegalArgumentException(errorMessage);
             }
+            Specimen updated = new Specimen(existing.institution()
+                    , existing.collection()
+                    , specimen.barcode()
+                    , specimen.specimen_pid()
+                    , specimen.preparation_types()
+                    , existing.specimen_id()
+                    , existing.collection_id()
+                    , specimen.role_restrictions());
             specimenRepository
-                    .updateSpecimen(new Specimen(existing.institution()
-                            , existing.collection()
-                            , specimen.barcode()
-                            , specimen.specimen_pid()
-                            , specimen.preparation_types()
-                            , null
-                            , existing.specimen_id()
-                            , existing.collection_id()
-                            , null
-                            , false
-                            , specimen.role_restrictions()));
+                    .updateSpecimen(updated);
+            pidSpecimen.put(specimen.specimen_pid(), updated);
 
-            return specimen;
+            return updated;
         });
     }
 
     public List<String> listPreparationTypes() {
         return preparationTypeCache.getPreparationTypes();
+    }
+
+    void validateAssetSpecimen(AssetSpecimen assetSpecimen) {
+        Optional<Specimen> specimenOpt = findSpecimen(assetSpecimen.specimen_pid);
+        if(specimenOpt.isEmpty()) {
+            throw new IllegalArgumentException("Specimen doesnt exist");
+        }
+        Specimen specimen = specimenOpt.get();
+        if(assetSpecimen.asset_preparation_type != null &&
+           (specimen.preparation_types() == null || !specimen.preparation_types().contains(assetSpecimen.asset_preparation_type))) {
+            throw new IllegalArgumentException("Specimen has no preparation type that matches asset preparation type: " + assetSpecimen.asset_preparation_type);
+        }
     }
 
     void validateSpecimen(Specimen specimen) {
@@ -121,9 +168,9 @@ public class SpecimenService {
         if (specimen.preparation_types() == null || specimen.preparation_types().isEmpty()) {
             throw new IllegalArgumentException("a specimen must have at least one preparation_type");
         }
-        if (specimen.asset_preparation_type() != null && !specimen.preparation_types().contains(specimen.asset_preparation_type())) {
-            throw new IllegalArgumentException("Asset preparation_type is not present in preparation types on this specimen");
-        }
+//        if (specimen.asset_preparation_type() != null && !specimen.preparation_types().contains(specimen.asset_preparation_type())) {
+//            throw new IllegalArgumentException("Asset preparation_type is not present in preparation types on this specimen");
+//        }
         for (String p : specimen.preparation_types()) {
             if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.PREPARATION_TYPE, p)) {
                 throw new IllegalArgumentException(p + " is not a valid preparation_type");

@@ -100,10 +100,11 @@ public interface RoleRepository extends SqlObject {
         return "SELECT * FROM " + object.objectName + "_role_restriction" ;
     }
 
-    default List<String> findRoleRestrictions(RestrictedObjectType object, int identifier) {
+
+    default List<Role> findRoleRestrictions(RestrictedObjectType object, int identifier) {
         return withHandle(h -> {
             return h.createQuery(getFindSql(object)).bind("param", identifier)
-                    .mapTo(String.class).list();
+                    .mapTo(Role.class).list();
         });
     }
 

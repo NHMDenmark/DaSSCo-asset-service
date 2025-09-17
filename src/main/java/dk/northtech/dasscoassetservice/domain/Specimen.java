@@ -21,28 +21,23 @@ public record Specimen(
         String specimen_pid,
         @Schema(description = "The way that the specimen has been prepared (pinned insect or mounted on a slide)", example = "slide")
         HashSet<String> preparation_types,
-        @Schema(description = "A Specimen can have multiple different preparation_types, this field is used to specify what preparation_type is valid for the asset this specimen is connected to", example = "slide")
-        String asset_preparation_type,
 //        @JsonIgnore
         Integer specimen_id,
         @JsonIgnore
         Integer collection_id,
-        @Schema(description = "The id that connects an attachment to a Collection Object in specify, can be seen as an analogue to the asset_specimen junction in ARS", example = "1234")
-        Long specify_collection_object_attachment_id,
-        @Schema(description = "If a Specimen has been detached from an Asset in ARS after it have been synchronized to Specify this is set to true until specify has been synchronised again and the asset_specimen connection can be safely deleted")
-        boolean asset_detached,
+
         List<Role> role_restrictions
     ) {
-    public Specimen(String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
-        this(null, null, barcode, specimen_pid, preparation_types, asset_preparation_type, null, null, null, false, new ArrayList<>());
+    public Specimen(String barcode, String specimen_pid, HashSet<String> preparation_types) {
+        this(null, null, barcode, specimen_pid, preparation_types, null, null, new ArrayList<>());
+    }
+
+    public Specimen(Specimen specimen, Integer specimen_id ,Integer collecion_id) {
+        this(specimen.institution, specimen.collection, specimen.barcode, specimen.specimen_pid, specimen.preparation_types, specimen_id,collecion_id, specimen.role_restrictions());
     }
 
     @JdbiConstructor
-    public Specimen {
-        role_restrictions = new ArrayList<>();
-    }
-//    new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning",
-    public Specimen(String institution, String collection, String barcode, String specimen_pid, HashSet<String> preparation_types, String asset_preparation_type) {
-        this(institution, collection, barcode, specimen_pid, preparation_types, asset_preparation_type,null, null, null, false, new ArrayList<>());
+    public Specimen(Integer collection_id, Integer specimen_id, HashSet<String> preparation_types, String specimen_pid, String barcode, String collection, String institution) {
+        this(institution, collection, barcode, specimen_pid, preparation_types, specimen_id, collection_id, List.of());
     }
 }

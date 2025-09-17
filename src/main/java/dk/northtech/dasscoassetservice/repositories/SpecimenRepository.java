@@ -1,7 +1,9 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.AssetSpecimen;
 import dk.northtech.dasscoassetservice.domain.Specimen;
+import dk.northtech.dasscoassetservice.repositories.helpers.AssetSpecimenMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import org.apache.age.jdbc.base.Agtype;
 import org.apache.age.jdbc.base.AgtypeFactory;
@@ -51,8 +53,11 @@ public interface SpecimenRepository extends SqlObject {
 """)
     void updateSpecimen(@BindMethods Specimen specimen);
 
-    @SqlQuery("""
-            SELECT specimen.*
+    String find_specimens_by_asset = """
+            SELECT specimen.specimen_id
+                , specimen.specimen_pid
+                , asset_specimen.asset_specimen_id
+                , asset_specimen.asset_guid 
                 , asset_specimen.preparation_type AS asset_preparation_type
                 , asset_specimen.specify_collection_object_attachment_id
                 , asset_specimen.asset_detached
@@ -60,16 +65,21 @@ public interface SpecimenRepository extends SqlObject {
                 , collection.institution_name AS institution
             FROM specimen
                 LEFT JOIN asset_specimen USING(specimen_id)
-                LEFT JOIN collection USING (collection_id)
+                LEFT JOIN collection USING(collection_id)
             WHERE asset_guid = :assetGuid
-            """)
-    List<Specimen> findSpecimensByAsset(String assetGuid);
+            """;
+    default List<AssetSpecimen> findAssetSpecimens(String assetGuid) {
+        return withHandle(h -> {
+            return h.createQuery(find_specimens_by_asset)
+                    .bind("assetGuid", assetGuid)
+                    .map(new AssetSpecimenMapper())
+                    .list();
+        });
+    }
 
     @SqlQuery("""
             SELECT specimen.*
-                , NULL as asset_preparation_type
                 , false AS asset_detached
-                , NULL AS specify_collection_object_attachment_id             
                 , collection.collection_name AS collection
                 , collection.institution_name AS institution
             FROM specimen

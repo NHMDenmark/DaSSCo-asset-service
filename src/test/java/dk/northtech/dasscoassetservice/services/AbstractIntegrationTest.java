@@ -65,6 +65,7 @@ public class AbstractIntegrationTest {
 
     @Inject ExtendableEnumService extendableEnumService;
     @Inject SpecimenService specimenService;
+    @Inject RoleService roleService;
     @Inject
     Jdbi jdbi;
     @Inject UserService userService;

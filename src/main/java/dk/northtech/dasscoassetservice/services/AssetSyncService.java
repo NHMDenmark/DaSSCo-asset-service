@@ -75,12 +75,12 @@ public class AssetSyncService {
                     status = InternalStatus.SPECIFY_SYNC_FAILED;
                 } else {
                     acknowledge.specimensWithSpecifyIds().forEach(specimen -> {
-                        if(specimen.asset_detached()) {
-                            specimenRepository.deleteAssetSpecimen(asset.asset_guid, specimen.specimen_id());
+                        if(specimen.asset_detached) {
+                            specimenRepository.deleteAssetSpecimen(asset.asset_guid, specimen.specimen_id);
                             // Delete junction
                         } else {
                             LOGGER.info("Updateting specimen" + specimen);
-                           specimenRepository.updateAssetSpecimen(asset.asset_guid, specimen.specimen_id(), specimen.specify_collection_object_attachment_id(), specimen.asset_preparation_type());
+                           specimenRepository.updateAssetSpecimen(asset.asset_guid, specimen.specimen_id, specimen.specify_collection_object_attachment_id, specimen.asset_preparation_type);
                         }
                     });
 //                    asset.specify_attachment_id = acknowledge.specify_attachment_id();
@@ -151,8 +151,8 @@ public class AssetSyncService {
             Optional<Asset> assetOpt = assetService.getAsset(guid);
             if (assetOpt.isPresent()) {
                 Asset asset = assetOpt.get();
-                for(Specimen specimen: asset.specimens) {
-                    LOGGER.info("collection_object_attachment_id: {}",specimen.specify_collection_object_attachment_id());
+                for(AssetSpecimen specimen: asset.assetSpecimens) {
+                    LOGGER.info("collection_object_attachment_id: {}",specimen.specify_collection_object_attachment_id);
                 }
                 syncAsset(asset);
             } else {

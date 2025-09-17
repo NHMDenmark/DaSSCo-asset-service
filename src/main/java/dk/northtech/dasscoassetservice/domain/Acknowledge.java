@@ -14,7 +14,7 @@ public record Acknowledge(
         String message,
         @Schema(description = "The date the object was created.", example = "2023-05-24T00:00:00.000Z")
         Instant date,
-        List<Specimen> specimensWithSpecifyIds) {
+        List<AssetSpecimen> specimensWithSpecifyIds) {
 
 
     @Override

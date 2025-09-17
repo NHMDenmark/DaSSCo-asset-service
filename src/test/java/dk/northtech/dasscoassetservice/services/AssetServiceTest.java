@@ -153,7 +153,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testNoSpecimen() {
         Asset asset = getTestAsset("testNoSpecimen");
-        asset.specimens = new ArrayList<>();
+        asset.assetSpecimens = new ArrayList<>();
         assetService.persistAsset(asset, user, 777);
         jdbi.onDemand(AssetRepository.class).deleteAsset("testNoSpecimen");
         Optional<Asset> result = assetService.getAsset("testNoSpecimen");
@@ -185,8 +185,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.tags.put("Tag1", "value1");
         createAsset.tags.put("Tag2", "value2");
         createAsset.institution = "institution_1";
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide")
-                , new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning"));
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
@@ -196,6 +194,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.specify_attachment_remarks = "attachment_remarks";
         createAsset.specify_attachment_title = "spezzify 'tachment";
         createAsset.issues = Arrays.asList(new Issue(createAsset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        addSpecimen(createAsset,   "creatAsset-sp-1","spid1","slide");
+        addSpecimen(createAsset, "creatAsset-sp-2", "spid2","pinning");
 
         assetService.persistAsset(createAsset, user, 10);
 
@@ -236,15 +236,15 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.file_formats).contains("TIF");
         assertThat(result.file_formats).contains("JPEG");
         //Specimens
-        assertThat(result.specimens).hasSize(2);
-        Specimen specimen_1 = result.specimens.get(0).barcode().equals("creatAsset-sp-1") ? result.specimens.get(0) : result.specimens.get(1);
-        assertThat(specimen_1.barcode()).isEqualTo("creatAsset-sp-1");
-        assertThat(specimen_1.specimen_pid()).isEqualTo("spid1");
-        assertThat(specimen_1.preparation_types()).contains("slide");
-        Specimen specimen_2 = result.specimens.get(0).barcode().equals("creatAsset-sp-2") ? result.specimens.get(0) : result.specimens.get(1);
-        assertThat(specimen_2.barcode()).isEqualTo("creatAsset-sp-2");
-        assertThat(specimen_2.specimen_pid()).isEqualTo("spid2");
-        assertThat(specimen_2.preparation_types()).contains("pinning");
+        assertThat(result.assetSpecimens).hasSize(2);
+        AssetSpecimen specimen_1 = result.assetSpecimens.get(0).specimen_pid.equals("spid1") ? result.assetSpecimens.get(0) : result.assetSpecimens.get(1);
+        assertThat(specimen_1.specimen.barcode()).isEqualTo("creatAsset-sp-1");
+        assertThat(specimen_1.specimen.specimen_pid()).isEqualTo("spid1");
+        assertThat(specimen_1.specimen.preparation_types()).contains("slide");
+        AssetSpecimen specimen_2 = result.assetSpecimens.get(0).specimen_pid.equals("spid2") ? result.assetSpecimens.get(0) : result.assetSpecimens.get(1);
+        assertThat(specimen_2.specimen.barcode()).isEqualTo("creatAsset-sp-2");
+        assertThat(specimen_2.specimen_pid).isEqualTo("spid2");
+        assertThat(specimen_2.specimen.preparation_types()).contains("pinning");
         assertThat(result.legality).isNotNull();
         assertThat(result.legality.legality_id()).isAtLeast(1);
         assertThat(result.legality.copyright()).isEqualTo("Copy-rite");
@@ -425,7 +425,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
     @Test
     void testUpdateAsset() {
         Asset createAsset = getTestAsset("createAssetUpdateAsset");
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide"));
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
@@ -434,6 +433,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
+        addSpecimen(createAsset, "creatAsset-sp-1", "spid1","slide");
         assetService.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -469,7 +469,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         var issue_2 = new Issue("testUpdateIssuesCreateOnUpdate", "test_issue_create", "iss_2", Instant.now(), "iss_2_status", "iss_2_description", "iss_2_notest", false);
 
         Asset createAsset = getTestAsset("testUpdateIssuesCreateOnUpdate");
-        createAsset.specimens = Arrays.asList(new Specimen(createAsset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide"));
         createAsset.pipeline = "i1_p1";
         createAsset.workstation = "i1_w1";
         createAsset.tags.put("Tag1", "value1");
@@ -478,6 +477,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         createAsset.collection = "i1_c1";
         createAsset.asset_pid = "pid-createAsset";
         createAsset.status = "BEING_PROCESSED";
+        addSpecimen(createAsset,  "creatAsset-sp-1", "spid1","slide");
         assetService.persistAsset(createAsset, user, 10);
         Optional<Asset> resultOpt = assetService.getAsset("testUpdateIssuesCreateOnUpdate");
         assertThat(resultOpt.isPresent()).isTrue();
@@ -570,8 +570,6 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Asset asset = getTestAsset("updateAsset");
 //        asset.specimen_barcodes = Arrays.asList("createAsset-sp-1", "createAsset-sp-2");
         asset.institution = "institution_1";
-        asset.specimens = new ArrayList<>(Arrays.asList(new Specimen(asset.institution, "i1_c1", "creatAsset-sp-1", "spid1", new HashSet<>(Set.of("slide")),"slide")
-                , new Specimen(asset.institution, "i1_c1", "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("pinning")),"pinning")));
         asset.pipeline = "i1_p1";
         asset.workstation = "i1_w1";
         asset.tags.put("Tag1", "value1");
@@ -584,7 +582,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
         extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, "The Science Pamphlet");
         asset.external_publishers = List.of(new Publication("updateAsset","descriptive description", "The Science Pamphlet"), new Publication("updateAsset", "Bezkrivelze", "The Science Pamphlet"));
 
+        addSpecimen(asset, "creatAsset-sp-1", "spid1_updateAsset","slide");
+//        addSpecimen(asset, "creatAsset-sp-2", "spid2_updateAsset","pinning");
+        Specimen specimen = new Specimen(asset.institution, asset.collection, "creatAsset-sp-1", "spid2_updateAsset", new HashSet<>(Arrays.asList("pinning", "slide")),null, null, new ArrayList<>() );
+        specimenService.putSpecimen(specimen, user);
         assetService.persistAsset(asset, user, 11);
+        asset.assetSpecimens.add(new AssetSpecimen(asset.asset_guid, specimen.specimen_pid(),"pinning", false));
         Long publication_id = asset.external_publishers.get(0).publication_id();
         assertThat(publication_id).isGreaterThan(0);
         asset.tags.remove("Tag1");
@@ -592,7 +595,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.date_asset_finalised = Instant.now();
         asset.date_asset_taken = Instant.now();
         asset.date_metadata_ingested = Instant.now();
-        asset.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide"));
+        asset.assetSpecimens.remove(0);
+        asset.assetSpecimens.get(0).asset_preparation_type = "slide";
 //        asset.specimens.get()
         asset.workstation = "i1_w2";
         asset.pipeline = "i1_p2";
@@ -659,19 +663,18 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.legality.legality_id()).isNotNull();
         assertThat(result.date_metadata_ingested).isEqualTo(date_metadata_ingested);
 //        assertThat(result.issues).hasSize(1);
-        assertThat(result.specimens).hasSize(1);
+        assertThat(result.assetSpecimens).hasSize(1);
         assertThat(result.make_public).isFalse();
         assertThat(result.push_to_specify).isFalse();
         assertThat(result.specify_attachment_title).isEqualTo("'Attchment tittle");
         assertThat(result.specify_attachment_remarks).isEqualTo("Spezzify remarx");
 
         //Verify that the asset with barcode creatAsset-sp-1 is removed and the remaining is updated
-        Specimen specimen = result.specimens.get(0);
-        assertThat(specimen.preparation_types()).hasSize(2);
-        assertThat(specimen.preparation_types()).contains("slide");
-        assertThat(specimen.preparation_types()).contains("pinning");
-        assertThat(specimen.specimen_pid()).isEqualTo("spid2");
-        assertThat(specimen.asset_preparation_type()).isEqualTo("slide");
+        AssetSpecimen assetSpecimen = result.assetSpecimens.get(0);
+        assertThat(assetSpecimen.specimen.preparation_types()).hasSize(2);
+        assertThat(assetSpecimen.specimen.preparation_types()).contains("slide");
+        assertThat(assetSpecimen.specimen_pid).isEqualTo("spid2_updateAsset");
+        assertThat(assetSpecimen.asset_preparation_type).isEqualTo("slide");
         assertThat(result.external_publishers.size()).isEqualTo(2);
         result.external_publishers.forEach(x -> {
             if(x.description().equals("New description")) {
@@ -684,7 +687,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
             }
         });
         result.legality = null;
-        result.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide"));
+//        result.specimens = List.of(new Specimen(asset.institution, asset.collection, "creatAsset-sp-2", "spid2", new HashSet<>(Set.of("slide")),"slide"));
         assetService.updateAsset(result, user);
         Optional<Asset> result2opt = assetService.getAsset("updateAsset");
         Asset result2 = result2opt.get();
@@ -830,8 +833,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i2_c1";
         asset.asset_pid = "pid-testDoNotUpdateSynchronisingAsset";
         asset.status = "BEING_PROCESSED";
-        Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("pinning")), "pinning");
-        asset.specimens = List.of(specimen);
+//        Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("pinning")), "pinning");
+//        asset.specimens = List.of(specimen);
         assetService.persistAsset(asset, user, 1);
         asset.internal_status = InternalStatus.SPECIFY_SYNC_SCHEDULED;
         jdbi.onDemand(AssetRepository.class).updateAssetStatus(asset);
@@ -850,8 +853,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.collection = "i2_c1";
         asset.asset_pid = "pid-setAssetStatusInvalidStatus";
         asset.status = "BEING_PROCESSED";
-        Specimen specimen = new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("pinning")),"pinning");
-        asset.specimens = List.of(specimen);
+        addSpecimen(asset,"barcode-1", "nhmd.plantz.barcode-1","pinning");
+
 
         Asset asset2 = getTestAsset("updateAssetAttachExistingAsset-2");
         asset2.pipeline = "i2_p1";
@@ -861,19 +864,19 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset2.collection = "i2_c1";
         asset2.asset_pid = "pid-setAssetStatusInvalidStatus";
         asset2.status = "BEING_PROCESSED";
-        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-2", new HashSet<>(Set.of("slide")), "slide"));
+        addSpecimen(asset2, "barcode-2", "nhmd.plantz.barcode-2", "slide");
         assetService.persistAsset(asset, user, 1);
         assetService.persistAsset(asset2, user, 1);
-        asset2.specimens = List.of(new Specimen(asset.institution, asset.collection, "barcode-2", "nhmd.plantz.barcode-2", new HashSet<>(Set.of("slide")), "slide")
-                ,new Specimen(asset.institution, asset.collection, "barcode-1", "nhmd.plantz.barcode-1", new HashSet<>(Set.of("slide")),"slide"));
+        addSpecimen(asset2,"barcode-1", "nhmd.plantz.barcode-1","pinning");
+
         assetService.updateAsset(asset2, user);
         Optional<Asset> resultOpt = assetService.getAsset(asset2.asset_guid);
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();
-        System.out.println(result.specimens);
-        assertThat(result.specimens).hasSize(2);
-        assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-1"))).isTrue();
-        assertThat(result.specimens.stream().anyMatch(x-> x.specimen_pid().equals("nhmd.plantz.barcode-2"))).isTrue();
+        System.out.println(result.assetSpecimens);
+        assertThat(result.assetSpecimens).hasSize(2);
+        assertThat(result.assetSpecimens.stream().anyMatch(x-> x.specimen_pid.equals("nhmd.plantz.barcode-1"))).isTrue();
+        assertThat(result.assetSpecimens.stream().anyMatch(x-> x.specimen_pid.equals("nhmd.plantz.barcode-2"))).isTrue();
     }
 
     @Test
@@ -937,13 +940,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
         extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "test-delete-issue");
         Asset testAsset1 = getTestAsset("deleteAssetMetadata-1");
         Asset parent = getTestAsset("deleteAssetMetadataParent");
-        testAsset1.specimens = List.of(new Specimen("barcode-d-1", "delete_specimen-1", new HashSet<>(Set.of("pinning")),"pinning")
-                , new Specimen("barcode-d-2", "dont-delete_specimen-1", new HashSet<>(Set.of("pinning")),"pinning"));
+        addSpecimen(testAsset1,"barcode-d-1", "delete_specimen-1","pinning");
+                addSpecimen(testAsset1,"barcode-d-2", "dont-delete_specimen-1","pinning");
         testAsset1.issues = List.of(new Issue("deleteAssetMetadata-1","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
         testAsset1.funding.add("A wad of cash");
         testAsset1.parent_guids = Set.of("deleteAssetMetadataParent");
         Asset testAsset2 = getTestAsset("deleteAssetMetadata-2");
-        testAsset2.specimens = List.of(new Specimen("barcode-d-2", "dont-delete_specimen-1", new HashSet<>(Set.of("pinning")), "pinning"));
+        addSpecimen(testAsset2,"barcode-d-2", "dont-delete_specimen-1", "pinning");
         testAsset2.issues = List.of(new Issue("deleteAssetMetadata-2","test-delete-issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
         assetService.persistAsset(parent, user, 1000);
         assetService.persistAsset(testAsset1,user, 1000);
@@ -961,7 +964,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         // Check that only correct things are deleted
         Asset asset = result2.get();
         assertThat(asset.funding).contains("Hundredetusindvis af dollars");
-        assertThat(asset.specimens).hasSize(1);
+        assertThat(asset.assetSpecimens).hasSize(1);
         assertThat(asset.issues).hasSize(1);
         Optional<Asset> child_result_opt = assetService.getAsset("deleteAssetMetadataChild");
         assertThat(child_result_opt.isPresent()).isTrue();
@@ -973,5 +976,15 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Funding> aWholeLotOfMoney = fundingService.getFundingIfExists("A wad of cash");
         assertThat(aWholeLotOfMoney.isEmpty()).isTrue();
 
+    }
+//    "barcode-d-1", "delete_specimen-1", new HashSet<>(Set.of("pinning")),"pinning"
+    public Specimen addSpecimen(Asset asset, String barcode, String specimen_pid, String asset_preparation_type) {
+        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection, asset.institution);
+        Collection collection = collectionInternal.get();
+        Specimen specimen = new Specimen(asset.institution, collection.name(), barcode, specimen_pid, new HashSet<>(Arrays.asList(asset_preparation_type)),null, collection.collection_id(), new ArrayList<>() );
+        specimenService.putSpecimen(specimen, user);
+        AssetSpecimen assetSpecimen = new AssetSpecimen(asset.asset_guid, specimen_pid, asset_preparation_type, false);
+        asset.assetSpecimens.add(assetSpecimen);
+        return specimen;
     }
 }
