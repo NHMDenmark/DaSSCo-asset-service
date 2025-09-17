@@ -256,7 +256,10 @@ public class QueriesService {
             left join legality using (legality_id)
             left join issue using (asset_guid)
          */
-        StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id) left join asset_specimen using(asset_guid) left join specimen using(specimen_id)");
+        StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id)");
+        leftJoins.append("left join asset_specimen using(asset_guid)");
+        leftJoins.append("left join specimen using(specimen_id)");
+        leftJoins.append("join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
 
         for(String tableUsed : tablesUsed) {
             if(tableUsed.equals("event")) {
@@ -294,11 +297,9 @@ public class QueriesService {
                 collection.institution_name as institution,
                 collection_name as collection,
                 file_formats,
-                now() as created_date
+                creation_event.timestamp as created_date
             from asset
-            #LeftJoins#
-            #where# #collectionAccess#
-            limit :limit
+            #LeftJoins# #where# #collectionAccess# limit :limit
         """
                 .replace("#LeftJoins#", leftJoins.toString())
                 .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
