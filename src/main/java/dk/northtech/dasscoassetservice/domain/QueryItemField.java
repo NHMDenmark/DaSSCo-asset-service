@@ -34,6 +34,8 @@ public enum QueryItemField {
     LEGAL("legal", "legal", "legality"), // What field in legality?
     MAKE_PUBLIC("make_public", "make_public", "asset"),
     METADATA_SOURCE("metadata_source", "metadata_source", "asset"),
+    METADATA_CERATED_BY("metadata_created_by", "event_user.username", "event"),
+    METADATA_UPDATED_BY("metadata_updated_by", "event_user.username", "event"),
     METADATA_VERSION("metadata_version", "metadata_version", "asset"),
     MOS_ID("mos_id", "mos_id", "asset"),
     MULTI_SPECIMEN("multi_specimen", "multi_specimen", ""), // TODO update the query to handle it
@@ -44,7 +46,7 @@ public enum QueryItemField {
     RESTRICTED_ACCESS("restricted_access", "restricted_access", ""), // TODO how does this one work?
     SPECIFY_ATTACHMENT_REMARKS("specify_attachment_remarks", "specify_attachment_remarks", "asset"),
     SPECIFY_ATTACHMENT_TITLE("specify_attachment_title", "specify_attachment_title", "asset"),
-    SPECIMENS("specimens", "specimens", "specimen"),
+    SPECIMENS("specimens", "specimen.specimen_pid", "specimen"),
     STATUS("status", "status", "asset"),
     SUBJECT("subject", "subject", "asset"),
     UPDATE_USER("update_user", "update_user", ""), // TODO should this be deleted?

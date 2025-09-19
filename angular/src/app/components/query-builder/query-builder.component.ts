@@ -178,11 +178,11 @@ export class QueryBuilderComponent implements OnInit {
       }
       this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.ENUM) ?? [''])[0]));
-    } else if (nodeProperty.property.includes('date') || nodeProperty.property.includes('timestamp')) {
+    } else if ((nodeProperty.property.includes('date') && !nodeProperty.property.includes('_by')) || nodeProperty.property.includes('timestamp')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
-    } else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
+    } else if (nodeProperty.property.includes('file_format')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-    } else if (nodeProperty.property.includes('asset_locked') || nodeProperty.property.includes('audited')) {
+    } else if (nodeProperty.property.includes('asset_locked') || (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
     } else {

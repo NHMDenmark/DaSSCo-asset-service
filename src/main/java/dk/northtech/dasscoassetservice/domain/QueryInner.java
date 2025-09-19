@@ -45,7 +45,7 @@ public class QueryInner {
         if(operator.equalsIgnoreCase("equal") && ((!table.equals("event")) || !dataType.name().equals("BOOLEAN"))) {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
-            String sql = eventfiler.replace("#BASE#", "%s %s '%s'".formatted(column, operator, ":" + preparedParam));
+            String sql = eventfiler.replace("#BASE#", "%s %s %s".formatted(column, operator, ":" + preparedParam));
             return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("starts with")) {
@@ -171,6 +171,8 @@ public class QueryInner {
             case "date_metadata_created_ars": return " event = 'CREATE_ASSET_METADATA'";
             case "date_metadata_updated_ars": return " event = 'UPDATE_ASSET_METADATA'";
             case "date_pushed_to_specify": return " event = 'SYNCHRONISE_SPECIFY'";
+            case "metadata_created_by": return " event = 'CREATE_ASSET_METADATA'";
+            case "metadata_updated_by": return " event = 'UPDATE_ASSET_METADATA'";
             default: return "";
         }
     }

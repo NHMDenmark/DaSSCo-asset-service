@@ -177,16 +177,16 @@ public class QueriesService {
 //                new QueryProperty(QueryItemField.ASSET_DELETED_BY.getDisplayName(), "String", QueryItemField.ASSET_DELETED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.ASSET_UPDATED_BY.getDisplayName(), "String", QueryItemField.ASSET_UPDATED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.AUDITED.getDisplayName(), "boolean", QueryItemField.AUDITED.getTableName()), // EVENT TYPE
-//                new QueryProperty("audited_by", "string", "???"), // EVENT USER
+                new QueryProperty(QueryItemField.AUDITED_BY.getDisplayName(), "String", QueryItemField.AUDITED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_CREATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_DELETED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_AUDITED.getDisplayName(), "???", "Instant"), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_METADATA_CERATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_CERATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_METADATA_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
-                new QueryProperty(QueryItemField.DATE_PUSHED_TO_SPECIFY.getDisplayName(), "Instant", QueryItemField.DATE_PUSHED_TO_SPECIFY.getTableName()) // EVENT TYPE + TIME
-//                new QueryProperty("metadata_created_by", "string", "???"), // EVENT USER
-//                new QueryProperty("metadata_updated_by", "string", "???"), // EVENT USER
+                new QueryProperty(QueryItemField.DATE_PUSHED_TO_SPECIFY.getDisplayName(), "Instant", QueryItemField.DATE_PUSHED_TO_SPECIFY.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.METADATA_CERATED_BY.getDisplayName(), "String", QueryItemField.METADATA_CERATED_BY.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.METADATA_UPDATED_BY.getDisplayName(), "String", QueryItemField.METADATA_UPDATED_BY.getTableName()) // EVENT TYPE + TIME
         )));
 
         return queryItems;
@@ -244,22 +244,10 @@ public class QueriesService {
             }).collect(Collectors.joining(" or ")) + ")";
         }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
 
-         /*
-            left join event using (asset_guid)
-            left join digitiser_list using (asset_guid)
-            left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id
-            left join asset_funding using (asset_guid)
-            left join funding using (funding_id)
-            left join parent_child on parent_child.child_guid = asset.asset_guid
-            left join workstation using (workstation_id)
-            left join pipeline using (pipeline_id)
-            left join legality using (legality_id)
-            left join issue using (asset_guid)
-         */
         StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id)");
-        leftJoins.append("left join asset_specimen using(asset_guid)");
-        leftJoins.append("left join specimen using(specimen_id)");
-        leftJoins.append("join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
+        leftJoins.append(" left join asset_specimen using(asset_guid)");
+        leftJoins.append(" left join specimen using(specimen_id)");
+        leftJoins.append(" join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
 
         for(String tableUsed : tablesUsed) {
             if(tableUsed.equals("event")) {
