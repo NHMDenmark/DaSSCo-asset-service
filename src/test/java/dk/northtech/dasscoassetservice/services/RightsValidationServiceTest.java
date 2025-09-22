@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RightsValidationServiceTest extends AbstractIntegrationTest {
     @Test
-    public void testCheckRightsInstitution() {
+    public void testCheckRightsInstitutionInstitution() {
         Institution institution = new Institution("inst_rv1", Arrays.asList(new Role("test_1")));
         institutionService.createInstitution(institution);
         Collection collection = new Collection("col_rv1", institution.name(), new ArrayList<>());
@@ -83,7 +83,7 @@ class RightsValidationServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    public void testCheckRightsNoRoles() {
+    public void testCheckRightsInstitutionNoRoles() {
         Institution institution = new Institution("inst_testCheckRightsNoRoles", new ArrayList<>());
         institutionService.createInstitution(institution);
         Collection collection = new Collection("col_testCheckRightsNoRoles", institution.name(),new ArrayList<>() );
