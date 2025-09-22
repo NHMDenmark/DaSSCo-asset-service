@@ -87,18 +87,10 @@ public class RightsValidationService {
         return checkRightsInstitution(user, institutionName, collectionName, true);
     }
 
-    public void checkReadRightsThrowing(User user, String institutionName, String collectionName) {
-        boolean hasRight = checkRightsInstitution(user, institutionName, collectionName, false);
+    public void checkReadRightsThrowing(User user, Asset asset) {
+        boolean hasRight = checkRightsAsset(user, asset, false);
         if (!hasRight) {
-            LOGGER.warn("User {} does not have read access to collection {} in institution {}", user.username, collectionName, institutionName);
-            throw new DasscoIllegalActionException("FORBIDDEN");
-        }
-    }
-
-    public void checkReadRightsThrowing(User user, String institutionName, String collectionName, String assetGuid) {
-        boolean hasRight = checkRightsInstitution(user, institutionName, collectionName, assetGuid, false);
-        if (!hasRight) {
-            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}", user.username, assetGuid, collectionName, institutionName);
+            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}", user.username, asset.asset_guid, asset.collection, asset.institution);
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
     }
@@ -226,40 +218,7 @@ public class RightsValidationService {
         return true;
     }
 
-    public boolean checkRightsInstitution(User user, String institutionName, String collectionName, String assetGuid, boolean write) {
-        if(checkAdminRoles(user)) {
-            return true;
-        }
-
-        // TODO WP5a check access to asset groups
-//        boolean hasAccess = jdbi.onDemand(UserRepository.class).userHasAccessToAsset(user.username, assetGuid);
-//        if (hasAccess) {
-//            return true;
-//        }
-
-        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
-        if (collectionOpt.isEmpty()) {
-            throw new DasscoIllegalActionException("Collection " + collectionName + " does not exist within institution " + institutionName);
-        }
-        Set<String> allUserRoles = getUserRoles(user.roles);
-        Collection collection = collectionOpt.get();
-        if(!checkObjectRoles(allUserRoles, collection.roleRestrictions(), write)){
-            return false;
-        }
-
-        Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
-        if (ifExists.isEmpty()) {
-            throw new RuntimeException("This should not happen :^)");
-        }
-        Institution institution = ifExists.get();
-        if(!checkObjectRoles(allUserRoles, institution.roleRestrictions(), write)) {
-            return false;
-        }
-        //If no roles exists everyone has access
-        return true;
-    }
-
-    public boolean checkRightsInstitution(User user, AssetGroup assetGroup) {
+     public boolean checkRightsInstitution(User user, AssetGroup assetGroup) {
         Set<String> roles = user.roles;
         if(checkAdminRoles(user)) {
             return true;
@@ -293,9 +252,7 @@ public class RightsValidationService {
         return allRoles;
     }
 
-    public void checkRoles(Set<Role> roles, Set<String> userRoles) {
 
-    }
 
     public Set<String> getInstitutionsReadRights(Set<String> userRoles) {
         Set<String> institutionNames = new HashSet<>();

@@ -162,7 +162,7 @@ public class AssetApi {
             throw new IllegalArgumentException("There is no such asset");
         }
         Asset asset = assetOpt.get();
-        rightsValidationService.checkReadRightsThrowing(userService.from(securityContext), asset.institution, asset.collection);
+        rightsValidationService.checkReadRightsThrowing(userService.from(securityContext), asset);
     }
 
     @POST

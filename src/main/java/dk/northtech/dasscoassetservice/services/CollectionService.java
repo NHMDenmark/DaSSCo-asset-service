@@ -117,11 +117,6 @@ public class CollectionService {
         });
     }
 
-    public Optional<Collection> findCollection(User user, String collectionName, String institutionName) {
-        rightsValidationService.checkReadRightsThrowing(user, institutionName, collectionName);
-        return findCollectionInternal(collectionName, institutionName);
-    }
-
     public Optional<Collection> findCollectionInternal(String collectionName, String institutionName) {
         if (collectionCache.isEmpty()) {
             initCollections();

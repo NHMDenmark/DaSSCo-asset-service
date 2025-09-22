@@ -445,7 +445,7 @@ public class AssetService {
         if (optionalAsset.isPresent()) {
             Asset found = optionalAsset.get();
             LocalDateTime checkValidationStart = LocalDateTime.now();
-            rightsValidationService.checkReadRightsThrowing(user, found.institution, found.collection, found.asset_guid);
+            rightsValidationService.checkReadRightsThrowing(user, found);
             LocalDateTime checkValidationEnd = LocalDateTime.now();
             logger.info("#4.1.3 Validating Asset took {} ms", Duration.between(checkValidationStart, checkValidationEnd).toMillis());
         }
@@ -809,7 +809,7 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        rightsValidationService.checkReadRightsThrowing(user, asset);
         // Asset cannot have work in progress when auditing
         if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
@@ -833,7 +833,7 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist");
         }
         Asset asset = assetOpt.get();
-        rightsValidationService.checkReadRightsThrowing(user, asset.institution, asset.collection);
+        rightsValidationService.checkReadRightsThrowing(user, asset);
         return jdbi.onDemand(EventRepository.class).getAssetEvents(assetGuid);
     }
 
