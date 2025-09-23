@@ -121,7 +121,7 @@ public class Asset {
     public List<Publication> external_publishers;
     public Legality legality;
     public String metadata_created_by;
-    public List<Role> role_restrictions;
+    public List<Role> role_restrictions = new ArrayList<>();
 //    public List<String> file_formats;
     // Internal ids for database operations
     public transient Integer workstation_id;

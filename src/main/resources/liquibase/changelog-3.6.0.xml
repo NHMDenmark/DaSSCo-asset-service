@@ -4,7 +4,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
 
-    <changeSet id="3.5.0:CREATE_SPECIMEN_ROLE_RESTRICTION" author="Thomas Skov Bornerup" context="default">
+    <changeSet id="3.6.0:CREATE_SPECIMEN_ROLE_RESTRICTION" author="Thomas Skov Bornerup" context="default">
         <createTable tableName="specimen_role_restriction">
             <column name="specimen_role_restriction_id" autoIncrement="true" type="int">
                 <constraints primaryKeyName="pk_specimen_role_restriction"
@@ -19,7 +19,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="3.5.0:CREATE_ASSET_ROLE_RESTRICTION" author="Thomas Skov Bornerup" context="default">
+    <changeSet id="3.6.0:CREATE_ASSET_ROLE_RESTRICTION" author="Thomas Skov Bornerup" context="default">
         <createTable tableName="asset_role_restriction">
             <column name="asset_role_restriction_id" autoIncrement="true" type="int">
                 <constraints primaryKeyName="pk_asset_role_restriction"
@@ -34,7 +34,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="1.0.0:CREATE_ROLE_RESTRICTION_FKEYS" author="Thomas Skov Bornerup">
+    <changeSet id="3.6.0:CREATE_ROLE_RESTRICTION_FKEYS" author="Thomas Skov Bornerup">
         <addForeignKeyConstraint baseTableName="specimen_role_restriction"
                                  baseColumnNames="role"
                                  constraintName="fk_specimen_role_restriction__role"

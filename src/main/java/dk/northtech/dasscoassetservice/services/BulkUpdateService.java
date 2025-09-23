@@ -2,7 +2,6 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.DigitiserCache;
 import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
@@ -21,9 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
 import java.net.http.HttpClient;
-import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -103,7 +100,7 @@ public class BulkUpdateService {
         }
 
         for (Asset asset : assets) {
-            rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+            rightsValidationService.requireWriteRights(user, asset.institution, asset.collection);
         }
 
 

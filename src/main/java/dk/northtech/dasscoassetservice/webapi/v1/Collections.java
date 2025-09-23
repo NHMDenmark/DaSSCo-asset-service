@@ -55,7 +55,7 @@ public class Collections {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Collection> getInstitutes(@PathParam("institutionName") String institutionName
             , @Context SecurityContext securityContext) {
-        rightsValidationService.checkReadRights(userService.from(securityContext),institutionName);
+//        rightsValidationService.checkReadRights(userService.from(securityContext),institutionName);
         return this.collectionService.listCollections(new Institution(institutionName), userService.from(securityContext));
     }
 
@@ -74,7 +74,7 @@ public class Collections {
             @PathParam("institutionName") String institutionName
             , Collection collection
             , @Context SecurityContext securityContext) {
-        rightsValidationService.checkWriteRightsThrowing(userService.from(securityContext), institutionName);
+        rightsValidationService.requireWriteRights(userService.from(securityContext), institutionName);
         return this.collectionService.persistCollection(collection);
     }
 

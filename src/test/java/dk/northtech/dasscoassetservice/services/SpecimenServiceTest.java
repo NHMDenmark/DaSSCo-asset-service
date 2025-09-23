@@ -39,10 +39,12 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , new HashSet<>(Set.of("pinning", "slide"))
                 ,null, collectionService.findCollectionInternal(updateSpecimen.collection
                 , updateSpecimen.institution).get().collection_id()
-                ,Arrays.asList(new Role("NHMD")));
+                , Arrays.asList(new Role("NHMD")));
         specimenService.putSpecimen(specimen, user);
         updateSpecimen.assetSpecimens = Arrays.asList(new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false));
-        assetService.persistAsset(updateSpecimen, user, 86);
+        User nhmd = new User("nhmd-user", Set.of("WRITE_NHMD"));
+        User nhmdWithId = userService.ensureExists(nhmd);
+        assetService.persistAsset(updateSpecimen, nhmdWithId, 86);
         Optional<Specimen> resultSpecimen = specimenService.findSpecimen("nhmd.plantz.updateSpecimenDoNotRemovePrepTypeInUse-1");
         assertThat(resultSpecimen.isPresent()).isTrue();
         Specimen specimen1 = resultSpecimen.get();
@@ -68,34 +70,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
 //    void listPreparationTypes() {
 //    }
 //
-//    @Test
-//    void validateSpecimen() {
-//        Asset updateSpecimen = AssetServiceTest.getTestAsset("validateSpecimen");
-//        User restrictedUser = new User("Musketta", Set.of("WRITE_test_1"));
-//        userService.persistUser(restrictedUser);
-//        Institution institution = new Institution("testSpecimenInst", Arrays.asList(new Role("test_1")));
-//        institutionService.createInstitution(institution);
-//        Collection collection = new Collection("testSpecimenCol", institution.name(), new ArrayList<>());
-//        collectionService.persistCollection(collection);
-//        updateSpecimen.assetSpecimens = Arrays.asList(new AssetSpecimen()new Specimen("testSpecimenInst"
-//                , "testSpecimenCol"
-//                , "validateSpecimen-1"
-//                , "nhmd.plantz.validateSpecimen-1"
-//                , new HashSet<>(Set.of("pinning", "slide"))
-//                , "pinning"));
-//        assetService.persistAsset(updateSpecimen, restrictedUser, 86);
-//
-//        Specimen specimen = new Specimen("testSpecimenInst"
-//                , "testSpecimenCol"
-//                , "validateSpecimen-1"
-//                , "nhmd.plantz.validateSpecimen-1"
-//                , new HashSet<>(Set.of("pinning"))
-//                , null);
-//
-//        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> {
-//            specimenService.putSpecimen(specimen, user);
-//        });
-//        specimenService.putSpecimen(specimen, restrictedUser);
-//    }
+
+
 
 }

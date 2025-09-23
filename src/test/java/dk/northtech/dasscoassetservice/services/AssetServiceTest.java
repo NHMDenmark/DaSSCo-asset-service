@@ -715,6 +715,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
 
+
+
     @Test
     void testCompleteAssetAssetDoesntExist() {
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob"), user));
@@ -877,6 +879,33 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(result.assetSpecimens).hasSize(2);
         assertThat(result.assetSpecimens.stream().anyMatch(x-> x.specimen_pid.equals("nhmd.plantz.barcode-1"))).isTrue();
         assertThat(result.assetSpecimens.stream().anyMatch(x-> x.specimen_pid.equals("nhmd.plantz.barcode-2"))).isTrue();
+    }
+
+    @Test
+    void updateAssetNoRights() {
+        Asset asset = getTestAsset("updateAssetNoRights-1");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.tags.put("Tag1", "value1");
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-updateAssetNoRights";
+        asset.status = "BEING_PROCESSED";
+        asset.role_restrictions.add(new Role("updateAssetNoRights"));
+        addSpecimen(asset,"barcode-1", "nhmd.plantz.barcode-1","pinning");
+        User userWithRights = userService.ensureExists(new User("updateAssetNoRights", Set.of("WRITE_updateAssetNoRights")));
+
+        assetService.persistAsset(asset, userWithRights, 1);
+
+        //with rights
+        Optional<Asset> resultOpt = assetService.getAsset(asset.asset_guid, userWithRights);
+        if(resultOpt.isEmpty()) {
+            fail();
+        }
+        Asset asset1 = resultOpt.get();
+        //without rights
+        assertThrows(DasscoIllegalActionException.class, () -> assetService.getAsset(asset.asset_guid, user));
+
     }
 
     @Test

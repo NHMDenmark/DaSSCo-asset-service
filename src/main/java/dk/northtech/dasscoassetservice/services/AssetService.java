@@ -50,6 +50,7 @@ public class AssetService {
     private static final Logger logger = LoggerFactory.getLogger(AssetService.class);
     private final FileProxyConfiguration fileProxyConfiguration;
     private final ExtendableEnumService extendableEnumService;
+    private final RoleService roleService;
     Cache<String, Instant> assetsGettingCreated;
     private final UserService userService;
     private final SpecimenService specimenService;
@@ -73,7 +74,7 @@ public class AssetService {
             , UserService userService
             , AssetSyncService assetSyncService
             , FundingService fundingService
-            , SpecimenService specimenService) {
+            , SpecimenService specimenService, RoleService roleService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -94,6 +95,7 @@ public class AssetService {
         this.specimenService = specimenService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
+        this.roleService = roleService;
     }
 
     void validateAssetFields(Asset asset) {
@@ -168,14 +170,13 @@ public class AssetService {
         return jdbi.withHandle(h -> {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             Optional<Asset> asset = assetRepository.readAssetInternalNew(assetGuid);
-
+            RoleRepository roleRepository = h.attach(RoleRepository.class);
             if (asset.isEmpty()) {
                 return Optional.empty();
             }
             Asset assetToBeMapped = asset.get();
             EventRepository attach = h.attach(EventRepository.class);
             assetToBeMapped.events = attach.getAssetEvents(assetGuid);
-            SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
             assetToBeMapped.assetSpecimens = specimenService.findAssetSpecimens(assetGuid);
             assetToBeMapped.multi_specimen = assetToBeMapped.assetSpecimens.size() > 1;
             UserRepository userRepository = h.attach(UserRepository.class);
@@ -185,6 +186,7 @@ public class AssetService {
             assetToBeMapped.issues = issueRepository.findIssuesByAssetGuid(assetToBeMapped.asset_guid);
             assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
             assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
+            assetToBeMapped.role_restrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.ASSET, assetToBeMapped.asset_guid);
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
             for (Event event : assetToBeMapped.events) {
@@ -287,16 +289,23 @@ public class AssetService {
         }
 
         asset.updateUser = user.username;
-        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        for(AssetSpecimen assetSpecimen : asset.assetSpecimens) {
+            Optional<Specimen> specimen = specimenService.findSpecimen(assetSpecimen.specimen_pid);
+            if (specimen.isEmpty()) {
+                throw new IllegalArgumentException("Specimen " + assetSpecimen.specimen_pid + " doesn't exist");
+            }
+            assetSpecimen.specimen = specimen.get();
+        }
+        rightsValidationService.requireWriteRights(user, asset);
         validateAndSetCollectionId(asset);
         validateNewAssetAndSetIds(asset);
+        ensureValuesExists(asset);
         validateAsset(asset);
         // Create share
         assetsGettingCreated.put(asset.asset_guid, Instant.now());
 
         LocalDateTime httpInfoStart = LocalDateTime.now();
         logger.info("POSTing asset {} with parent {} to file-proxy", asset.asset_guid, asset.parent_guids);
-        ensureValuesExists(asset);
         Asset resultAsset = jdbi.inTransaction(h -> {
             // Default values on creation
             asset.date_metadata_updated = Instant.now();
@@ -434,6 +443,15 @@ public class AssetService {
         for (String funds : asset.funding) {
             fundingService.ensureExists(funds);
         }
+        if(!asset.role_restrictions.isEmpty()) {
+            Set<String> roles = roleService.getRoles();
+            for(Role role: asset.role_restrictions){
+                if(!roles.contains(role.name())){
+                    roleService.addRole(role.name());
+                }
+            }
+        }
+
 
     }
 
@@ -537,7 +555,7 @@ public class AssetService {
         }
         Map<Integer, Issue> existing_issues = new HashMap<>();
         existing.issues.forEach(iss -> existing_issues.put(iss.issue_id(), iss));
-        rightsValidationService.checkWriteRightsThrowing(user, existing.institution, existing.collection);
+        rightsValidationService.requireWriteRights(user, existing.institution, existing.collection);
         if (updatedAsset.digitiser != null && !updatedAsset.digitiser.equals(existing.digitiser)) {
             User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
             existing.digitiser_id = digitiser.dassco_user_id;
@@ -850,7 +868,7 @@ public class AssetService {
 
         // Mark as asset received
         Asset asset = optAsset.get();
-        rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        rightsValidationService.requireWriteRights(user, asset);
         if (asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
@@ -915,7 +933,7 @@ public class AssetService {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 404) {
                 Asset asset = optAsset.get();
-                rightsValidationService.checkWriteRightsThrowing(user, asset.institution, asset.collection);
+                rightsValidationService.requireWriteRights(user, asset.institution, asset.collection);
                 jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
                 // Make sure deleted funding is removed from cache
                 fundingService.forceRefreshCache();
@@ -937,7 +955,7 @@ public class AssetService {
             throw new IllegalArgumentException("Asset doesnt exist!");
         }
         Asset asset = optAsset.get();
-        rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+        rightsValidationService.checkRightsAsset(user, asset, true);
         if (asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }

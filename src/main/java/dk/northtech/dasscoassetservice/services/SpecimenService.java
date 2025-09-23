@@ -4,10 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
-import dk.northtech.dasscoassetservice.domain.AssetSpecimen;
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Specimen;
-import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
 import dk.northtech.dasscoassetservice.repositories.RoleRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
@@ -18,9 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -98,6 +93,7 @@ public class SpecimenService {
                 Integer specimen_id = specimenRepository.insert_specimen(specimenWithCollectionId);
 
                 if (!specimenWithCollectionId.role_restrictions().isEmpty()) {
+                    rightsValidationService.checkRightsSpecimen(user, specimenWithCollectionId, true);
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
                     roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimenWithCollectionId.role_restrictions(), specimen_id);
 
@@ -106,6 +102,9 @@ public class SpecimenService {
                 return specimenWithCollectionId;
             } else {
 
+                if(!rightsValidationService.checkRightsSpecimen(user, specimensByPID.get(), true)){
+                    throw new DasscoIllegalActionException("FORBIDDEN");
+                }
                 return updateSpecimen(specimen, specimensByPID.get(), user);
             }
         });
@@ -116,7 +115,7 @@ public class SpecimenService {
         return jdbi.inTransaction(h -> {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
 
-            rightsValidationService.checkWriteRightsThrowing(user, specimen.institution(), specimen.collection());
+            rightsValidationService.requireWriteRights(user, specimen.institution(), specimen.collection());
             List<String> assetsWithRemovedPreparationType = specimenRepository.getGuidsByPreparationTypeAndSpecimenId(specimen.preparation_types(), existing.specimen_id());
             if (specimen.role_restrictions() != null && !existing.role_restrictions().equals(specimen.role_restrictions())) {
                 RoleRepository roleRepository = h.attach(RoleRepository.class);

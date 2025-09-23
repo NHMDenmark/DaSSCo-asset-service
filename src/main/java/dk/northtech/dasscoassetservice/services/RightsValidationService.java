@@ -1,7 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import jakarta.inject.Inject;
@@ -11,8 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static java.util.Map.entry;
@@ -40,13 +37,7 @@ public class RightsValidationService {
 
     }
 
-    public boolean checkReadRights(User user, String institutionName) {
-        return checkRightsInstitution(user, institutionName, false);
-    }
-
-
-
-    public void checkWriteRightsThrowing(User user, String institutionName) {
+    public void requireWriteRights(User user, String institutionName) {
         boolean hasRight = checkRightsInstitution(user, institutionName, false);
         if (!hasRight) {
             LOGGER.info("User {} does not have write access to institution {}", user.username, institutionName);
@@ -95,6 +86,14 @@ public class RightsValidationService {
         }
     }
 
+    public void requireWriteRights(User user, Asset asset) {
+        boolean hasRight = checkRightsAsset(user, asset, true);
+        if (!hasRight) {
+            LOGGER.warn("User {} does not have read access to asset {} in collection {} in institution {}", user.username, asset.asset_guid, asset.collection, asset.institution);
+            throw new DasscoIllegalActionException("FORBIDDEN");
+        }
+    }
+
     public boolean checkReadRightsThrowing(User user, AssetGroup assetGroup) {
         boolean hasRight = checkRightsInstitution(user, assetGroup);
         if (!hasRight) {
@@ -104,8 +103,21 @@ public class RightsValidationService {
         return true;
     }
 
+    public boolean checkRightsSpecimen(User user, Specimen specimen, boolean write) {
+        Set<String> allUserRoles = getUserRoles(user.roles);
+        if(!checkObjectRoles(allUserRoles, specimen.role_restrictions(), write)){
+            return false;
+        };
+        if(!write) {
+            // all may read
+            return true;
+        }
+        return checkRightsInstitution(user, specimen.institution(),specimen.collection(),write);
+    }
+
     public boolean checkRightsAsset(User user, Asset asset, boolean write) {
         if(checkAdminRoles(user)) {
+            System.out.println("badmin");
             return true;
         }
         Set<String> allUserRoles = getUserRoles(user.roles);
@@ -121,28 +133,11 @@ public class RightsValidationService {
                 return false;
             }
         }
-        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection, asset.institution);
-        if (collectionOpt.isEmpty()) {
-            throw new DasscoIllegalActionException("Collection " + asset.collection + " does not exist within institution " + asset.institution);
-        }
         if(!write) {
             //All users have read access to institution
             return true;
         }
-
-        Collection collection = collectionOpt.get();
-        if(!checkObjectRoles(allUserRoles, collection.roleRestrictions(), write)){
-            return false;
-        }
-
-        Optional<Institution> ifExists = institutionService.getIfExists(asset.institution);
-        if (ifExists.isEmpty()) {
-            throw new RuntimeException("This should not happen :^)");
-        }
-        Institution institution = ifExists.get();
-        if(!checkObjectRoles(allUserRoles, institution.roleRestrictions(), write)) {
-            return false;
-        }
+        checkRightsInstitution(user, asset.institution, asset.collection, write);
         return true;
     }
 
@@ -162,7 +157,7 @@ public class RightsValidationService {
         }
     }
 
-    public void checkWriteRightsThrowing(User user, String institutionName, String collectionName) {
+    public void requireWriteRights(User user, String institutionName, String collectionName) {
         boolean hasRight = checkRightsInstitution(user, institutionName, collectionName, true);
         if (!hasRight) {
             LOGGER.warn("User {} does not have write access to collection {} in institution {}", user.username, collectionName, institutionName);
@@ -175,35 +170,24 @@ public class RightsValidationService {
         if(checkAdminRoles(user)) {
             return true;
         }
+        Set<String> allUserRoles = getUserRoles(user.roles);
+
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
         if (collectionOpt.isEmpty()) {
             throw new DasscoIllegalActionException("Collection " + collectionName + " does not exist within institution " + institutionName);
         }
-        Set<String> allUserRoles = getUserRoles(user.roles);
+
         Collection collection = collectionOpt.get();
-        if (!collection.roleRestrictions().isEmpty()) {
-            for (Role r : collection.roleRestrictions()) {
-                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
-                    return true;
-                }
-            }
+        if(!checkObjectRoles(allUserRoles, collection.roleRestrictions(), write)){
             return false;
         }
+
         Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
         if (ifExists.isEmpty()) {
             throw new RuntimeException("This should not happen :^)");
         }
         Institution institution = ifExists.get();
-        if (!institution.roleRestrictions().isEmpty()) {
-            for (Role r : institution.roleRestrictions()) {
-                if (allUserRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        //If no roles exists everyone has access
-        return true;
+        return checkObjectRoles(allUserRoles, institution.roleRestrictions(), write);
     }
 
     public boolean checkObjectRoles(Set<String> userRoles, List<Role> objectRoles, boolean write) {
@@ -217,6 +201,8 @@ public class RightsValidationService {
         }
         return true;
     }
+
+
 
      public boolean checkRightsInstitution(User user, AssetGroup assetGroup) {
         Set<String> roles = user.roles;
@@ -254,22 +240,6 @@ public class RightsValidationService {
 
 
 
-    public Set<String> getInstitutionsReadRights(Set<String> userRoles) {
-        Set<String> institutionNames = new HashSet<>();
-        List<Institution> institutionList = this.institutionService.listInstitutions();
-        for (Institution institution : institutionList) {
-            if (!institution.roleRestrictions().isEmpty()) { // institution has role restrictions
-                for (Role role : institution.roleRestrictions()) {
-                    if (userRoles.contains(READ_ROLE_PREFIX + role.name()) || userRoles.contains(WRITE_ROLE_PREFIX + role.name())) {
-                        institutionNames.add(institution.name());
-                    }
-                }
-            } else {
-                institutionNames.add(institution.name()); // no restrictions, everyone can access yay
-            }
-        }
-        return institutionNames;
-    }
 
 
     public Map<String, Set<String>> getCollectionRights(Set<String> userRoles) {

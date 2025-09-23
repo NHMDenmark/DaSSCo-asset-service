@@ -29,7 +29,7 @@ public interface RoleRepository extends SqlObject {
     }
 
     default String getFindSql(RestrictedObjectType object) {
-        return "SELECT role FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " =:param" ;
+        return "SELECT role as name FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " =:param" ;
     }
 
     @SqlUpdate("INSERT INTO role(role) VALUES (:role)")
@@ -102,6 +102,12 @@ public interface RoleRepository extends SqlObject {
 
 
     default List<Role> findRoleRestrictions(RestrictedObjectType object, int identifier) {
+        return withHandle(h -> {
+            return h.createQuery(getFindSql(object)).bind("param", identifier)
+                    .mapTo(Role.class).list();
+        });
+    }
+    default List<Role> findRoleRestrictions(RestrictedObjectType object, String identifier) {
         return withHandle(h -> {
             return h.createQuery(getFindSql(object)).bind("param", identifier)
                     .mapTo(Role.class).list();

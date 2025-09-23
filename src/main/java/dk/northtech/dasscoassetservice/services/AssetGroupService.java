@@ -63,7 +63,7 @@ public class AssetGroupService {
             List<String> assetsWithoutPermission = new ArrayList<>();
             // Check user roles. You need WRITE access to create the asset group and invite people to it.
             for (Asset asset: assets){
-                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset,true);
                 if (!hasAccess){
                     assetsWithoutPermission.add(asset.asset_guid);
                 }
@@ -169,7 +169,7 @@ public class AssetGroupService {
         if (assetGroupOptional.get().hasAccess.size() > 1){
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets){
-                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, true);
                 if (!hasAccess){
                     forbiddenAssets.add(asset.asset_guid);
                 }
@@ -262,7 +262,7 @@ public class AssetGroupService {
         if (!assets.isEmpty()){
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset: assets){
-                boolean hasAccess = rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, true);
                 if (!hasAccess){
                     forbiddenAssets.add(asset.asset_guid);
                 }
