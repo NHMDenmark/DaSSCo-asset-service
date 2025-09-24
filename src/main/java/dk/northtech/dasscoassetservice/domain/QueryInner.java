@@ -41,7 +41,11 @@ public class QueryInner {
             }
         }
 
-
+        if(column.equalsIgnoreCase("specimens.count") && operator.equalsIgnoreCase("equal")){
+            operator = value.equals("true") ? ">= 2" : "<= 1";
+            String sql = eventfiler.replace("#BASE#", "%s %s".formatted(column, operator));
+            return Map.of(sql, Map.of());
+        }
         if(operator.equalsIgnoreCase("equal") && ((!table.equals("event")) || !dataType.name().equals("BOOLEAN"))) {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
@@ -162,11 +166,11 @@ public class QueryInner {
     public String eventTypeByMetadataColumn(String column) {
         switch (column) {
             case "asset_created_by": return " event = 'CREATE_ASSET'";
+            case "asset_deleted_by", "date_asset_deleted_ars": return " event = 'DELETE_ASSET'";
             case "asset_updated_by", "date_asset_updated_ars": return " event = 'UPDATE_ASSET'";
             case "audited": return " event %s 'AUDIT_ASSET'".formatted(value.equalsIgnoreCase("true") ? "=" : "!=");
             case "audited_by": return " event = 'AUDIT_ASSET'";
             case "date_asset_created_ars": return "event = 'CREATE_ASSET'";
-            case "date_asset_deleted_ars": return " event = 'DELETE_ASSET'";
             case "date_audited": return " event = 'AUDIT_ASSET_METADATA'";
             case "date_metadata_created_ars": return " event = 'CREATE_ASSET_METADATA'";
             case "date_metadata_updated_ars": return " event = 'UPDATE_ASSET_METADATA'";

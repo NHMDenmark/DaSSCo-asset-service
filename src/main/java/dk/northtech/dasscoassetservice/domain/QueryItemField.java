@@ -5,7 +5,7 @@ import java.util.Map;
 
 public enum QueryItemField {
     ASSET_CERATED_BY("asset_created_by", "event_user.username", "event"),
-    ASSET_DELETED_BY("asset_deleted_by", "event_user.username", "event"),
+    ASSET_DELETED_BY("asset_deleted_by", "pipeline_name", "event"),
     ASSET_UPDATED_BY("asset_updated_by", "event_user.username", "event"),
     ASSET_GUID("asset_guid", "asset_guid", "asset"),
     ASSET_LOCKED("asset_locked", "asset_locked", "asset"),
@@ -30,15 +30,15 @@ public enum QueryItemField {
     FUNDING("funding", "funding", "funding"),
     INSTITUTION("institution", "institution_name", "collection"),
     INTERNAL_STATUS("internal_status", "internal_status", "asset"),
-    ISSUES("issues", "issues", "issue"), // What field in issues?
-    LEGAL("legal", "legal", "legality"), // What field in legality?
+    ISSUES("issues", "issue.name", "issue"), // What field in issues?
+    LEGAL("legal", "copyright", "legality"),
     MAKE_PUBLIC("make_public", "make_public", "asset"),
     METADATA_SOURCE("metadata_source", "metadata_source", "asset"),
     METADATA_CERATED_BY("metadata_created_by", "event_user.username", "event"),
     METADATA_UPDATED_BY("metadata_updated_by", "event_user.username", "event"),
     METADATA_VERSION("metadata_version", "metadata_version", "asset"),
     MOS_ID("mos_id", "mos_id", "asset"),
-    MULTI_SPECIMEN("multi_specimen", "multi_specimen", ""), // TODO update the query to handle it
+    MULTI_SPECIMEN("multi_specimen", "specimens.count", ""), // TODO update the query to handle it
     PARENT_GUID("parent_guid", "parent_guid", "parent_child"),
     PAYLOAD_TYPE("payload_type", "payload_type", "asset"),
     PIPELINE("pipeline", "pipeline", "pipeline"), // TODO expand the fields to have extra sql that need to be appended e.g here event.event in (CREATE_ASSET, UPDATE_ASSET)
@@ -50,7 +50,7 @@ public enum QueryItemField {
     STATUS("status", "status", "asset"),
     SUBJECT("subject", "subject", "asset"),
     UPDATE_USER("update_user", "update_user", ""), // TODO should this be deleted?
-    V2_FEATURE_EXTERNAL_PUBLISHER("V2", "V2", ""),
+    V2_FEATURE_EXTERNAL_PUBLISHER("External publisher", "publisher", "publisher"),
     WORKSTATION("workstation", "workstation_name", "workstation");
 
     private final String displayName;

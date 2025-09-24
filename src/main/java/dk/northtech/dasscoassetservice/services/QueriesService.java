@@ -146,16 +146,15 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.DIGITISER.getDisplayName(), "digitiser", QueryItemField.DIGITISER.getTableName()),
                 new QueryProperty(QueryItemField.FILE_FORMAT.getDisplayName(), "String", QueryItemField.FILE_FORMAT.getTableName()),
                 new QueryProperty(QueryItemField.FUNDING.getDisplayName(), "String", QueryItemField.FUNDING.getTableName()),
-//                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "???", QueryItemField.ISSUES.getTableName())
+                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "String", QueryItemField.ISSUES.getTableName()),
                 new QueryProperty(QueryItemField.INSTITUTION.getDisplayName(), "institution", QueryItemField.INSTITUTION.getTableName()),
                 new QueryProperty(QueryItemField.INTERNAL_STATUS.getDisplayName(), "String", QueryItemField.INTERNAL_STATUS.getTableName()),
-//                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "???", QueryItemField.LEGAL.getTableName()),
+                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "String", QueryItemField.LEGAL.getTableName()),
                 new QueryProperty(QueryItemField.MAKE_PUBLIC.getDisplayName(), "boolean", QueryItemField.MAKE_PUBLIC.getTableName()),
                 new QueryProperty(QueryItemField.METADATA_SOURCE.getDisplayName(), "String", QueryItemField.METADATA_SOURCE.getTableName()),
                 new QueryProperty(QueryItemField.METADATA_VERSION.getDisplayName(), "String", QueryItemField.METADATA_VERSION.getTableName()),
                 new QueryProperty(QueryItemField.MOS_ID.getDisplayName(), "String", QueryItemField.MOS_ID.getTableName()),
                 new QueryProperty(QueryItemField.MULTI_SPECIMEN.getDisplayName(), "boolean", QueryItemField.MULTI_SPECIMEN.getTableName()),
-                //multi_specimen
                 new QueryProperty(QueryItemField.PARENT_GUID.getDisplayName(), "String", QueryItemField.PARENT_GUID.getTableName()),
                 new QueryProperty(QueryItemField.PAYLOAD_TYPE.getDisplayName(), "String", QueryItemField.PAYLOAD_TYPE.getTableName()),
                 new QueryProperty(QueryItemField.PIPELINE.getDisplayName(), "String", QueryItemField.PIPELINE.getTableName()),
@@ -167,14 +166,14 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", QueryItemField.STATUS.getTableName()),
                 new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", QueryItemField.SUBJECT.getTableName()),
                 new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
-//                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "???", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
+                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "String", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName())
 
                 )));
         //
         queryItems.add(new QueryItem("event", List.of(
                 new QueryProperty(QueryItemField.ASSET_CERATED_BY.getDisplayName(), "String", QueryItemField.ASSET_CERATED_BY.getTableName()), // EVENT USER
-//                new QueryProperty(QueryItemField.ASSET_DELETED_BY.getDisplayName(), "String", QueryItemField.ASSET_DELETED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.ASSET_DELETED_BY.getDisplayName(), "String", QueryItemField.ASSET_DELETED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.ASSET_UPDATED_BY.getDisplayName(), "String", QueryItemField.ASSET_UPDATED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.AUDITED.getDisplayName(), "boolean", QueryItemField.AUDITED.getTableName()), // EVENT TYPE
                 new QueryProperty(QueryItemField.AUDITED_BY.getDisplayName(), "String", QueryItemField.AUDITED_BY.getTableName()), // EVENT USER
@@ -228,6 +227,11 @@ public class QueriesService {
             collectionsAccess = null;
         }
 
+        StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id)");
+        leftJoins.append(" left join asset_specimen using(asset_guid)");
+        leftJoins.append(" left join specimen using(specimen_id)");
+        leftJoins.append(" join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
+
         Set<String> tablesUsed = new HashSet<>();
         Map<String, Object> paramMap = new HashMap<>();
         AtomicInteger counter = new AtomicInteger();
@@ -238,18 +242,23 @@ public class QueriesService {
                 var index = counter.getAndIncrement();
                 var queryInnerResult = queryInner.toBasicPostgreSQLQueryString(column, table, index);
                 var queryInnerResultEntry = queryInnerResult.entrySet().iterator().next();
+                var tableUsed = QueryItemField.fromDisplayName(column).getTableName();
                 paramMap.putAll(queryInnerResultEntry.getValue());
-                tablesUsed.add(QueryItemField.fromDisplayName(column).getTableName());
+                tablesUsed.add(tableUsed);
+                if(column.equalsIgnoreCase("multi_specimen")) {
+                    leftJoins.append(" join lateral (select count(as2.*) as count from asset_specimen as2 where as2.asset_guid = asset.asset_guid) as specimens on true");
+                }
+                if(column.equalsIgnoreCase("asset_deleted_by")) {
+                    tablesUsed.add("pipeline");
+                }
                 return queryInnerResultEntry.getKey();
             }).collect(Collectors.joining(" or ")) + ")";
         }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
 
-        StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id)");
-        leftJoins.append(" left join asset_specimen using(asset_guid)");
-        leftJoins.append(" left join specimen using(specimen_id)");
-        leftJoins.append(" join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
 
-        for(String tableUsed : tablesUsed) {
+
+
+        /*for(String tableUsed : tablesUsed) {
             if(tableUsed.equals("event")) {
                 leftJoins.append(" left join event using (asset_guid)");
                 leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
@@ -271,12 +280,46 @@ public class QueriesService {
             if(tableUsed.equals("pipeline")) {
                 leftJoins.append(" left join pipeline using (pipeline_id)");
             }
+            if(tableUsed.equals("publisher")) {
+                leftJoins.append(" left join asset_publisher using (asset_guid)");
+            }
             if(tableUsed.equals("legality")) {
                 leftJoins.append(" left join legality using (legality_id)");
             }
             if(tableUsed.equals("issue")) {
                 leftJoins.append(" left join issue using (asset_guid)");
             }
+        }*/
+
+        if (tablesUsed.contains("event")) {
+            leftJoins.append(" left join event using (asset_guid)");
+            leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
+        }
+        if (tablesUsed.contains("digitiser_user")) {
+            leftJoins.append(" left join digitiser_list using (asset_guid)");
+            leftJoins.append(" left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id");
+        }
+        if (tablesUsed.contains("funding")) {
+            leftJoins.append(" left join asset_funding using (asset_guid)");
+            leftJoins.append(" left join funding using (funding_id)");
+        }
+        if (tablesUsed.contains("parent_child")) {
+            leftJoins.append(" left join parent_child on parent_child.child_guid = asset.asset_guid");
+        }
+        if (tablesUsed.contains("workstation")) {
+            leftJoins.append(" left join workstation using (workstation_id)");
+        }
+        if (tablesUsed.contains("pipeline")) {
+            leftJoins.append(" left join pipeline using (pipeline_id)");
+        }
+        if (tablesUsed.contains("publisher")) {
+            leftJoins.append(" left join asset_publisher using (asset_guid)");
+        }
+        if (tablesUsed.contains("legality")) {
+            leftJoins.append(" left join legality using (legality_id)");
+        }
+        if (tablesUsed.contains("issue")) {
+            leftJoins.append(" left join issue using (asset_guid)");
         }
 
         String sql = """
@@ -292,7 +335,6 @@ public class QueriesService {
                 .replace("#LeftJoins#", leftJoins.toString())
                 .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
                 .replace("#collectionAccess#", fullAccess ? "" : (whereFilters.isEmpty() ? "where" : " and collection_name in (%s)".formatted(collectionsAccess.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))));
-
 
         return readonlyJdbi.withHandle(h ->
                 {

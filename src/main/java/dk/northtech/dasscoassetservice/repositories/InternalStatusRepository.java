@@ -55,9 +55,9 @@ public class InternalStatusRepository {
 
     String statusBaseSql = """
             select
-            	count(*) filter (where a.internal_status IN ('ASSET_RECEIVED','METADATA_RECEIVED') and e.event_id is null) as pending,
-            	count(*) filter (where a.internal_status = 'COMPLETED' and e.event_id is null) as completed,
-            	count(*) filter (where a.internal_status IN ('ERDA_ERROR','ERDA_FAILED') and e.event_id is null) as failed
+            	count(*) filter (where a.internal_status IN ('ASSET_RECEIVED','METADATA_RECEIVED', 'SHARE_REOPENED', 'SPECIFY_SYNC_SCHEDULED') and e.event_id is null) as pending,
+            	count(*) filter (where a.internal_status IN ('COMPLETED', 'SPECIFY_SYNCHRONISED') and e.event_id is null) as completed,
+            	count(*) filter (where a.internal_status IN ('ERDA_ERROR','ERDA_FAILED', 'SPECIFY_SYNC_FAILED') and e.event_id is null) as failed
             from asset a
             left join event e on e.asset_guid = a.asset_guid and e.event = 'DELETE_ASSET_METADATA'
             where a.internal_status in ('ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'ERDA_ERROR', 'ERDA_FAILED') #and#

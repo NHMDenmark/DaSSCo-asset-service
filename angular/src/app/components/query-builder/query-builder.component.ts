@@ -182,7 +182,7 @@ export class QueryBuilderComponent implements OnInit {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
     } else if (nodeProperty.property.includes('file_format')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-    } else if (nodeProperty.property.includes('asset_locked') || (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))) {
+    } else if (nodeProperty.property.includes('asset_locked') || nodeProperty.property.includes('multi_specimen') || (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
     } else {
