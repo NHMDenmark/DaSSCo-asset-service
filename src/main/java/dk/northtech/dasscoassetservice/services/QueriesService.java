@@ -165,7 +165,7 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.SPECIMENS.getDisplayName(), "specimen", QueryItemField.SPECIMENS.getTableName()),
                 new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", QueryItemField.STATUS.getTableName()),
                 new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", QueryItemField.SUBJECT.getTableName()),
-                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
+//                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
                 new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "String", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName())
 
@@ -248,48 +248,15 @@ public class QueriesService {
                 if(column.equalsIgnoreCase("multi_specimen")) {
                     leftJoins.append(" join lateral (select count(as2.*) as count from asset_specimen as2 where as2.asset_guid = asset.asset_guid) as specimens on true");
                 }
+                if(column.equalsIgnoreCase("pipeline")) {
+                    tablesUsed.add("event");
+                }
                 if(column.equalsIgnoreCase("asset_deleted_by")) {
                     tablesUsed.add("pipeline");
                 }
                 return queryInnerResultEntry.getKey();
             }).collect(Collectors.joining(" or ")) + ")";
         }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
-
-
-
-
-        /*for(String tableUsed : tablesUsed) {
-            if(tableUsed.equals("event")) {
-                leftJoins.append(" left join event using (asset_guid)");
-                leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
-            }
-            if(tableUsed.equals("digitiser_user")) {
-                leftJoins.append(" left join digitiser_list using (asset_guid)");
-                leftJoins.append(" left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id");
-            }
-            if(tableUsed.equals("funding")) {
-                leftJoins.append(" left join asset_funding using (asset_guid)");
-                leftJoins.append(" left join funding using (funding_id)");
-            }
-            if(tableUsed.equals("parent_child")) {
-                leftJoins.append(" left join parent_child on parent_child.child_guid = asset.asset_guid");
-            }
-            if(tableUsed.equals("workstation")) {
-                leftJoins.append(" left join workstation using (workstation_id)");
-            }
-            if(tableUsed.equals("pipeline")) {
-                leftJoins.append(" left join pipeline using (pipeline_id)");
-            }
-            if(tableUsed.equals("publisher")) {
-                leftJoins.append(" left join asset_publisher using (asset_guid)");
-            }
-            if(tableUsed.equals("legality")) {
-                leftJoins.append(" left join legality using (legality_id)");
-            }
-            if(tableUsed.equals("issue")) {
-                leftJoins.append(" left join issue using (asset_guid)");
-            }
-        }*/
 
         if (tablesUsed.contains("event")) {
             leftJoins.append(" left join event using (asset_guid)");

@@ -50,7 +50,7 @@ public class QueryInner {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
             String sql = eventfiler.replace("#BASE#", "%s %s %s".formatted(column, operator, ":" + preparedParam));
-            return Map.of(sql, Map.of(preparedParam, value));
+            return Map.of(sql, Map.of(preparedParam, dataType.name().equals("BOOLEAN") ? Boolean.parseBoolean(value) : value));
         }
         if(operator.equalsIgnoreCase("starts with")) {
             operator = "ILIKE";
@@ -82,13 +82,13 @@ public class QueryInner {
             return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("after")) {
-            operator = "<";
+            operator = ">";
             String preparedParam = "%s_%s".formatted("after", index);
             String sql = eventfiler.replace("#BASE#", "%s %s to_timestamp(%s)".formatted(column, operator, ":" + preparedParam));
             return Map.of(sql, Map.of(preparedParam, (Long.parseLong(value) / 1000)));
         }
         if(operator.equalsIgnoreCase("before")) {
-            operator = ">";
+            operator = "<";
             String preparedParam = "%s_%s".formatted("before", index);
             String sql = eventfiler.replace("#BASE#", "%s %s to_timestamp(%s)".formatted(column, operator, ":" + preparedParam));
             return Map.of(sql, Map.of(preparedParam, (Long.parseLong(value) / 1000)));

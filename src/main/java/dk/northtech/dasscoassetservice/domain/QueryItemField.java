@@ -38,12 +38,12 @@ public enum QueryItemField {
     METADATA_UPDATED_BY("metadata_updated_by", "event_user.username", "event"),
     METADATA_VERSION("metadata_version", "metadata_version", "asset"),
     MOS_ID("mos_id", "mos_id", "asset"),
-    MULTI_SPECIMEN("multi_specimen", "specimens.count", ""), // TODO update the query to handle it
+    MULTI_SPECIMEN("multi_specimen", "specimens.count", ""),
     PARENT_GUID("parent_guid", "parent_guid", "parent_child"),
     PAYLOAD_TYPE("payload_type", "payload_type", "asset"),
-    PIPELINE("pipeline", "pipeline", "pipeline"), // TODO expand the fields to have extra sql that need to be appended e.g here event.event in (CREATE_ASSET, UPDATE_ASSET)
+    PIPELINE("pipeline", "pipeline_name", "pipeline"),
     PUSH_TO_SPECIFY("push_to_specify", "push_to_specify", "asset"),
-    RESTRICTED_ACCESS("restricted_access", "restricted_access", ""), // TODO how does this one work?
+    RESTRICTED_ACCESS("restricted_access", "restricted_access", ""), // how does this one work?
     SPECIFY_ATTACHMENT_REMARKS("specify_attachment_remarks", "specify_attachment_remarks", "asset"),
     SPECIFY_ATTACHMENT_TITLE("specify_attachment_title", "specify_attachment_title", "asset"),
     SPECIMENS("specimens", "specimen.specimen_pid", "specimen"),
