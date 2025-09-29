@@ -2,7 +2,12 @@ package dk.northtech.dasscoassetservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class QueriesReceived {
     @Schema(description = "The id of the overall statement. String for ease of JSON parsing in frontend.", example = "1")

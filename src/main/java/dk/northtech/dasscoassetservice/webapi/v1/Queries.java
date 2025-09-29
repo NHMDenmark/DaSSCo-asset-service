@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +46,7 @@ public class Queries {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Map<String, List<String>> getNodeProperties() {
+    public List<QueryItem> getNodeProperties() {
         return this.queriesService.getNodeProperties();
     }
 
@@ -58,8 +59,10 @@ public class Queries {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Specimen.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
+    public List<QueryResultAsset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
         User user = userService.from(securityContext);
+        var hello = Arrays.asList(queries);
+        System.out.println(hello.toString());
         return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user);
     }
 
@@ -72,7 +75,8 @@ public class Queries {
     public int getAssetCount(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
         User user = userService.from(securityContext);
         if (queries.length == 0) return 0;
-        return this.queriesService.getAssetCountFromQuery(Arrays.asList(queries), limit, user);
+        // The frontend should just use the getNodeProperties and count them
+        return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user).size();
     }
 
     @POST

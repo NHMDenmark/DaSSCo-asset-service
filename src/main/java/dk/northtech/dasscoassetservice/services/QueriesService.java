@@ -18,8 +18,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -129,12 +131,64 @@ public class QueriesService {
         this.readonlyJdbi = readonlyJdbi;
     }
 
-    public Map<String, List<String>> getNodeProperties() {
-        Map<String, List<String>> properties = readonlyJdbi.onDemand(QueriesRepository.class).getNodeProperties();
-        properties.get("Asset").add("parent_guid");
-        properties.get("Asset").addAll(propertiesTimestamps);
-        properties.get("Asset").addAll(propertiesDigitiser);
-        return properties;
+    public List<QueryItem> getNodeProperties() {
+        List<QueryItem> queryItems = new ArrayList<>();
+        queryItems.add(new QueryItem("asset", List.of(
+                new QueryProperty(QueryItemField.ASSET_GUID.getDisplayName(), "String", QueryItemField.ASSET_GUID.getTableName()),
+                new QueryProperty(QueryItemField.ASSET_LOCKED.getDisplayName(), "boolean", QueryItemField.ASSET_LOCKED.getTableName()),
+                new QueryProperty(QueryItemField.ASSET_PID.getDisplayName(), "String", QueryItemField.ASSET_PID.getTableName()),
+                new QueryProperty(QueryItemField.CAMERA_SETTING_CONTROL.getDisplayName(), "String", QueryItemField.CAMERA_SETTING_CONTROL.getTableName()),
+                new QueryProperty(QueryItemField.COLLECTION.getDisplayName(), "collection", QueryItemField.COLLECTION.getTableName()),
+//                new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(), "???", QueryItemField.COMPLETE_DIGITISER_LIST.getTableName()),
+                new QueryProperty(QueryItemField.DATE_ASSET_FINALISED.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_FINALISED.getTableName()),
+                new QueryProperty(QueryItemField.DATE_ASSET_TAKEN.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_TAKEN.getTableName()),
+                new QueryProperty(QueryItemField.DATE_METADATA_INGESTED.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_INGESTED.getTableName()),
+                new QueryProperty(QueryItemField.DIGITISER.getDisplayName(), "digitiser", QueryItemField.DIGITISER.getTableName()),
+                new QueryProperty(QueryItemField.FILE_FORMAT.getDisplayName(), "String", QueryItemField.FILE_FORMAT.getTableName()),
+                new QueryProperty(QueryItemField.FUNDING.getDisplayName(), "String", QueryItemField.FUNDING.getTableName()),
+                new QueryProperty(QueryItemField.ISSUES.getDisplayName(), "String", QueryItemField.ISSUES.getTableName()),
+                new QueryProperty(QueryItemField.INSTITUTION.getDisplayName(), "institution", QueryItemField.INSTITUTION.getTableName()),
+                new QueryProperty(QueryItemField.INTERNAL_STATUS.getDisplayName(), "String", QueryItemField.INTERNAL_STATUS.getTableName()),
+                new QueryProperty(QueryItemField.LEGAL.getDisplayName(), "String", QueryItemField.LEGAL.getTableName()),
+                new QueryProperty(QueryItemField.MAKE_PUBLIC.getDisplayName(), "boolean", QueryItemField.MAKE_PUBLIC.getTableName()),
+                new QueryProperty(QueryItemField.METADATA_SOURCE.getDisplayName(), "String", QueryItemField.METADATA_SOURCE.getTableName()),
+                new QueryProperty(QueryItemField.METADATA_VERSION.getDisplayName(), "String", QueryItemField.METADATA_VERSION.getTableName()),
+                new QueryProperty(QueryItemField.MOS_ID.getDisplayName(), "String", QueryItemField.MOS_ID.getTableName()),
+                new QueryProperty(QueryItemField.MULTI_SPECIMEN.getDisplayName(), "boolean", QueryItemField.MULTI_SPECIMEN.getTableName()),
+                new QueryProperty(QueryItemField.PARENT_GUID.getDisplayName(), "String", QueryItemField.PARENT_GUID.getTableName()),
+                new QueryProperty(QueryItemField.PAYLOAD_TYPE.getDisplayName(), "String", QueryItemField.PAYLOAD_TYPE.getTableName()),
+                new QueryProperty(QueryItemField.PIPELINE.getDisplayName(), "String", QueryItemField.PIPELINE.getTableName()),
+                new QueryProperty(QueryItemField.PUSH_TO_SPECIFY.getDisplayName(), "boolean", QueryItemField.PUSH_TO_SPECIFY.getTableName()),
+                //new QueryProperty(QueryItemField.RESTRICTED_ACCESS.getDisplayName(), "???", QueryItemField.RESTRICTED_ACCESS.getTableName()),
+                new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_REMARKS.getDisplayName(), "String", QueryItemField.SPECIFY_ATTACHMENT_REMARKS.getTableName()),
+                new QueryProperty(QueryItemField.SPECIFY_ATTACHMENT_TITLE.getDisplayName(), "String", QueryItemField.SPECIFY_ATTACHMENT_TITLE.getTableName()),
+                new QueryProperty(QueryItemField.SPECIMENS.getDisplayName(), "specimen", QueryItemField.SPECIMENS.getTableName()),
+                new QueryProperty(QueryItemField.STATUS.getDisplayName(), "String", QueryItemField.STATUS.getTableName()),
+                new QueryProperty(QueryItemField.SUBJECT.getDisplayName(), "String", QueryItemField.SUBJECT.getTableName()),
+                new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String", QueryItemField.UPDATE_USER.getTableName()),
+                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "String", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
+                new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName())
+
+                )));
+        //
+        queryItems.add(new QueryItem("event", List.of(
+                new QueryProperty(QueryItemField.ASSET_CERATED_BY.getDisplayName(), "String", QueryItemField.ASSET_CERATED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.ASSET_DELETED_BY.getDisplayName(), "String", QueryItemField.ASSET_DELETED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.ASSET_UPDATED_BY.getDisplayName(), "String", QueryItemField.ASSET_UPDATED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.AUDITED.getDisplayName(), "boolean", QueryItemField.AUDITED.getTableName()), // EVENT TYPE
+                new QueryProperty(QueryItemField.AUDITED_BY.getDisplayName(), "String", QueryItemField.AUDITED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_CREATED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_DELETED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_AUDITED.getDisplayName(), "???", "Instant"), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_METADATA_CERATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_CERATED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_METADATA_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_METADATA_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.DATE_PUSHED_TO_SPECIFY.getDisplayName(), "Instant", QueryItemField.DATE_PUSHED_TO_SPECIFY.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.METADATA_CERATED_BY.getDisplayName(), "String", QueryItemField.METADATA_CERATED_BY.getTableName()), // EVENT TYPE + TIME
+                new QueryProperty(QueryItemField.METADATA_UPDATED_BY.getDisplayName(), "String", QueryItemField.METADATA_UPDATED_BY.getTableName()) // EVENT TYPE + TIME
+        )));
+
+        return queryItems;
     }
 
     public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
@@ -159,10 +213,9 @@ public class QueriesService {
         return allAssets;
     }
 
-    public List<Asset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
-        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
+    public List<QueryResultAsset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
+        Set<String> collectionsAccess; // only need collection, really, as it's the deepest access check (we check for institute rights in the function if necessary, too)
         Map<String, Set<String>> accessMap = null;
-
         boolean fullAccess = checkRights(user);
         if (!fullAccess) {
             accessMap = accessCache.get(user);
@@ -170,24 +223,204 @@ public class QueriesService {
                     .values().stream()
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
+        } else {
+            collectionsAccess = null;
         }
 
-        List<Asset> allAssets = new ArrayList<>();
+        StringBuilder leftJoins = new StringBuilder("left join collection using(collection_id)");
+        leftJoins.append(" left join asset_specimen using(asset_guid)");
+        leftJoins.append(" left join specimen using(specimen_id)");
+        leftJoins.append(" join lateral (select timestamp from event where event.asset_guid = asset.asset_guid and event.event = 'CREATE_ASSET_METADATA' limit 1) as creation_event on true");
 
-        for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
-            String query = unwrapQuery(received, limit, false, collectionsAccess, fullAccess);
-            if (query != null && !StringUtils.isBlank(query)) {
-                logger.info("Getting assets from query.");
-                System.out.println(query);
-                List<Asset> assets = readonlyJdbi.onDemand(QueriesRepository.class).getAssetsFromQuery(query);
-                List<Asset> distinctAssets = handleDuplicatedAssets(assets);
+        Set<String> tablesUsed = new HashSet<>();
+        Map<String, Object> paramMap = new HashMap<>();
+        AtomicInteger counter = new AtomicInteger();
+        String whereFilters = queries.stream().map(queryReceived -> queryReceived.query.stream().map(query -> query.where.stream().map(queryWhere -> {
+            var table = query.select;
+            var column = queryWhere.property;
+            return  "(" + queryWhere.fields.stream().map(queryInner -> {
+                var index = counter.getAndIncrement();
+                var queryInnerResult = queryInner.toBasicPostgreSQLQueryString(column, table, index);
+                var queryInnerResultEntry = queryInnerResult.entrySet().iterator().next();
+                var tableUsed = QueryItemField.fromDisplayName(column).getTableName();
+                paramMap.putAll(queryInnerResultEntry.getValue());
+                tablesUsed.add(tableUsed);
+                if(column.equalsIgnoreCase("multi_specimen")) {
+                    leftJoins.append(" join lateral (select count(as2.*) as count from asset_specimen as2 where as2.asset_guid = asset.asset_guid) as specimens on true");
+                }
+                if(column.equalsIgnoreCase("asset_deleted_by")) {
+                    tablesUsed.add("pipeline");
+                }
+                return queryInnerResultEntry.getKey();
+            }).collect(Collectors.joining(" or ")) + ")";
+        }).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "))).collect(Collectors.joining(" and "));
 
-                applyWriteAccess(accessMap, distinctAssets);
-                allAssets.addAll(distinctAssets);
+
+
+
+        /*for(String tableUsed : tablesUsed) {
+            if(tableUsed.equals("event")) {
+                leftJoins.append(" left join event using (asset_guid)");
+                leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
             }
+            if(tableUsed.equals("digitiser_user")) {
+                leftJoins.append(" left join digitiser_list using (asset_guid)");
+                leftJoins.append(" left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id");
+            }
+            if(tableUsed.equals("funding")) {
+                leftJoins.append(" left join asset_funding using (asset_guid)");
+                leftJoins.append(" left join funding using (funding_id)");
+            }
+            if(tableUsed.equals("parent_child")) {
+                leftJoins.append(" left join parent_child on parent_child.child_guid = asset.asset_guid");
+            }
+            if(tableUsed.equals("workstation")) {
+                leftJoins.append(" left join workstation using (workstation_id)");
+            }
+            if(tableUsed.equals("pipeline")) {
+                leftJoins.append(" left join pipeline using (pipeline_id)");
+            }
+            if(tableUsed.equals("publisher")) {
+                leftJoins.append(" left join asset_publisher using (asset_guid)");
+            }
+            if(tableUsed.equals("legality")) {
+                leftJoins.append(" left join legality using (legality_id)");
+            }
+            if(tableUsed.equals("issue")) {
+                leftJoins.append(" left join issue using (asset_guid)");
+            }
+        }*/
+
+        if (tablesUsed.contains("event")) {
+            leftJoins.append(" left join event using (asset_guid)");
+            leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
+        }
+        if (tablesUsed.contains("digitiser_user")) {
+            leftJoins.append(" left join digitiser_list using (asset_guid)");
+            leftJoins.append(" left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id");
+        }
+        if (tablesUsed.contains("funding")) {
+            leftJoins.append(" left join asset_funding using (asset_guid)");
+            leftJoins.append(" left join funding using (funding_id)");
+        }
+        if (tablesUsed.contains("parent_child")) {
+            leftJoins.append(" left join parent_child on parent_child.child_guid = asset.asset_guid");
+        }
+        if (tablesUsed.contains("workstation")) {
+            leftJoins.append(" left join workstation using (workstation_id)");
+        }
+        if (tablesUsed.contains("pipeline")) {
+            leftJoins.append(" left join pipeline using (pipeline_id)");
+        }
+        if (tablesUsed.contains("publisher")) {
+            leftJoins.append(" left join asset_publisher using (asset_guid)");
+        }
+        if (tablesUsed.contains("legality")) {
+            leftJoins.append(" left join legality using (legality_id)");
+        }
+        if (tablesUsed.contains("issue")) {
+            leftJoins.append(" left join issue using (asset_guid)");
         }
 
-        return allAssets;
+        String sql = """
+            select
+                DISTINCT asset_guid,
+                collection.institution_name as institution,
+                collection_name as collection,
+                file_formats,
+                creation_event.timestamp as created_date
+            from asset
+            #LeftJoins# #where# #collectionAccess# limit :limit
+        """
+                .replace("#LeftJoins#", leftJoins.toString())
+                .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
+                .replace("#collectionAccess#", fullAccess ? "" : (whereFilters.isEmpty() ? "where" : " and collection_name in (%s)".formatted(collectionsAccess.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))));
+
+        return readonlyJdbi.withHandle(h ->
+                {
+                    List<QueryResultAsset> queryResultAssets = h.createQuery(sql)
+                            .bindMap(paramMap)
+                            .bind("limit", Math.min(limit, 10000))
+                            .mapTo(QueryResultAsset.class)
+                            .list();
+
+                    List<String> assetGuids = queryResultAssets.stream().map(QueryResultAsset::asset_guid).toList();
+
+                    Map<String, List<Event>> assetEvents = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
+                                    select asset_guid, username, timestamp, event, pipeline_name from event
+                                    left join dassco_user using (dassco_user_id)
+                                    left join pipeline using (pipeline_id)
+                                    where asset_guid in (<assetGuids>)
+                                    """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Event>> assetEventsTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String username = rs.getString("username");
+                                        Timestamp timestamp = rs.getTimestamp("timestamp");
+                                        String event = rs.getString("event");
+                                        String pipelineName = rs.getString("pipeline_name");
+                                        Event newEvent = new Event(
+                                            username,
+                                            timestamp != null ? timestamp.toInstant() : null,
+                                            event != null ? DasscoEvent.valueOf(event) : null,
+                                            pipelineName
+                                        );
+                                        assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
+                                    }
+                                    return assetEventsTemp;
+                                }
+                            });
+
+                    Map<String, List<Specimen>> assetSpecimens = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
+                            select asset_guid, institution_name, collection_name, barcode, specimen_pid, preparation_types, preparation_type, specimen_id, collection_id, specify_collection_object_attachment_id, asset_detached from asset_specimen
+                            inner join specimen using (specimen_id)
+                            left join collection using (collection_id)
+                            where asset_guid in (<assetGuids>)
+                            """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Specimen>> assetSpecimensTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String institutionName = rs.getString("institution_name");
+                                        String collectionName = rs.getString("collection_name");
+                                        String barcode = rs.getString("barcode");
+                                        String specimenPid = rs.getString("specimen_pid");
+                                        String preparationTypes = rs.getString("preparation_types");
+                                        String preparationType = rs.getString("preparation_type");
+                                        int specimenId = rs.getInt("specimen_id");
+                                        int collectionId = rs.getInt("collection_id");
+                                        Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
+                                        boolean assetDetached = rs.getBoolean("asset_detached");
+                                        Specimen newSpecimen = new Specimen(
+                                                institutionName,
+                                                collectionName,
+                                                barcode,
+                                                specimenPid,
+                                                new HashSet<>(Arrays.asList(preparationTypes.split(","))),
+                                                preparationType,
+                                                specimenId,
+                                                collectionId,
+                                                specifyCollectionObjectAttachmentId,
+                                                assetDetached
+                                        );
+                                        assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newSpecimen);
+                                    }
+                                    return assetSpecimensTemp;
+                                }
+                            });
+
+                    return queryResultAssets.stream().map(queryResultAsset ->
+                            queryResultAsset
+                                    .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
+                                    .withSpeciments(assetSpecimens.get(queryResultAsset.asset_guid()))
+                    ).toList();
+                }
+        );
     }
 
     public List<Asset> handleDuplicatedAssets(List<Asset> originalAssets) {

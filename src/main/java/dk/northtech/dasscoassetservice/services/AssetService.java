@@ -11,6 +11,7 @@ import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.repositories.*;
+import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
 import jakarta.inject.Inject;
@@ -25,6 +26,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -224,6 +226,234 @@ public class AssetService {
 
 //        }
 
+    }
+
+    public List<Asset> getAssets(List<String> assetGuids){
+        return this.jdbi.withHandle(h -> {
+                    var assets = h.createQuery("""
+                                    SELECT
+                                        asset.*
+                                        , collection.collection_name
+                                        , collection.institution_name
+                                        , dassco_user.username AS digitiser
+                                        , workstation.workstation_name
+                                        , copyright
+                                        , license
+                                        , credit
+                                    FROM asset
+                                    LEFT JOIN collection USING(collection_id)
+                                    LEFT JOIN workstation USING(workstation_id)
+                                    LEFT JOIN legality USING(legality_id)
+                                    LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+                                    WHERE asset_guid in (<asset_guids>)
+                                    """)
+                            .bindList("asset_guids", assetGuids)
+                            .map(new AssetMapper())
+                            .list();
+
+                    Map<String, List<Event>> assetEvents = h.createQuery("""
+                                    select asset_guid, username, timestamp, event, pipeline_name from event
+                                    left join dassco_user using (dassco_user_id)
+                                    left join pipeline using (pipeline_id)
+                                    where asset_guid in (<assetGuids>)
+                                    """)
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<Event>> assetEventsTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("asset_guid");
+                                String username = rs.getString("username");
+                                Timestamp timestamp = rs.getTimestamp("timestamp");
+                                String event = rs.getString("event");
+                                String pipelineName = rs.getString("pipeline_name");
+                                Event newEvent = new Event(
+                                        username,
+                                        timestamp != null ? timestamp.toInstant() : null,
+                                        event != null ? DasscoEvent.valueOf(event) : null,
+                                        pipelineName
+                                );
+                                assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
+                            }
+                            return assetEventsTemp;
+                        }
+                    });
+
+                    Map<String, List<Specimen>> assetSpecimens = h.createQuery("""
+                            select asset_guid, institution_name, collection_name, barcode, specimen_pid, preparation_types, preparation_type, specimen_id, collection_id, specify_collection_object_attachment_id, asset_detached from asset_specimen
+                            inner join specimen using (specimen_id)
+                            left join collection using (collection_id)
+                            where asset_guid in (<assetGuids>)
+                            """)
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<Specimen>> assetSpecimensTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("asset_guid");
+                                String institutionName = rs.getString("institution_name");
+                                String collectionName = rs.getString("collection_name");
+                                String barcode = rs.getString("barcode");
+                                String specimenPid = rs.getString("specimen_pid");
+                                String preparationTypes = rs.getString("preparation_types");
+                                String preparationType = rs.getString("preparation_type");
+                                int specimenId = rs.getInt("specimen_id");
+                                int collectionId = rs.getInt("collection_id");
+                                Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
+                                boolean assetDetached = rs.getBoolean("asset_detached");
+                                Specimen newSpecimen = new Specimen(
+                                        institutionName,
+                                        collectionName,
+                                        barcode,
+                                        specimenPid,
+                                        new HashSet<>(Arrays.asList(preparationTypes.split(","))),
+                                        preparationType,
+                                        specimenId,
+                                        collectionId,
+                                        specifyCollectionObjectAttachmentId,
+                                        assetDetached
+                                );
+                                assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newSpecimen);
+                            }
+                            return assetSpecimensTemp;
+                        }
+                    });
+
+                    Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
+                            SELECT asset_guid, username
+                            FROM digitiser_list
+                            LEFT JOIN dassco_user USING (dassco_user_id)
+                            WHERE asset_guid in (<assetGuids>)
+                            """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<String>> assetCompleteDigitiserListTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String username = rs.getString("username");
+                                        assetCompleteDigitiserListTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(username);
+                                    }
+                                    return assetCompleteDigitiserListTemp;
+                                }
+                            });
+
+                    Map<String, List<Issue>> assetIssues = h.createQuery("""
+                            SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
+                            FROM issue
+                            WHERE asset_guid in (<assetGuids>)
+                            """)
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Issue>> assetSpecimensTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        int issueId = rs.getInt("issue_id");
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String category = rs.getString("category");
+                                        String name = rs.getString("name");
+                                        Timestamp timestamp = rs.getTimestamp("timestamp");
+                                        String status = rs.getString("status");
+                                        String description = rs.getString("description");
+                                        String notes = rs.getString("notes");
+                                        boolean solved = rs.getBoolean("solved");
+                                        var issue = new Issue(issueId, assetGuid, category, name, timestamp != null ? timestamp.toInstant() : null, status, description, notes, solved);
+                                        assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(issue);
+                                    }
+                                    return assetSpecimensTemp;
+                                }
+                            });
+
+                    Map<String, List<String>> assetFundings = h.createUpdate("""
+                            SELECT asset_guid, funding_id, funding
+                            FROM asset_funding
+                            INNER JOIN funding USING (funding_id)
+                            WHERE asset_guid in (<assetGuids>)
+                            """).bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<String>> assetFundingsTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String funding = rs.getString("funding");
+                                        assetFundingsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(funding);
+                                    }
+                                    return assetFundingsTemp;
+                                }
+                            });
+
+                    Map<String, Set<String>> assetParent = h.createUpdate("SELECT child_guid, parent_guid FROM parent_child WHERE child_guid in (<assetGuids>)")
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, Set<String>> assetParentTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("child_guid");
+                                        String parentGuid = rs.getString("parent_guid");
+                                        assetParentTemp.computeIfAbsent(assetGuid, k -> new HashSet<>()).add(parentGuid);
+                                    }
+                                    return assetParentTemp;
+                                }
+                            });
+
+            Map<String, List<Publication>> assetPublishers = h.createUpdate("SELECT asset_guid, description, publisher, asset_publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<Publication>> assetPublishersTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("asset_guid");
+                                String description = rs.getString("description");
+                                String publisher = rs.getString("publisher");
+                                Long publisherId = rs.getLong("publisher_id");
+                                var newPublisher = new Publication(publisherId, assetGuid, description, publisher);
+                                assetPublishersTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newPublisher);
+                            }
+                            return assetPublishersTemp;
+                        }
+                    });
+
+            return assets.stream().peek(asset -> {
+                asset.events = assetEvents.get(asset.asset_guid);
+                asset.specimens = assetSpecimens.get(asset.asset_guid);
+                asset.complete_digitiser_list = assetCompleteDigitiserList.get(asset.asset_guid);
+                asset.issues = assetIssues.get(asset.asset_guid);
+                asset.funding = assetFundings.get(asset.asset_guid);
+                asset.parent_guids = assetParent.get(asset.asset_guid);
+                asset.external_publishers = assetPublishers.get(asset.asset_guid);
+                for (Event event : asset.events) {
+                    if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+                        asset.audited = true;
+                        if (asset.date_audited == null || event.timestamp.isAfter(asset.date_audited)) {
+                            asset.date_audited = event.timestamp;
+                            asset.audited_by = event.user;
+                        }
+
+                    } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (asset.date_pushed_to_specify == null || asset.date_pushed_to_specify.isAfter(event.timestamp))) {
+                        asset.date_pushed_to_specify = event.timestamp;
+                    } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
+                            && asset.date_metadata_updated == null) {
+                        asset.date_metadata_updated = event.timestamp;
+                        asset.metadata_updated_by = event.user;
+
+                    } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
+                            && (asset.date_metadata_updated == null || event.timestamp.isAfter(asset.date_metadata_updated))) {
+                        asset.date_metadata_updated = event.timestamp;
+                        asset.metadata_updated_by = event.user;
+
+                    } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
+                        if (asset.date_metadata_updated == null) {
+                            asset.date_metadata_updated = event.timestamp;
+                        }
+                        //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
+                        asset.pipeline = event.pipeline;
+                        asset.metadata_created_by = event.user;
+                    } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
+                        asset.date_asset_deleted = event.timestamp;
+                    }
+                }
+            }).toList();
+        });
     }
 
     void validateAsset(Asset asset) {
