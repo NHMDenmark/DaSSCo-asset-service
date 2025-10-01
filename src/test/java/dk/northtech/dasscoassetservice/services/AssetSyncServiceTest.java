@@ -1,13 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.domain.Collection;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -46,7 +40,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
 
         assetService.updateAsset(asset, user);
         assetService.getAsset("testAcknowledgeAsset");
-        assetSyncService.handleAcknowledge(new Acknowledge(asset.asset_guid, AcknowledgeStatus.SUCCESS, "Halli hallå", Instant.now(), asset.assetSpecimens));
+        assetSyncService.handleAcknowledge(new Acknowledge(asset.asset_guid, AcknowledgeStatus.SUCCESS, "Halli hallå", Instant.now(), asset.asset_specimen));
         Optional<Asset> resultOpt = assetService.getAsset("testAcknowledgeAsset");
         assertThat(resultOpt.isPresent()).isTrue();
         Asset result = resultOpt.get();

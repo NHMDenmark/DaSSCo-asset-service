@@ -116,8 +116,8 @@ public class AssetService {
         if (asset.issues != null) {
             asset.issues.forEach(this::validateIssue);
         }
-        if (!asset.assetSpecimens.isEmpty()) {
-            asset.assetSpecimens.forEach(specimenService::validateAssetSpecimen);
+        if (!asset.asset_specimen.isEmpty()) {
+            asset.asset_specimen.forEach(specimenService::validateAssetSpecimen);
         }
     }
 
@@ -177,8 +177,8 @@ public class AssetService {
             Asset assetToBeMapped = asset.get();
             EventRepository attach = h.attach(EventRepository.class);
             assetToBeMapped.events = attach.getAssetEvents(assetGuid);
-            assetToBeMapped.assetSpecimens = specimenService.findAssetSpecimens(assetGuid);
-            assetToBeMapped.multi_specimen = assetToBeMapped.assetSpecimens.size() > 1;
+            assetToBeMapped.asset_specimen = specimenService.findAssetSpecimens(assetGuid);
+            assetToBeMapped.multi_specimen = assetToBeMapped.asset_specimen.size() > 1;
             UserRepository userRepository = h.attach(UserRepository.class);
             assetToBeMapped.complete_digitiser_list = userRepository.getDigitiserList(assetGuid);
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
@@ -289,7 +289,7 @@ public class AssetService {
         }
 
         asset.updateUser = user.username;
-        for(AssetSpecimen assetSpecimen : asset.assetSpecimens) {
+        for(AssetSpecimen assetSpecimen : asset.asset_specimen) {
             Optional<Specimen> specimen = specimenService.findSpecimen(assetSpecimen.specimen_pid);
             if (specimen.isEmpty()) {
                 throw new IllegalArgumentException("Specimen " + assetSpecimen.specimen_pid + " doesn't exist");
@@ -340,7 +340,7 @@ public class AssetService {
                 userRepository.addDigitiser(asset.asset_guid, user1.dassco_user_id);
             }
             // Handle specimen
-            for (AssetSpecimen specimen : asset.assetSpecimens) {
+            for (AssetSpecimen specimen : asset.asset_specimen) {
                 Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid);
                 if (specimensByPID.isEmpty()) {
                     throw new IllegalArgumentException("Specimen " + specimen.specimen_pid + " doesn't exist");
@@ -534,6 +534,7 @@ public class AssetService {
         if (assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
+        rightsValidationService.requireWriteRights(user, assetOpt.get());
 //        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
 //            throw new IllegalArgumentException("Update user must be provided");
 //        }
@@ -555,15 +556,14 @@ public class AssetService {
         }
         Map<Integer, Issue> existing_issues = new HashMap<>();
         existing.issues.forEach(iss -> existing_issues.put(iss.issue_id(), iss));
-        rightsValidationService.requireWriteRights(user, existing.institution, existing.collection);
         if (updatedAsset.digitiser != null && !updatedAsset.digitiser.equals(existing.digitiser)) {
             User digitiser = userService.ensureExists(new User(updatedAsset.digitiser));
             existing.digitiser_id = digitiser.dassco_user_id;
         }
         ensureValuesExists(updatedAsset);
 
-        Set<String> updatedSpecimenPIDs = updatedAsset.assetSpecimens.stream().map(a -> a.specimen_pid).collect(Collectors.toSet());
-        List<AssetSpecimen> specimensToDetach = existing.assetSpecimens.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid)).toList();
+        Set<String> updatedSpecimenPIDs = updatedAsset.asset_specimen.stream().map(a -> a.specimen_pid).collect(Collectors.toSet());
+        List<AssetSpecimen> specimensToDetach = existing.asset_specimen.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid)).toList();
         updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(), existing.asset_guid, publication.description(), publication.name())).toList();
         existing.collection_id = updatedAsset.collection_id;
 //        existing.specimens = updatedAsset.specimens;
@@ -650,8 +650,8 @@ public class AssetService {
             }
 
 //            Set<String> pids = existing.specimens.stream().map(s -> s.specimen_pid()).collect(Collectors.toSet());
-            Map<String, AssetSpecimen> pidExistingSpecimen = existing.assetSpecimens.stream().collect(Collectors.toMap(s -> s.specimen_pid, s -> s));
-            for (AssetSpecimen s : updatedAsset.assetSpecimens) {
+            Map<String, AssetSpecimen> pidExistingSpecimen = existing.asset_specimen.stream().collect(Collectors.toMap(s -> s.specimen_pid, s -> s));
+            for (AssetSpecimen s : updatedAsset.asset_specimen) {
 
                 if(!pidExistingSpecimen.containsKey(s.specimen_pid)) {
                     Optional<Specimen> specimen = specimenService.findSpecimen(s.specimen_pid);
@@ -670,7 +670,7 @@ public class AssetService {
                 }
                 finalSpecimen.add(s);
             }
-            existing.assetSpecimens = finalSpecimen;
+            existing.asset_specimen = finalSpecimen;
             //Handle digitisers
             for (String s : existingDigitiserList) {
                 if (!newDigitisers.contains(s)) {
@@ -965,7 +965,7 @@ public class AssetService {
 
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
 
-        Optional<AssetSpecimen> specimenWithSpecifyId = asset.assetSpecimens.stream().filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
+        Optional<AssetSpecimen> specimenWithSpecifyId = asset.asset_specimen.stream().filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
         if (specimenWithSpecifyId.isPresent()) {
             assetSyncService.syncAsset(asset.asset_guid);
         }

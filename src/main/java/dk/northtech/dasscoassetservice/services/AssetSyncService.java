@@ -151,7 +151,7 @@ public class AssetSyncService {
             Optional<Asset> assetOpt = assetService.getAsset(guid);
             if (assetOpt.isPresent()) {
                 Asset asset = assetOpt.get();
-                for(AssetSpecimen specimen: asset.assetSpecimens) {
+                for(AssetSpecimen specimen: asset.asset_specimen) {
                     LOGGER.info("collection_object_attachment_id: {}",specimen.specify_collection_object_attachment_id);
                 }
                 syncAsset(asset);

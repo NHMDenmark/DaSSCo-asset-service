@@ -50,12 +50,15 @@ public class Specimens {
     @Path("/{specimenPID}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+//    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Specimen updateSpacemen(Specimen specimen
             , @PathParam("specimenPID") String specimenPID
             , @Context SecurityContext securityContext) {
+        if(!specimenPID.equals(specimen.specimen_pid())) {
+            throw new IllegalArgumentException("Specimen pid in object does not match specimen pid in path");
+        }
         specimenService.putSpecimen(specimen, userService.from(securityContext));
         return specimen;
     }

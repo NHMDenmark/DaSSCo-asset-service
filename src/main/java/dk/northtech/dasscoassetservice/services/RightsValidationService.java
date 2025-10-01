@@ -117,14 +117,13 @@ public class RightsValidationService {
 
     public boolean checkRightsAsset(User user, Asset asset, boolean write) {
         if(checkAdminRoles(user)) {
-            System.out.println("badmin");
             return true;
         }
         Set<String> allUserRoles = getUserRoles(user.roles);
         if(!checkObjectRoles(allUserRoles, asset.role_restrictions,write)) {
             return false;
         }
-        for(AssetSpecimen assetSpecimen: asset.assetSpecimens) {
+        for(AssetSpecimen assetSpecimen: asset.asset_specimen) {
             if(assetSpecimen.specimen == null) {
                 // If specimen is not present we are likely checking a user provided asset. We should not do that.
                 throw new RuntimeException("Specimen must be present when checking roles");
@@ -137,8 +136,7 @@ public class RightsValidationService {
             //All users have read access to institution
             return true;
         }
-        checkRightsInstitution(user, asset.institution, asset.collection, write);
-        return true;
+        return checkRightsInstitution(user, asset.institution, asset.collection, write);
     }
 
     public boolean checkAdminRoles(User user) {

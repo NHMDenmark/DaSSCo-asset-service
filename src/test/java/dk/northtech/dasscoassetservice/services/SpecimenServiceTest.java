@@ -1,8 +1,6 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.domain.Collection;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +39,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , updateSpecimen.institution).get().collection_id()
                 , Arrays.asList(new Role("NHMD")));
         specimenService.putSpecimen(specimen, user);
-        updateSpecimen.assetSpecimens = Arrays.asList(new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false));
+        updateSpecimen.asset_specimen = Arrays.asList(new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false));
         User nhmd = new User("nhmd-user", Set.of("WRITE_NHMD"));
         User nhmdWithId = userService.ensureExists(nhmd);
         assetService.persistAsset(updateSpecimen, nhmdWithId, 86);

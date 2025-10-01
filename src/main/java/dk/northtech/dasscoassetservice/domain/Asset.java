@@ -18,7 +18,7 @@ public class Asset {
     //@Schema(description = "The barcodes of associated specimens", example = "'[\"ti-sp-00012\"']")
     //public List<String> specimen_barcodes = new ArrayList<>();
     @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
-    public List<AssetSpecimen> assetSpecimens = new ArrayList<>();
+    public List<AssetSpecimen> asset_specimen = new ArrayList<>();
     @Schema(description = "A short description of funding source used to create the asset", example = "Hundredetusindvis af dollars")
     public List<String> funding = new ArrayList<>();
     @Schema(description = "We will need to distinguish between image of a folder, device target, specimen, label etc)", example = "folder")
@@ -142,7 +142,7 @@ public class Asset {
                ", asset_guid='" + asset_guid + '\'' +
                ", status='" + status + '\'' +
                ", multi_specimen=" + multi_specimen +
-               ", assetSpecimens=" + assetSpecimens +
+               ", assetSpecimens=" + asset_specimen +
                ", funding=" + funding +
                ", subject='" + asset_subject + '\'' +
                ", payload_type='" + payload_type + '\'' +
@@ -187,11 +187,11 @@ public class Asset {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Asset asset = (Asset) o;
-        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(assetSpecimens, asset.assetSpecimens) && Objects.equals(funding, asset.funding) && Objects.equals(asset_subject, asset.asset_subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted, asset.date_asset_deleted) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
+        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(asset_specimen, asset.asset_specimen) && Objects.equals(funding, asset.funding) && Objects.equals(asset_subject, asset.asset_subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted, asset.date_asset_deleted) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, assetSpecimens, funding, asset_subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
+        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, asset_specimen, funding, asset_subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
     }
 }

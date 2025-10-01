@@ -36,4 +36,7 @@ public class AssetSpecimen {
         this.asset_guid = asset_guid;
         this.specimen_id = specimen_id;
     }
+
+    public AssetSpecimen() {
+    }
 }

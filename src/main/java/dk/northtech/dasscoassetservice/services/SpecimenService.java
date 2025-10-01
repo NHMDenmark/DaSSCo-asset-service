@@ -93,8 +93,16 @@ public class SpecimenService {
                 Integer specimen_id = specimenRepository.insert_specimen(specimenWithCollectionId);
 
                 if (!specimenWithCollectionId.role_restrictions().isEmpty()) {
-                    rightsValidationService.checkRightsSpecimen(user, specimenWithCollectionId, true);
+                    if(!rightsValidationService.checkRightsSpecimen(user, specimenWithCollectionId, true)) {
+                        throw new DasscoIllegalActionException("FORBIDDEN");
+                    }
                     RoleRepository roleRepository = h.attach(RoleRepository.class);
+                    List<String> roles = roleRepository.listRoles();
+                    for(Role role: specimenWithCollectionId.role_restrictions()) {
+                        if(!roles.contains(role.name())) {
+                            roleRepository.createRole(role.name());
+                        }
+                    }
                     roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimenWithCollectionId.role_restrictions(), specimen_id);
 
                 }
@@ -119,6 +127,12 @@ public class SpecimenService {
             List<String> assetsWithRemovedPreparationType = specimenRepository.getGuidsByPreparationTypeAndSpecimenId(specimen.preparation_types(), existing.specimen_id());
             if (specimen.role_restrictions() != null && !existing.role_restrictions().equals(specimen.role_restrictions())) {
                 RoleRepository roleRepository = h.attach(RoleRepository.class);
+                List<String> roles = roleRepository.listRoles();
+                for(Role role: specimen.role_restrictions()) {
+                    if(!roles.contains(role.name())) {
+                        roleRepository.createRole(role.name());
+                    }
+                }
                 roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimen.role_restrictions(), existing.specimen_id());
             }
             if (!assetsWithRemovedPreparationType.isEmpty()) {
