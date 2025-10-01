@@ -4,6 +4,7 @@ import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
 import {QueryResponse, SavedQuery} from "../types/query-types";
 import {Asset} from "../types/types";
+import {QueryItem} from "../types/queryItem";
 
 @Injectable({
   providedIn: 'root'
@@ -24,6 +25,17 @@ export class QueriesService {
             );
         })
       );
+
+  queryItems$
+    = this.oidcSecurityService.getAccessToken()
+    .pipe(
+      switchMap((token) => {
+        return this.http.get<QueryItem[]>(`${this.baseUrl}/nodes`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(
+            catchError(this.handleError(`get ${this.baseUrl}/nodes`, undefined))
+          );
+      })
+    );
 
   savedQueries$
     = this.oidcSecurityService.getAccessToken()

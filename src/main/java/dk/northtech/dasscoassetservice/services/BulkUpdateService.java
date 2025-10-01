@@ -40,6 +40,8 @@ public class BulkUpdateService {
     private final ExtendableEnumService extendableEnumService;
     Cache<String, Instant> assetsGettingCreated;
 
+    AssetService assetService;
+
     @Inject
     public BulkUpdateService(InstitutionService institutionService
             , CollectionService collectionService
@@ -55,7 +57,8 @@ public class BulkUpdateService {
             , PreparationTypeCache preparationTypeCache
             , FileProxyConfiguration fileProxyConfiguration
             , ObservationRegistry observationRegistry
-            , ExtendableEnumService extendableEnumService) {
+            , ExtendableEnumService extendableEnumService
+            , AssetService assetService) {
         this.workstationService = workstationService;
 
         this.pipelineService = pipelineService;
@@ -67,6 +70,7 @@ public class BulkUpdateService {
         this.extendableEnumService = extendableEnumService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
+        this.assetService = assetService;
     }
 
     public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user) {
@@ -205,6 +209,10 @@ public class BulkUpdateService {
 
     public List<Asset> readMultipleAssets(List<String> assets) {
         return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assets);
+    }
+
+    public List<Asset> readMultipleAssetsSQL(List<String> assetGuids) {
+        return this.assetService.getAssets(assetGuids);
     }
 
     public String createCSVString(List<Asset> assets) {

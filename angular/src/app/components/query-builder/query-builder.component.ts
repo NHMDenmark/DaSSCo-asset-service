@@ -4,6 +4,7 @@ import {FormArray, FormBuilder, FormControl, Validators} from '@angular/forms';
 import {Moment} from 'moment-timezone';
 import {BehaviorSubject, map, Observable} from 'rxjs';
 import {CacheService} from '../../services/cache.service';
+import {QueryItem} from "../../types/queryItem";
 
 @Component({
   selector: 'dassco-query-builder',
@@ -68,6 +69,7 @@ export class QueryBuilderComponent implements OnInit {
       );
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
+  @Input() queryItems: QueryItem[] = [];
   @Input() savedQuery: QueryView | undefined;
   @Output() saveQueryEvent = new EventEmitter<QueryView>();
   @Output() removeComponentEvent = new EventEmitter<any>();
@@ -176,11 +178,12 @@ export class QueryBuilderComponent implements OnInit {
       }
       this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.ENUM) ?? [''])[0]));
-    } else if (nodeProperty.property.includes('date') || nodeProperty.property.includes('timestamp')) {
+    } else if ((nodeProperty.property.includes('date') && !nodeProperty.property.includes('_by')) || nodeProperty.property.includes('timestamp')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
-    } else if (nodeProperty.property.includes('file_formats')) { // todo should prob get list names from somewhere
+    } else if (nodeProperty.property.includes('file_format')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-    } else if (nodeProperty.property.includes('asset_locked')) {
+
+    } else if (['asset_locked', 'push_to_specify', 'make_public', 'multi_specimen'].some(key => nodeProperty.property.includes(key)) || (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
       this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
     } else {

@@ -174,7 +174,8 @@ public class AssetApi {
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
+        //List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssetsSQL(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
@@ -215,7 +216,8 @@ public class AssetApi {
         // Set: No repeated assets, just in case:
         Set<String> assetSet = new HashSet<>(assets);
         // Assets found in backend:
-        List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
+        //List<Asset> assetList = bulkUpdateService.readMultipleAssets(assetSet.stream().toList());
+        List<Asset> assetList = bulkUpdateService.readMultipleAssetsSQL(assetSet.stream().toList());
         // If one or more assets don't exist, complain:
         if (assetList.size() != assetSet.size()){
             throw new IllegalArgumentException("One or more assets were not found");
