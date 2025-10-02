@@ -29,6 +29,8 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
     void updateSpecimenDoNotRemovePrepTypeInUse() {
         Asset updateSpecimen = AssetServiceTest.getTestAsset("updateSpecimenDoNotRemovePrepTypeInUse");
         roleService.addRole("NHMD");
+        User nhmd = new User("nhmd-user", Set.of("WRITE_NHMD"));
+        User nhmdWithId = userService.ensureExists(nhmd);
 
         Specimen specimen = new Specimen(updateSpecimen.institution
                 , updateSpecimen.collection
@@ -38,10 +40,8 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 ,null, collectionService.findCollectionInternal(updateSpecimen.collection
                 , updateSpecimen.institution).get().collection_id()
                 , Arrays.asList(new Role("NHMD")));
-        specimenService.putSpecimen(specimen, user);
+        specimenService.putSpecimen(specimen, nhmdWithId);
         updateSpecimen.asset_specimen = Arrays.asList(new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false));
-        User nhmd = new User("nhmd-user", Set.of("WRITE_NHMD"));
-        User nhmdWithId = userService.ensureExists(nhmd);
         assetService.persistAsset(updateSpecimen, nhmdWithId, 86);
         Optional<Specimen> resultSpecimen = specimenService.findSpecimen("nhmd.plantz.updateSpecimenDoNotRemovePrepTypeInUse-1");
         assertThat(resultSpecimen.isPresent()).isTrue();

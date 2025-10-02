@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.annotation.Nullable;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public record QueryResultAsset(
@@ -25,13 +24,13 @@ public record QueryResultAsset(
         List<Event> events,
         @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
         @Nullable
-        List<Specimen> specimens
+        List<AssetSpecimen> asset_specimen
 ) {
 
         public QueryResultAsset withEvents(List<Event> events) {
-                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, specimens);
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, asset_specimen);
         }
-        public QueryResultAsset withSpeciments(List<Specimen> speciments) {
-                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, speciments);
+        public QueryResultAsset withSpecimen(List<AssetSpecimen> asset_specimen) {
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, asset_specimen);
         }
 }

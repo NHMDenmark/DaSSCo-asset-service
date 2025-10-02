@@ -1,12 +1,9 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.repositories.InternalStatusRepository;
 import dk.northtech.dasscoassetservice.repositories.QueriesRepository;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +12,6 @@ import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -27,6 +23,7 @@ import java.util.stream.Collectors;
 @Service
 public class QueriesService {
     private static final Logger logger = LoggerFactory.getLogger(QueriesService.class);
+    private final SpecimenService specimenService;
     private Jdbi jdbi;
     private Jdbi readonlyJdbi;
     private RightsValidationService rightsValidationService;
@@ -125,10 +122,11 @@ public class QueriesService {
                   """;
 
     @Inject
-    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi")Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi) {
+    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi")Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
         this.readonlyJdbi = readonlyJdbi;
+        this.specimenService = specimenService;
     }
 
     public List<QueryItem> getNodeProperties() {
@@ -340,51 +338,12 @@ public class QueriesService {
                                     return assetEventsTemp;
                                 }
                             });
-
-                    Map<String, List<Specimen>> assetSpecimens = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
-                            select asset_guid, institution_name, collection_name, barcode, specimen_pid, preparation_types, preparation_type, specimen_id, collection_id, specify_collection_object_attachment_id, asset_detached from asset_specimen
-                            inner join specimen using (specimen_id)
-                            left join collection using (collection_id)
-                            where asset_guid in (<assetGuids>)
-                            """)
-                            .bindList("assetGuids", assetGuids)
-                            .execute((statement, ctx) -> {
-                                try (ctx; var rs = statement.get().getResultSet()) {
-                                    Map<String, List<Specimen>> assetSpecimensTemp = new HashMap<>();
-                                    while (rs.next()) {
-                                        String assetGuid = rs.getString("asset_guid");
-                                        String institutionName = rs.getString("institution_name");
-                                        String collectionName = rs.getString("collection_name");
-                                        String barcode = rs.getString("barcode");
-                                        String specimenPid = rs.getString("specimen_pid");
-                                        String preparationTypes = rs.getString("preparation_types");
-                                        String preparationType = rs.getString("preparation_type");
-                                        int specimenId = rs.getInt("specimen_id");
-                                        int collectionId = rs.getInt("collection_id");
-                                        Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
-                                        boolean assetDetached = rs.getBoolean("asset_detached");
-                                        Specimen newSpecimen = new Specimen(
-                                                institutionName,
-                                                collectionName,
-                                                barcode,
-                                                specimenPid,
-                                                new HashSet<>(Arrays.asList(preparationTypes.split(","))),
-                                                preparationType,
-                                                specimenId,
-                                                collectionId,
-                                                specifyCollectionObjectAttachmentId,
-                                                assetDetached
-                                        );
-                                        assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newSpecimen);
-                                    }
-                                    return assetSpecimensTemp;
-                                }
-                            });
+                    Map<String, List<AssetSpecimen>> assetSpecimens = specimenService.getMultiAssetSpecimens(new HashSet<>(assetGuids));
 
                     return queryResultAssets.stream().map(queryResultAsset ->
                             queryResultAsset
                                     .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
-                                    .withSpeciments(assetSpecimens.get(queryResultAsset.asset_guid()))
+                                    .withSpecimen(assetSpecimens.get(queryResultAsset.asset_guid()))
                     ).toList();
                 }
         );

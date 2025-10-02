@@ -280,47 +280,7 @@ public class AssetService {
                             return assetEventsTemp;
                         }
                     });
-
-                    Map<String, List<Specimen>> assetSpecimens = h.createQuery("""
-                            select asset_guid, institution_name, collection_name, barcode, specimen_pid, preparation_types, preparation_type, specimen_id, collection_id, specify_collection_object_attachment_id, asset_detached from asset_specimen
-                            inner join specimen using (specimen_id)
-                            left join collection using (collection_id)
-                            where asset_guid in (<assetGuids>)
-                            """)
-                    .bindList("assetGuids", assetGuids)
-                    .execute((statement, ctx) -> {
-                        try (ctx; var rs = statement.get().getResultSet()) {
-                            Map<String, List<Specimen>> assetSpecimensTemp = new HashMap<>();
-                            while (rs.next()) {
-                                String assetGuid = rs.getString("asset_guid");
-                                String institutionName = rs.getString("institution_name");
-                                String collectionName = rs.getString("collection_name");
-                                String barcode = rs.getString("barcode");
-                                String specimenPid = rs.getString("specimen_pid");
-                                String preparationTypes = rs.getString("preparation_types");
-                                String preparationType = rs.getString("preparation_type");
-                                int specimenId = rs.getInt("specimen_id");
-                                int collectionId = rs.getInt("collection_id");
-                                Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
-                                boolean assetDetached = rs.getBoolean("asset_detached");
-                                Specimen newSpecimen = new Specimen(
-                                        institutionName,
-                                        collectionName,
-                                        barcode,
-                                        specimenPid,
-                                        new HashSet<>(Arrays.asList(preparationTypes.split(","))),
-                                        preparationType,
-                                        specimenId,
-                                        collectionId,
-                                        specifyCollectionObjectAttachmentId,
-                                        assetDetached
-                                );
-                                assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newSpecimen);
-                            }
-                            return assetSpecimensTemp;
-                        }
-                    });
-
+            Map<String, List<AssetSpecimen>> assetSpecimens = specimenService.getMultiAssetSpecimens(new HashSet<>(assetGuids));
                     Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
                             SELECT asset_guid, username
                             FROM digitiser_list
@@ -417,7 +377,7 @@ public class AssetService {
 
             return assets.stream().peek(asset -> {
                 asset.events = assetEvents.get(asset.asset_guid);
-                asset.specimens = assetSpecimens.get(asset.asset_guid);
+                asset.asset_specimen = assetSpecimens.get(asset.asset_guid);
                 asset.complete_digitiser_list = assetCompleteDigitiserList.get(asset.asset_guid);
                 asset.issues = assetIssues.get(asset.asset_guid);
                 asset.funding = assetFundings.get(asset.asset_guid);

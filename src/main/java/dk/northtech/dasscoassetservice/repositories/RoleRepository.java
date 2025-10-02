@@ -8,6 +8,7 @@ import org.apache.age.jdbc.base.AgtypeFactory;
 import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Repository;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.*;
 
 
 public interface RoleRepository extends SqlObject {
@@ -30,6 +31,10 @@ public interface RoleRepository extends SqlObject {
 
     default String getFindSql(RestrictedObjectType object) {
         return "SELECT role as name FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " =:param" ;
+    }
+
+    default String getFindListSql(RestrictedObjectType object) {
+        return "SELECT role as name, " + object.identifierName + "AS identifier FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " IN (<params>)" ;
     }
 
     @SqlUpdate("INSERT INTO role(role) VALUES (:role)")
@@ -107,9 +112,27 @@ public interface RoleRepository extends SqlObject {
                     .mapTo(Role.class).list();
         });
     }
+
+    default Map<String, List<Role>> getRoleRestrictionsFromList(RestrictedObjectType restrictedObject, Set<String> identifiers) {
+        HashMap<String, List<Role>> stringListHashMap = new HashMap<>();
+        getHandle().createQuery(getFindListSql(restrictedObject))
+                .bindList("params", identifiers)
+                .mapTo(RoleWithId.class)
+                .list()
+                .forEach(r -> stringListHashMap
+                        .computeIfAbsent(r.identifier, (k) -> new ArrayList<>())
+                        .add(new Role(r.identifier)));
+        return stringListHashMap;
+    }
+
+    static record RoleWithId(String name, String identifier) {
+
+    }
+
     default List<Role> findRoleRestrictions(RestrictedObjectType object, String identifier) {
         return withHandle(h -> {
-            return h.createQuery(getFindSql(object)).bind("param", identifier)
+            return h.createQuery(getFindSql(object))
+                    .bind("param", identifier)
                     .mapTo(Role.class).list();
         });
     }

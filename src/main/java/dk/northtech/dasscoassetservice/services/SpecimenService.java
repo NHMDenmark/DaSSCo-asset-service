@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
 import dk.northtech.dasscoassetservice.repositories.RoleRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
@@ -14,14 +15,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class SpecimenService {
     private final Jdbi jdbi;
     private static final Logger log = LoggerFactory.getLogger(SpecimenService.class);
+    private final RoleService roleService;
 
     private PreparationTypeCache preparationTypeCache;
     private ExtendableEnumService extendableEnumService;
@@ -36,12 +37,13 @@ public class SpecimenService {
             });
 
     @Inject
-    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService, CollectionService collectionService) {
+    public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService, CollectionService collectionService, RoleService roleService) {
         this.jdbi = jdbi;
         this.preparationTypeCache = preparationTypeCache;
         this.extendableEnumService = extendableEnumService;
         this.rightsValidationService = rightsValidationService;
         this.collectionService = collectionService;
+        this.roleService = roleService;
     }
 
     Optional<Specimen> findSpecimen(String pid) {
@@ -189,6 +191,77 @@ public class SpecimenService {
                 throw new IllegalArgumentException(p + " is not a valid preparation_type");
             }
         }
+    }
+
+    Map<String, List<AssetSpecimen>> getMultiAssetSpecimens(Set<String> assetGuids) {
+       return jdbi.withHandle(h -> {
+           RoleRepository roleRepository = h.attach(RoleRepository.class);
+           Set<String> specimenPIDs = new HashSet<>();
+           List<AssetSpecimen> assetSpecimens = h.createQuery("""
+                            SELECT asset_guid
+                                , institution_name
+                                , collection_name
+                                , barcode
+                                , specimen_pid
+                                , preparation_types
+                                , preparation_type
+                                , specimen_id
+                                , collection_id
+                                , specify_collection_object_attachment_id
+                                , asset_detached
+                            FROM asset_specimen
+                            INNER JOIN specimen USING (specimen_id)
+                            LEFT JOIN collection USING (collection_id)
+                            WHERE asset_guid in (<assetGuids>) AND asset_detached IS FALSE
+                            """)
+                .bindList("assetGuids", assetGuids)
+                .execute((statement, ctx) -> {
+                    try (ctx; var rs = statement.get().getResultSet()) {
+                        List<AssetSpecimen> result = new ArrayList<>();
+                        while (rs.next()) {
+                            String assetGuid = rs.getString("asset_guid");
+                            String institutionName = rs.getString("institution_name");
+                            String collectionName = rs.getString("collection_name");
+                            String barcode = rs.getString("barcode");
+                            String specimenPid = rs.getString("specimen_pid");
+                            String preparationTypes = rs.getString("preparation_types");
+                            String preparationType = rs.getString("preparation_type");
+                            int specimenId = rs.getInt("specimen_id");
+                            int collectionId = rs.getInt("collection_id");
+                            Long specifyCollectionObjectAttachmentId = rs.getLong("specify_collection_object_attachment_id");
+                            Long asset_specimenId = rs.getLong("asset_specimen_id");
+                            boolean assetDetached = rs.getBoolean("asset_detached");
+
+                            specimenPIDs.add(specimenPid);
+
+                            AssetSpecimen assetSpecimen = new AssetSpecimen(assetDetached, specifyCollectionObjectAttachmentId,preparationType, asset_specimenId, specimenPid, assetGuid,specimenId );
+                            assetSpecimen.specimen =
+                                    new Specimen(
+                                            institutionName,
+                                            collectionName,
+                                            barcode,
+                                            specimenPid,
+                                            new HashSet<>(Arrays.asList(preparationTypes.split(","))),
+                                            specimenId,
+                                            collectionId, new ArrayList<>()
+
+                                    );
+                            result.add(assetSpecimen);
+//                            assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(assetSpecimen);
+                        }
+                        return result;
+                    }
+                });
+           Map<String, List<Role>> roleRestrictionsFromList = roleRepository.getRoleRestrictionsFromList(RestrictedObjectType.SPECIMEN, specimenPIDs);
+           HashMap<String, List<AssetSpecimen>> result = new HashMap<>();
+           assetSpecimens.forEach(s -> {
+               if(roleRestrictionsFromList.containsKey(s.specimen_pid)) {
+                   s.specimen.role_restrictions = roleRestrictionsFromList.get(s.specimen_pid);
+               }
+               result.computeIfAbsent(s.asset_guid, k -> new ArrayList<>()).add(s);
+           });
+           return result;
+        });
     }
 
 }
