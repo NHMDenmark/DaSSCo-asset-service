@@ -191,37 +191,7 @@ public class AssetService {
             assetToBeMapped.role_restrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.ASSET, assetToBeMapped.asset_guid);
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
-            for (Event event : assetToBeMapped.events) {
-                if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
-                    assetToBeMapped.audited = true;
-                    if (assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
-                        assetToBeMapped.date_audited = event.timestamp;
-                        assetToBeMapped.audited_by = event.user;
-                    }
-
-                } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (assetToBeMapped.date_pushed_to_specify == null || assetToBeMapped.date_pushed_to_specify.isAfter(event.timestamp))) {
-                    assetToBeMapped.date_pushed_to_specify = event.timestamp;
-                } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
-                           && assetToBeMapped.date_metadata_updated == null) {
-                    assetToBeMapped.date_metadata_updated = event.timestamp;
-                    assetToBeMapped.metadata_updated_by = event.user;
-
-                } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
-                           && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
-                    assetToBeMapped.date_metadata_updated = event.timestamp;
-                    assetToBeMapped.metadata_updated_by = event.user;
-
-                } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
-                    if (assetToBeMapped.date_metadata_updated == null) {
-                        assetToBeMapped.date_metadata_updated = event.timestamp;
-                    }
-                    //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
-                    assetToBeMapped.pipeline = event.pipeline;
-                    assetToBeMapped.metadata_created_by = event.user;
-                } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
-                    assetToBeMapped.date_asset_deleted = event.timestamp;
-                }
-            }
+            mapEvents(assetToBeMapped);
 
             return Optional.of(assetToBeMapped);
         });
@@ -230,9 +200,44 @@ public class AssetService {
 
     }
 
+    private void mapEvents(Asset assetToBeMapped) {
+        for (Event event : assetToBeMapped.events) {
+            if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+                assetToBeMapped.audited = true;
+                if (assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
+                    assetToBeMapped.date_audited = event.timestamp;
+                    assetToBeMapped.audited_by = event.user;
+                }
+
+            } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (assetToBeMapped.date_pushed_to_specify == null || assetToBeMapped.date_pushed_to_specify.isAfter(event.timestamp))) {
+                assetToBeMapped.date_pushed_to_specify = event.timestamp;
+            } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
+                       && assetToBeMapped.date_metadata_updated == null) {
+                assetToBeMapped.date_metadata_updated = event.timestamp;
+                assetToBeMapped.metadata_updated_by = event.user;
+
+            } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
+                       && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
+                assetToBeMapped.date_metadata_updated = event.timestamp;
+                assetToBeMapped.metadata_updated_by = event.user;
+
+            } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
+                if (assetToBeMapped.date_metadata_updated == null) {
+                    assetToBeMapped.date_metadata_updated = event.timestamp;
+                }
+                //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
+                assetToBeMapped.pipeline = event.pipeline;
+                assetToBeMapped.metadata_created_by = event.user;
+            } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
+                assetToBeMapped.date_asset_deleted = event.timestamp;
+            }
+        }
+    }
+
     public List<Asset> getAssets(List<String> assetGuids){
         return this.jdbi.withHandle(h -> {
-                    var assets = h.createQuery("""
+            RoleRepository roleRepository = h.attach(RoleRepository.class);
+            var assets = h.createQuery("""
                                     SELECT
                                         asset.*
                                         , collection.collection_name
@@ -299,7 +304,7 @@ public class AssetService {
                                     return assetCompleteDigitiserListTemp;
                                 }
                             });
-
+                    Map<String, List<Role>> assetRoleRestrictions= roleRepository.getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
                     Map<String, List<Issue>> assetIssues = h.createQuery("""
                             SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
                             FROM issue
@@ -383,37 +388,10 @@ public class AssetService {
                 asset.funding = assetFundings.get(asset.asset_guid);
                 asset.parent_guids = assetParent.get(asset.asset_guid);
                 asset.external_publishers = assetPublishers.get(asset.asset_guid);
-                for (Event event : asset.events) {
-                    if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
-                        asset.audited = true;
-                        if (asset.date_audited == null || event.timestamp.isAfter(asset.date_audited)) {
-                            asset.date_audited = event.timestamp;
-                            asset.audited_by = event.user;
-                        }
-
-                    } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (asset.date_pushed_to_specify == null || asset.date_pushed_to_specify.isAfter(event.timestamp))) {
-                        asset.date_pushed_to_specify = event.timestamp;
-                    } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
-                            && asset.date_metadata_updated == null) {
-                        asset.date_metadata_updated = event.timestamp;
-                        asset.metadata_updated_by = event.user;
-
-                    } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
-                            && (asset.date_metadata_updated == null || event.timestamp.isAfter(asset.date_metadata_updated))) {
-                        asset.date_metadata_updated = event.timestamp;
-                        asset.metadata_updated_by = event.user;
-
-                    } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
-                        if (asset.date_metadata_updated == null) {
-                            asset.date_metadata_updated = event.timestamp;
-                        }
-                        //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
-                        asset.pipeline = event.pipeline;
-                        asset.metadata_created_by = event.user;
-                    } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
-                        asset.date_asset_deleted = event.timestamp;
-                    }
+                if(assetRoleRestrictions.containsKey(asset.asset_guid)) {
+                    asset.role_restrictions = assetRoleRestrictions.get(asset.asset_guid);
                 }
+                mapEvents(asset);
             }).toList();
         });
     }

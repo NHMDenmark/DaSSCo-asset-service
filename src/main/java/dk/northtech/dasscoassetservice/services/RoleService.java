@@ -24,6 +24,9 @@ public class RoleService {
     }
 
     public void addRole(String newRole) {
+        if(this.getRoles().contains(newRole)) {
+            return;
+        }
         jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             roleRepository.createRole(newRole);

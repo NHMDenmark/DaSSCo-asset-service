@@ -196,7 +196,7 @@ public class SpecimenService {
     Map<String, List<AssetSpecimen>> getMultiAssetSpecimens(Set<String> assetGuids) {
        return jdbi.withHandle(h -> {
            RoleRepository roleRepository = h.attach(RoleRepository.class);
-           Set<String> specimenPIDs = new HashSet<>();
+           Set<Integer> specimenIds = new HashSet<>();
            List<AssetSpecimen> assetSpecimens = h.createQuery("""
                             SELECT asset_guid
                                 , institution_name
@@ -209,6 +209,7 @@ public class SpecimenService {
                                 , collection_id
                                 , specify_collection_object_attachment_id
                                 , asset_detached
+                                , asset_specimen_id
                             FROM asset_specimen
                             INNER JOIN specimen USING (specimen_id)
                             LEFT JOIN collection USING (collection_id)
@@ -232,7 +233,7 @@ public class SpecimenService {
                             Long asset_specimenId = rs.getLong("asset_specimen_id");
                             boolean assetDetached = rs.getBoolean("asset_detached");
 
-                            specimenPIDs.add(specimenPid);
+                            specimenIds.add(specimenId);
 
                             AssetSpecimen assetSpecimen = new AssetSpecimen(assetDetached, specifyCollectionObjectAttachmentId,preparationType, asset_specimenId, specimenPid, assetGuid,specimenId );
                             assetSpecimen.specimen =
@@ -252,11 +253,11 @@ public class SpecimenService {
                         return result;
                     }
                 });
-           Map<String, List<Role>> roleRestrictionsFromList = roleRepository.getRoleRestrictionsFromList(RestrictedObjectType.SPECIMEN, specimenPIDs);
+           Map<Integer, List<Role>> roleRestrictionsFromList = roleRepository.getRoleRestrictionsFromList(RestrictedObjectType.SPECIMEN, specimenIds);
            HashMap<String, List<AssetSpecimen>> result = new HashMap<>();
            assetSpecimens.forEach(s -> {
-               if(roleRestrictionsFromList.containsKey(s.specimen_pid)) {
-                   s.specimen.role_restrictions = roleRestrictionsFromList.get(s.specimen_pid);
+               if(roleRestrictionsFromList.containsKey(s.specimen_id)) {
+                   s.specimen.role_restrictions = roleRestrictionsFromList.get(s.specimen_id);
                }
                result.computeIfAbsent(s.asset_guid, k -> new ArrayList<>()).add(s);
            });

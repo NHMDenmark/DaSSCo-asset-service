@@ -3,9 +3,9 @@ package dk.northtech.dasscoassetservice.configuration;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.RoleRepository;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
-import org.jdbi.v3.core.statement.HashPrefixSqlParser;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
 import org.jdbi.v3.postgres.PostgresPlugin;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
@@ -66,6 +66,8 @@ public class DataSources {
             .registerRowMapper(ConstructorMapper.factory(Legality.class))
             .registerRowMapper(ConstructorMapper.factory(Issue.class))
             .registerRowMapper(ConstructorMapper.factory(Publication.class))
+            .registerRowMapper(ConstructorMapper.factory(RoleRepository.RoleWithIntegerId.class))
+            .registerRowMapper(ConstructorMapper.factory(RoleRepository.RoleWithStringId.class))
             .registerColumnMapper(Role.class, (rs, col, ctx) -> new Role(rs.getString("role")))
            ;
   }

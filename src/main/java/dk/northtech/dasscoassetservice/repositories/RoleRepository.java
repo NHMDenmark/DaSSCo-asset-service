@@ -1,25 +1,12 @@
 package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
-import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeMap;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.mapper.RowMapper;
+import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 import org.jdbi.v3.sqlobject.SqlObject;
-import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
-import org.postgresql.jdbc.PgConnection;
-import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 
 
@@ -34,7 +21,7 @@ public interface RoleRepository extends SqlObject {
     }
 
     default String getFindListSql(RestrictedObjectType object) {
-        return "SELECT role as name, " + object.identifierName + "AS identifier FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " IN (<params>)" ;
+        return "SELECT role AS name, " + object.identifierName + " AS identifier FROM " + object.objectName + "_role_restriction WHERE " + object.identifierName + " IN (<params>)" ;
     }
 
     @SqlUpdate("INSERT INTO role(role) VALUES (:role)")
@@ -113,20 +100,43 @@ public interface RoleRepository extends SqlObject {
         });
     }
 
-    default Map<String, List<Role>> getRoleRestrictionsFromList(RestrictedObjectType restrictedObject, Set<String> identifiers) {
+    default Map<Integer, List<Role>> getRoleRestrictionsFromList(RestrictedObjectType restrictedObject, Set<Integer> identifiers) {
+        if(identifiers.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        HashMap<Integer, List<Role>> idListMap = new HashMap<>();
+        getHandle().createQuery(getFindListSql(restrictedObject))
+                .bindList("params", identifiers)
+                .mapTo(RoleWithIntegerId.class)
+                .list()
+                .forEach(r -> idListMap
+                        .computeIfAbsent(r.identifier, (k) -> new ArrayList<>())
+                        .add(new Role(r.name)));
+        return idListMap;
+    }
+
+    default Map<String, List<Role>> getRoleRestrictionsFromListOfString(RestrictedObjectType restrictedObject, Set<String> identifiers) {
+        if(identifiers.isEmpty()) {
+            return Collections.emptyMap();
+        }
         HashMap<String, List<Role>> stringListHashMap = new HashMap<>();
         getHandle().createQuery(getFindListSql(restrictedObject))
                 .bindList("params", identifiers)
-                .mapTo(RoleWithId.class)
+                .mapTo(RoleWithStringId.class)
                 .list()
                 .forEach(r -> stringListHashMap
                         .computeIfAbsent(r.identifier, (k) -> new ArrayList<>())
-                        .add(new Role(r.identifier)));
+                        .add(new Role(r.name)));
         return stringListHashMap;
     }
 
-    static record RoleWithId(String name, String identifier) {
+    static record RoleWithIntegerId(String name, Integer identifier) {
+        @JdbiConstructor
+        public RoleWithIntegerId {
+        }
+    }
 
+    static record RoleWithStringId(String name, String identifier) {
     }
 
     default List<Role> findRoleRestrictions(RestrictedObjectType object, String identifier) {
