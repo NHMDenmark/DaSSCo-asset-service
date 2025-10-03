@@ -25,7 +25,6 @@ export class DetailedViewComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
       this.assetGuid = params['asset_guid'];
-      console.log(this.assetGuid)
       this.initializeCurrentAsset(this.assetGuid);
     })
   }
@@ -55,7 +54,8 @@ export class DetailedViewComponent implements OnInit {
     this.detailedViewService.getAssetMetadata(assetGuid).subscribe((response) => {
       if (response){
         this.asset = response;
-        this.specimenBarcodes = this.asset?.specimens?.map(specimen => specimen.barcode).join(', ');
+        const specimen = (this.asset?.asset_specimen??[]).flatMap(a => (a?.specimen??[]));
+        this.specimenBarcodes = specimen.map(s => s.barcode).join(', ');
         this.fileFormats = this.asset?.file_formats?.map(file_format => file_format).join(', ');
         this.restrictedAccess = this.asset?.restricted_access?.map(type => type).join(", ");
         this.tags = Object.entries(this.asset?.tags ?? {})

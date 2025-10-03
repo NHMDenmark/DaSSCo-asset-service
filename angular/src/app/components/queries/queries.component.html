@@ -114,8 +114,8 @@
       <ng-container matColumnDef="barcode">
         <mat-header-cell *matHeaderCellDef mat-sort-header>Barcodes</mat-header-cell>
         <mat-cell *matCellDef="let element">
-          <ng-container *ngFor="let specimen of element.specimens; let isLast = last">
-            {{isLast ? specimen.barcode : specimen.barcode + ','}}
+          <ng-container *ngFor="let specimen of assetSpecimenToSpecimen(element.asset_specimen); let isLast = last">
+            {{isLast ? specimen?.barcode : specimen?.barcode + ','}}
             <br />
           </ng-container>
         </mat-cell>

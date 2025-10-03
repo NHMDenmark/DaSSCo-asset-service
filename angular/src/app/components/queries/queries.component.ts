@@ -13,7 +13,7 @@ import {SaveSearchDialogComponent} from "../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from "@angular/material/snack-bar";
 import {MatPaginator} from "@angular/material/paginator";
 import {CacheService} from "../../services/cache.service";
-import {Asset, AssetGroup, DasscoError} from "../../types/types";
+import {Asset, AssetGroup, AssetSpecimen, DasscoError} from "../../types/types";
 import {MatSort, Sort} from "@angular/material/sort";
 import {SelectionModel} from "@angular/cdk/collections";
 import {AssetGroupDialogComponent} from "../dialogs/asset-group-dialog/asset-group-dialog.component";
@@ -158,6 +158,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     if (this.paginator) {
       this.dataSource.paginator = this.paginator;
     }
+  }
+
+  assetSpecimenToSpecimen(assetSpecimen: AssetSpecimen[]){
+    return (assetSpecimen??[]).flatMap(a => a.specimen);
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
@@ -306,8 +310,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
       const sortedData = data.sort((a, b) => {
         const isAsc = sort.direction === 'asc';
-        if (a.specimens && b.specimens) {
-          return this.compare(a.specimens[0].barcode, b.specimens[0].barcode, isAsc);
+        if (a.asset_specimen && b.asset_specimen) {
+          if(a.asset_specimen[0].specimen && b.asset_specimen[0].specimen){
+            return this.compare(a.asset_specimen[0].specimen[0].barcode, b.asset_specimen[0].specimen[0].barcode, isAsc);
+          }
         }
         return 0;
       })

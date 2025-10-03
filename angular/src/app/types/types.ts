@@ -15,7 +15,7 @@ export interface Asset {
   asset_guid: string | undefined;
   status: AssetStatus | undefined;
   multi_specimen: boolean | undefined;
-  specimens: Specimen[] | undefined;
+  asset_specimen: AssetSpecimen[] | undefined;
   funding: string | undefined;
   subject: string | undefined;
   payload_type: string | undefined;
@@ -43,6 +43,17 @@ export interface Asset {
   error_message: string | undefined;
   error_timestamp: Moment | undefined;
   writeAccess: boolean | undefined;
+}
+
+export interface AssetSpecimen {
+  specimen_id: number | undefined;
+  asset_guid: string | undefined;
+  specimen_pid: string | undefined;
+  asset_specimen_id: number | undefined;
+  asset_preparation_type: string | undefined;
+  specify_collection_object_attachment_id: number | undefined;
+  asset_detached: boolean | undefined;
+  specimen: Specimen[] | undefined;
 }
 
 export interface Specimen {
