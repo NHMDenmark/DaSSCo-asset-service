@@ -234,36 +234,36 @@ public class AssetService {
         }
     }
 
-    public List<Asset> getAssets(List<String> assetGuids){
+    public List<Asset> getAssets(List<String> assetGuids) {
         return this.jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             var assets = h.createQuery("""
-                                    SELECT
-                                        asset.*
-                                        , collection.collection_name
-                                        , collection.institution_name
-                                        , dassco_user.username AS digitiser
-                                        , workstation.workstation_name
-                                        , copyright
-                                        , license
-                                        , credit
-                                    FROM asset
-                                    LEFT JOIN collection USING(collection_id)
-                                    LEFT JOIN workstation USING(workstation_id)
-                                    LEFT JOIN legality USING(legality_id)
-                                    LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-                                    WHERE asset_guid in (<asset_guids>)
-                                    """)
-                            .bindList("asset_guids", assetGuids)
-                            .map(new AssetMapper())
-                            .list();
+                            SELECT
+                                asset.*
+                                , collection.collection_name
+                                , collection.institution_name
+                                , dassco_user.username AS digitiser
+                                , workstation.workstation_name
+                                , copyright
+                                , license
+                                , credit
+                            FROM asset
+                            LEFT JOIN collection USING(collection_id)
+                            LEFT JOIN workstation USING(workstation_id)
+                            LEFT JOIN legality USING(legality_id)
+                            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+                            WHERE asset_guid in (<asset_guids>)
+                            """)
+                    .bindList("asset_guids", assetGuids)
+                    .map(new AssetMapper())
+                    .list();
 
-                    Map<String, List<Event>> assetEvents = h.createQuery("""
-                                    select asset_guid, username, timestamp, event, pipeline_name from event
-                                    left join dassco_user using (dassco_user_id)
-                                    left join pipeline using (pipeline_id)
-                                    where asset_guid in (<assetGuids>)
-                                    """)
+            Map<String, List<Event>> assetEvents = h.createQuery("""
+                            SELECT asset_guid, username, timestamp, event, pipeline_name from event
+                            LEFT JOIN dassco_user USING (dassco_user_id)
+                            LEFT JOIN pipeline USING (pipeline_id)
+                            WHERE asset_guid IN (<assetGuids>)
+                            """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -286,82 +286,82 @@ public class AssetService {
                         }
                     });
             Map<String, List<AssetSpecimen>> assetSpecimens = specimenService.getMultiAssetSpecimens(new HashSet<>(assetGuids));
-                    Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
+            Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
                             SELECT asset_guid, username
                             FROM digitiser_list
                             LEFT JOIN dassco_user USING (dassco_user_id)
                             WHERE asset_guid in (<assetGuids>)
                             """)
-                            .bindList("assetGuids", assetGuids)
-                            .execute((statement, ctx) -> {
-                                try (ctx; var rs = statement.get().getResultSet()) {
-                                    Map<String, List<String>> assetCompleteDigitiserListTemp = new HashMap<>();
-                                    while (rs.next()) {
-                                        String assetGuid = rs.getString("asset_guid");
-                                        String username = rs.getString("username");
-                                        assetCompleteDigitiserListTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(username);
-                                    }
-                                    return assetCompleteDigitiserListTemp;
-                                }
-                            });
-                    Map<String, List<Role>> assetRoleRestrictions= roleRepository.getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
-                    Map<String, List<Issue>> assetIssues = h.createQuery("""
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<String>> assetCompleteDigitiserListTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("asset_guid");
+                                String username = rs.getString("username");
+                                assetCompleteDigitiserListTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(username);
+                            }
+                            return assetCompleteDigitiserListTemp;
+                        }
+                    });
+            Map<String, List<Role>> assetRoleRestrictions = roleRepository.getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
+            Map<String, List<Issue>> assetIssues = h.createQuery("""
                             SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
                             FROM issue
                             WHERE asset_guid in (<assetGuids>)
                             """)
-                            .bindList("assetGuids", assetGuids)
-                            .execute((statement, ctx) -> {
-                                try (ctx; var rs = statement.get().getResultSet()) {
-                                    Map<String, List<Issue>> assetSpecimensTemp = new HashMap<>();
-                                    while (rs.next()) {
-                                        int issueId = rs.getInt("issue_id");
-                                        String assetGuid = rs.getString("asset_guid");
-                                        String category = rs.getString("category");
-                                        String name = rs.getString("name");
-                                        Timestamp timestamp = rs.getTimestamp("timestamp");
-                                        String status = rs.getString("status");
-                                        String description = rs.getString("description");
-                                        String notes = rs.getString("notes");
-                                        boolean solved = rs.getBoolean("solved");
-                                        var issue = new Issue(issueId, assetGuid, category, name, timestamp != null ? timestamp.toInstant() : null, status, description, notes, solved);
-                                        assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(issue);
-                                    }
-                                    return assetSpecimensTemp;
-                                }
-                            });
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<Issue>> assetSpecimensTemp = new HashMap<>();
+                            while (rs.next()) {
+                                int issueId = rs.getInt("issue_id");
+                                String assetGuid = rs.getString("asset_guid");
+                                String category = rs.getString("category");
+                                String name = rs.getString("name");
+                                Timestamp timestamp = rs.getTimestamp("timestamp");
+                                String status = rs.getString("status");
+                                String description = rs.getString("description");
+                                String notes = rs.getString("notes");
+                                boolean solved = rs.getBoolean("solved");
+                                var issue = new Issue(issueId, assetGuid, category, name, timestamp != null ? timestamp.toInstant() : null, status, description, notes, solved);
+                                assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(issue);
+                            }
+                            return assetSpecimensTemp;
+                        }
+                    });
 
-                    Map<String, List<String>> assetFundings = h.createUpdate("""
+            Map<String, List<String>> assetFundings = h.createUpdate("""
                             SELECT asset_guid, funding_id, funding
                             FROM asset_funding
                             INNER JOIN funding USING (funding_id)
                             WHERE asset_guid in (<assetGuids>)
                             """).bindList("assetGuids", assetGuids)
-                            .execute((statement, ctx) -> {
-                                try (ctx; var rs = statement.get().getResultSet()) {
-                                    Map<String, List<String>> assetFundingsTemp = new HashMap<>();
-                                    while (rs.next()) {
-                                        String assetGuid = rs.getString("asset_guid");
-                                        String funding = rs.getString("funding");
-                                        assetFundingsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(funding);
-                                    }
-                                    return assetFundingsTemp;
-                                }
-                            });
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, List<String>> assetFundingsTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("asset_guid");
+                                String funding = rs.getString("funding");
+                                assetFundingsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(funding);
+                            }
+                            return assetFundingsTemp;
+                        }
+                    });
 
-                    Map<String, Set<String>> assetParent = h.createUpdate("SELECT child_guid, parent_guid FROM parent_child WHERE child_guid in (<assetGuids>)")
-                            .bindList("assetGuids", assetGuids)
-                            .execute((statement, ctx) -> {
-                                try (ctx; var rs = statement.get().getResultSet()) {
-                                    Map<String, Set<String>> assetParentTemp = new HashMap<>();
-                                    while (rs.next()) {
-                                        String assetGuid = rs.getString("child_guid");
-                                        String parentGuid = rs.getString("parent_guid");
-                                        assetParentTemp.computeIfAbsent(assetGuid, k -> new HashSet<>()).add(parentGuid);
-                                    }
-                                    return assetParentTemp;
-                                }
-                            });
+            Map<String, Set<String>> assetParent = h.createUpdate("SELECT child_guid, parent_guid FROM parent_child WHERE child_guid in (<assetGuids>)")
+                    .bindList("assetGuids", assetGuids)
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, Set<String>> assetParentTemp = new HashMap<>();
+                            while (rs.next()) {
+                                String assetGuid = rs.getString("child_guid");
+                                String parentGuid = rs.getString("parent_guid");
+                                assetParentTemp.computeIfAbsent(assetGuid, k -> new HashSet<>()).add(parentGuid);
+                            }
+                            return assetParentTemp;
+                        }
+                    });
 
             Map<String, List<Publication>> assetPublishers = h.createUpdate("SELECT asset_guid, description, publisher, asset_publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
                     .bindList("assetGuids", assetGuids)
@@ -388,7 +388,7 @@ public class AssetService {
                 asset.funding = assetFundings.get(asset.asset_guid);
                 asset.parent_guids = assetParent.get(asset.asset_guid);
                 asset.external_publishers = assetPublishers.get(asset.asset_guid);
-                if(assetRoleRestrictions.containsKey(asset.asset_guid)) {
+                if (assetRoleRestrictions.containsKey(asset.asset_guid)) {
                     asset.role_restrictions = assetRoleRestrictions.get(asset.asset_guid);
                 }
                 mapEvents(asset);
@@ -457,7 +457,7 @@ public class AssetService {
         }
 
         asset.updateUser = user.username;
-        for(AssetSpecimen assetSpecimen : asset.asset_specimen) {
+        for (AssetSpecimen assetSpecimen : asset.asset_specimen) {
             Optional<Specimen> specimen = specimenService.findSpecimen(assetSpecimen.specimen_pid);
             if (specimen.isEmpty()) {
                 throw new IllegalArgumentException("Specimen " + assetSpecimen.specimen_pid + " doesn't exist");
@@ -611,10 +611,10 @@ public class AssetService {
         for (String funds : asset.funding) {
             fundingService.ensureExists(funds);
         }
-        if(!asset.role_restrictions.isEmpty()) {
+        if (!asset.role_restrictions.isEmpty()) {
             Set<String> roles = roleService.getRoles();
-            for(Role role: asset.role_restrictions){
-                if(!roles.contains(role.name())){
+            for (Role role : asset.role_restrictions) {
+                if (!roles.contains(role.name())) {
                     roleService.addRole(role.name());
                 }
             }
@@ -821,9 +821,9 @@ public class AssetService {
             Map<String, AssetSpecimen> pidExistingSpecimen = existing.asset_specimen.stream().collect(Collectors.toMap(s -> s.specimen_pid, s -> s));
             for (AssetSpecimen s : updatedAsset.asset_specimen) {
 
-                if(!pidExistingSpecimen.containsKey(s.specimen_pid)) {
+                if (!pidExistingSpecimen.containsKey(s.specimen_pid)) {
                     Optional<Specimen> specimen = specimenService.findSpecimen(s.specimen_pid);
-                    if(specimen.isPresent()) {
+                    if (specimen.isPresent()) {
                         s.specimen = specimen.get();
                         specimenRepository.attachSpecimen(updatedAsset.asset_guid, s.asset_preparation_type, specimen.get().specimen_id());
                     } else {
@@ -832,8 +832,8 @@ public class AssetService {
                     }
                 } else {
                     AssetSpecimen existingAssetSpecimen = pidExistingSpecimen.get(s.specimen_pid);
-                    if(!existingAssetSpecimen.asset_preparation_type.equals(s.asset_preparation_type)) {
-                        specimenRepository.updateAssetSpecimen(updatedAsset.asset_guid, existingAssetSpecimen.specimen_id, existingAssetSpecimen.specify_collection_object_attachment_id,s.asset_preparation_type);
+                    if (!existingAssetSpecimen.asset_preparation_type.equals(s.asset_preparation_type)) {
+                        specimenRepository.updateAssetSpecimen(updatedAsset.asset_guid, existingAssetSpecimen.specimen_id, existingAssetSpecimen.specify_collection_object_attachment_id, s.asset_preparation_type);
                     }
                 }
                 finalSpecimen.add(s);
