@@ -1,0 +1,24 @@
+@import 'src/style/base';
+
+.mat-card-override {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100%;
+}
+p {
+  margin: 0;
+  font-family: graphikBold;
+  font-weight: 500 !important;
+}
+
+.content-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+}
+.subtitle-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
