@@ -7,7 +7,7 @@ import {ReplaySubject} from 'rxjs';
 @Component({
   selector: 'dassco-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
   activeMenu: ReplaySubject<string | undefined> = new ReplaySubject<string | undefined>(1);
@@ -34,7 +34,7 @@ export class AppComponent {
       },
       error: (err) => {
         console.log(err);
-      },
+      }
     });
   }
 
@@ -57,7 +57,6 @@ export class AppComponent {
   navigateToSite(location: string): void {
     this.router.navigate([location]).then((r) => {
       if (r) {
-        console.log('r', r);
         this.activeMenu.next(location);
         history.replaceState({}, '', location);
       }
