@@ -93,11 +93,7 @@ public class BulkUpdateService {
             throw new IllegalArgumentException("Assets to update cannot be empty.");
         }
 
-        // Check if all the assets exist:
         List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
-        for (Asset a : assets) {
-            System.out.println(a);
-        }
 
         if (assets.size() != assetList.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
@@ -199,12 +195,9 @@ public class BulkUpdateService {
     }
 
 
-
-
     public Optional<Asset> getAsset(String assetGuid) {
         return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
     }
-
 
 
     public List<Asset> readMultipleAssets(List<String> assets) {

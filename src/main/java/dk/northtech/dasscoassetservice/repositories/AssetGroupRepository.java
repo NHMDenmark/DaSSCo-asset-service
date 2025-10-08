@@ -1,449 +1,347 @@
 package dk.northtech.dasscoassetservice.repositories;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.AssetGroup;
 import dk.northtech.dasscoassetservice.domain.User;
-import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
-import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
-import dk.northtech.dasscoassetservice.services.AssetGroupService;
-import dk.northtech.dasscoassetservice.webapi.v1.AssetGroups;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeMap;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
-import org.checkerframework.checker.units.qual.A;
-import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
-import org.postgresql.jdbc.PgConnection;
 
 import java.sql.Array;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
 public interface AssetGroupRepository extends SqlObject {
 
-    //This must be called once per transaction
-    default void boilerplate() {
+    // CREATE GROUP
+    @Transaction
+    default void createAssetGroup(AssetGroup assetGroup, User user) {
         withHandle(handle -> {
-            Connection connection = handle.getConnection();
-            try {
-                PgConnection pgConn = connection.unwrap(PgConnection.class);
-                pgConn.addDataType("agtype", Agtype.class);
-                handle.execute(DBConstants.AGE_BOILERPLATE);
-                return handle;
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+
+            // 1. Create group
+            handle.createUpdate("""
+                            INSERT INTO asset_group (group_name, creator_user_id)
+                            VALUES (:group_name, :creator_user_id)
+                            ON CONFLICT (group_name) DO NOTHING
+                            """)
+                    .bind("group_name", assetGroup.group_name)
+                    .bind("creator_user_id", user.dassco_user_id)
+                    .execute();
+
+            // 2. Get asset_group_id
+            Integer assetGroupId = handle.createQuery("""
+                            SELECT asset_group_id
+                            FROM asset_group
+                            WHERE group_name = :group_name
+                            """)
+                    .bind("group_name", assetGroup.group_name)
+                    .mapTo(Integer.class)
+                    .one();
+
+            // 3. Grant creator access
+            handle.createUpdate("""
+                            INSERT INTO asset_group_access (asset_group_id, dassco_user_id)
+                            VALUES (:asset_group_id, :user_id)
+                            ON CONFLICT DO NOTHING
+                            """)
+                    .bind("asset_group_id", assetGroupId)
+                    .bind("user_id", user.dassco_user_id)
+                    .execute();
+
+            // 4. Add assets
+            if (assetGroup.assets != null && !assetGroup.assets.isEmpty()) {
+                var batch = handle.prepareBatch("""
+                        INSERT INTO asset_group_asset (asset_group_id, asset_guid)
+                        VALUES (:asset_group_id, :asset_guid)
+                        ON CONFLICT DO NOTHING
+                        """);
+                for (String assetGuid : assetGroup.assets) {
+                    batch.bind("asset_group_id", assetGroupId)
+                            .bind("asset_guid", assetGuid)
+                            .add();
+                }
+                batch.execute();
             }
+
+            return null;
         });
     }
 
-    @Transaction
-    default void createAssetGroup(AssetGroup assetGroup, User user, Instant now){
-        boilerplate();
-        createAssetGroupInternal(assetGroup, user, now);
+    //  GET GROUPS MADE BY THE USER
+    default List<AssetGroup> readOwnedListAssetGroup(User user) {
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT ag.group_name,
+                               cu.username AS creator_username,
+                               COALESCE(
+                                   ARRAY_AGG(DISTINCT a.asset_guid)
+                                   FILTER (WHERE a.asset_guid IS NOT NULL),
+                                   '{}'
+                               ) AS assets,
+                               COALESCE(
+                                   ARRAY_AGG(DISTINCT u.username)
+                                   FILTER (WHERE u.username IS NOT NULL),
+                                   '{}'
+                               ) AS has_access
+                        FROM asset_group ag
+                                 JOIN dassco_user cu ON cu.dassco_user_id = ag.creator_user_id
+                                 LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
+                                 LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
+                        WHERE cu.username = :username
+                        GROUP BY ag.group_name, cu.username
+                        """)
+                .bind("username", user.username)
+                .map((rs, ctx) -> {
+                    AssetGroup group = new AssetGroup();
+                    group.group_name = rs.getString("group_name");
+                    group.groupCreator = rs.getString("creator_username");
+                    group.assets =
+                            List.of((String[]) rs.getArray("assets").getArray());
+                    group.hasAccess =
+                            List.of((String[]) rs.getArray("has_access").getArray());
+                    return group;
+                })
+                .list());
     }
 
-    @Transaction
-    default Optional<AssetGroup> readAssetGroup(String assetGroupName){
-        boilerplate();
-        return readAssetGroupInternal(assetGroupName);
+    // READ SINGLE GROUP
+    default Optional<AssetGroup> readAssetGroup(String groupName) {
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT ag.group_name,
+                               cu.username       AS creator_username,
+                               COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
+                                        FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
+                               COALESCE(ARRAY_AGG(DISTINCT u.username)
+                                        FILTER (WHERE u.username IS NOT NULL), '{}') AS has_access
+                        FROM asset_group ag
+                                 JOIN dassco_user cu ON cu.dassco_user_id = ag.creator_user_id
+                                 LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
+                                 LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
+                        WHERE ag.group_name = :group_name
+                        GROUP BY ag.group_name, cu.username
+                        """)
+                .bind("group_name", groupName)
+                .map((rs, ctx) -> {
+                    AssetGroup g = new AssetGroup();
+                    g.group_name = rs.getString("group_name");
+                    g.groupCreator = rs.getString("creator_username");
+
+                    String[] assets = (String[]) rs.getArray("assets").getArray();
+                    g.assets = List.of(assets);
+
+                    String[] users = (String[]) rs.getArray("has_access").getArray();
+                    g.hasAccess = List.of(users);
+
+                    return g;
+                })
+                .findOne());
     }
 
-    @Transaction
-    default List<AssetGroup> readListAssetGroup(User user){
-        boilerplate();
-        return readListAssetGroupInternal(user);
-    }
-
-    @Transaction
-    default List<AssetGroup> readOwnedListAssetGroup(User user){
-        boilerplate();
-        return readOwnedListAssetGroupInternal(user);
-    }
-
-    @Transaction
-    default void deleteAssetGroup(String groupName, User user){
-        boilerplate();
-        deleteAssetGroupInternal(groupName, user);
-    }
-
-    @Transaction
-    default Optional<AssetGroup> addAssetsToAssetGroup(List<String> assetList, String groupName){
-        boilerplate();
-        return addAssetsToAssetGroupInternal(assetList, groupName);
-    }
-
-    @Transaction
-    default Optional<AssetGroup> removeAssetsFromAssetGroup(List<String> assetList, String groupName){
-        boilerplate();
-        return removeAssetsFromAssetGroupInternal(assetList, groupName);
-    }
-
-    @Transaction
-    default Optional<AssetGroup> grantAccessToAssetGroup(List<String> users, String groupName){
-        boilerplate();
-        return grantAccessToAssetGroupInternal(users, groupName);
-    }
-
-    @Transaction
-    default Optional<AssetGroup> revokeAccessToAssetGroup(List<String> users, String groupName){
-        boilerplate();
-        return revokeAccessToAssetGroupInternal(users, groupName);
-    }
-
-    @Transaction
-    default List<String> getHasAccess(String assetGroup){
-        boilerplate();
-        return getHasAccessInternal(assetGroup);
-    }
-
-    default void createAssetGroupInternal(AssetGroup assetGroup, User user, Instant now){
-
-        String assetListAsString = assetGroup.assets.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String assetGroupSql = """
-                SELECT * FROM ag_catalog.cypher(
-                    'dassco'
-                        , $$
-                        MERGE (u:User {name: $user_name, user_id: $user_name})
-                        MERGE (ag:Asset_Group{name:$group_name, timestamp:$timestamp})
-                        MERGE (ag)-[:HAS_ACCESS]->(u)
-                        MERGE (ag)-[:MADE_BY]->(u)
-                    $$
-                    , #params) as (a agtype);
-                """;
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                    'dassco'
-                        , $$
-                            MATCH (ag:Asset_Group{name:$group_name})
-                            MATCH (a:Asset)
-                            
-                            WHERE a.asset_guid IN [%s]
-                            MERGE (ag)-[:CONTAINS]->(a)
-                        $$
-                    , #params) as (a agtype);
-                """.formatted(assetListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder()
-                .add("group_name", assetGroup.group_name);
-                builder.add("user_name", user.username);
-                builder.add("timestamp", now.toEpochMilli());
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(assetGroupSql)
-                        .bind("params", agtype)
-                        .execute();
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
+    default List<AssetGroup> readAssetGroupFromGroupNames(List<String> groupNames, User user) {
+        if (groupNames == null || groupNames.isEmpty()) {
+            return List.of();
         }
+
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT ag.group_name,
+                               cu.username       AS creator_username,
+                               COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
+                                        FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
+                               COALESCE(ARRAY_AGG(DISTINCT u.username)
+                                        FILTER (WHERE u.username IS NOT NULL), '{}') AS has_access
+                        FROM asset_group ag
+                                 JOIN dassco_user cu ON cu.dassco_user_id = ag.creator_user_id
+                                 LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
+                                 LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
+                        WHERE ag.group_name IN (<groupNames>) AND cu.dassco_user_id = :userId
+                        GROUP BY ag.group_name, cu.username
+                        """)
+                .bindList("groupNames", groupNames)
+                .bind("userId", user.dassco_user_id)
+                .map((rs, ctx) -> {
+                    AssetGroup g = new AssetGroup();
+                    g.group_name = rs.getString("group_name");
+                    g.groupCreator = rs.getString("creator_username");
+
+                    Array assetArray = rs.getArray("assets");
+                    g.assets = assetArray != null
+                            ? List.of((String[]) assetArray.getArray())
+                            : List.of();
+
+                    Array usersArray = rs.getArray("has_access");
+                    g.hasAccess = usersArray != null
+                            ? List.of((String[]) usersArray.getArray())
+                            : List.of();
+
+                    return g;
+                })
+                .list());
     }
 
-    default Optional<AssetGroup> readAssetGroupInternal(String assetGroupName){
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (u:User)-[:HAS_ACCESS]-(ag:Asset_Group {name: $group_name})
-                       MATCH (ag)-[:CONTAINS]->(a:Asset)
-                       MATCH (ag)-[:MADE_BY]->(uu:User)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) AS user_names, uu.name
-                   $$
-                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);     
-                """;
+    // READ USER ACCESSIBLE GROUPS
+    default List<AssetGroup> readListAssetGroup(User user) {
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT ag.group_name,
+                               cu.username AS creator_username,
+                               COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
+                                        FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
+                               COALESCE(ARRAY_AGG(DISTINCT u.username)
+                                        FILTER (WHERE u.username IS NOT NULL), '{}') AS has_access
+                        FROM asset_group ag
+                                 JOIN dassco_user cu ON cu.dassco_user_id = ag.creator_user_id
+                                 JOIN asset_group_access aga1 ON aga1.asset_group_id = ag.asset_group_id
+                                 JOIN dassco_user viewer ON viewer.dassco_user_id = aga1.dassco_user_id
+                                 LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
+                                 LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
+                        WHERE viewer.username = :username
+                        GROUP BY ag.group_name, cu.username
+                        """)
+                .bind("username", user.username)
+                .map((rs, ctx) -> {
+                    AssetGroup g = new AssetGroup();
+                    g.group_name = rs.getString("group_name");
+                    g.groupCreator = rs.getString("creator_username");
+                    g.assets = List.of((String[]) rs.getArray("assets").getArray());
+                    g.hasAccess = List.of((String[]) rs.getArray("has_access").getArray());
+                    return g;
+                })
+                .list());
+    }
 
-        return withHandle(handle -> {
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("group_name", assetGroupName)
-                    .build();
-            Agtype agtype = AgtypeFactory.create(agParams);
-            return handle.createQuery(sql)
-                    .bind("params", agtype)
-                    .map((rs, ctx) -> {
-
-                        AssetGroup assetGroup = new AssetGroup();
-                        Agtype groupName = rs.getObject("group_name", Agtype.class);
-                        assetGroup.group_name = groupName.getString();
-                        Agtype assets = rs.getObject("asset_guids", Agtype.class);
-                        assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        Agtype hasAccess = rs.getObject("user_name", Agtype.class);
-                        assetGroup.hasAccess = hasAccess.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                        Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
-                        assetGroup.groupCreator = groupCreator.getString();
-                        return assetGroup;
-                    }).findOne();
+    // DELETE ASSET GROUP
+    @Transaction
+    default void deleteAssetGroup(String groupName) {
+        withHandle(handle -> {
+            handle.createUpdate("""
+                            DELETE FROM asset_group WHERE group_name = :group_name
+                            """)
+                    .bind("group_name", groupName)
+                    .execute();
+            return null;
         });
     }
 
-    default List<AssetGroup> readListAssetGroupInternal(User user){
-
-        String sqlRoles = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (u:User {name: $user_name})<-[:HAS_ACCESS]-(ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                       WITH ag, a, u
-                       MATCH (ag)-[:HAS_ACCESS]->(allUsers:User)
-                       MATCH (ag)-[:MADE_BY]->(uu:User)
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT allUsers.name) AS user_names, uu.name
-                   $$
-                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);
-                """;
-
-            return withHandle(handle -> {
-                AgtypeMap agParams = new AgtypeMapBuilder()
-                        .add("user_name", user.username)
-                        .build();
-                Agtype agtype = AgtypeFactory.create(agParams);
-                return handle.createQuery(sqlRoles)
-                        .bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            AssetGroup assetGroup = new AssetGroup();
-                            Agtype groupName = rs.getObject("group_name", Agtype.class);
-                            assetGroup.group_name = groupName.getString();
-                            Agtype assets = rs.getObject("asset_guids", Agtype.class);
-                            assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                            Agtype users = rs.getObject("user_name", Agtype.class);
-                            assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                            Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
-                            assetGroup.groupCreator = groupCreator.getString();
-                            return assetGroup;
-                        })
-                        .list();
-            });
+    // DELETE ASSET GROUPS
+    @Transaction
+    default boolean deleteAssetGroups(List<String> groupNames, User user) {
+        return withHandle(handle -> handle.createUpdate("""
+                        DELETE FROM asset_group WHERE group_name in (<groupNames>) AND creator_user_id = :userId
+                        """)
+                .bindList("groupNames", groupNames)
+                .bind("userId", user.dassco_user_id)
+                .execute() > 0);
     }
 
-    default List<AssetGroup> readOwnedListAssetGroupInternal(User user){
+    // ADD ASSETS TO GROUP
+    @Transaction
+    default Optional<AssetGroup> addAssetsToAssetGroup(List<String> assets, String groupName) {
+        withHandle(handle -> {
+            Integer agId = handle.createQuery("""
+                            SELECT asset_group_id FROM asset_group WHERE group_name = :group_name
+                            """)
+                    .bind("group_name", groupName)
+                    .mapTo(Integer.class)
+                    .one();
 
-        String sqlRoles = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (ag:Asset_Group)-[:CONTAINS]->(a:Asset)
-                       MATCH (ag)-[:HAS_ACCESS]->(u:User)
-                       MATCH (ag)-[:MADE_BY]->(uu:User {name: $username})
-                       RETURN ag.name AS group_name, collect(DISTINCT a.asset_guid) AS asset_guids, collect(DISTINCT u.name) as user_names, uu.name
-                   $$
-                , #params) as (group_name agtype, asset_guids agtype, user_name agtype, group_creator agtype);
-                """;
-
-            return withHandle(handle -> {
-                AgtypeMap agParams = new AgtypeMapBuilder()
-                        .add("username", user.username)
-                        .build();
-                Agtype agtype = AgtypeFactory.create(agParams);
-                return handle.createQuery(sqlRoles)
-                        .bind("params", agtype)
-                        .map((rs, ctx) -> {
-                            AssetGroup assetGroup = new AssetGroup();
-                            Agtype groupName = rs.getObject("group_name", Agtype.class);
-                            assetGroup.group_name = groupName.getString();
-                            Agtype assets = rs.getObject("asset_guids", Agtype.class);
-                            assetGroup.assets = assets.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                            Agtype users = rs.getObject("user_name", Agtype.class);
-                            assetGroup.hasAccess = users.getList().stream().map(x -> String.valueOf(x.toString())).collect(Collectors.toList());
-                            Agtype groupCreator = rs.getObject("group_creator", Agtype.class);
-                            assetGroup.groupCreator = groupCreator.getString();
-                            return assetGroup;
-                        })
-                        .list();
-            });
+            var batch = handle.prepareBatch("""
+                    INSERT INTO asset_group_asset (asset_group_id, asset_guid)
+                    VALUES (:asset_group_id, :asset_guid)
+                    ON CONFLICT DO NOTHING
+                    """);
+            for (String guid : assets) {
+                batch.bind("asset_group_id", agId)
+                        .bind("asset_guid", guid)
+                        .add();
+            }
+            batch.execute();
+            return null;
+        });
+        return readAssetGroup(groupName);
     }
 
-    default void deleteAssetGroupInternal(String groupName, User user){
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                   , $$
-                       MATCH (ag:Asset_Group{name:$group_name})
-                       DETACH DELETE ag
-                   $$
-                , #params) as (ag agtype);
-                """;
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-
+    @Transaction
+    default Optional<AssetGroup> removeAssetsFromAssetGroup(List<String> assets, String groupName) {
+        withHandle(handle -> {
+            handle.createUpdate("""
+                            DELETE FROM asset_group_asset
+                            WHERE asset_group_id = (
+                                SELECT asset_group_id FROM asset_group WHERE group_name = :group_name
+                            )
+                              AND asset_guid IN (<assets>)
+                            """)
+                    .bind("group_name", groupName)
+                    .bindList("assets", assets)
+                    .execute();
+            return null;
+        });
+        return readAssetGroup(groupName);
     }
 
-    default Optional<AssetGroup> addAssetsToAssetGroupInternal(List<String> assetList, String groupName){
 
-        String assetListAsString = assetList.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
+    // GRANT / REVOKE ACCESS
+    @Transaction
+    default Optional<AssetGroup> grantAccessToAssetGroup(List<String> usernames, String groupName) {
+        withHandle(handle -> {
+            Integer groupId = handle.createQuery("""
+                            SELECT asset_group_id FROM asset_group WHERE group_name = :group_name
+                            """)
+                    .bind("group_name", groupName)
+                    .mapTo(Integer.class)
+                    .one();
 
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                MATCH (ag:Asset_Group {name: $group_name})
-                MATCH (a:Asset)
-                WHERE a.name IN [%s]
-                MERGE (ag)-[:CONTAINS]->(a)
-                RETURN ag.name AS group_name
-                $$, #params) as (group_name agtype);
-                """.formatted(assetListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                return handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-                        });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-        return this.readAssetGroupInternal(groupName);
+            var batch = handle.prepareBatch("""
+                    INSERT INTO asset_group_access (asset_group_id, dassco_user_id)
+                    VALUES (:group_id,
+                            (SELECT dassco_user_id FROM dassco_user WHERE username = :username))
+                    ON CONFLICT DO NOTHING
+                    """);
+            for (String u : usernames) {
+                batch.bind("group_id", groupId)
+                        .bind("username", u)
+                        .add();
+            }
+            batch.execute();
+            return null;
+        });
+        return readAssetGroup(groupName);
     }
 
-    default Optional<AssetGroup> removeAssetsFromAssetGroupInternal(List<String> assetList, String groupName){
-        String assetListAsString = assetList.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                MATCH (ag:Asset_Group {name: $group_name})
-                MATCH (a:Asset)
-                WHERE a.name IN [%s]
-                MATCH (ag)-[r:CONTAINS]->(a)
-                DELETE r
-                RETURN ag
-                $$, #params) as (ag agtype);
-                """.formatted(assetListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-
-        return readAssetGroupInternal(groupName);
-
+    @Transaction
+    default Optional<AssetGroup> revokeAccessToAssetGroup(List<String> usernames, String groupName) {
+        withHandle(handle -> {
+            handle.createUpdate("""
+                            DELETE FROM asset_group_access
+                            WHERE asset_group_id = (
+                                SELECT asset_group_id FROM asset_group WHERE group_name = :group_name
+                            )
+                              AND dassco_user_id IN (
+                                SELECT dassco_user_id FROM dassco_user WHERE username IN (<usernames>)
+                              )
+                            """)
+                    .bind("group_name", groupName)
+                    .bindList("usernames", usernames)
+                    .execute();
+            return null;
+        });
+        return readAssetGroup(groupName);
     }
 
-    default List<String> getHasAccessInternal(String groupName) {
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                MATCH (u: User)<-[:HAS_ACCESS]-(ag:Asset_Group {name: $group_name})
-                return u.name
-                $$, #params) as (users agtype);
-                """;
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            return withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                return handle.createQuery(sql)
-                        .bind("params", agtype)
-                        .map((rs, ctx) -> rs.getString("users").replace("\"", "")).list();
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    default Optional<AssetGroup> grantAccessToAssetGroupInternal(List<String> users, String groupName){
-
-        String userListAsString = users.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                MATCH (u: User)
-                WHERE u.name IN [%s]
-                MATCH (ag:Asset_Group { name: $group_name })
-                MERGE (u)<-[:HAS_ACCESS]-(ag)
-                return ag
-                $$, #params) as (ag agtype);
-                """.formatted(userListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-
-        return readAssetGroupInternal(groupName);
-    }
-
-    default Optional<AssetGroup> revokeAccessToAssetGroupInternal(List<String> users, String groupName){
-        String userListAsString = users.stream()
-                .map(asset -> "'" + asset + "'")
-                .collect(Collectors.joining(", "));
-
-        String sql = """
-                SELECT * FROM ag_catalog.cypher('dassco', $$
-                MATCH (u: User)
-                WHERE u.name IN [%s]
-                MATCH (ag:Asset_Group { name: $group_name })
-                MATCH (u)<-[r:HAS_ACCESS]-(ag)
-                DELETE r
-                $$, #params) as (ag agtype);
-                """.formatted(userListAsString);
-
-        AgtypeMapBuilder builder = new AgtypeMapBuilder().add("group_name", groupName);
-
-        try {
-            withHandle(handle -> {
-                Agtype agtype = AgtypeFactory.create(builder.build());
-                handle.createUpdate(sql)
-                        .bind("params", agtype)
-                        .execute();
-
-                return handle;
-            });
-        } catch (Exception e){
-            throw new RuntimeException(e);
-        }
-        return readAssetGroupInternal(groupName);
+    // GET ACCESS LIST
+    default List<String> getHasAccess(String groupName) {
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT du.username
+                        FROM asset_group_access a
+                                 JOIN asset_group ag ON ag.asset_group_id = a.asset_group_id
+                                 JOIN dassco_user du ON du.dassco_user_id = a.dassco_user_id
+                        WHERE ag.group_name = :group_name
+                        """)
+                .bind("group_name", groupName)
+                .mapTo(String.class)
+                .list());
     }
 }
