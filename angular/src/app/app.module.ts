@@ -54,6 +54,7 @@ import {IllegalAssetGroupDialogComponent} from './components/dialogs/illegal-ass
 import {NgOptimizedImage} from '@angular/common';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {AssetCardComponent} from './components/queries/asset-card/asset-card.component';
+import {SafeUrlPipe} from './pipes/safe-url.pipe';
 
 @NgModule({
   declarations: [
@@ -79,7 +80,8 @@ import {AssetCardComponent} from './components/queries/asset-card/asset-card.com
     AssetGroupDialogComponent,
     AssetGroupsComponent,
     NewGroupDialogComponent,
-    IllegalAssetGroupDialogComponent
+    IllegalAssetGroupDialogComponent,
+    SafeUrlPipe
   ],
   imports: [
     BrowserModule,

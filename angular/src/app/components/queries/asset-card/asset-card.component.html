@@ -24,7 +24,7 @@
       </mat-card-subtitle>
     </mat-card-header>
     <ng-container *ngIf="assetService.getAssetThumbnail(asset) | async as assetThumbnail; else noImage">
-      <img mat-card-image [src]="assetThumbnail" [alt]="asset.asset_guid" />
+      <img mat-card-image [src]="assetThumbnail | safeUrl" [alt]="asset.asset_guid" />
     </ng-container>
     <ng-template #noImage>
       <img mat-card-image src="assets/placeholder.png" alt="No picture" />

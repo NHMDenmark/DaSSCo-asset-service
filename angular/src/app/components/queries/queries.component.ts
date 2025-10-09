@@ -11,7 +11,7 @@ import {SaveSearchDialogComponent} from '../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatPaginator} from '@angular/material/paginator';
 import {CacheService} from '../../services/cache.service';
-import {Asset, AssetGroup, AssetSpecimen, DasscoError} from '../../types/types';
+import {Asset, AssetGroup, AssetSpecimen, DasscoError, Specimen} from '../../types/types';
 import {MatSort, Sort} from '@angular/material/sort';
 import {SelectionModel} from '@angular/cdk/collections';
 import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-group-dialog.component';
@@ -140,7 +140,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
     if (this.queryToOtherPages.getDataSource().filteredData.length > 0) {
       this.dataSource = this.queryToOtherPages.getDataSource();
-      this.myData = this.queryToOtherPages.getDataSource().data;
     }
   }
 
@@ -148,10 +147,6 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     if (this.paginator) {
       this.dataSource.paginator = this.paginator;
     }
-  }
-
-  assetSpecimenToSpecimen(assetSpecimen: AssetSpecimen[]) {
-    return (assetSpecimen ?? []).flatMap((a) => a.specimen);
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
