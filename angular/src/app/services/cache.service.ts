@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
-import {QueryView} from "../types/query-types";
-import {catchError, Observable, of, switchMap} from "rxjs";
-import {OidcSecurityService} from "angular-auth-oidc-client";
-import {HttpClient} from "@angular/common/http";
-import {Digitiser} from "../types/types";
-import {QueryItem} from "../types/queryItem";
+import {Injectable} from '@angular/core';
+import {QueryView} from '../types/query-types';
+import {catchError, Observable, of, switchMap} from 'rxjs';
+import {OidcSecurityService} from 'angular-auth-oidc-client';
+import {HttpClient} from '@angular/common/http';
+import {Digitiser} from '../types/types';
+import {QueryItem} from '../types/queryItem';
 
 @Injectable({
   providedIn: 'root'
@@ -12,29 +12,26 @@ import {QueryItem} from "../types/queryItem";
 export class CacheService {
   baseUrl = 'api/v1/caches';
 
-  constructor(public oidcSecurityService: OidcSecurityService
-    , private http: HttpClient) { }
+  constructor(public oidcSecurityService: OidcSecurityService, private http: HttpClient) {}
 
-  cachedDropdownValues$: Observable<Map<string, object[]> | undefined>
-    = this.oidcSecurityService.getAccessToken()
+  cachedDropdownValues$: Observable<Map<string, object[]> | undefined> = this.oidcSecurityService
+    .getAccessToken()
     .pipe(
-      switchMap((token) => {
-        return this.http.get<Map<string, object[]>>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
-          .pipe(
-            catchError(this.handleError(`get ${this.baseUrl}`, undefined))
-          );
-      })
+      switchMap((token) =>
+        this.http
+          .get<Map<string, object[]>>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(catchError(this.handleError(`get ${this.baseUrl}`, undefined)))
+      )
     );
 
-  cachedDigitisers$: Observable<Map<string, Digitiser[]> | undefined>
-    = this.oidcSecurityService.getAccessToken()
+  cachedDigitisers$: Observable<Map<string, Digitiser[]> | undefined> = this.oidcSecurityService
+    .getAccessToken()
     .pipe(
-      switchMap((token) => {
-        return this.http.get<Map<string, Digitiser[]>>(`${this.baseUrl}/digitisers`, {headers: {'Authorization': 'Bearer ' + token}})
-          .pipe(
-            catchError(this.handleError(`get ${this.baseUrl}/digitisers`, undefined))
-          );
-      })
+      switchMap((token) =>
+        this.http
+          .get<Map<string, Digitiser[]>>(`${this.baseUrl}/digitisers`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(catchError(this.handleError(`get ${this.baseUrl}/digitisers`, undefined)))
+      )
     );
 
   setSetupTime() {
@@ -49,14 +46,15 @@ export class CacheService {
       localStorage.setItem('setupTime', JSON.stringify(now));
     } else {
       const cachedTime: number = JSON.parse(setupTime);
-      if (now - cachedTime > 1*60*60*1000) { // 1 hr
-        localStorage.clear()
+      if (now - cachedTime > 1 * 60 * 60 * 1000) {
+        // 1 hr
+        localStorage.clear();
         localStorage.setItem('setupTime', JSON.stringify(now));
       }
     }
   }
 
-  setNodeProperties(properties: Map<string, string[]> ) {
+  setNodeProperties(properties: Map<string, string[]>) {
     localStorage.setItem('node-properties', JSON.stringify(properties));
     this.setSetupTime();
   }
@@ -84,18 +82,18 @@ export class CacheService {
     return undefined;
   }
 
-  setQueries(queries: {title: string | undefined, map: Map<string, QueryView[]>}) {
+  setQueries(queries: {title: string | undefined; map: Map<string, QueryView[]>}) {
     const mapString = JSON.stringify(Object.fromEntries(queries.map));
     const newMap = {title: queries.title, map: mapString};
     localStorage.setItem('queries', JSON.stringify(newMap));
   }
 
-  getQueries(): {title: string | undefined, map: Map<string, QueryView[]>} | undefined {
+  getQueries(): {title: string | undefined; map: Map<string, QueryView[]>} | undefined {
     this.checkSetupTime();
-    let query: {title: string | undefined, map: Map<string, QueryView[]>} | undefined;
+    let query: {title: string | undefined; map: Map<string, QueryView[]>} | undefined;
     const queries = localStorage.getItem('queries');
     if (queries) {
-      const tempObj: {title: string | undefined, map: string} = JSON.parse(queries);
+      const tempObj: {title: string | undefined; map: string} = JSON.parse(queries);
       query = {title: tempObj.title, map: new Map(Object.entries(JSON.parse(tempObj.map)))};
     }
     return query;

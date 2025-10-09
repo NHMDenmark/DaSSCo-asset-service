@@ -65,6 +65,9 @@ public class UserService {
     }
 
     public User from(SecurityContext securityContext) {
+        if(securityContext.getUserPrincipal() == null){
+            return new User("anonymous");
+        }
         JwtAuthenticationToken token = (JwtAuthenticationToken) securityContext.getUserPrincipal();
         Map<String, Object> tokenAttributes = token.getTokenAttributes();
         User user = new User();

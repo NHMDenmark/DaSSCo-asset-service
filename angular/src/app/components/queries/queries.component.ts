@@ -11,7 +11,7 @@ import {SaveSearchDialogComponent} from '../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatPaginator} from '@angular/material/paginator';
 import {CacheService} from '../../services/cache.service';
-import {Asset, AssetGroup, AssetSpecimen, DasscoError, Specimen} from '../../types/types';
+import {Asset, AssetGroup, AssetSpecimen, DasscoError} from '../../types/types';
 import {MatSort, Sort} from '@angular/material/sort';
 import {SelectionModel} from '@angular/cdk/collections';
 import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-group-dialog.component';
@@ -125,23 +125,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     private detailedViewService: DetailedViewService
   ) {}
 
-  myData: Asset[] | undefined;
-
   ngOnInit(): void {
-    /*this.nodes$.pipe(filter(isNotUndefined),take(1))
-      .subscribe(_nodes => {
-        const cachedQueries = this.cacheService.getQueries();
-
-        if (cachedQueries) {
-          this.queryData = cachedQueries;
-          this.addSelectFromData(this.queryData.map);
-          this.queries = this.queryData.map;
-          this.queryUpdatedTitle = this.queryData.title;
-        } else {
-          this.newSelect(undefined);
-        }
-      })*/
-
     this.queryItems$.pipe(filter(isNotUndefined), take(1)).subscribe((_queryItems) => {
       const cachedQueries = this.cacheService.getQueries();
       if (cachedQueries) {
@@ -164,6 +148,10 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     if (this.paginator) {
       this.dataSource.paginator = this.paginator;
     }
+  }
+
+  assetSpecimenToSpecimen(assetSpecimen: AssetSpecimen[]) {
+    return (assetSpecimen ?? []).flatMap((a) => a.specimen);
   }
 
   newSelect(savedQuery: QueryView[] | undefined) {
@@ -248,9 +236,14 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     dialogRef.afterClosed().subscribe((title: string | undefined) => {
       if (title) {
         this.queriesService
-          .saveSearch({name: title, query: JSON.stringify(Object.fromEntries(this.queries))})
+          .saveSearch({name: title.trim(), query: JSON.stringify(Object.fromEntries(this.queries))})
           .subscribe((saved) => {
-            this.openSnackBar(saved, 'The search "' + title + '" has been saved.');
+            this.openSnackBar(saved, 'The search "' + title.trim() + '" has been saved.');
+            if (!saved) return;
+            this.queryData = {title: saved?.name, map: new Map(Object.entries(JSON.parse(saved.query)))};
+            this.queryUpdatedTitle = saved.name;
+            this.cacheService.setQueryTitle(saved.name);
+            this.cacheService.setQueries(this.queryData);
           });
       }
     });
@@ -263,16 +256,26 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
     // deleting a saved query
     dialogRef.componentInstance.deleteQuery$.pipe(filter(isNotUndefined)).subscribe((queryName) => {
-      this.queriesService.deleteSavedSearch(queryName).subscribe((deleted) => {
-        this.openSnackBar(deleted, 'The search has been deleted.');
-      });
+      this.queriesService
+        .deleteSavedSearch(queryName)
+        .pipe(take(1))
+        .subscribe((deleted) => {
+          this.openSnackBar(deleted, 'The search has been deleted.');
+          if (this.queryData?.title === deleted) {
+            this.queryData = undefined;
+            this.queryUpdatedTitle = undefined;
+            this.cacheService.clearQueryCache();
+            this.queryHandlerEle?.clear();
+            this.queries.clear();
+          }
+        });
     });
 
     // opening saved query
     dialogRef.afterClosed().subscribe((queryMap: {title: string; map: Map<string, QueryView[]>} | undefined) => {
-      this.queryData = queryMap;
       if (queryMap) {
-        this.queryUpdatedTitle = queryMap.title;
+        this.queryData = queryMap;
+        this.queryUpdatedTitle = queryMap.title.trim();
         this.queryHandlerEle?.clear();
         this.dataSource.data = [];
         this.addSelectFromData(queryMap.map);
@@ -290,13 +293,19 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     if (this.queryUpdatedTitle && this.queryData?.title) {
       this.queriesService
         .updateSavedSearch(
-          {name: this.queryUpdatedTitle, query: JSON.stringify(Object.fromEntries(this.queries))},
-          this.queryData.title
+          {
+            name: this.queryUpdatedTitle.trim(),
+            query: JSON.stringify(Object.fromEntries(this.queries))
+          },
+          this.queryData.title.trim()
         )
         .subscribe((updated) => {
-          if (this.queryData) this.queryData.title = updated?.name;
-          this.queryUpdatedTitle = updated?.name;
-          this.cacheService.setQueryTitle(updated?.name);
+          if (this.queryData) {
+            this.queryData.title = updated?.name.trim();
+          }
+          this.queryUpdatedTitle = updated?.name.trim();
+          this.cacheService.setQueryTitle(updated?.name.trim());
+          this.openSnackBar(updated?.name.trim() ?? '', 'The search was updated');
         });
     }
   }
@@ -345,12 +354,14 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   }
 
   isAllSelected() {
+    // assets selection
     const numSelected = this.selection.selected.length;
     const numRows = this.dataSource.data.length;
     return numSelected === numRows;
   }
 
   toggleAllRows() {
+    // asset rows
     if (this.isAllSelected()) {
       this.selection.clear();
       return;
@@ -405,7 +416,9 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   openSnackBar(object: any | undefined, success: string) {
     if (object) {
-      this._snackBar.open(success, 'OK');
+      this._snackBar.open(success, 'OK', {
+        duration: 5000
+      });
     } else {
       this._snackBar.open('An error occurred. Try again.', 'OK');
     }

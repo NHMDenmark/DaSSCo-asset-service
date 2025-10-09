@@ -1,14 +1,19 @@
 <div class="container">
   <h1 mat-dialog-title>Saved searches</h1>
   <div mat-dialog-content>
-    <div *ngIf="(savedQueries$ | async)">
+    <div *ngIf="savedQueries$ | async">
       <ul *ngFor="let query of savedQueries">
-        <li (click)="chooseQuery(query)">{{query.name}}</li>
-        <button mat-raised-button (click)="deleteSavedSearch(query)">Delete</button>
+        <li>
+          <span>
+            {{ query.name }}
+          </span>
+          <button mat-flat-button color="primary" (click)="chooseQuery(query)">Use</button>
+          <button mat-flat-button color="warn" (click)="deleteSavedSearch(query)">Delete</button>
+        </li>
       </ul>
     </div>
   </div>
   <div mat-dialog-actions>
-    <button mat-button (click)="cancel()" cdkFocusInitial>Cancel</button>
+    <button mat-stroked-button (click)="cancel()" cdkFocusInitial>Cancel</button>
   </div>
 </div>
