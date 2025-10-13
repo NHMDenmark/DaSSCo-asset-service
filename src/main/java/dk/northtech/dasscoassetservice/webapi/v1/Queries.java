@@ -61,8 +61,6 @@ public class Queries {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<QueryResultAsset> getNodeProperties(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
         User user = userService.from(securityContext);
-        var hello = Arrays.asList(queries);
-        System.out.println(hello.toString());
         return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user);
     }
 
