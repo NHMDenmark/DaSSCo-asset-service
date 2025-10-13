@@ -120,7 +120,6 @@ public class SpecimenService {
         });
     }
 
-
     public Specimen updateSpecimen(Specimen specimen, Specimen existing, User user) {
         return jdbi.inTransaction(h -> {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);

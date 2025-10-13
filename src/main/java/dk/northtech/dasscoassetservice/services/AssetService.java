@@ -619,8 +619,6 @@ public class AssetService {
                 }
             }
         }
-
-
     }
 
     public Optional<Asset> getAsset(String assetGuid, User user) {

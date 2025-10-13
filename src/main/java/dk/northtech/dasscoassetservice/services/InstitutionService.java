@@ -28,13 +28,17 @@ public class InstitutionService {
     boolean initialised = false;
     private final ConcurrentHashMap<String, Institution> institutionMap = new ConcurrentHashMap<>();
     private CacheService cacheService;
+    private RoleService roleService;
 
     @Inject
-    public InstitutionService(Jdbi jdbi, CacheService cacheService,
-                              InstitutionCache institutionCache) {
+    public InstitutionService(Jdbi jdbi
+            , CacheService cacheService
+            , RoleService roleService
+            , InstitutionCache institutionCache) {
         this.jdbi = jdbi;
         this.cacheService = cacheService;
         this.institutionCache = institutionCache;
+        this.roleService = roleService;
     }
 
     public Institution createInstitution(Institution institution) {
@@ -142,6 +146,16 @@ public class InstitutionService {
             }
             RoleRepository roleRepository = h.attach(RoleRepository.class);
 //            roleRepository.removeAllRestrictions(RestrictedObjectType.INSTITUTION, institution.name());
+            Set<String> roles = roleService.getRoles();
+            for (Role role : institution.roleRestrictions()) {
+                if (!roles.contains(role.name())) {
+                    if (Strings.isNullOrEmpty(role.name())) {
+                        throw new IllegalArgumentException("Role cannot be null or empty");
+                    }
+                    roleRepository.createRole(role.name());
+
+                }
+            }
             roleRepository.setRestrictions(RestrictedObjectType.INSTITUTION, institution.roleRestrictions(), institution.name());
             institutionCache.put(institution.name(), institution);
             return h;
