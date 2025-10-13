@@ -794,6 +794,7 @@ public class AssetService {
             if (!Objects.equals(existing.role_restrictions, updatedAsset.role_restrictions) && updatedAsset.role_restrictions != null) {
                 RoleRepository attach = h.attach(RoleRepository.class);
                 attach.setRestrictions(RestrictedObjectType.ASSET, updatedAsset.role_restrictions, existing.asset_guid);
+                existing.role_restrictions= updatedAsset.role_restrictions;
             }
             repository.update_asset_internal(existing);
             Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline, existing.institution);
@@ -924,6 +925,10 @@ public class AssetService {
             }
             return h;
         });
+
+
+
+
 
         this.assetSyncService.checkAndSync(existing);
 
