@@ -1,40 +1,34 @@
-import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild} from '@angular/core';
 import {NodeProperty, QueryDataType, QueryInner, QueryView} from '../../types/query-types';
 import {FormArray, FormBuilder, FormControl, Validators} from '@angular/forms';
 import {Moment} from 'moment-timezone';
-import {BehaviorSubject, map, Observable} from 'rxjs';
+import {BehaviorSubject, map, Observable, Subject, takeUntil} from 'rxjs';
 import {CacheService} from '../../services/cache.service';
-import {QueryItem} from "../../types/queryItem";
+import {QueryItem} from '../../types/queryItem';
 
 @Component({
   selector: 'dassco-query-builder',
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss']
 })
-export class QueryBuilderComponent implements OnInit {
+export class QueryBuilderComponent implements OnInit, OnDestroy {
   @ViewChild('enumInput', {static: false}) enumInput: HTMLInputElement | undefined;
 
-  operators_string = [
-    'EQUAL',
-    'STARTS WITH',
-    'ENDS WITH',
-    'CONTAINS',
-    'EMPTY'
-  ];
+  operators_string = ['EQUAL', 'STARTS WITH', 'ENDS WITH', 'CONTAINS', 'EMPTY'];
 
-  operatorsMap: Map<QueryDataType, string[]>
-    = new Map([
-      [QueryDataType.STRING, this.operators_string],
-      [QueryDataType.NUMBER, this.operators_string],
-      [QueryDataType.ENUM, ['EQUAL', 'EMPTY']],
-      [QueryDataType.DATE, ['AFTER', 'BEFORE', 'BETWEEN']],
-      [QueryDataType.LIST, ['IN']],
-      [QueryDataType.BOOLEAN, ['EQUAL', 'EMPTY']]
-    ]);
+  destroy = new Subject();
+  operatorsMap: Map<QueryDataType, string[]> = new Map([
+    [QueryDataType.STRING, this.operators_string],
+    [QueryDataType.NUMBER, this.operators_string],
+    [QueryDataType.ENUM, ['EQUAL', 'EMPTY']],
+    [QueryDataType.DATE, ['AFTER', 'BEFORE', 'BETWEEN']],
+    [QueryDataType.LIST, ['IN']],
+    [QueryDataType.BOOLEAN, ['EQUAL', 'EMPTY']]
+  ]);
 
   operators: string[] = [];
 
-  enumOverview: {cacheName: string, node: NodeProperty}[] = [
+  enumOverview: {cacheName: string; node: NodeProperty}[] = [
     {cacheName: 'institutions', node: {node: 'Institution', property: 'name'}},
     {cacheName: 'pipelines', node: {node: 'Pipeline', property: 'name'}},
     {cacheName: 'collections', node: {node: 'Collection', property: 'name'}},
@@ -57,16 +51,14 @@ export class QueryBuilderComponent implements OnInit {
   selectedEnumValues = [''];
   filteredEnumValues = new BehaviorSubject<string[]>(['']);
 
-  cachedDropdownValues$: Observable<Map<string, object[]> | undefined>
-    = this.cacheService.cachedDropdownValues$
-      .pipe(
-        map(values => {
-          if (values) {
-            this.dropdownValueMap = new Map(Object.entries(values));
-          }
-          return values;
-        })
-      );
+  cachedDropdownValues$: Observable<Map<string, object[]> | undefined> = this.cacheService.cachedDropdownValues$.pipe(
+    map((values) => {
+      if (values) {
+        this.dropdownValueMap = new Map(Object.entries(values));
+      }
+      return values;
+    })
+  );
 
   @Input() nodes: Map<string, string[]> = new Map<string, string[]>();
   @Input() queryItems: QueryItem[] = [];
@@ -99,10 +91,10 @@ export class QueryBuilderComponent implements OnInit {
   ngOnInit(): void {
     if (this.savedQuery) {
       this.wheres.clear();
-        this.chosenNode.setValue({node: this.savedQuery.node, property: this.savedQuery.property});
-        this.savedQuery.fields.forEach(whereField => {
-          this.addWhereData(whereField);
-        })
+      this.chosenNode.setValue({node: this.savedQuery.node, property: this.savedQuery.property});
+      this.savedQuery.fields.forEach((whereField) => {
+        this.addWhereData(whereField);
+      });
       const cachedEnumValues = this.cacheService.getEnumValues();
       if (cachedEnumValues) {
         this.selectedEnumValues = cachedEnumValues;
@@ -112,11 +104,11 @@ export class QueryBuilderComponent implements OnInit {
     }
   }
 
-  constructor(private fb: FormBuilder
-            , private cacheService: CacheService) {
-    this.chosenNode.valueChanges.subscribe((choice: NodeProperty | null) => {
+  constructor(private fb: FormBuilder, private cacheService: CacheService) {
+    this.chosenNode.valueChanges.pipe(takeUntil(this.destroy)).subscribe((choice: NodeProperty | null) => {
       if (choice) {
-        if (this.wheres.length > 1) { // reset() can't be used if there's multiple elements in the form array
+        if (this.wheres.length > 1) {
+          // reset() can't be used if there's multiple elements in the form array
           this.wheres.clear();
           this.addWhere();
         } else {
@@ -124,13 +116,13 @@ export class QueryBuilderComponent implements OnInit {
         }
         this.setOperatorsAndDataType(choice);
       }
-    })
+    });
   }
 
   save(childIdx: number | undefined) {
     let innerList: QueryInner[] = [];
 
-    this.wheres.controls.forEach(where => {
+    this.wheres.controls.forEach((where) => {
       let value;
       if (this.queryForm.get('dataType')?.value === QueryDataType.DATE) {
         if (where.get('operator')?.value === 'BETWEEN') {
@@ -144,7 +136,8 @@ export class QueryBuilderComponent implements OnInit {
       } else {
         value = where.get('value')?.value;
       }
-      if (this.queryForm.get('dataType')?.value === QueryDataType.ENUM) this.cacheService.setEnumValues(this.selectedEnumValues);
+      if (this.queryForm.get('dataType')?.value === QueryDataType.ENUM)
+        this.cacheService.setEnumValues(this.selectedEnumValues);
 
       const newQueryField = {
         operator: where.get('operator')?.value,
@@ -167,7 +160,9 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   setOperatorsAndDataType(nodeProperty: NodeProperty) {
-    const isEnum = this.enumOverview.find(enumNode => enumNode.node.node === nodeProperty.node && enumNode.node.property === nodeProperty.property);
+    const isEnum = this.enumOverview.find(
+      (enumNode) => enumNode.node.node === nodeProperty.node && enumNode.node.property === nodeProperty.property
+    );
     if (isEnum) {
       if (this.dropdownValueMap) {
         const values = this.dropdownValueMap.get(isEnum.cacheName);
@@ -177,20 +172,33 @@ export class QueryBuilderComponent implements OnInit {
         }
       }
       this.queryForm.get('dataType')?.setValue(QueryDataType.ENUM);
-      this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.ENUM) ?? [''])[0]));
-    } else if ((nodeProperty.property.includes('date') && !nodeProperty.property.includes('_by')) || nodeProperty.property.includes('timestamp')) {
+      this.wheres.controls.forEach((where) =>
+        where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.ENUM) ?? [''])[0])
+      );
+    } else if (
+      (nodeProperty.property.includes('date') && !nodeProperty.property.includes('_by')) ||
+      nodeProperty.property.includes('timestamp')
+    ) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
     } else if (nodeProperty.property.includes('file_format')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
-
-    } else if (['asset_locked', 'push_to_specify', 'make_public', 'multi_specimen'].some(key => nodeProperty.property.includes(key)) || (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))) {
+    } else if (
+      ['asset_locked', 'push_to_specify', 'make_public', 'multi_specimen'].some((key) =>
+        nodeProperty.property.includes(key)
+      ) ||
+      (nodeProperty.property.includes('audited') && !nodeProperty.property.includes('audited_by'))
+    ) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.BOOLEAN);
-      this.wheres.controls.forEach(where => where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0]));
+      this.wheres.controls.forEach((where) =>
+        where.get('operator')?.setValue((this.operatorsMap.get(QueryDataType.BOOLEAN) ?? [''])[0])
+      );
     } else {
       this.queryForm.get('dataType')?.setValue(QueryDataType.STRING);
     }
     const dataType = this.queryForm.get('dataType')?.value;
-    this.operators = this.operatorsMap.get(dataType ? QueryDataType[dataType] : QueryDataType.STRING) ?? [QueryDataType.STRING];
+    this.operators = this.operatorsMap.get(dataType ? QueryDataType[dataType] : QueryDataType.STRING) ?? [
+      QueryDataType.STRING
+    ];
   }
 
   addWhereData(where: QueryInner) {
@@ -198,23 +206,30 @@ export class QueryBuilderComponent implements OnInit {
     const rangedDate = isDate && where.operator.toLowerCase().includes('BETWEEN');
     this.queryForm.get('dataType')?.setValue(QueryDataType[where.dataType]);
 
-    this.wheres.push(this.fb.group({
-      operator: new FormControl(where.operator, Validators.required),
-      value: new FormControl(!isDate ? where.value : null, Validators.required),
-      date: new FormControl<Date | null>(isDate && !rangedDate ? new Date(where.value) : null),
-      dateStart: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[0]) : null),
-      dateEnd: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[1]) : null)
-    }));
+    this.wheres.push(
+      this.fb.group({
+        operator: new FormControl(where.operator, Validators.required),
+        value: new FormControl(!isDate ? where.value : null, Validators.required),
+        date: new FormControl<Date | null>(isDate && !rangedDate ? new Date(where.value) : null),
+        dateStart: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[0]) : null),
+        dateEnd: new FormControl<Date | null>(rangedDate ? new Date(+where.value.split('#')[1]) : null)
+      })
+    );
   }
 
   addWhere() {
-    this.wheres.push(this.fb.group({
-      operator: new FormControl(this.queryForm.get('dataType')?.value === QueryDataType.ENUM ? '=' : null, Validators.required),
-      value: new FormControl(null, Validators.required),
-      date: new FormControl<Date | null>(null),
-      dateStart: new FormControl<Date | null>(null),
-      dateEnd: new FormControl<Date | null>(null)
-    }));
+    this.wheres.push(
+      this.fb.group({
+        operator: new FormControl(
+          this.queryForm.get('dataType')?.value === QueryDataType.ENUM ? '=' : null,
+          Validators.required
+        ),
+        value: new FormControl(null, Validators.required),
+        date: new FormControl<Date | null>(null),
+        dateStart: new FormControl<Date | null>(null),
+        dateEnd: new FormControl<Date | null>(null)
+      })
+    );
   }
 
   removeWhere(index: number): void {
@@ -231,8 +246,12 @@ export class QueryBuilderComponent implements OnInit {
   }
 
   filterAutocomplete(value: any) {
-    this.filteredEnumValues.next(this.selectedEnumValues.filter(enumVal => enumVal.includes(value.toLowerCase())));
+    this.filteredEnumValues.next(this.selectedEnumValues.filter((enumVal) => enumVal.includes(value.toLowerCase())));
   }
 
   protected readonly QueryDataType = QueryDataType;
+  ngOnDestroy(): void {
+    this.destroy.next(true);
+    this.destroy.complete();
+  }
 }

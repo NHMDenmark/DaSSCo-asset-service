@@ -101,34 +101,33 @@ export class DetailedViewService {
     );
   }
 
-  getThumbnail(institution: string, collection: string, assetGuid: string, thumbnail: string) {
+  getThumbnail(institution: string, collection: string, assetGuid: string) {
     return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) => {
-        return this.http
-          .get(`${this.thumbnail}${institution}/${collection}/${assetGuid}/${thumbnail}`, {
+      switchMap((token) =>
+        this.http
+          .get(`${this.thumbnail}${institution}/${collection}/${assetGuid}/thumbnail`, {
             headers: {'Authorization': 'Bearer ' + token},
             responseType: 'blob'
           })
           .pipe(
             catchError(
-              this.handleError(
-                `get ${this.assetFiles}${institution}/${collection}/${assetGuid}/${thumbnail}`,
-                undefined
-              )
+              this.handleError(`get ${this.assetFiles}${institution}/${collection}/${assetGuid}/thumbnail`, undefined)
             )
-          );
-      })
+          )
+      )
     );
   }
 
   getFileList(assetGuid: string) {
-    return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) => {
-        return this.http
-          .get<string[]>(`${this.assetFiles}${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
-          .pipe(catchError(this.handleError(`get ${this.assetFiles}${assetGuid}`, undefined)));
-      })
-    );
+    return this.oidcSecurityService
+      .getAccessToken()
+      .pipe(
+        switchMap((token) =>
+          this.http
+            .get<string[]>(`${this.assetFiles}${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(catchError(this.handleError(`get ${this.assetFiles}${assetGuid}`, undefined)))
+        )
+      );
   }
 
   private handleError<T>(operation = 'operation', result?: T) {

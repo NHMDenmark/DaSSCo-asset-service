@@ -51,7 +51,7 @@
 }
 
 .icon-display:hover {
-  color: #A8D6DC;
+  color: #a8d6dc;
   transform: scale(2) translate(3px, -3px);
 }
 
@@ -77,11 +77,28 @@
   flex-direction: column;
 }
 
-.item {
-  margin-bottom: 1vh;
-  margin-top: 1vh;
+.mat-list-base .mat-list-item {
+  padding-block: 1rem;
+  min-height: 3rem;
+  height: auto;
+  display: flex;
+  align-items: flex-start;
+}
+::ng-deep {
+  .mat-list-base .mat-list-item .mat-list-item-content {
+    width: 100% !important;
+  }
 }
 
 .bold-text {
-  font-weight: bold;
+  font-family: graphikbold;
+}
+.events {
+  max-height: 10rem;
+  overflow-y: auto;
+  display: flex;
+  padding-inline: 0.5rem;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.25rem;
 }

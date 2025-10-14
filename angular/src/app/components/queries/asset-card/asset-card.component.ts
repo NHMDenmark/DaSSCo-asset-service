@@ -16,7 +16,7 @@ export class AssetCardComponent {
   }
   @Input() checked = false;
   @Output() toggle = new EventEmitter<Asset>();
-
+  @Output() onClick = new EventEmitter<Asset>();
   assetService = inject(AssetService);
   currentAsset = new BehaviorSubject<Asset | undefined>(undefined);
   asset$ = this.currentAsset.asObservable();

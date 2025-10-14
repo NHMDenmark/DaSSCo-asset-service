@@ -58,6 +58,9 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.metadata_source = rs.getString("metadata_source");
         asset.push_to_specify = rs.getBoolean("push_to_specify");
         asset.metadata_version = rs.getString("metadata_version");
+        asset.error_message = rs.getString("error_message");
+        Timestamp err_time = rs.getTimestamp("error_timestamp");
+        asset.error_timestamp = err_time == null ? null : err_time.toInstant();
         asset.camera_setting_control = rs.getString("camera_setting_control");
         asset.mos_id = rs.getString("mos_id");
         asset.specify_attachment_title = rs.getString("specify_attachment_title");

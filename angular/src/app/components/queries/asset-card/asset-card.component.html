@@ -1,5 +1,5 @@
 <ng-container *ngIf="asset$ | async as asset">
-  <mat-card class="mat-card-override" appearance="outlined">
+  <mat-card class="mat-card-override" appearance="outlined" (click)="onClick.emit(asset)">
     <mat-card-header>
       <mat-card-title>
         <mat-checkbox
@@ -59,15 +59,29 @@
           </mat-icon>
           {{ asset.created_date?.toString() | date : 'dd/MM-yyyy HH:mm' }}
         </span>
-        <div *ngIf="asset.events; else noEvents">
-          <button mat-stroked-button [matMenuTriggerFor]="menu">Events</button>
+        <div *ngIf="asset.events as events; else noEvents">
+          <button type="button" (click)="$event.stopPropagation()" mat-stroked-button [matMenuTriggerFor]="menu">
+            Events
+          </button>
           <mat-menu #menu="matMenu">
-            <div *ngFor="let event of asset.events; index as i" mat-menu-item class="mat-menu-item-{{ i > 0 }}">
-              <div>
-                {{ event.event }}
-                <br />
-                {{ event.user }},
-                <span *ngIf="event.timeStamp as ts">{{ ts.toDate() | date : 'dd/MM-yyyy HH:mm' }}</span>
+            <div
+              *ngFor="let event of events; index as i; let last = last"
+              mat-menu-item
+              style="height: fit-content"
+              class="mat-menu-item-{{ i > 0 }}">
+              <div style="padding-block: 0.5rem">
+                <span style="display: block; line-height: 1.5">
+                  {{ event.event }}
+                </span>
+
+                <span style="display: block; line-height: 1.5">{{ event.user }}</span>
+
+                <span style="display: block; line-height: 1.5" *ngIf="event.timestamp as ts">
+                  {{ ts.toString() | date : 'dd/MM-yyyy HH:mm' }}
+                </span>
+              </div>
+              <div *ngIf="!last">
+                <mat-divider></mat-divider>
               </div>
             </div>
           </mat-menu>

@@ -1,13 +1,13 @@
-import {Moment} from "moment-timezone";
+import {Moment} from 'moment-timezone';
 
 export enum AssetStatus {
-  WORKING_COPY
-  , ARCHIVE
-  , BEING_PROCESSED
-  , PROCESSING_HALTED
-  , ISSUE_WITH_MEDIA
-  , ISSUE_WITH_METADATA
-  , FOR_DELETION
+  WORKING_COPY,
+  ARCHIVE,
+  BEING_PROCESSED,
+  PROCESSING_HALTED,
+  ISSUE_WITH_MEDIA,
+  ISSUE_WITH_METADATA,
+  FOR_DELETION
 }
 
 export interface Asset {
@@ -16,6 +16,7 @@ export interface Asset {
   status: AssetStatus | undefined;
   multi_specimen: boolean | undefined;
   asset_specimen: AssetSpecimen[] | undefined;
+  asset_subject?: string | undefined;
   funding: string | undefined;
   subject: string | undefined;
   payload_type: string | undefined;
@@ -31,7 +32,7 @@ export interface Asset {
   date_asset_finalised: Moment | undefined;
   date_metadata_taken: Moment | undefined;
   institution: string | undefined;
-  parent_guid: string | undefined;
+  parent_guids: string[] | undefined;
   collection: string | undefined;
   httpInfo: string | undefined;
   internal_status: string | undefined;
@@ -41,7 +42,7 @@ export interface Asset {
   workstation: string | undefined;
   pipeline: string | undefined;
   error_message: string | undefined;
-  error_timestamp: Moment | undefined;
+  error_timestamp: string | undefined;
   writeAccess: boolean | undefined;
 }
 
@@ -66,7 +67,7 @@ export interface Specimen {
 
 export interface Event {
   user: string | undefined;
-  timeStamp: Moment | undefined;
+  timestamp: string | undefined;
   event: string | undefined;
   pipeline: string | undefined;
   workstation: string | undefined;
@@ -94,11 +95,11 @@ export interface DasscoError {
 }
 
 export enum FileFormat {
-  TIF
-  , JPEG
-  , RAW
-  , RAF
-  , CR3
-  , DNG
-  , TXT
+  TIF,
+  JPEG,
+  RAW,
+  RAF,
+  CR3,
+  DNG,
+  TXT
 }

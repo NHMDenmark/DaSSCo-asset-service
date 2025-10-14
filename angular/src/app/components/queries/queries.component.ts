@@ -521,13 +521,16 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     return this.selection.hasValue();
   }
 
-  assetClick(asset: string) {
-    const assetGuids: string[] = this.dataSource.filteredData.map((asset) => asset.asset_guid!);
+  assetClick(assetGuid: string | undefined) {
+    if (!assetGuid) return;
+    const assetGuids = this.dataSource.filteredData
+      .map((asset) => asset.asset_guid)
+      .filter((guid) => isNotUndefined<string>(guid)) as string[];
 
     this.queryToOtherPages.setAssets(assetGuids);
     this.queryToOtherPages.setDataSource(this.dataSource);
 
-    this.router.navigate(['detailed-view/', asset]);
+    this.router.navigate(['detailed-view/', assetGuid]);
   }
 
   toggleListViewMode() {

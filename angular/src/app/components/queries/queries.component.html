@@ -183,7 +183,8 @@
           <dassco-asset-card
             [asset]="asset"
             [checked]="selection.isSelected(asset)"
-            (toggle)="selection.toggle(asset)"></dassco-asset-card>
+            (toggle)="selection.toggle(asset)"
+            (onClick)="assetClick($event.asset_guid)"></dassco-asset-card>
         </ng-container>
       </div>
     </ng-template>

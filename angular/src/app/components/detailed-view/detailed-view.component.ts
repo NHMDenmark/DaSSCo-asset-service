@@ -1,14 +1,16 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages';
-import {take} from 'rxjs';
+import {EMPTY, switchMap, take} from 'rxjs';
+import {DatePipe} from '@angular/common';
 
 @Component({
   selector: 'dassco-detailed-view',
+  providers: [DatePipe],
   templateUrl: './detailed-view.component.html',
   styleUrls: ['./detailed-view.component.scss']
 })
@@ -18,6 +20,7 @@ export class DetailedViewComponent implements OnInit {
   currentIndex: number = -1;
   assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
+  datePipe = inject(DatePipe);
 
   constructor(
     private detailedViewService: DetailedViewService,
@@ -40,8 +43,9 @@ export class DetailedViewComponent implements OnInit {
   fileFormats?: string | undefined;
   restrictedAccess?: string | undefined;
   tags?: string | undefined;
+  parentGuids: string = '';
   // TODO: For now: Event and Timestamp
-  events?: string | undefined;
+  events?: string[] | undefined;
 
   thumbnailUrl?: SafeUrl;
 
@@ -58,48 +62,60 @@ export class DetailedViewComponent implements OnInit {
     // Steps: 1. Get Asset Metadata
     this.detailedViewService
       .getAssetMetadata(assetGuid)
-      .pipe(take(1))
-      .subscribe((response) => {
-        if (response) {
-          this.asset = response;
-          const specimen = (this.asset?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
-          this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
-          this.fileFormats = this.asset?.file_formats?.map((file_format) => file_format).join(', ');
-          this.restrictedAccess = this.asset?.restricted_access?.map((type) => type).join(', ');
-          this.tags = Object.entries(this.asset?.tags ?? {})
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(', ');
-          this.events = this.asset
-            ?.events!.map((event) => {
-              return `Event: ${event.event}, Timestamp: ${event.timeStamp}`;
-            })
-            .join(', ');
-          this.thumbnailUrl = '';
-          // 2. Put the file names in a list. Check if there's an image with the substring "thumbnail"). If there is, send it to the service.
-          this.detailedViewService.getFileList(assetGuid).subscribe((response) => {
-            if (response) {
-              this.assetFiles = response.map((filePath) => {
-                let parts: string[] = filePath.split('/');
-                return parts[parts.length - 1];
-              });
-              const thumbnail = this.assetFiles.find((file) => file.includes('thumbnail') || '');
-              if (thumbnail !== undefined) {
-                let lastSlashIndex = thumbnail.lastIndexOf('/');
-                let fileName = thumbnail.substring(lastSlashIndex + 1);
-                // 3. Get Images. If Thumbnail, show thumbnail.
-                this.detailedViewService
-                  .getThumbnail(this.asset?.institution!, this.asset?.collection!, assetGuid, fileName)
-                  .subscribe((blob) => {
-                    if (blob) {
-                      const objectUrl = URL.createObjectURL(blob);
-                      this.thumbnailUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
-                    }
+      .pipe(
+        take(1),
+        switchMap((assetResponse) => {
+          if (assetResponse) {
+            this.asset = assetResponse;
+            console.log(assetResponse);
+            const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
+            this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
+            this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
+            this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
+            this.parentGuids = assetResponse?.parent_guids?.join(', ') ?? '';
+            this.tags = Object.entries(assetResponse?.tags ?? {})
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(', ');
+            this.events = assetResponse.events?.map(
+              (event) =>
+                `Event: ${event.event}, Timestamp: ${this.datePipe.transform(
+                  event?.timestamp?.toString(),
+                  'dd/MM-yyyy HH:mm'
+                )}`
+            );
+            return this.detailedViewService.getFileList(assetGuid).pipe(
+              switchMap((fileList) => {
+                if (fileList) {
+                  this.assetFiles = fileList.map((filePath) => {
+                    let parts: string[] = filePath.split('/');
+                    return parts[parts.length - 1];
                   });
-              }
-            }
-          });
-        }
-        this.dataLoaded = true;
+                  if (fileList.length > 0) {
+                    return this.detailedViewService.getThumbnail(
+                      assetResponse.institution ?? '',
+                      assetResponse.collection ?? '',
+                      assetGuid
+                    );
+                  }
+                  return EMPTY;
+                }
+                return EMPTY;
+              })
+            );
+          }
+          return EMPTY;
+        }),
+        take(1)
+      )
+      .subscribe({
+        next: (blob) => {
+          if (blob) {
+            const objectUrl = URL.createObjectURL(blob);
+            this.thumbnailUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
+          }
+        },
+        error: (err: Error) => console.log(err),
+        complete: () => (this.dataLoaded = true)
       });
   }
 
