@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,20 @@ import java.util.*;
 class QueriesServiceTest extends AbstractIntegrationTest {
     User user = new User("moogie-woogie");
     User auditingUser = new User("moogie-auditor");
+
+
+    @BeforeEach
+    void ensureUserExists() {
+        jdbi.useHandle(handle -> {
+            handle.createUpdate("""
+                INSERT INTO dassco_user (username, keycloak_id, dassco_user_id)
+                VALUES (:username, 'a854889a-6fa2-4f4e-89e9-2b74ce866b82', 1)
+                ON CONFLICT (username) DO NOTHING;
+            """)
+                    .bind("username", user.username)
+                    .execute();
+        });
+    }
 
     @Test
     public void getNodeProperties() {
@@ -208,7 +223,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
                                 ))
                         ))),
                         new Query("Collection", new LinkedList<QueryWhere>(Arrays.asList(
-                                new QueryWhere("name", Arrays.asList(
+                                new QueryWhere("collection", Arrays.asList(
                                         new QueryInner("CONTAINS", "closed", QueryDataType.STRING)
                                 ))
                         )))
@@ -298,11 +313,10 @@ class QueriesServiceTest extends AbstractIntegrationTest {
                 "[{ \"property\": \"name\", \"fields\": [{ \"operator\": \"CONTAINS\", \"value\": \"test\", \"dataType\": " +
                 "\"STRING\" }]}]}]}]";
 
-        SavedQuery initialQuery = new SavedQuery("Asset 1", query);
-        this.queriesService.saveQuery(initialQuery, user.username);
+        SavedQuery initialQuery = this.queriesService.saveQuery(new SavedQuery("Asset 1", query), user.username);
         List<SavedQuery> savedQueriesBeforeUpdate = this.queriesService.getSavedQueries(user.username);
 
-        SavedQuery updatedSavedQuery = this.queriesService.updateSavedQuery("Asset 1", new SavedQuery("New title!", updatedQuery), user.username);
+        SavedQuery updatedSavedQuery = this.queriesService.updateSavedQuery(initialQuery.name, new SavedQuery("New title!", updatedQuery),  user.username);
         List<SavedQuery> savedQueriesAfterUpdate = this.queriesService.getSavedQueries(user.username);
 
         assertThat(savedQueriesBeforeUpdate.contains(initialQuery)).isTrue();
@@ -319,14 +333,12 @@ class QueriesServiceTest extends AbstractIntegrationTest {
                 "[{ \"property\": \"name\", \"fields\": [{ \"operator\": \"CONTAINS\", \"value\": \"test\", \"dataType\": " +
                 "\"STRING\" }]}]}]}]";
 
-        SavedQuery initialQuery = new SavedQuery("Asset 1", query);
-        this.queriesService.saveQuery(initialQuery, user.username);
+        SavedQuery initialQuery = this.queriesService.saveQuery(new SavedQuery("Asset 1", query), user.username);
         List<SavedQuery> savedQueriesBeforeUpdate = this.queriesService.getSavedQueries(user.username);
-
-        String deletedQueryName = this.queriesService.deleteSavedQuery("Asset 1", user.username);
+        String deletedQueryName = this.queriesService.deleteSavedQuery(initialQuery.name, user.username);
         List<SavedQuery> savedQueriesAfterUpdate = this.queriesService.getSavedQueries(user.username);
 
-        assertThat(deletedQueryName).matches("\"" + "Asset 1" + "\"");
+        assertThat(deletedQueryName).isEqualTo("Asset 1");
         assertThat(savedQueriesBeforeUpdate.contains(initialQuery)).isTrue();
         assertThat(savedQueriesAfterUpdate.size()).isLessThan(savedQueriesBeforeUpdate.size());
         assertThat(savedQueriesAfterUpdate.contains(initialQuery)).isFalse();

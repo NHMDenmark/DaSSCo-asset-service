@@ -9,13 +9,13 @@
 
   .actions {
     button {
-      margin-bottom: .5rem;
-      margin-right: .5rem;
+      margin-bottom: 0.5rem;
+      margin-right: 0.5rem;
     }
   }
 
   table {
-    width: 75%;
+    width: 100%;
   }
 
   tr.detail-row {
@@ -55,7 +55,9 @@
     background-color: #e5e5e5;
   }
 
-  .digitiser-div, .edit-actions, .detail-inner {
+  .digitiser-div,
+  .edit-actions,
+  .detail-inner {
     flex: 1;
   }
 
@@ -70,7 +72,7 @@
     }
 
     button {
-      margin-bottom: .5rem;
+      margin-bottom: 0.5rem;
     }
   }
 
@@ -85,21 +87,23 @@
     }
 
     button {
-      margin-bottom: .5rem;
+      margin-bottom: 0.5rem;
     }
   }
 }
 
-.list-option-digitiser-false:hover { // i know this is messy, but until we get an acutal layout i'm not gonna spend more time on it lol
+.list-option-digitiser-false:hover {
+  // i know this is messy, but until we get an acutal layout i'm not gonna spend more time on it lol
   cursor: default;
   ::ng-deep mat-pseudo-checkbox {
     cursor: default;
   }
 }
 
-.list-option-false, .list-option-digitiser-false  {
+.list-option-false,
+.list-option-digitiser-false {
   ::ng-deep mat-pseudo-checkbox {
-    color: rgba(0,0,0,0);
+    color: rgba(0, 0, 0, 0);
     background-color: darkgrey;
   }
 }

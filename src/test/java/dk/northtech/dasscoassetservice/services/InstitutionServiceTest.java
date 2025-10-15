@@ -21,7 +21,7 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testCreateInstitutionIllegalName() {
-        InstitutionService institutionService = new InstitutionService(null, null,null);
+        InstitutionService institutionService = new InstitutionService(null,null, null,null);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> institutionService.createInstitution(new Institution("")));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Name cannot be null or empty");
     }
@@ -40,6 +40,29 @@ class InstitutionServiceTest extends AbstractIntegrationTest {
             return institution.name().equals("Teztitution");
         }).findAny();
         assertThat(result.isPresent()).isTrue();
+    }
+
+    @Test
+    void testUpdateInstitution() {
+        institutionService.createInstitution(new Institution("ikz"));
+        List<Institution> institutions = institutionService.listInstitutions();
+        Optional<Institution> createdOpt = institutions.stream().filter(institution -> {
+            return institution.name().equals("ikz");
+        }).findAny();
+        assertThat(createdOpt.isPresent()).isTrue();
+        Institution institution = createdOpt.get();
+        institution.roleRestrictions().add(new Role("ikz"));
+        institutionService.updateInstitution(institution);
+        institutions = institutionService.listInstitutions();
+        Optional<Institution> updatedOpt = institutions.stream().filter(i -> {
+            return i.name().equals("ikz");
+        }).findAny();
+        assertThat(updatedOpt.isPresent()).isTrue();
+        Institution result = updatedOpt.get();
+        assertThat(result.name()).isEqualTo("ikz");
+        assertThat(result.roleRestrictions().size()).isEqualTo(1);
+        assertThat(result.roleRestrictions().get(0).name()).isEqualTo("ikz");
+
     }
 
     @Test

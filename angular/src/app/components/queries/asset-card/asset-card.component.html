@@ -1,0 +1,95 @@
+<ng-container *ngIf="asset$ | async as asset">
+  <mat-card class="mat-card-override" style="flex-grow: 1" appearance="outlined" (click)="onClick.emit(asset)">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-checkbox
+          (click)="$event.stopPropagation()"
+          (change)="$event ? toggle.emit(asset) : null"
+          [checked]="checked"></mat-checkbox>
+        {{ asset.asset_guid }}
+      </mat-card-title>
+      <mat-card-subtitle>
+        <span class="subtitle-flex">
+          <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem">house</mat-icon>
+          <span>
+            {{ asset.institution }}
+          </span>
+        </span>
+        <span class="subtitle-flex">
+          <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem">folder</mat-icon>
+          <span>
+            {{ asset.collection }}
+          </span>
+        </span>
+      </mat-card-subtitle>
+    </mat-card-header>
+    <ng-container *ngIf="assetService.getAssetThumbnail(asset) | async as assetThumbnail; else noImage">
+      <img mat-card-image [src]="assetThumbnail | safeUrl" [alt]="asset.asset_guid" />
+    </ng-container>
+    <ng-template #noImage>
+      <img mat-card-image src="assets/placeholder.png" alt="No picture" />
+    </ng-template>
+    <mat-card-content>
+      <div style="display: grid; height: 100%; grid-template-columns: 1fr 1fr">
+        <div>
+          <p>Barcodes</p>
+          <ul class="content-list">
+            <ng-container *ngFor="let specimen of assetSpecimenToSpecimen(asset?.asset_specimen ?? [])">
+              <li>
+                {{ specimen?.barcode }}
+              </li>
+            </ng-container>
+          </ul>
+        </div>
+        <div>
+          <p>File formats</p>
+          <ul class="content-list">
+            <ng-container *ngFor="let file of asset.file_formats">
+              {{ file }}
+            </ng-container>
+          </ul>
+        </div>
+      </div>
+    </mat-card-content>
+    <mat-card-actions style="margin-top: auto">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 0.875rem">
+          <mat-icon style="font-size: 0.875rem; width: 0.875rem; height: 0.875rem; margin-right: 0.25rem">
+            calendar_today
+          </mat-icon>
+          {{ asset.created_date?.toString() | date : 'dd/MM-yyyy HH:mm' }}
+        </span>
+        <div *ngIf="asset.events as events; else noEvents">
+          <button type="button" (click)="$event.stopPropagation()" mat-stroked-button [matMenuTriggerFor]="menu">
+            Events
+          </button>
+          <mat-menu #menu="matMenu">
+            <div
+              *ngFor="let event of events; index as i; let last = last"
+              mat-menu-item
+              style="height: fit-content"
+              class="mat-menu-item-{{ i > 0 }}">
+              <div style="padding-block: 0.5rem">
+                <span style="display: block; line-height: 1.5">
+                  {{ event.event }}
+                </span>
+
+                <span style="display: block; line-height: 1.5">{{ event.user }}</span>
+
+                <span style="display: block; line-height: 1.5" *ngIf="event.timestamp as ts">
+                  {{ ts.toString() | date : 'dd/MM-yyyy HH:mm' }}
+                </span>
+              </div>
+              <div *ngIf="!last">
+                <mat-divider></mat-divider>
+              </div>
+            </div>
+          </mat-menu>
+        </div>
+        <ng-template #noEvents>
+          <div>-</div>
+        </ng-template>
+      </div>
+    </mat-card-actions>
+  </mat-card>
+</ng-container>

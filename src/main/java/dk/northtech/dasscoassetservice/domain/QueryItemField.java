@@ -74,7 +74,7 @@ public enum QueryItemField {
     public String getTableName() {return tableName;}
 
     public static QueryItemField fromDisplayName(String displayName) {
-        return BY_DISPLAY.get(displayName);
+            return BY_DISPLAY.get(displayName);
     }
 
     public static QueryItemField fromFieldName(String fieldName) {

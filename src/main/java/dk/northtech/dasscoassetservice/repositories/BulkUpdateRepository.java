@@ -13,6 +13,7 @@ import org.apache.age.jdbc.base.type.AgtypeMap;
 import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.sqlobject.CreateSqlObject;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.statement.SqlScript;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.postgresql.jdbc.PgConnection;
 import org.slf4j.Logger;
@@ -23,9 +24,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-
-
 
 
 //@Repository
@@ -56,8 +54,34 @@ public interface BulkUpdateRepository extends SqlObject {
 
     @Transaction
     default List<Asset> readMultipleAssets(List<String> assets) {
-        boilerplate();
-        return readMultipleAssetsInternal(assets);
+        if (assets == null || assets.isEmpty()) {
+            return List.of();
+        }
+
+
+        String sql = """
+                SELECT asset.*,
+                collection.collection_name,
+                collection.institution_name,
+                dassco_user.username AS digitiser,
+                workstation.workstation_name,
+                copyright,
+                license,
+                credit
+                FROM asset
+                LEFT JOIN collection USING(collection_id)
+                LEFT JOIN workstation USING(workstation_id)
+                LEFT JOIN legality USING(legality_id)
+                LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+                WHERE asset.asset_guid IN (<asset_guids>)
+                """;
+
+        return withHandle(handle ->
+                handle.createQuery(sql)
+                        .bindList("asset_guids", assets)
+                        .map(new AssetMapper())
+                        .list()
+        );
     }
 
     static AGEQuery createBulkUpdateSql(List<String> assetList, Asset updatedFields) {
@@ -140,7 +164,7 @@ public interface BulkUpdateRepository extends SqlObject {
 
 
         sb.append("""
-                       
+                
                         $$
                         , #params) as (a agtype);
                 """);
@@ -169,7 +193,7 @@ public interface BulkUpdateRepository extends SqlObject {
                 .append(")\n")
                 .append("DELETE ")
                 .append(name)
-                        .append("""
+                .append("""
                                 $$
                                 , #params) as (a agtype);
                         """);
@@ -183,17 +207,17 @@ public interface BulkUpdateRepository extends SqlObject {
         StringBuilder sb = new StringBuilder("""
                 SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
-
+                
                 """);
-        for(int i = 0 ; i < nameProperties.size(); i++) {
+        for (int i = 0; i < nameProperties.size(); i++) {
             sb.append("MERGE (").append(":").append(listNode).append("{name: ").append("$l").append(i).append("})\n");
-            builder.add("l"+ i, nameProperties.get(i));
+            builder.add("l" + i, nameProperties.get(i));
 
         }
-         sb.append("""
-                                $$
-                                , #params) as (a agtype);
-                        """);
+        sb.append("""
+                        $$
+                        , #params) as (a agtype);
+                """);
         return new AGEQuery(sb.toString(), builder);
     }
 
@@ -237,11 +261,11 @@ public interface BulkUpdateRepository extends SqlObject {
                 builder.add("new_" + parmName + i, name);
             }
         }
-                        sb.append("""                               
-                                        $$
-                                        , #params) as (a agtype);
-                                """);
-                ;
+        sb.append("""                               
+                        $$
+                        , #params) as (a agtype);
+                """);
+        ;
         return new AGEQuery(sb.toString(), builder);
 
     }
@@ -282,7 +306,7 @@ public interface BulkUpdateRepository extends SqlObject {
 //        }
 
         // Return the List of Assets:
-        return this.readMultipleAssetsInternal(assetList);
+        return this.readMultipleAssets(assetList);
     }
 
 
@@ -358,30 +382,6 @@ public interface BulkUpdateRepository extends SqlObject {
         });
     }
 
-
-    default List<Asset> readMultipleAssetsInternal(List<String> assets) {
-        String sql = """
-                               SELECT * FROM ag_catalog.cypher(
-                             'dassco'
-                                 , $$
-                                      MATCH (asset:Asset)
-                                      WHERE asset.asset_guid IN $asset_guids
-                                      """;
-//                     + READ_WITHOUT_WHERE;
-        return withHandle(handle -> {
-            AgtypeListBuilder assetGuidList = new AgtypeListBuilder();
-            assets.forEach(assetGuidList::add);
-            AgtypeMap agParams = new AgtypeMapBuilder()
-                    .add("asset_guids", assetGuidList.build())
-                    .build();
-            Agtype agtype = AgtypeFactory.create(agParams);
-            return handle.createQuery(sql)
-                    .bind("params", agtype)
-                    .map(new AssetMapper())
-                    .list();
-        });
-    }
-
     default void internal_deleteAsset(String assetGuid) {
         // Deletes Asset
         String sqlAsset = """
@@ -454,7 +454,7 @@ public interface BulkUpdateRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (a:Asset {name: $asset_guid})
-                            
+                        
                             SET a.tags = $tags
                         $$
                         , #params) as (a agtype);
@@ -490,7 +490,7 @@ public interface BulkUpdateRepository extends SqlObject {
                         SELECT * FROM ag_catalog.cypher('dassco'
                         , $$
                             MATCH (a:Asset {name: $asset_guid})
-                            """;
+                        """;
         if (event.pipeline != null) {
             sql += "MATCH (p:Pipeline {name: $pipeline_name}) ";
         }

@@ -311,6 +311,10 @@ public class QueriesService {
 
                     List<String> assetGuids = queryResultAssets.stream().map(QueryResultAsset::asset_guid).toList();
 
+                    if(assetGuids.isEmpty()){
+                        return List.of();
+                    }
+
                     Map<String, List<Event>> assetEvents = assetGuids.isEmpty() ? new HashMap<>() : h.createQuery("""
                                     select asset_guid, username, timestamp, event, pipeline_name from event
                                     left join dassco_user using (dassco_user_id)
@@ -340,7 +344,7 @@ public class QueriesService {
                             });
                     Map<String, List<AssetSpecimen>> assetSpecimens = specimenService.getMultiAssetSpecimens(new HashSet<>(assetGuids));
 
-                    return queryResultAssets.stream().map(queryResultAsset ->
+                    return queryResultAssets.isEmpty() ? List.of() : queryResultAssets.stream().map(queryResultAsset ->
                             queryResultAsset
                                     .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
                                     .withSpecimen(assetSpecimens.get(queryResultAsset.asset_guid()))

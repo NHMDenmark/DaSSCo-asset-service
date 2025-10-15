@@ -1,134 +1,195 @@
 <div class="container">
-    <button mat-icon-button (click)="removeComponent()"
-            color="primary"
-            matTooltip="Delete whole clause for Node"
-            [matTooltipPosition]="'below'"><mat-icon>delete_forever</mat-icon></button>
-  <div *ngIf="(cachedDropdownValues$ | async)"></div>
+  <button
+    mat-icon-button
+    (click)="removeComponent()"
+    color="primary"
+    matTooltip="Delete whole clause for Node"
+    [matTooltipPosition]="'below'">
+    <mat-icon>delete_forever</mat-icon>
+  </button>
+  <div *ngIf="cachedDropdownValues$ | async"></div>
 
   <div class="form-container">
     <form [formGroup]="queryForm" class="query-form-div">
-        <mat-form-field appearance="outline">
-          <mat-label>Choose Property</mat-label>
-          <mat-select formControlName="node" [compareWith]="compareNodeProperty">
-            <mat-select-trigger>
-              {{queryForm.controls.node.value?.node}} -> {{queryForm.controls.node.value?.property}}
-            </mat-select-trigger>
-            <!--<mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
+      <mat-form-field appearance="outline">
+        <mat-label>Choose Property</mat-label>
+        <mat-select formControlName="node" [compareWith]="compareNodeProperty">
+          <mat-select-trigger>
+            {{ queryForm.controls.node.value?.node }} -> {{ queryForm.controls.node.value?.property }}
+          </mat-select-trigger>
+          <!--<mat-optgroup *ngFor="let n of nodes | keyvalue" [label]="n.key">
               <mat-option *ngFor="let property of n.value" [value]="{node: n.key, property: property}">
                 {{property}}
               </mat-option>
             </mat-optgroup>-->
-            <mat-optgroup *ngFor="let queryItem of queryItems" [label]="queryItem.name">
-              <mat-option *ngFor="let property of queryItem.properties" [value]="{node: queryItem.name, property: property.name}">
-                {{property.name}}
-              </mat-option>
-            </mat-optgroup>
-          </mat-select>
-        </mat-form-field>
+          <mat-optgroup *ngFor="let queryItem of queryItems" [label]="queryItem.name">
+            <mat-option
+              *ngFor="let property of queryItem.properties"
+              [value]="{node: queryItem.name, property: property.name}">
+              {{ property.name }}
+            </mat-option>
+          </mat-optgroup>
+        </mat-select>
+      </mat-form-field>
 
-        <div formArrayName="wheres">
-          <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
-            <div class="form-div">
-              <div *ngIf="i > 0">
-                <p style="margin-right: .5rem;">OR</p>
-              </div>
+      <div formArrayName="wheres">
+        <div *ngFor="let child of wheres.controls; let i = index" [formGroupName]="i">
+          <div class="form-div">
+            <div *ngIf="i > 0">
+              <p style="margin-right: 0.5rem">OR</p>
+            </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Operator</mat-label>
-                <mat-select formControlName="operator">
-                  <mat-option *ngFor="let operator of operators" [value]="operator">
-                    {{operator}}
+            <mat-form-field appearance="outline">
+              <mat-label>Operator</mat-label>
+              <mat-select formControlName="operator">
+                <ng-container
+                  *ngIf="queryForm.controls.node.getRawValue()?.property === 'internal_status'; else allOperators">
+                  <mat-option [value]="'EQUAL'">
+                    {{ 'EQUAL' }}
                   </mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.DATE">
-                <div *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('BETWEEN'); else oneDate">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Enter a date range</mat-label>
-                    <mat-date-range-input [rangePicker]="picker">
-                      <input matStartDate formControlName="dateStart" placeholder="Start date">
-                      <input matEndDate formControlName="dateEnd" placeholder="End date">
-                    </mat-date-range-input>
-                    <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
-                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                    <mat-date-range-picker #picker></mat-date-range-picker>
-                  </mat-form-field>
-                </div>
-
-                <ng-template #oneDate>
-                  <mat-form-field appearance="outline" class="example-form-field">
-                    <mat-label>Choose a date</mat-label>
-                    <input matInput [matDatepicker]="datepicker" formControlName="date">
-                    <mat-hint>MM/DD/YYYY</mat-hint>
-                    <mat-datepicker-toggle matSuffix [for]="datepicker"></mat-datepicker-toggle>
-                    <mat-datepicker #datepicker>
-                    </mat-datepicker>
-                  </mat-form-field>
+                </ng-container>
+                <ng-template #allOperators>
+                  <mat-option *ngFor="let operator of operators" [value]="operator">
+                    {{ operator }}
+                  </mat-option>
                 </ng-template>
+              </mat-select>
+            </mat-form-field>
+
+            <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.DATE">
+              <div
+                *ngIf="child.get('operator')?.value && child.get('operator')?.value!.includes('BETWEEN'); else oneDate">
+                <mat-form-field appearance="outline">
+                  <mat-label>Enter a date range</mat-label>
+                  <mat-date-range-input [rangePicker]="picker">
+                    <input matStartDate formControlName="dateStart" placeholder="Start date" />
+                    <input matEndDate formControlName="dateEnd" placeholder="End date" />
+                  </mat-date-range-input>
+                  <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-date-range-picker #picker></mat-date-range-picker>
+                </mat-form-field>
               </div>
 
-              <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.BOOLEAN">
-                <div *ngIf="child.get('operator')?.value && !child.get('operator')?.value!.includes('EMPTY')">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Value</mat-label>
-                    <input type="text"
-                           placeholder="Value"
-                           matInput
-                           formControlName="value"
-                           #enumInput
-                           [matAutocomplete]="auto">
-                    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [panelWidth]="'fit-content'">
-                      <mat-option class="autocomplete-option" *ngFor="let option of [true, false]" [value]="option">
-                        {{option}}
-                      </mat-option>
-                    </mat-autocomplete>
-                  </mat-form-field>
-                </div>
+              <ng-template #oneDate>
+                <mat-form-field appearance="outline" class="example-form-field">
+                  <mat-label>Choose a date</mat-label>
+                  <input matInput [matDatepicker]="datepicker" formControlName="date" />
+                  <mat-hint>MM/DD/YYYY</mat-hint>
+                  <mat-datepicker-toggle matSuffix [for]="datepicker"></mat-datepicker-toggle>
+                  <mat-datepicker #datepicker></mat-datepicker>
+                </mat-form-field>
+              </ng-template>
+            </div>
+
+            <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.BOOLEAN">
+              <div *ngIf="child.get('operator')?.value && !child.get('operator')?.value!.includes('EMPTY')">
+                <mat-form-field appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    matInput
+                    formControlName="value"
+                    #enumInput
+                    [matAutocomplete]="auto" />
+                  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [panelWidth]="'fit-content'">
+                    <mat-option class="autocomplete-option" *ngFor="let option of [true, false]" [value]="option">
+                      {{ option }}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div
+              *ngIf="
+                queryForm.get('dataType')?.value !== QueryDataType.DATE &&
+                queryForm.get('dataType')?.value !== QueryDataType.BOOLEAN
+              ">
+              <div
+                *ngIf="
+                  queryForm.get('dataType')?.value === QueryDataType.ENUM &&
+                  child.get('operator')?.value &&
+                  !child.get('operator')?.value!.includes('EMPTY')
+                ">
+                <mat-form-field appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input
+                    type="text"
+                    placeholder="Value"
+                    matInput
+                    formControlName="value"
+                    #enumInput
+                    [matAutocomplete]="auto"
+                    (keyup)="filterAutocomplete(enumInput.value)" />
+                  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [panelWidth]="'fit-content'">
+                    <mat-option
+                      class="autocomplete-option"
+                      *ngFor="let option of filteredEnumValues | async"
+                      [value]="option">
+                      {{ option }}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
               </div>
 
-              <div *ngIf="queryForm.get('dataType')?.value !== QueryDataType.DATE && queryForm.get('dataType')?.value !== QueryDataType.BOOLEAN">
-                <div *ngIf="queryForm.get('dataType')?.value === QueryDataType.ENUM && child.get('operator')?.value && !child.get('operator')?.value!.includes('EMPTY')">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Value</mat-label>
-                    <input type="text"
-                           placeholder="Value"
-                           matInput
-                           formControlName="value"
-                           #enumInput
-                           [matAutocomplete]="auto"
-                          (keyup)="filterAutocomplete(enumInput.value)">
-                    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [panelWidth]="'fit-content'">
-                      <mat-option class="autocomplete-option" *ngFor="let option of (filteredEnumValues | async)" [value]="option">
-                        {{option}}
-                      </mat-option>
-                    </mat-autocomplete>
-                  </mat-form-field>
-                </div>
-
-                <div *ngIf="queryForm.get('dataType')?.value !== QueryDataType.ENUM && child.get('operator')?.value && !child.get('operator')?.value!.includes('EMPTY')">
-                  <mat-form-field class="example-form-field" appearance="outline">
-                    <mat-label>Value</mat-label>
-                    <input matInput type="text" formControlName="value">
-                  </mat-form-field>
-                </div>
+              <div
+                *ngIf="
+                  queryForm.get('dataType')?.value !== QueryDataType.ENUM &&
+                  child.get('operator')?.value &&
+                  queryForm.get('node')?.value?.property !== 'internal_status' &&
+                  !child.get('operator')?.value!.includes('EMPTY')
+                ">
+                <mat-form-field class="example-form-field" appearance="outline">
+                  <mat-label>Value</mat-label>
+                  <input matInput type="text" formControlName="value" />
+                </mat-form-field>
+              </div>
+              <div
+                *ngIf="
+                  queryForm.get('dataType')?.value !== QueryDataType.ENUM &&
+                  child.get('operator')?.value &&
+                  queryForm.get('node')?.value?.property === 'internal_status' &&
+                  !child.get('operator')?.value!.includes('EMPTY')
+                ">
+                <mat-form-field class="example-form-field" appearance="outline">
+                  <mat-select auto formControlName="value">
+                    <mat-option value="METADATA_RECEIVED">METADATA_RECEIVED</mat-option>
+                    <mat-option value="ASSET_RECEIVED">ASSET_RECEIVED</mat-option>
+                    <mat-option value="COMPLETED">COMPLETED</mat-option>
+                    <mat-option value="ERDA_FAILED">ERDA_FAILED</mat-option>
+                    <mat-option value="ERDA_SYNCHRONISED">ERDA_SYNCHRONISED</mat-option>
+                    <mat-option value="SPECIFY_SYNC_SCHEDULED">SPECIFY_SYNC_SCHEDULED</mat-option>
+                    <mat-option value="SPECIFY_SYNC_FAILED">SPECIFY_SYNC_FAILED</mat-option>
+                    <mat-option value="SPECIFY_SYNCHRONISED">SPECIFY_SYNCHRONISED</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
             </div>
             <button mat-icon-button (click)="removeWhere(i)" color="primary"><mat-icon>delete</mat-icon></button>
-            <button mat-mini-fab
-                    class="save-btn"
-                    (click)="save(i)"
-                    matTooltip="Save where clause"
-                    [matTooltipPosition]="'below'"
-                    color="primary"
-            [disabled]="!child.touched"><mat-icon>check</mat-icon></button>
+            <button
+              mat-mini-fab
+              class="save-btn"
+              (click)="save(i)"
+              matTooltip="Save where clause"
+              [matTooltipPosition]="'below'"
+              color="primary"
+              [disabled]="!child.touched">
+              <mat-icon>check</mat-icon>
+            </button>
           </div>
         </div>
 
         <div class="and-btn-div">
-          <button mat-icon-button (click)="addWhere()"
-                  color="primary"
-                  matTooltip="Add OR argument"
-                  [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
+          <button
+            mat-icon-button
+            (click)="addWhere()"
+            color="primary"
+            matTooltip="Add OR argument"
+            [matTooltipPosition]="'below'">
+            <mat-icon>add</mat-icon>
+          </button>
         </div>
       </div>
     </form>

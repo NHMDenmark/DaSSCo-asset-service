@@ -1,5 +1,5 @@
 <div class="container">
-<!--  <button (click)="clearcache()">cache</button>-->
+  <!--  <button (click)="clearcache()">cache</button>-->
   <div class="top-div">
     <div>
       <button mat-raised-button class="saved-searches-btn" (click)="saveSearch()">Save Search</button>
@@ -10,7 +10,7 @@
       <button mat-raised-button class="saved-searches-btn" type="submit" (click)="updateSearch()">Update Search</button>
       <mat-form-field appearance="outline">
         <mat-label>Query Title</mat-label>
-        <input matInput [(ngModel)]="queryUpdatedTitle">
+        <input matInput [(ngModel)]="queryUpdatedTitle" />
       </mat-form-field>
     </div>
   </div>
@@ -18,16 +18,16 @@
   <ng-template #queryHandlerContainer></ng-template>
 
   <div class="input-container">
-    <button mat-mini-fab (click)="newSelect(undefined)"
-            matTooltip="New where clause"
-            [matTooltipPosition]="'below'"><mat-icon>add</mat-icon></button>
-    <button mat-mini-fab (click)="save()"
-            matTooltip="Search for assets"
-            [matTooltipPosition]="'below'"><mat-icon>search</mat-icon></button>
+    <button mat-mini-fab (click)="newSelect(undefined)" matTooltip="New where clause" [matTooltipPosition]="'below'">
+      <mat-icon>add</mat-icon>
+    </button>
+    <button mat-mini-fab (click)="save()" matTooltip="Search for assets" [matTooltipPosition]="'below'">
+      <mat-icon>search</mat-icon>
+    </button>
     <button mat-raised-button (click)="clearAll()">Clear ALL</button>
     <mat-form-field appearance="outline">
       <mat-label>Limit</mat-label>
-      <input matInput placeholder="200" [(ngModel)]="limit">
+      <input matInput placeholder="200" [(ngModel)]="limit" />
     </mat-form-field>
   </div>
 
@@ -36,36 +36,49 @@
       <div class="group-btns">
         <button mat-raised-button [disabled]="selection.isEmpty()" (click)="addToGroup()">Add To Group</button>
         <button mat-raised-button [routerLink]="'/asset-groups'">My Groups</button>
+        <button mat-raised-button (click)="toggleListViewMode()">
+          <mat-icon>{{ listView === 'GRID' ? 'grid_view' : 'list_view' }}</mat-icon>
+        </button>
+        <ng-container *ngIf="listView === 'GRID' && dataSource.data.length > 0">
+          <mat-checkbox
+            matTooltip="Select All"
+            #selectAllCheckBox
+            (change)="$event ? toggleAllRows() : null"
+            [checked]="selection.hasValue() && isAllSelected()"
+            [indeterminate]="selection.hasValue() && !isAllSelected()"></mat-checkbox>
+        </ng-container>
       </div>
 
       <div *ngIf="dataSource.data.length > 0">
-        <div>{{dataSource.data.length}} /
-          <div *ngIf="loadingAssetCount; else showCount;">
+        <div>
+          {{ dataSource.data.length }} /
+          <div *ngIf="loadingAssetCount; else showCount">
             <mat-spinner [diameter]="25" [strokeWidth]="3"></mat-spinner>
           </div>
           <ng-template #showCount>
-            {{assetCount}}
+            {{ assetCount }}
           </ng-template>
         </div>
       </div>
     </div>
 
-    <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort (matSortChange)="sortData($event)">
-      <ng-container matColumnDef="select">
-        <mat-header-cell *matHeaderCellDef class="checkbox-width">
-          <mat-checkbox (change)="$event ? toggleAllRows() : null"
-                        [checked]="selection.hasValue() && isAllSelected()"
-                        [indeterminate]="selection.hasValue() && !isAllSelected()">
-          </mat-checkbox>
-        </mat-header-cell>
-        <mat-cell *matCellDef="let row" class="checkbox-width">
-          <mat-checkbox (click)="$event.stopPropagation()"
-                        (change)="$event ? selection.toggle(row) : null"
-                        [checked]="selection.isSelected(row)">
-          </mat-checkbox>
-        </mat-cell>
-      </ng-container>
-<!--
+    <ng-container *ngIf="listView === 'LIST'; else gridViewContainer">
+      <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort (matSortChange)="sortData($event)">
+        <ng-container matColumnDef="select">
+          <mat-header-cell *matHeaderCellDef class="checkbox-width">
+            <mat-checkbox
+              (change)="$event ? toggleAllRows() : null"
+              [checked]="selection.hasValue() && isAllSelected()"
+              [indeterminate]="selection.hasValue() && !isAllSelected()"></mat-checkbox>
+          </mat-header-cell>
+          <mat-cell *matCellDef="let row" class="checkbox-width">
+            <mat-checkbox
+              (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(row) : null"
+              [checked]="selection.isSelected(row)"></mat-checkbox>
+          </mat-cell>
+        </ng-container>
+        <!--
       <ng-container matColumnDef="select">
         <mat-header-cell *matHeaderCellDef>Select</mat-header-cell>
         <mat-cell *matCellDef="let element">
@@ -73,93 +86,121 @@
         </mat-cell>
       </ng-container>
 -->
-      <ng-container matColumnDef="asset_guid">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Guid</mat-header-cell>
-        <mat-cell *matCellDef="let element" (click)="assetClick(element.asset_guid)">{{element.asset_guid}}</mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="asset_guid">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Guid</mat-header-cell>
+          <mat-cell *matCellDef="let element" (click)="assetClick(element.asset_guid)">
+            {{ element.asset_guid }}
+          </mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="institution">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Institution</mat-header-cell>
-        <mat-cell *matCellDef="let element">{{element.institution}}</mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="institution">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Institution</mat-header-cell>
+          <mat-cell *matCellDef="let element">{{ element.institution }}</mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="collection">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Collection</mat-header-cell>
-        <mat-cell *matCellDef="let element">{{element.collection}}</mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="collection">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Collection</mat-header-cell>
+          <mat-cell *matCellDef="let element">{{ element.collection }}</mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="file_formats">
-        <mat-header-cell *matHeaderCellDef class="medium-width">
-          <mat-form-field appearance="standard" class="small-width file-formats">
-            <mat-label>File Formats</mat-label>
-            <input matInput (keyup)="filterFileFormats($event)" placeholder="TIF" #input>
-          </mat-form-field>
-        </mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          <ng-container *ngFor="let file of element.file_formats; let isLast = last">
-            {{isLast ? file : file + ','}}
-          </ng-container>
-        </mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="file_formats">
+          <mat-header-cell *matHeaderCellDef class="medium-width">
+            <mat-form-field appearance="standard" class="small-width file-formats">
+              <mat-label>File Formats</mat-label>
+              <input matInput (keyup)="filterFileFormats($event)" placeholder="TIF" #input />
+            </mat-form-field>
+          </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <ng-container *ngFor="let file of element.file_formats; let isLast = last">
+              {{ isLast ? file : file + ',' }}
+            </ng-container>
+          </mat-cell>
+        </ng-container>
 
-<!--      <ng-container matColumnDef="tags">-->
-<!--        <th mat-header-cell *matHeaderCellDef>Tags</th>-->
-<!--        <td mat-cell *matCellDef="let element">-->
-<!--          <div *ngFor="let tag of element.tags | keyvalue">-->
-<!--            {{tag.key}}: {{tag.value}}<br>-->
-<!--          </div>-->
-<!--        </td>-->
-<!--      </ng-container>-->
+        <!--      <ng-container matColumnDef="tags">-->
+        <!--        <th mat-header-cell *matHeaderCellDef>Tags</th>-->
+        <!--        <td mat-cell *matCellDef="let element">-->
+        <!--          <div *ngFor="let tag of element.tags | keyvalue">-->
+        <!--            {{tag.key}}: {{tag.value}}<br>-->
+        <!--          </div>-->
+        <!--        </td>-->
+        <!--      </ng-container>-->
 
-      <ng-container matColumnDef="barcode">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Barcodes</mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          <ng-container *ngFor="let specimen of assetSpecimenToSpecimen(element.asset_specimen); let isLast = last">
-            {{isLast ? specimen?.barcode : specimen?.barcode + ','}}
-            <br />
-          </ng-container>
-        </mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="barcode">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Barcodes</mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            <ng-container *ngFor="let specimen of assetSpecimenToSpecimen(element.asset_specimen); let isLast = last">
+              {{ isLast ? specimen?.barcode : specimen?.barcode + ',' }}
+              <br />
+            </ng-container>
+          </mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="created_date">
-        <mat-header-cell *matHeaderCellDef mat-sort-header>Created Date</mat-header-cell>
-        <mat-cell *matCellDef="let element"> {{element.created_date | date:'dd/MM-yyyy HH:mm'}}</mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="created_date">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Created Date</mat-header-cell>
+          <mat-cell *matCellDef="let element">{{ element.created_date | date : 'dd/MM-yyyy HH:mm' }}</mat-cell>
+        </ng-container>
 
-      <ng-container matColumnDef="events">
-        <mat-header-cell *matHeaderCellDef class="event-header-cell"
-                         matTooltip="If the queried asset belongs to multiple events"
-                         [matTooltipPosition]="'above'">Events</mat-header-cell>
-        <mat-cell *matCellDef="let element" class="event-center-{{element.events ? 'false' : 'true'}}">
-          <div *ngIf="element.events; else noEvents">
-            <button mat-stroked-button [matMenuTriggerFor]="menu">Events</button>
-            <mat-menu #menu="matMenu">
-              <div *ngFor="let event of element.events; index as i" mat-menu-item class="mat-menu-item-{{i > 0}}">
-                <div>{{event.event}}
-                <br>{{event.user}}, {{event.timeStamp | date:'dd/MM-yyyy HH:mm'}}</div>
-              </div>
-            </mat-menu>
-          </div>
-          <ng-template #noEvents>
-            <div>-</div>
-          </ng-template>
-        </mat-cell>
-      </ng-container>
+        <ng-container matColumnDef="events">
+          <mat-header-cell
+            *matHeaderCellDef
+            class="event-header-cell"
+            matTooltip="If the queried asset belongs to multiple events"
+            [matTooltipPosition]="'above'">
+            Events
+          </mat-header-cell>
+          <mat-cell *matCellDef="let element" class="event-center-{{ element.events ? 'false' : 'true' }}">
+            <div *ngIf="element.events; else noEvents">
+              <button mat-stroked-button [matMenuTriggerFor]="menu">Events</button>
+              <mat-menu #menu="matMenu">
+                <div *ngFor="let event of element.events; index as i" mat-menu-item class="mat-menu-item-{{ i > 0 }}">
+                  <div>
+                    {{ event.event }}
+                    <br />
+                    {{ event.user }}, {{ event.timeStamp | date : 'dd/MM-yyyy HH:mm' }}
+                  </div>
+                </div>
+              </mat-menu>
+            </div>
+            <ng-template #noEvents>
+              <div>-</div>
+            </ng-template>
+          </mat-cell>
+        </ng-container>
 
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns;"></mat-row>
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row class="data-rows" matRipple *matRowDef="let row; columns: displayedColumns"></mat-row>
 
-      <tr class="mat-row no-data-row" *matNoDataRow>
-        <td class="mat-cell" colspan="5">No data available</td>
-      </tr>
-    </mat-table>
+        <tr class="mat-row no-data-row" *matNoDataRow>
+          <td class="mat-cell" colspan="5">No data available</td>
+        </tr>
+      </mat-table>
+    </ng-container>
+
+    <ng-template #gridViewContainer>
+      <div class="grid-list-container">
+        <ng-container *ngFor="let asset of dataSource.data; trackBy: trackByGuuid">
+          <dassco-asset-card
+            [asset]="asset"
+            [checked]="selection.isSelected(asset)"
+            (toggle)="selection.toggle(asset)"
+            (onClick)="assetClick($event.asset_guid)"></dassco-asset-card>
+        </ng-container>
+      </div>
+    </ng-template>
 
     <mat-paginator [pageSizeOptions]="[10, 25, 40, 80]" aria-label="Select page of assets"></mat-paginator>
   </div>
 
   <div class="button-container">
-    <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected()">Download Asset CSV</button>
-    <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">Download Asset ZIP</button>
-    <button mat-raised-button color="primary" (click)="bulkUpdate()" [disabled]="!areAssetsSelected()">Bulk Update Assets</button>
+    <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected()">
+      Download Asset CSV
+    </button>
+    <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">
+      Download Asset ZIP
+    </button>
+    <button mat-raised-button color="primary" (click)="bulkUpdate()" [disabled]="!areAssetsSelected()">
+      Bulk Update Assets
+    </button>
   </div>
 </div>

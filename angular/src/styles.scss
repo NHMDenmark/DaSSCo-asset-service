@@ -1,11 +1,7 @@
 @use '@angular/material' as mat;
 @import 'sanitize.css';
 @import './theme';
-@include mat.core(
-    mat.define-typography-config(
-      $font-family: graphik-regular
-    )
-);
+@include mat.core(mat.define-typography-config($font-family: graphik-regular));
 
 @import 'style/base';
 
@@ -54,12 +50,13 @@
   src: url('assets/fonts/GraphikBold.otf');
 }
 
-@font-face {
-  font-family: graphikRegular;
-  src: url('assets/fonts/GraphikRegular.otf');
-}
-
 @include mat.all-component-themes($dassco-asset-service-theme);
 
-html, body { height: 100%; background-color: $primaryBackgroundColor; }
-body { margin: 0 }
+html,
+body {
+  height: 100%;
+  background-color: $primaryBackgroundColor;
+}
+body {
+  margin: 0;
+}

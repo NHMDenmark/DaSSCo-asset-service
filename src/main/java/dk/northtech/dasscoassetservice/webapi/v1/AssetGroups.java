@@ -20,7 +20,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,6 +99,20 @@ public class AssetGroups {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteAssetGroup(@PathParam("groupName") String groupName, @Context SecurityContext securityContext) {
         this.assetGroupService.deleteAssetGroup(groupName, userService.from(securityContext));
+    }
+    @DELETE
+    @Path("/deletegroups")
+    @Operation(summary = "Delete Asset Groups", description = "Deletes Asset Groups, using the Asset Group names. Only the user that created the group can delete it.")
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public boolean deleteAssetGroups(@QueryParam("groups") String groupsParam, @Context SecurityContext securityContext) {
+        List<String> groups = Arrays.stream(groupsParam.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        return this.assetGroupService.deleteAssetGroups(groups, userService.from(securityContext));
     }
 
     @PUT

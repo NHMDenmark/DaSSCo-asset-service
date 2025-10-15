@@ -23,35 +23,38 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
 import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatMomentDateModule} from '@angular/material-moment-adapter';
-import {MatTooltipModule} from "@angular/material/tooltip";
-import { ExportChartComponent } from './components/export-chart/export-chart.component';
-import {MatSnackBarModule} from "@angular/material/snack-bar";
-import { StatusWidgetComponent } from './components/status-widget/status-widget.component';
-import {MatDividerModule} from "@angular/material/divider";
-import {MatTableModule} from "@angular/material/table";
-import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
-import {MatChipsModule} from "@angular/material/chips";
-import {MatCheckboxModule} from "@angular/material/checkbox";
-import {MatExpansionModule} from "@angular/material/expansion";
-import { QueriesComponent } from './components/queries/queries.component';
-import {MatCardModule} from "@angular/material/card";
-import { QueryBuilderComponent } from './components/query-builder/query-builder.component';
-import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
-import {MatListModule} from "@angular/material/list";
-import { QueryHandlerComponent } from './components/query-handler/query-handler.component';
-import {MatDialogModule} from "@angular/material/dialog";
-import { SavedSearchesDialogComponent } from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
-import { SaveSearchDialogComponent } from './components/dialogs/save-search-dialog/save-search-dialog.component';
-import {MatPaginatorModule} from "@angular/material/paginator";
-import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
-import {MatAutocompleteModule} from "@angular/material/autocomplete";
-import {MatMenuModule} from "@angular/material/menu";
-import {MatSortModule} from "@angular/material/sort";
-import { AssetGroupDialogComponent } from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
-import { AssetGroupsComponent } from './components/asset-groups/asset-groups.component';
-import { NewGroupDialogComponent } from './components/dialogs/new-group-dialog/new-group-dialog.component';
-import { IllegalAssetGroupDialogComponent } from './components/dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
-import {NgOptimizedImage} from "@angular/common";
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {ExportChartComponent} from './components/export-chart/export-chart.component';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {StatusWidgetComponent} from './components/status-widget/status-widget.component';
+import {MatDividerModule} from '@angular/material/divider';
+import {MatTableModule} from '@angular/material/table';
+import {BulkUpdateComponent} from './components/bulk-update/bulk-update.component';
+import {MatChipsModule} from '@angular/material/chips';
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {QueriesComponent} from './components/queries/queries.component';
+import {MatCardModule} from '@angular/material/card';
+import {QueryBuilderComponent} from './components/query-builder/query-builder.component';
+import {DetailedViewComponent} from './components/detailed-view/detailed-view.component';
+import {MatListModule} from '@angular/material/list';
+import {QueryHandlerComponent} from './components/query-handler/query-handler.component';
+import {MatDialogModule} from '@angular/material/dialog';
+import {SavedSearchesDialogComponent} from './components/dialogs/saved-searches-dialog/saved-searches-dialog.component';
+import {SaveSearchDialogComponent} from './components/dialogs/save-search-dialog/save-search-dialog.component';
+import {MatPaginatorModule} from '@angular/material/paginator';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {MatMenuModule} from '@angular/material/menu';
+import {MatSortModule} from '@angular/material/sort';
+import {AssetGroupDialogComponent} from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
+import {AssetGroupsComponent} from './components/asset-groups/asset-groups.component';
+import {NewGroupDialogComponent} from './components/dialogs/new-group-dialog/new-group-dialog.component';
+import {IllegalAssetGroupDialogComponent} from './components/dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
+import {NgOptimizedImage} from '@angular/common';
+import {MatGridListModule} from '@angular/material/grid-list';
+import {AssetCardComponent} from './components/queries/asset-card/asset-card.component';
+import {SafeUrlPipe} from './pipes/safe-url.pipe';
 
 @NgModule({
   declarations: [
@@ -72,11 +75,13 @@ import {NgOptimizedImage} from "@angular/common";
     QueryHandlerComponent,
     SavedSearchesDialogComponent,
     SaveSearchDialogComponent,
+    AssetCardComponent,
     DetailedViewComponent,
     AssetGroupDialogComponent,
     AssetGroupsComponent,
     NewGroupDialogComponent,
-    IllegalAssetGroupDialogComponent
+    IllegalAssetGroupDialogComponent,
+    SafeUrlPipe
   ],
   imports: [
     BrowserModule,
@@ -105,6 +110,7 @@ import {NgOptimizedImage} from "@angular/common";
     MatChipsModule,
     MatCheckboxModule,
     MatExpansionModule,
+    MatGridListModule,
     MatCardModule,
     MatListModule,
     MatPaginatorModule,
@@ -115,13 +121,8 @@ import {NgOptimizedImage} from "@angular/common";
     MatRippleModule,
     NgOptimizedImage
   ],
-  schemas: [
-    CUSTOM_ELEMENTS_SCHEMA
-  ],
-  providers: [
-    MatDatepickerModule,
-    ChartComponent
-  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  providers: [MatDatepickerModule, ChartComponent],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}

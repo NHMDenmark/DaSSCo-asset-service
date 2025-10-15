@@ -1,136 +1,238 @@
 <div *ngIf="dataLoaded; else loading">
-
   <div *ngIf="asset">
-
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
-        <img [src]="thumbnailUrl" alt="Thumbnail">
+        <img [src]="thumbnailUrl" alt="Thumbnail" />
       </ng-container>
-      <ng-container *ngIf="!thumbnailUrl">
-        No thumbnail found.
-      </ng-container>
+      <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
     </div>
 
     <div class="asset-metadata">
       <mat-list>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Asset Guid:</span> {{ asset.asset_guid }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Asset Guid:&nbsp;</span>
+            {{ asset.asset_guid }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Asset Pid:</span> {{ asset.asset_pid }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Asset Pid:&nbsp;</span>
+            {{ asset.asset_pid }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Status:</span> {{ asset.status }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Status:&nbsp;</span>
+            {{ asset.status }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Multi-Specimen:</span> {{ asset.multi_specimen }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Multi-Specimen:&nbsp;</span>
+            {{ asset.multi_specimen }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Specimens:</span> {{ specimenBarcodes }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Specimens:&nbsp;</span>
+            {{ specimenBarcodes }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Funding:</span> {{ asset.funding }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Funding:&nbsp;</span>
+            {{ asset.funding }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Subject:</span> {{ asset.subject }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Subject:&nbsp;</span>
+            {{ asset.asset_subject }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Payload Type:</span> {{ asset.payload_type }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Payload Type:&nbsp;</span>
+            {{ asset.payload_type }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">File Formats:</span> {{ fileFormats }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">File Formats:&nbsp;</span>
+            {{ fileFormats }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Asset Locked:</span> {{ asset.asset_locked }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Asset Locked:&nbsp;</span>
+            {{ asset.asset_locked }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Restricted Access:</span> {{ restrictedAccess }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Restricted Access:&nbsp;</span>
+            {{ restrictedAccess }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Tags:</span> {{ tags }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Tags:&nbsp;</span>
+            {{ tags }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Audited:</span> {{ asset.audited }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Audited:&nbsp;</span>
+            {{ asset.audited }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Created Date:</span> {{ asset.created_date }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Created Date:&nbsp;</span>
+            {{ asset.created_date }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Date Metadata Updated:</span> {{ asset.date_metadata_updated }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Date Metadata Updated:&nbsp;</span>
+            {{ asset.date_metadata_updated }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Date Asset Taken:</span> {{ asset.date_asset_taken }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Date Asset Taken:&nbsp;</span>
+            {{ asset.date_asset_taken }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Date Asset Deleted:</span> {{ asset.date_asset_deleted }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Date Asset Deleted:&nbsp;</span>
+            {{ asset.date_asset_deleted }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Date Asset Finalised:</span> {{ asset.date_asset_finalised }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Date Asset Finalised:&nbsp;</span>
+            {{ asset.date_asset_finalised }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Date Metadata Taken:</span> {{ asset.date_metadata_taken }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Date Metadata Taken:&nbsp;</span>
+            {{ asset.date_metadata_taken }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Institution:</span> {{ asset.institution }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Institution:&nbsp;</span>
+            {{ asset.institution }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Parent Guid:</span> {{ asset.parent_guid }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Parent Guids:&nbsp;</span>
+            {{ parentGuids }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Collection:</span> {{ asset.collection }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Collection:&nbsp;</span>
+            {{ asset.collection }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Internal Status:</span> {{ asset.internal_status }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Internal Status:&nbsp;</span>
+            {{ asset.internal_status }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Update User:</span> {{ asset.updateUser }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Update User:&nbsp;</span>
+            {{ asset.updateUser }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Events:</span> {{ events }}</mat-list-item>
+          <mat-list-item style="display: block">
+            <span class="bold-text" style="align-self: flex-start">Events:&nbsp;</span>
+            <div class="events">
+              <ng-container *ngFor="let event of asset.events; let last = last">
+                <div style="display: flex; font-size: 0.875rem; width: fit-content; align-items: center; gap: 0.5rem">
+                  <span>
+                    {{ event.event }}
+                  </span>
+                  |
+                  <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+                </div>
+                <div *ngIf="!last">
+                  <hr />
+                </div>
+              </ng-container>
+            </div>
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Digitiser:</span> {{ asset.digitiser }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Digitiser:&nbsp;</span>
+            {{ asset.digitiser }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Workstation:</span> {{ asset.workstation }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Workstation:&nbsp;</span>
+            {{ asset.workstation }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Pipeline:</span> {{ asset.pipeline }}</mat-list-item>
+          <mat-list-item>
+            <span class="bold-text">Pipeline:&nbsp;</span>
+            {{ asset.pipeline }}
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Error message:</span> {{ asset.error_message }}</mat-list-item>
+          <mat-list-item style="overflow-x: auto">
+            <span class="bold-text">Error message:&nbsp;</span>
+            <span style="font-size: 0.875rem; color: crimson; text-wrap: balance">
+              {{ asset.error_message }}
+            </span>
+          </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
-          <mat-list-item class="item"><span class="bold-text">Error timestamp:</span> {{ asset.error_timestamp }}
+          <mat-list-item>
+            <span class="bold-text">Error timestamp:&nbsp;</span>
+            <span style="color: crimson; font-size: 0.875rem">
+              {{ asset.error_timestamp | date : 'dd/MM-yyyy HH:mm' }}
+            </span>
           </mat-list-item>
         </div>
       </mat-list>
@@ -143,32 +245,34 @@
           <td mat-cell *matCellDef="let file">{{ file }}</td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
       </table>
     </div>
 
     <div class="icons">
-      <mat-icon *ngIf="assetList.length > 1"
-                fontIcon="arrow_back"
-                class="icon-display"
-                (click)="showPreviousAsset()"
-                [class.disabled]="isPreviousDisabled()"
-                [ngClass]="{'disabled': isPreviousDisabled()}"
-                [attr.disabled]="isPreviousDisabled() ? true : null"
-                title="Previous Asset"></mat-icon>
+      <mat-icon
+        *ngIf="assetList.length > 1"
+        fontIcon="arrow_back"
+        class="icon-display"
+        (click)="showPreviousAsset()"
+        [class.disabled]="isPreviousDisabled()"
+        [ngClass]="{'disabled': isPreviousDisabled()}"
+        [attr.disabled]="isPreviousDisabled() ? true : null"
+        title="Previous Asset"></mat-icon>
       <!--
       <mat-icon fontIcon="download" class="icon-display" (click)="exportCsv()" title="Download CSV"></mat-icon>
       -->
       <button (click)="downloadCsv()">Download CSV File</button>
       <button (click)="downloadZip()">Create and Download Complete Asset</button>
-      <mat-icon *ngIf="assetList.length > 1"
-                fontIcon="arrow_forward"
-                class="icon-display"
-                (click)="showNextAsset()"
-                [class.disabled]="isNextDisabled()"
-                [ngClass]="{'disabled': isNextDisabled()}"
-                [attr.disabled]="isNextDisabled() ? true : null"
-                title="Next Asset"></mat-icon>
+      <mat-icon
+        *ngIf="assetList.length > 1"
+        fontIcon="arrow_forward"
+        class="icon-display"
+        (click)="showNextAsset()"
+        [class.disabled]="isNextDisabled()"
+        [ngClass]="{'disabled': isNextDisabled()}"
+        [attr.disabled]="isNextDisabled() ? true : null"
+        title="Next Asset"></mat-icon>
     </div>
   </div>
   <div *ngIf="!asset">
@@ -177,7 +281,5 @@
 </div>
 
 <ng-template #loading>
-  <div class="loading-spinner">
-    Loading...
-  </div>
+  <div class="loading-spinner">Loading...</div>
 </ng-template>
