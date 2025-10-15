@@ -19,7 +19,7 @@ import {AssetGroupService} from '../../services/asset-group.service';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {QueryToOtherPages} from '../../services/query-to-other-pages';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {QueryItem} from '../../types/queryItem';
 
 @Component({
@@ -57,7 +57,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   assetCount: string | undefined = undefined;
   queryData: {title: string | undefined; map: Map<string, QueryView[]>} | undefined; // saved/loaded or cached
   selectedAssets = new Set<string>();
-  listView: 'LIST' | 'GRID' = 'LIST';
+  listView: 'LIST' | 'GRID' = (this.route.snapshot.queryParamMap.get('view') as 'LIST' | 'GRID') ?? 'LIST';
   propertiesCall$: Observable<Map<string, string[]> | undefined> = this.queriesService.nodeProperties$.pipe(
     filter(isNotUndefined),
     map((nodes) => {
@@ -122,6 +122,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
     private assetGroupService: AssetGroupService,
     private queryToOtherPages: QueryToOtherPages,
     private router: Router,
+    private route: ActivatedRoute,
     private detailedViewService: DetailedViewService
   ) {}
 
@@ -535,6 +536,13 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   toggleListViewMode() {
     this.listView = this.listView === 'GRID' ? 'LIST' : 'GRID';
+    this.router.navigate([], {
+      queryParams: {
+        view: this.listView
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
   }
 
   trackByGuuid(_index: number, asset: Asset) {
