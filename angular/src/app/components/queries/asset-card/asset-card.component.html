@@ -1,5 +1,5 @@
 <ng-container *ngIf="asset$ | async as asset">
-  <mat-card class="mat-card-override" appearance="outlined" (click)="onClick.emit(asset)">
+  <mat-card class="mat-card-override" style="flex-grow: 1" appearance="outlined" (click)="onClick.emit(asset)">
     <mat-card-header>
       <mat-card-title>
         <mat-checkbox
