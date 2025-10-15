@@ -69,6 +69,9 @@ public class PipelineService {
     }
 
     public List<Pipeline> listPipelines(Institution institution) {
+        if(!this.initialised) {
+            this.initPipelines();
+        }
         if (institutionService.getIfExists(institution.name()).isEmpty()){
             throw new IllegalArgumentException("Institute does not exist");
         }
