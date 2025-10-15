@@ -8,7 +8,7 @@
             (change)="$event ? toggle.emit(asset) : null"
             [checked]="checked"></mat-checkbox>
           <span
-            [title]="'040ck2b867e980d0b07142be473ec5_400040ck2b867e980d0b07142be473ec5_400'"
+            [title]="asset.asset_guid"
             style="
               width: 100%;
               font-size: 1rem;
@@ -17,7 +17,7 @@
               text-overflow: ellipsis;
               white-space: nowrap;
             ">
-            040ck2b867e980d0b07142be473ec5_400040ck2b867e980d0b07142be473ec5_400
+            {{ asset.asset_guid }}
           </span>
         </div>
       </mat-card-title>
