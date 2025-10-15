@@ -3,19 +3,13 @@ package dk.northtech.dasscoassetservice.repositories;
 import dk.northtech.dasscoassetservice.domain.AssetStatusInfo;
 import dk.northtech.dasscoassetservice.domain.InternalStatus;
 import jakarta.inject.Inject;
-import org.apache.age.jdbc.base.Agtype;
-import org.apache.age.jdbc.base.AgtypeFactory;
-import org.apache.age.jdbc.base.type.AgtypeMap;
-import org.apache.age.jdbc.base.type.AgtypeMapBuilder;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Repository
 public class InternalStatusRepository {
@@ -54,18 +48,16 @@ public class InternalStatusRepository {
     String dailyAmountCypherSql = statusBaseCypherSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
 
     String statusBaseSql = """
-            select
-            	count(*) filter (where a.internal_status IN ('ASSET_RECEIVED','METADATA_RECEIVED', 'SHARE_REOPENED', 'SPECIFY_SYNC_SCHEDULED') and e.event_id is null) as pending,
-            	count(*) filter (where a.internal_status IN ('COMPLETED', 'SPECIFY_SYNCHRONISED') and e.event_id is null) as completed,
-            	count(*) filter (where a.internal_status IN ('ERDA_ERROR','ERDA_FAILED', 'SPECIFY_SYNC_FAILED') and e.event_id is null) as failed
-            from asset a
-            left join event e on e.asset_guid = a.asset_guid and e.event = 'DELETE_ASSET_METADATA'
-            where a.internal_status in ('ASSET_RECEIVED', 'COMPLETED', 'METADATA_RECEIVED', 'ERDA_ERROR', 'ERDA_FAILED') #and#
+            select internal_status, count(*) from asset
+            #where#
+            group by internal_status
+            order by internal_status ASC
             """;
 
-    String totalAmountSql = statusBaseSql.replaceAll("#and#|, #params", "");
-    String dailyAmountSql = statusBaseSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp::date >= CURRENT_DATE"));
-
+    String totalAmountSql = statusBaseSql.replaceAll("#where#|, #params", "");
+    String dailyAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("WHERE date_asset_taken::date >= CURRENT_DATE"));
+    String customAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("WHERE date_asset_taken::date >= TO_TIMESTAMP(:startDate) and date_asset_taken::date <= TO_TIMESTAMP(:endDate)"));
+//where e.timestamp::date >= TO_TIMESTAMP(:startDate) AND e.timestamp::date <= TO_TIMESTAMP(:endDate)
 
     /**
      * get a map with asset status for current day with keys "failed", "pending" and "completed" and their respective count as values.
@@ -75,44 +67,53 @@ public class InternalStatusRepository {
 
     public Optional<Map<String, Integer>> getDailyInternalStatusAmt(long currMillisecs) {
         return jdbi.withHandle(handle -> {
-//            handle.execute(boilerplate);
             return handle.createQuery(dailyAmountSql)
-                    .map((rs, ctx) -> {
-                        Map<String, Integer> amountMap = new HashMap<>();
-
-                        Integer failedcount = rs.getInt("failed");
-                        Integer pendingcount = rs.getInt("pending");
-                        Integer complcount = rs.getInt("completed");
-
-                        amountMap.put("failed", failedcount);
-                        amountMap.put("pending", pendingcount);
-                        amountMap.put("completed", complcount);
-
-                        return amountMap;
-                    })
-                    .findFirst();
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, Integer> amountMap = new HashMap<>();
+                            while (rs.next()) {
+                                String internalStatus = rs.getString("internal_status");
+                                Integer internalStatusCount = rs.getInt("count");
+                                amountMap.put(internalStatus, internalStatusCount);
+                            }
+                            return Optional.of(amountMap);
+                        }
+                    });
         });
     }
 
     public Optional<Map<String, Integer>> getTotalInternalStatusAmt() {
         return jdbi.withHandle(handle -> {
-//            handle.execute(boilerplate);
             return handle.createQuery(totalAmountSql)
-                    .map((rs, ctx) -> {
-                        Map<String, Integer> amountMap = new HashMap<>();
-
-                        Integer failedcount = rs.getInt("failed");
-                        Integer pendingcount = rs.getInt("pending");
-                        Integer complcount = rs.getInt("completed");
-
-                        amountMap.put("failed", failedcount);
-                        amountMap.put("pending", pendingcount);
-                        amountMap.put("completed", complcount);
-
-                        return amountMap;
-                    })
-                    .findFirst();
+                    .execute((statement, ctx) -> {
+                        try (ctx; var rs = statement.get().getResultSet()) {
+                            Map<String, Integer> amountMap = new HashMap<>();
+                            while (rs.next()) {
+                                String internalStatus = rs.getString("internal_status");
+                                Integer internalStatusCount = rs.getInt("count");
+                                amountMap.put(internalStatus, internalStatusCount);
+                            }
+                            return Optional.of(amountMap);
+                        }
+                    });
         });
+    }
+
+    public Optional<Map<String, Integer>> getDailyInternalStatusAmtCustomRange(long startDate, long endDate) {
+        return jdbi.withHandle(handle -> handle.createQuery(customAmountSql)
+                .bind("startDate", (startDate/1000))
+                .bind("endDate", (endDate/1000))
+                .execute((statement, ctx) -> {
+                    try (ctx; var rs = statement.get().getResultSet()) {
+                        Map<String, Integer> amountMap = new HashMap<>();
+                        while (rs.next()) {
+                            String internalStatus = rs.getString("internal_status");
+                            Integer internalStatusCount = rs.getInt("count");
+                            amountMap.put(internalStatus, internalStatusCount);
+                        }
+                        return Optional.of(amountMap);
+                    }
+                }));
     }
 
     String IN_PROGRESS_SQL = """

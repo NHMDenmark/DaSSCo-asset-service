@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient, HttpResponse} from '@angular/common/http';
-import {catchError, Observable, of, switchMap, timer} from "rxjs";
+import {BehaviorSubject, catchError, Observable, of, switchMap, timer} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -9,6 +9,13 @@ import {catchError, Observable, of, switchMap, timer} from "rxjs";
 export class SpecimenGraphService {
   baseUrl = 'api/v1/graphdata';
   fiveMinutes = 5 * 60 * 1000;
+
+  private _statisticsStartDate = new BehaviorSubject<string | undefined>(undefined);
+  private _statisticsEndDate = new BehaviorSubject<string | undefined>(undefined);
+
+  readonly statisticsStartDate = this._statisticsStartDate.asObservable();
+  readonly statisticsEndDate = this._statisticsEndDate.asObservable();
+
 
   constructor(
     public oidcSecurityService: OidcSecurityService
@@ -94,4 +101,9 @@ export class SpecimenGraphService {
       return of(result as T);
     };
   }
+
+  updateStatisticsDate(start: string | undefined, end: string | undefined){
+    this._statisticsStartDate.next(start);
+    this._statisticsEndDate.next(end);
+}
 }

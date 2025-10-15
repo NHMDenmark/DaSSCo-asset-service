@@ -1,10 +1,11 @@
 import { Component} from '@angular/core';
 import {InternalStatusService} from '../../services/internal-status.service';
-import {filter, map, Observable} from 'rxjs';
+import {filter, map, Observable, combineLatest, switchMap, debounceTime} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {MatTableDataSource} from '@angular/material/table';
 import {InternalStatusDataSource} from '../../types/graph-types';
 import {HttpResponse} from '@angular/common/http';
+import {SpecimenGraphService} from "../../services/specimen-graph.service";
 
 @Component({
   selector: 'dassco-status-widget',
@@ -12,10 +13,14 @@ import {HttpResponse} from '@angular/common/http';
   styleUrls: ['./status-widget.component.scss']
 })
 export class StatusWidgetComponent {
+
+  startDate = this.specimenGraphService.statisticsStartDate;
+  endDate = this.specimenGraphService.statisticsEndDate;
+
   today = new Date();
   displayedColumns: string[] = ['status', 'no'];
 
-  dailyStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
+  /*dailyStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
   = this.internalStatusService.dailyInternalStatuses$
     .pipe(filter(isNotUndefined))
     .pipe(
@@ -23,7 +28,23 @@ export class StatusWidgetComponent {
         let dailyStatuses = new MatTableDataSource<InternalStatusDataSource>();
         return this.getStatusFromResponse(status, dailyStatuses);
       })
-    )
+    )*/
+
+  dailyStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
+  = combineLatest([this.startDate, this.endDate]).pipe(
+    debounceTime(250),
+    filter(([startDate, endDate]) => startDate !== undefined && endDate !== undefined),
+    switchMap(([startDate, endDate]) => {
+      return this.internalStatusService.customRangeInterStatuses(startDate, endDate)
+        .pipe(filter(isNotUndefined))
+        .pipe(
+          map((status: HttpResponse<InternalStatusDataSource>) => {
+            let dailyStatuses = new MatTableDataSource<InternalStatusDataSource>();
+            return this.getStatusFromResponse(status, dailyStatuses);
+          })
+        )
+    })
+  );
 
   totalStatus$: Observable<MatTableDataSource<InternalStatusDataSource>>
   = this.internalStatusService.totalInternalStatuses$
@@ -47,5 +68,6 @@ export class StatusWidgetComponent {
     return dataSource;
   }
 
-  constructor(public internalStatusService: InternalStatusService) {}
+
+  constructor(public internalStatusService: InternalStatusService, public specimenGraphService: SpecimenGraphService) {}
 }

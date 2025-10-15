@@ -23,7 +23,6 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class InternalStatusService {
@@ -119,5 +118,9 @@ public class InternalStatusService {
         } else {
             return internalStatusRepository.getTotalInternalStatusAmt();
         }
+    }
+
+    public Optional<Map<String, Integer>> getInternalStatusAmtCustomRange(long startDate, long endDate) {
+        return internalStatusRepository.getDailyInternalStatusAmtCustomRange(startDate, endDate);
     }
 }

@@ -99,6 +99,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               type: 'custom'
             }
           })
+          this.specimenGraphService.updateStatisticsDate(range.start!.format('DD-MM-YYYY'), range.end!.format('DD-MM-YYYY'));
           return this.specimenGraphService.getSpecimenDataCustom(view,
             moment(range.start).valueOf(),
             endDateFormatted.valueOf())
@@ -155,6 +156,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
           this.location.replaceState(this.router.url.split('?')[0], newQueryString);
+          const [start, end] = this.createDateRange('WEEK');
+          if(start !== undefined && end != undefined){
+            this.timeFrameForm.setValue({
+              start: moment(start, 'DD-MM-YYYY'),
+              end: moment(end, 'DD-MM-YYYY')
+            }, { emitEvent: false });
+          }
           this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
             .pipe(
               filter(isNotUndefined),
@@ -170,7 +178,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             .map(key => `${key}=${queryParams[key]}`)
             .join("&");
           this.location.replaceState(this.router.url.split('?')[0], newQueryString);
-
+          const [start, end] = this.createDateRange('MONTH');
+          if(start !== undefined && end != undefined){
+            this.timeFrameForm.patchValue({
+              start: moment(start, 'DD-MM-YYYY'),
+              end: moment(end, 'DD-MM-YYYY')
+            }, { emitEvent: false });
+          }
           this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
             .pipe(
               filter(isNotUndefined),
@@ -192,6 +206,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               .map(key => `${key}=${queryParams[key]}`)
               .join("&");
             this.location.replaceState(this.router.url.split('?')[0], newQueryString);
+          }
+          const [start, end] = this.createDateRange('YEAR');
+          if(start !== undefined && end != undefined){
+            this.timeFrameForm.patchValue({
+              start: moment(start, 'DD-MM-YYYY'),
+              end: moment(end, 'DD-MM-YYYY')
+            }, { emitEvent: false });
           }
           this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
             .pipe(
@@ -219,6 +240,33 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       });
   }
 
+  createDateRange(range: string){
+    if(range === 'WEEK'){
+      const today = new Date();
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(today.getDate() - 7);
+      return [this.formatDate(oneWeekAgo), this.formatDate(today)];
+    }else if (range === 'MONTH'){
+      const today = new Date();
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(today.getMonth() - 1);
+      return [this.formatDate(oneMonthAgo), this.formatDate(today)];
+    }
+    else if (range === 'YEAR'){
+      const today = new Date();
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(today.getFullYear() - 1);
+      return [this.formatDate(oneYearAgo), this.formatDate(today)];
+    }
+    return [undefined, undefined];
+  }
+
+  formatDate(date: Date): string {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-based
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
 
   ngOnDestroy(): void {
     this.destroy.next(true)
@@ -229,7 +277,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     this.route.queryParamMap.pipe(take(1)).subscribe(params => {
       // type can be week/month/total/total+fluctuation
       const type = params.get("type");
-      console.log('qparams', params)
       if (type?.toLowerCase() == "week" || type == null) {
         this.viewForm.setValue(ViewV2.WEEK);
       } else if (type?.toLowerCase() == "month") {
@@ -258,7 +305,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
       }
     })
   }
-
 
   setStatValue(statValue: StatValue) {
     this.statValueSubject.next(statValue);
@@ -318,5 +364,6 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
   openSnackBar(message: string, action: string) {
     this.snackBar.open(message, action, {duration: 3000});
   }
+
 }
 

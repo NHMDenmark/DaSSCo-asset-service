@@ -1,6 +1,6 @@
 <div class="container">
 <!--  <h3>No. pr. Status for {{today | date}}</h3>-->
-  <div *ngIf="(dailyStatus$ | async) as dailyStatuses">
+ <!-- <div *ngIf="(dailyStatus$ | async) as dailyStatuses">
     <table mat-table [dataSource]="dailyStatuses" class="mat-elevation-z8">
 
       <ng-container matColumnDef="status">
@@ -24,8 +24,41 @@
 
       <tr mat-footer-row *matFooterRowDef="['info']" class="footer-row"></tr>
     </table>
+  </div>-->
+
+  <div *ngIf="(dailyStatus$ | async) as customStatus" class="status-box">
+    <div class="status-header">
+      <p>Status</p>
+      <p>No.</p>
+    </div>
+    <ng-container *ngFor="let statusRow of customStatus.data | sortInternalStatusPipe:'status'">
+      <div class="status-row">
+        <p>{{statusRow.status}}</p>
+        <p>{{statusRow.no}}</p>
+      </div>
+    </ng-container>
+    <div class="status-footer">
+      <p>This number is based on <b>{{startDate | async}}</b> - <b>{{endDate | async}}</b></p>
+    </div>
   </div>
-  <div *ngIf="(totalStatus$ | async) as totalStatuses" >
+
+  <div *ngIf="(totalStatus$ | async) as totalStatuses" class="status-box">
+    <div class="status-header">
+      <p>Status</p>
+      <p>No.</p>
+    </div>
+    <ng-container *ngFor="let statusRow of totalStatuses.data | sortInternalStatusPipe:'status'">
+      <div class="status-row">
+        <p>{{statusRow.status}}</p>
+        <p>{{statusRow.no}}</p>
+      </div>
+    </ng-container>
+    <div class="status-footer">
+      <p>This number is based on <b>all</b> data</p>
+    </div>
+  </div>
+
+<!--  <div *ngIf="(totalStatus$ | async) as totalStatuses" >
     <table mat-table [dataSource]="totalStatuses" class="mat-elevation-z8">
 
       <ng-container matColumnDef="status">
@@ -49,5 +82,5 @@
 
       <tr mat-footer-row *matFooterRowDef="['info']" class="footer-row"></tr>
     </table>
-  </div>
+  </div>-->
 </div>

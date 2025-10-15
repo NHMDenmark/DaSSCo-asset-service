@@ -55,6 +55,7 @@ import {NgOptimizedImage} from '@angular/common';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {AssetCardComponent} from './components/queries/asset-card/asset-card.component';
 import {SafeUrlPipe} from './pipes/safe-url.pipe';
+import {SortInternalStatusPipe} from "./pipes/sort-internal-status.pipe";
 
 @NgModule({
   declarations: [
@@ -81,7 +82,8 @@ import {SafeUrlPipe} from './pipes/safe-url.pipe';
     AssetGroupsComponent,
     NewGroupDialogComponent,
     IllegalAssetGroupDialogComponent,
-    SafeUrlPipe
+    SafeUrlPipe,
+    SortInternalStatusPipe
   ],
   imports: [
     BrowserModule,
