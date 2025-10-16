@@ -7,7 +7,7 @@
       <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
     </div>
 
-    <div class="asset-metadata">
+    <div class="asset-metadata" #assetMetadata>
       <mat-list>
         <div class="list-item-container">
           <mat-list-item>
@@ -151,8 +151,14 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Parent Guids:&nbsp;</span>
-            {{ parentGuids }}
+            <span class="bold-text" style="margin-bottom: auto">Parent Guids:&nbsp;</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem">
+              <a
+                *ngFor="let parentGuid of asset.parent_guids; trackBy: trackBy"
+                [routerLink]="['/detailed-view', parentGuid]">
+                {{ parentGuid }}
+              </a>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -186,6 +192,8 @@
                   <span>
                     {{ event.event }}
                   </span>
+                  |
+                  <span>{{ event?.user }}</span>
                   |
                   <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
                 </div>
