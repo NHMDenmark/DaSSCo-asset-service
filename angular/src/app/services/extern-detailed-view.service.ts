@@ -11,7 +11,6 @@ export class ExternDetailedViewService {
   private http = inject(HttpClient);
   private url = inject(AssetService);
   private proxyUrl = inject(FileProxy);
-  private thumbnail = this.proxyUrl + '/file_proxy/api/files/assets/';
 
   getAssetMetaData(assetGuid: string) {
     return this.http
@@ -24,12 +23,12 @@ export class ExternDetailedViewService {
       return of(undefined);
     }
     return this.http
-      .get(`${this.thumbnail}${institution}/${collection}/${assetGuid}/thumbnail`, {
+      .get(`${this.proxyUrl}/file_proxy/api/files/assets/${institution}/${collection}/${assetGuid}/thumbnail`, {
         responseType: 'blob'
       })
       .pipe(
         catchError(
-          this.handleError(`get ${this.thumbnail}${institution}/${collection}/${assetGuid}/thumbnail`, undefined)
+          this.handleError(`get ${this.proxyUrl}/file_proxy/api/files/assets/${institution}/${collection}/${assetGuid}/thumbnail`, undefined)
         )
       );
   }
@@ -47,6 +46,7 @@ export class ExternDetailedViewService {
       })
     )
   }
+
 
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {

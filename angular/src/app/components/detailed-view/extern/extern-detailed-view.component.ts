@@ -15,7 +15,6 @@ export class ExternDetailedViewComponent {
   private sanitizer = inject(DomSanitizer);
   externDetailedViewService = inject(ExternDetailedViewService);
   assetGuid$ = this.route.paramMap.pipe(map((params) => params.get('asset_guid')));
-
   loading = new BehaviorSubject(true);
   loading$ = this.loading.asObservable();
   loadingImage = new BehaviorSubject(true);
@@ -51,4 +50,5 @@ export class ExternDetailedViewComponent {
   trackByGuid(_index: number, guid: string) {
     return guid;
   }
+
 }
