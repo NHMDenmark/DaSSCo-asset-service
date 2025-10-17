@@ -3,6 +3,7 @@ import {ActivatedRoute} from '@angular/router';
 import {BehaviorSubject, filter, map, switchMap, tap} from 'rxjs';
 import {ExternDetailedViewService} from '../../../services/extern-detailed-view.service';
 import {DomSanitizer} from '@angular/platform-browser';
+import {WikiPageUrl} from "../../../utility";
 
 @Component({
   selector: 'dassco-extern-detailed-view',
@@ -13,6 +14,7 @@ import {DomSanitizer} from '@angular/platform-browser';
 export class ExternDetailedViewComponent {
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
+  wikiPageUrl = inject(WikiPageUrl);
   externDetailedViewService = inject(ExternDetailedViewService);
   assetGuid$ = this.route.paramMap.pipe(map((params) => params.get('asset_guid')));
   loading = new BehaviorSubject(true);

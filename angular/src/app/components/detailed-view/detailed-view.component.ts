@@ -7,6 +7,7 @@ import {Asset} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages';
 import {EMPTY, switchMap, take} from 'rxjs';
 import {DatePipe} from '@angular/common';
+import {WikiPageUrl} from "../../utility";
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -21,6 +22,7 @@ export class DetailedViewComponent implements OnInit {
   assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
   datePipe = inject(DatePipe);
+  wikiPageUrl = inject(WikiPageUrl);
 
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
   constructor(

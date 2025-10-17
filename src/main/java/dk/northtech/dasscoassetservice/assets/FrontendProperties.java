@@ -8,11 +8,13 @@ public class FrontendProperties {
   public final String rootUrl;
   public final String clientId;
   public final String fileProxyRootUrl;
+  public final String wikiPageUrl;
 
-  public FrontendProperties(String authenticationUrl, String rootUrl, String clientId, String fileProxyRootUrl) {
+  public FrontendProperties(String authenticationUrl, String rootUrl, String clientId, String fileProxyRootUrl, String wikiPageUrl) {
     this.authenticationUrl = authenticationUrl;
     this.rootUrl = rootUrl;
     this.clientId = clientId;
     this.fileProxyRootUrl = fileProxyRootUrl;
+    this.wikiPageUrl = wikiPageUrl;
   }
 }

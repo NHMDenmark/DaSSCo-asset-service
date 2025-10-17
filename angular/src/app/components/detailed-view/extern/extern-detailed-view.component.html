@@ -4,6 +4,11 @@
 </ng-container>
 
 <ng-container *ngIf="assetMetaData$ | async as asset">
+  <a [href]="wikiPageUrl" target="_blank" matTooltip="Open wiki page in a new tab"
+     style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 9999" mat-mini-fab
+     color="primary" aria-label="Wiki page link">
+    <mat-icon>help</mat-icon>
+  </a>
   <div class="asset-thumbnail">
     <ng-container *ngIf="(loadingImage$ | async)">
       <mat-spinner></mat-spinner>

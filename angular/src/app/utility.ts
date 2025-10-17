@@ -10,3 +10,8 @@ export const AssetService = new InjectionToken<string>('Asset Service Url', {
   providedIn: "root",
   factory: () => checkNotUndefined((window as any).frontendProperties?.rootUrl, 'missing assetservice in frontendProperties'),
 });
+
+export const WikiPageUrl = new InjectionToken<string>('Wiki Page Url', {
+  providedIn: "root",
+  factory: () => checkNotUndefined((window as any).frontendProperties?.wikiPageUrl, 'missing wiki page url in frontendProperties'),
+});

@@ -2,11 +2,17 @@
   <div *ngIf="asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
-        <img [src]="thumbnailUrl" alt="Thumbnail" />
+        <img [src]="thumbnailUrl" alt="Thumbnail"/>
       </ng-container>
       <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
     </div>
 
+
+    <a [href]="wikiPageUrl" target="_blank" matTooltip="Open wiki page in a new tab"
+       style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 9999" mat-mini-fab
+       color="primary" aria-label="Wiki page link">
+      <mat-icon>help</mat-icon>
+    </a>
     <div class="asset-metadata" #assetMetadata>
       <mat-list>
         <div class="list-item-container">
@@ -198,7 +204,7 @@
                   <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
                 </div>
                 <div *ngIf="!last">
-                  <hr />
+                  <hr/>
                 </div>
               </ng-container>
             </div>
