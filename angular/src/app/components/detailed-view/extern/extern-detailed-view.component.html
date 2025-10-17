@@ -1,0 +1,220 @@
+<ng-container *ngIf="loading$ | async">
+  <mat-spinner
+    style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000"></mat-spinner>
+</ng-container>
+
+<ng-container *ngIf="assetMetaData$ | async as asset">
+  <div class="asset-thumbnail">
+    <ng-container *ngIf="(loadingImage$ | async)">
+      <mat-spinner></mat-spinner>
+    </ng-container>
+    <ng-container *ngIf="(thumbnail$ | async) as thumbnail; else noThumbnail">
+      <img [src]="thumbnail" [alt]="asset?.asset_guid"/>
+    </ng-container>
+    <ng-template #noThumbnail>
+      <img *ngIf="!(loadingImage$ | async)" src="assets/placeholder.png" alt="placeholder"/>
+    </ng-template>
+  </div>
+  <div class="asset-metadata" #assetMetadata>
+    <mat-list>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Asset Guid:&nbsp;</span>
+          {{ asset?.asset_guid ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Asset Pid:&nbsp;</span>
+          {{ asset?.asset_pid ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Subject:&nbsp;</span>
+          {{ asset?.asset_subject ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Audited:&nbsp;</span>
+          {{ asset?.audited ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Barcodes:&nbsp;</span>
+          <ul>
+            <li *ngFor="let barcode of asset?.barcode">
+              {{ barcode }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Camera Setting Control:&nbsp;</span>
+          {{ asset?.camera_setting_control ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Collection:&nbsp;</span>
+          {{ asset?.collection ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Deleted Date:&nbsp;</span>
+          {{ asset?.date_asset_deleted_ars | date : 'dd/MM-yyyy HH:mm' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Asset Taken Date:&nbsp;</span>
+          {{ asset?.date_asset_taken | date : 'dd/MM-yyyy HH:mm' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Audited Date:&nbsp;</span>
+          {{ asset?.date_audited | date : 'dd/MM-yyyy HH:mm' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Barcode:&nbsp;</span>
+          <ul>
+            <li *ngFor="let format of asset?.file_formats">
+              {{ format }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Funding:&nbsp;</span>
+          <ul>
+            <li *ngFor="let funding of asset?.funding">
+              {{ funding }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Institution:&nbsp;</span>
+          {{ asset?.institution ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Legality:&nbsp;</span>
+          <pre *ngIf="asset?.legality">{{ asset?.legality | json }}</pre>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Metadata Version:&nbsp;</span>
+          {{ asset?.metadata_version ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Mime types:&nbsp;</span>
+          <ul>
+            <li *ngFor="let mimetype of asset?.mime_type">
+              {{ mimetype }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Mos ID:&nbsp;</span>
+          {{ asset?.mos_id ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Multi-Specimen:&nbsp;</span>
+          {{ asset?.multi_specimen ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item style="overflow-x: auto">
+          <span class="bold-text" style="margin-bottom: auto">Parent Guids:&nbsp;</span>
+          <ul>
+            <li *ngFor="let parentGuid of asset.parent_guids; trackBy: trackByGuid">
+              <a [routerLink]="['/extern/detailed-view', parentGuid]">
+                {{ parentGuid }}
+              </a>
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Payload Type:&nbsp;</span>
+          {{ asset?.payload_type ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Pipeline:&nbsp;</span>
+          {{ asset?.pipeline_name ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Preparation type:&nbsp;</span>
+          <ul>
+            <li *ngFor="let preparation_type of asset?.preparation_type">
+              {{ preparation_type }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Specify Attachment:&nbsp;</span>
+          {{ asset?.specify_attachment_title ?? '' }}
+        </mat-list-item>
+      </div>
+      <mat-divider></mat-divider>
+      <div class="list-item-container">
+        <mat-list-item>
+          <span class="bold-text">Specimen PID:&nbsp;</span>
+          <ul>
+            <li *ngFor="let pid of asset?.specimen_pid">
+              {{ pid }}
+            </li>
+          </ul>
+        </mat-list-item>
+      </div>
+    </mat-list>
+  </div>
+</ng-container>

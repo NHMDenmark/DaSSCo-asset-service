@@ -69,12 +69,10 @@ export class DetailedViewComponent implements OnInit {
         switchMap((assetResponse) => {
           if (assetResponse) {
             this.asset = assetResponse;
-            console.log(assetResponse);
             const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
             this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
             this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
             this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
-            console.log(assetResponse.parent_guids);
             this.tags = Object.entries(assetResponse?.tags ?? {})
               .map(([key, value]) => `${key}: ${value}`)
               .join(', ');

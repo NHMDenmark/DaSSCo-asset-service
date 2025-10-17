@@ -1,14 +1,16 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {UserComponent} from './components/user/user.component';
-import {AuthenticatedGuard} from './authenticated.guard';
+import {AuthenticatedGuard} from './guards/authenticated.guard';
 import {DocsComponent} from './components/docs/docs.component';
 import {GraphComponent} from './components/graph/graph.component';
 import {StatisticsComponent} from './components/statistics/statistics.component';
-import {BulkUpdateComponent} from "./components/bulk-update/bulk-update.component";
-import {QueriesComponent} from "./components/queries/queries.component";
-import {DetailedViewComponent} from "./components/detailed-view/detailed-view.component";
-import {AssetGroupsComponent} from "./components/asset-groups/asset-groups.component";
+import {BulkUpdateComponent} from './components/bulk-update/bulk-update.component';
+import {QueriesComponent} from './components/queries/queries.component';
+import {DetailedViewComponent} from './components/detailed-view/detailed-view.component';
+import {AssetGroupsComponent} from './components/asset-groups/asset-groups.component';
+import {ExternDetailedViewComponent} from './components/detailed-view/extern/extern-detailed-view.component';
+import {HasRightsGuard} from "./guards/has-rights.guard";
 
 const routes: Routes = [
   {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
@@ -19,6 +21,11 @@ const routes: Routes = [
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
   {path: 'asset-groups', component: AssetGroupsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'detailed-view/:asset_guid', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
+  {
+    path: 'extern/detailed-view/:asset_guid',
+    component: ExternDetailedViewComponent,
+    canActivate: [HasRightsGuard],
+  },
   {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 ];
 
@@ -26,4 +33,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

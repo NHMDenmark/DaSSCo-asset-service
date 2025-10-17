@@ -103,3 +103,44 @@ export enum FileFormat {
   DNG,
   TXT
 }
+
+export interface Legality {
+  id?: number;
+  copyright?: string;
+  license?: string;
+  credit?: string;
+}
+
+export interface PublicAssetMetadata {
+  asset_guid?: string;
+  asset_pid?: string;
+  asset_subject?: string;
+  audited?: boolean;
+
+  barcode?: string[];
+
+  camera_setting_control?: string;
+  collection?: string;
+  date_asset_deleted_ars?: string;
+  date_asset_taken?: string;
+  date_audited?: string;
+
+  file_formats?: string[];
+
+  funding?: string[];
+  institution?: string;
+  legality?: Legality;
+  metadata_version?: string;
+
+  mime_type?: string[];
+  mos_id?: string;
+  multi_specimen?: boolean;
+
+  parent_guids?: string[];
+  payload_type?: string;
+  pipeline_name?: string;
+  preparation_type?: string[];
+
+  specify_attachment_title?: string;
+  specimen_pid?: string[];
+}
