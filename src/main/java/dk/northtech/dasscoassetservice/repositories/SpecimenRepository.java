@@ -104,6 +104,9 @@ public interface SpecimenRepository extends SqlObject {
     """)
     void deleteAssetSpecimen(String assetGuid, Integer specimenId);
 
+    @SqlUpdate("delete from specimen where specimen_pid = :pid")
+    int deleteSpecimenWithPid(String pid);
+
     @SqlUpdate("""
     UPDATE asset_specimen
     SET specify_collection_object_attachment_id = :collectionObjectAttachmentId

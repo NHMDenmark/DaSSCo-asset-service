@@ -10,6 +10,8 @@ import dk.northtech.dasscoassetservice.repositories.RestrictedObjectType;
 import dk.northtech.dasscoassetservice.repositories.RoleRepository;
 import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,43 @@ public class SpecimenService {
             return Optional.empty();
         } else {
             return Optional.of(specimen);
+        }
+    }
+
+    public Optional<Specimen> findSpecimen(String pid, User user) {
+        Specimen specimen = pidSpecimen.get(pid);
+        if (specimen == null) {
+            return Optional.empty();
+        } else {
+            if(!rightsValidationService.checkRightsSpecimen(user, specimen, false)){
+                throw new DasscoIllegalActionException("FORBIDDEN");
+            }
+            return Optional.of(specimen);
+        }
+    }
+
+    public Response deleteSpecimen(String pid, User user) {
+        if(user.token == null) {
+            throw new DasscoIllegalActionException("FORBIDDEN");
+        }
+        Optional<Specimen> optionalSpecimen = findSpecimen(pid);
+        if (optionalSpecimen.isEmpty()) {
+            throw new NotFoundException("No specimen found with PID " + pid);
+        }else{
+            Specimen specimen = optionalSpecimen.get();
+            if(!rightsValidationService.checkRightsSpecimen(user, specimen, true)){
+                throw new DasscoIllegalActionException("FORBIDDEN");
+            }
+            List<String> assetGuids = this.jdbi.withHandle(h -> h.createQuery("select asset_guid from asset_specimen where specimen_id = :specimen_id").bind("specimen_id", specimen.specimen_id).mapTo(String.class).list());
+            if(!assetGuids.isEmpty()) {
+                return Response.status(Response.Status.FORBIDDEN).entity("Can't delete Specimen with PID: " + pid + ", it has the following assets attached " + assetGuids).build();
+            }else{
+                return this.jdbi.withHandle(handle -> {
+                    SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+                    int count = specimenRepository.deleteSpecimenWithPid(pid);
+                    return Response.status(Response.Status.OK).entity("%s specimen deleted with PID %s".formatted(count, pid)).build();
+                });
+            }
         }
     }
 
