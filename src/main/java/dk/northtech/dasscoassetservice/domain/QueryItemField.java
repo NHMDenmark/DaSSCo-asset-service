@@ -46,7 +46,7 @@ public enum QueryItemField {
     RESTRICTED_ACCESS("restricted_access", "restricted_access", ""), // how does this one work?
     SPECIFY_ATTACHMENT_REMARKS("specify_attachment_remarks", "specify_attachment_remarks", "asset"),
     SPECIFY_ATTACHMENT_TITLE("specify_attachment_title", "specify_attachment_title", "asset"),
-    SPECIMENS("specimens", "specimen.specimen_pid", "specimen"),
+    SPECIMENS("specimens", "specimen.barcode", "specimen"),
     STATUS("status", "status", "asset"),
     SUBJECT("subject", "subject", "asset"),
     UPDATE_USER("update_user", "update_user", ""), // TODO should this be deleted?
