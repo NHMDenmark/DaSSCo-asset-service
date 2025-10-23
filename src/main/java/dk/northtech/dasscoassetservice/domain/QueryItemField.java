@@ -30,7 +30,8 @@ public enum QueryItemField {
     FUNDING("funding", "funding", "funding"),
     INSTITUTION("institution", "institution_name", "collection"),
     INTERNAL_STATUS("internal_status", "internal_status", "asset"),
-    ISSUES("issues", "issue.name", "issue"), // What field in issues?
+    ISSUES_CATEGORY("issue category", "issue.category", "issue"),
+    ISSUES_NAME("issue name", "issue.name", "issue"),
     LEGAL("legal", "copyright", "legality"),
     MAKE_PUBLIC("make_public", "make_public", "asset"),
     METADATA_SOURCE("metadata_source", "metadata_source", "asset"),
@@ -46,7 +47,7 @@ public enum QueryItemField {
     RESTRICTED_ACCESS("restricted_access", "restricted_access", ""), // how does this one work?
     SPECIFY_ATTACHMENT_REMARKS("specify_attachment_remarks", "specify_attachment_remarks", "asset"),
     SPECIFY_ATTACHMENT_TITLE("specify_attachment_title", "specify_attachment_title", "asset"),
-    SPECIMENS("specimens", "specimen.specimen_pid", "specimen"),
+    SPECIMENS("specimens", "specimen.barcode", "specimen"),
     STATUS("status", "status", "asset"),
     SUBJECT("subject", "subject", "asset"),
     UPDATE_USER("update_user", "update_user", ""), // TODO should this be deleted?

@@ -2,12 +2,18 @@
   <div *ngIf="asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
-        <img [src]="thumbnailUrl" alt="Thumbnail" />
+        <img [src]="thumbnailUrl" alt="Thumbnail"/>
       </ng-container>
       <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
     </div>
 
-    <div class="asset-metadata">
+
+    <a [href]="wikiPageUrl" target="_blank" matTooltip="Open wiki page in a new tab"
+       style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 9999" mat-mini-fab
+       color="primary" aria-label="Wiki page link">
+      <mat-icon>help</mat-icon>
+    </a>
+    <div class="asset-metadata" #assetMetadata>
       <mat-list>
         <div class="list-item-container">
           <mat-list-item>
@@ -151,8 +157,14 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Parent Guids:&nbsp;</span>
-            {{ parentGuids }}
+            <span class="bold-text" style="margin-bottom: auto">Parent Guids:&nbsp;</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem">
+              <a
+                *ngFor="let parentGuid of asset.parent_guids; trackBy: trackBy"
+                [routerLink]="['/detailed-view', parentGuid]">
+                {{ parentGuid }}
+              </a>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -187,10 +199,12 @@
                     {{ event.event }}
                   </span>
                   |
+                  <span>{{ event?.user }}</span>
+                  |
                   <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
                 </div>
                 <div *ngIf="!last">
-                  <hr />
+                  <hr/>
                 </div>
               </ng-container>
             </div>

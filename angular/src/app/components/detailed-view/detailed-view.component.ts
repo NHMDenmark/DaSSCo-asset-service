@@ -1,4 +1,4 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params} from '@angular/router';
@@ -7,6 +7,7 @@ import {Asset} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages';
 import {EMPTY, switchMap, take} from 'rxjs';
 import {DatePipe} from '@angular/common';
+import {WikiPageUrl} from "../../utility";
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -21,7 +22,9 @@ export class DetailedViewComponent implements OnInit {
   assetList: string[] = this.queryToDetailedViewService.getAssets();
   dataLoaded: boolean = false;
   datePipe = inject(DatePipe);
+  wikiPageUrl = inject(WikiPageUrl);
 
+  @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
   constructor(
     private detailedViewService: DetailedViewService,
     private sanitizer: DomSanitizer,
@@ -34,6 +37,10 @@ export class DetailedViewComponent implements OnInit {
     this.route.params.subscribe((params: Params) => {
       this.assetGuid = params['asset_guid'];
       this.initializeCurrentAsset(this.assetGuid);
+      this.metadataContainer?.nativeElement?.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
   }
 
@@ -43,8 +50,6 @@ export class DetailedViewComponent implements OnInit {
   fileFormats?: string | undefined;
   restrictedAccess?: string | undefined;
   tags?: string | undefined;
-  parentGuids: string = '';
-  // TODO: For now: Event and Timestamp
   events?: string[] | undefined;
 
   thumbnailUrl?: SafeUrl;
@@ -59,7 +64,6 @@ export class DetailedViewComponent implements OnInit {
   }
 
   fetchData(assetGuid: string) {
-    // Steps: 1. Get Asset Metadata
     this.detailedViewService
       .getAssetMetadata(assetGuid)
       .pipe(
@@ -67,12 +71,10 @@ export class DetailedViewComponent implements OnInit {
         switchMap((assetResponse) => {
           if (assetResponse) {
             this.asset = assetResponse;
-            console.log(assetResponse);
             const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
             this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
             this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
             this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
-            this.parentGuids = assetResponse?.parent_guids?.join(', ') ?? '';
             this.tags = Object.entries(assetResponse?.tags ?? {})
               .map(([key, value]) => `${key}: ${value}`)
               .join(', ');
@@ -229,5 +231,8 @@ export class DetailedViewComponent implements OnInit {
 
   openSnackBar(message: string, action: string) {
     this._snackBar.open(message, action);
+  }
+  trackBy(_index: number, guid: string) {
+    return guid;
   }
 }

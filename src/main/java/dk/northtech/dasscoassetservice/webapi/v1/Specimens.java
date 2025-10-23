@@ -1,13 +1,9 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.Collection;
-import dk.northtech.dasscoassetservice.domain.Institution;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
-import dk.northtech.dasscoassetservice.domain.Specimen;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.SpecimenService;
 import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,18 +11,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 
 @Component
@@ -61,6 +57,24 @@ public class Specimens {
         }
         specimenService.putSpecimen(specimen, userService.from(securityContext));
         return specimen;
+    }
+
+    @GET
+    @Path("/{specimenPID}")
+    @Operation(summary = "Get Specimen with PID", description = "Get a specimen with PID")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Specimen getSpecimen(@PathParam("specimenPID") String specimenPID, @Context SecurityContext securityContext){
+        return specimenService.findSpecimen(specimenPID, securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext)).orElseThrow(()->new NotFoundException("No specimen found with PID " + specimenPID));
+    }
+
+    @DELETE
+    @Path("/{specimenPID}")
+    @Operation(summary = "Delete Specimen with PID", description = "Delete a specimen with PID")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    @ApiResponse(responseCode = "403", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    @ApiResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
+    public Response deleteSpecimen(@PathParam("specimenPID") String specimenPID, @Context SecurityContext securityContext){
+        return specimenService.deleteSpecimen(specimenPID, userService.from(securityContext));
     }
 
     @GET

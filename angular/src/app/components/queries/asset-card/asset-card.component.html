@@ -1,12 +1,25 @@
 <ng-container *ngIf="asset$ | async as asset">
-  <mat-card class="mat-card-override" appearance="outlined" (click)="onClick.emit(asset)">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-checkbox
-          (click)="$event.stopPropagation()"
-          (change)="$event ? toggle.emit(asset) : null"
-          [checked]="checked"></mat-checkbox>
-        {{ asset.asset_guid }}
+  <mat-card class="mat-card-override" style="flex-grow: 1" appearance="outlined" (click)="onClick.emit(asset)">
+    <mat-card-header style="width: 100%">
+      <mat-card-title style="width: 100%">
+        <div style="display: flex; align-items: center; gap: 0.25rem; width: 100%">
+          <mat-checkbox
+            (click)="$event.stopPropagation()"
+            (change)="$event ? toggle.emit(asset) : null"
+            [checked]="checked"></mat-checkbox>
+          <span
+            [title]="asset.asset_guid"
+            style="
+              width: 100%;
+              font-size: 1rem;
+              margin-inline: 0.5rem;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            ">
+            {{ asset.asset_guid }}
+          </span>
+        </div>
       </mat-card-title>
       <mat-card-subtitle>
         <span class="subtitle-flex">

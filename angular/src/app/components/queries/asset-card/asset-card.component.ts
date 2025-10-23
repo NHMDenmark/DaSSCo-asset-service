@@ -5,7 +5,7 @@ import {Asset, AssetSpecimen, Specimen} from 'src/app/types/types';
 @Component({
   selector: 'dassco-asset-card',
   host: {
-    style: 'height: 100%; display: flex;'
+    style: 'display: flex; max-width: 360px; min-width: 272px; flex: 1 1 320px; flex-direction: column;'
   },
   templateUrl: './asset-card.component.html',
   styleUrls: ['./asset-card.component.scss']

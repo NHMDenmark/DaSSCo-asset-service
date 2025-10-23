@@ -25,7 +25,13 @@
           Docs
         </button>
       </div>
-      <button mat-button aria-label="Sign out" class="logout-btn" (click)="authService.logout()">
+
+      <button
+        *ngIf="authService.isAuthenticated$ | async"
+        mat-button
+        aria-label="Sign out"
+        class="logout-btn"
+        (click)="authService.logout()">
         Log out
         <mat-icon>logout</mat-icon>
       </button>

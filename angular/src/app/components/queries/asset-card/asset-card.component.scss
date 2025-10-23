@@ -22,3 +22,9 @@ p {
   align-items: center;
   gap: 0.25rem;
 }
+
+::ng-deep {
+  .mat-card-header-text {
+    width: 100% !important;
+  }
+}
