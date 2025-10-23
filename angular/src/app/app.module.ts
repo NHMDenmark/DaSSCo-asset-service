@@ -84,7 +84,7 @@ import {SortInternalStatusPipe} from "./pipes/sort-internal-status.pipe";
     NewGroupDialogComponent,
     IllegalAssetGroupDialogComponent,
     SafeUrlPipe,
-    ExternDetailedViewComponent
+    ExternDetailedViewComponent,
     SafeUrlPipe,
     SortInternalStatusPipe
   ],

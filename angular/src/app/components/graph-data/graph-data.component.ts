@@ -79,37 +79,41 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     , private snackBar: MatSnackBar, private route: ActivatedRoute,
               private router: Router, private location: Location) {
 
+    this.timeFrameForm.valueChanges.pipe(
+      startWith(null),
+      distinctUntilChanged(),
+      filter((range) => !!range?.start && !!range?.end),
+      switchMap((range) => {
+        if (range) {
+          if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
+            && moment(range.end, 'DD-MM-YYYY ', true).isValid()
+            && this.timeFrameForm.valid) {
+            let view = "WEEK";
+            if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
+            if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
+            // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
+            const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
 
-    this.timeFrameForm.valueChanges.pipe(startWith(null), distinctUntilChanged(), filter((range) => !!range?.start && !!range?.end), switchMap((range) => {
-      if (range) {
-        if (moment(range.start, 'DD-MM-YYYY ', true).isValid()
-          && moment(range.end, 'DD-MM-YYYY ', true).isValid()
-          && this.timeFrameForm.valid) {
-          let view = "WEEK";
-          if (this.viewForm.value === ViewV2.YEAR) view = 'YEAR';
-          if (this.viewForm.value === ViewV2.EXPONENTIAL) view = 'EXPONENTIAL';
-          // this is stupid but otherwise it fucks up both zone and time and it's all wrong. time is limited. sorry
-          const endDateFormatted = moment(moment(range.end).format('YYYY-MM-DDTHH:mm:ss')).endOf('day');
-
-          this.router.navigate([], {
-            queryParamsHandling: 'merge',
-            queryParams: {
-              startDate: range.start!.format('DD-MM-YYYY'),
-              endDate: range.end!.format('DD-MM-YYYY'),
-              type: 'custom'
-            }
-          })
-          this.specimenGraphService.updateStatisticsDate(range.start!.format('DD-MM-YYYY'), range.end!.format('DD-MM-YYYY'));
-          return this.specimenGraphService.getSpecimenDataCustom(view,
-            moment(range.start).valueOf(),
-            endDateFormatted.valueOf())
-            .pipe(filter(isNotUndefined))
+            this.router.navigate([], {
+              queryParamsHandling: 'merge',
+              queryParams: {
+                startDate: range.start!.format('DD-MM-YYYY'),
+                endDate: range.end!.format('DD-MM-YYYY'),
+                type: 'custom'
+              }
+            });
+            this.specimenGraphService.updateStatisticsDate(range.start!.format('DD-MM-YYYY'), range.end!.format('DD-MM-YYYY'));
+            return this.specimenGraphService.getSpecimenDataCustom(view,
+              moment(range.start).valueOf(),
+              endDateFormatted.valueOf())
+              .pipe(filter(isNotUndefined))
+          }
+          return of(null)
+        } else {
+          return of(null);
         }
-        return of(null)
-      } else {
-        return of(null);
-      }
-    }), takeUntil(this.destroy))
+      }),
+      takeUntil(this.destroy))
       .subscribe(customData => {
         if (!customData) {
           this.statsV2Subject.next(undefined)
@@ -157,12 +161,13 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             .join("&");
           this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           const [start, end] = this.createDateRange('WEEK');
-          if(start !== undefined && end != undefined){
+          this.specimenGraphService.updateStatisticsDate(start, end);
+          /*if(start !== undefined && end != undefined){
             this.timeFrameForm.setValue({
               start: moment(start, 'DD-MM-YYYY'),
               end: moment(end, 'DD-MM-YYYY')
             }, { emitEvent: false });
-          }
+          }*/
           this.currentViewSubscription = this.specimenGraphService.specimenDataWeek$
             .pipe(
               filter(isNotUndefined),
@@ -179,12 +184,7 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
             .join("&");
           this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           const [start, end] = this.createDateRange('MONTH');
-          if(start !== undefined && end != undefined){
-            this.timeFrameForm.patchValue({
-              start: moment(start, 'DD-MM-YYYY'),
-              end: moment(end, 'DD-MM-YYYY')
-            }, { emitEvent: false });
-          }
+          this.specimenGraphService.updateStatisticsDate(start, end);
           this.currentViewSubscription = this.specimenGraphService.specimenDataMonth$
             .pipe(
               filter(isNotUndefined),
@@ -207,13 +207,8 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
               .join("&");
             this.location.replaceState(this.router.url.split('?')[0], newQueryString);
           }
-          const [start, end] = this.createDateRange('YEAR');
-          if(start !== undefined && end != undefined){
-            this.timeFrameForm.patchValue({
-              start: moment(start, 'DD-MM-YYYY'),
-              end: moment(end, 'DD-MM-YYYY')
-            }, { emitEvent: false });
-          }
+         const [start, end] = this.createDateRange('YEAR');
+         this.specimenGraphService.updateStatisticsDate(start, end);
           this.currentViewSubscription = this.specimenGraphService.specimenDataYear$
             .pipe(
               filter(isNotUndefined),
