@@ -2,15 +2,19 @@
   <div *ngIf="asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
-        <img [src]="thumbnailUrl" alt="Thumbnail"/>
+        <img [src]="thumbnailUrl" alt="Thumbnail" />
       </ng-container>
       <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
     </div>
 
-
-    <a [href]="wikiPageUrl" target="_blank" matTooltip="Open wiki page in a new tab"
-       style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 9999" mat-mini-fab
-       color="primary" aria-label="Wiki page link">
+    <a
+      [href]="wikiPageUrl"
+      target="_blank"
+      matTooltip="Open wiki page in a new tab"
+      style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 50"
+      mat-mini-fab
+      color="primary"
+      aria-label="Wiki page link">
       <mat-icon>help</mat-icon>
     </a>
     <div class="asset-metadata" #assetMetadata>
@@ -190,8 +194,26 @@
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Issues:&nbsp;</span>
+
+            <div style="padding: 0.5rem; display: flex; gap: 0.25rem; flex-wrap: wrap">
+              <button
+                type="button"
+                style="flex-shrink: 0"
+                [color]="issue.solved ? 'primary' : 'warn'"
+                (click)="openIssueDialog(issue)"
+                *ngFor="let issue of asset?.issues; trackBy: trackByIssueId"
+                mat-raised-button>
+                {{ issue.name }}
+              </button>
+            </div>
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
           <mat-list-item style="display: block">
-            <span class="bold-text" style="align-self: flex-start">Events:&nbsp;</span>
+            <span class="bold-text">Events:&nbsp;</span>
             <div class="events">
               <ng-container *ngFor="let event of asset.events; let last = last">
                 <div style="display: flex; font-size: 0.875rem; width: fit-content; align-items: center; gap: 0.5rem">
@@ -204,7 +226,7 @@
                   <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
                 </div>
                 <div *ngIf="!last">
-                  <hr/>
+                  <hr />
                 </div>
               </ng-container>
             </div>

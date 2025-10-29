@@ -9,7 +9,17 @@ export enum AssetStatus {
   ISSUE_WITH_METADATA,
   FOR_DELETION
 }
-
+export interface Issue {
+  issue_id?: number;
+  asset_guid?: string;
+  category?: string;
+  name?: string;
+  timestamp?: string;
+  status?: string;
+  description?: string;
+  notes?: string;
+  solved?: boolean;
+}
 export interface Asset {
   asset_pid: string | undefined;
   asset_guid: string | undefined;
@@ -38,6 +48,7 @@ export interface Asset {
   internal_status: string | undefined;
   updateUser: string | undefined;
   events: Event[] | undefined;
+  issues: Issue[] | undefined;
   digitiser: string | undefined;
   workstation: string | undefined;
   pipeline: string | undefined;

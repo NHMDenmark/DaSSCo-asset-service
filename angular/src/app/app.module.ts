@@ -57,6 +57,7 @@ import {AssetCardComponent} from './components/queries/asset-card/asset-card.com
 import {SafeUrlPipe} from './pipes/safe-url.pipe';
 import {ExternDetailedViewComponent} from './components/detailed-view/extern-detailed-view/extern-detailed-view.component';
 import {SortInternalStatusPipe} from './pipes/sort-internal-status.pipe';
+import {IssueViewerComponent} from './components/issue-viewer/issue-viewer.component';
 
 @NgModule({
   declarations: [
@@ -86,6 +87,7 @@ import {SortInternalStatusPipe} from './pipes/sort-internal-status.pipe';
     SafeUrlPipe,
     ExternDetailedViewComponent,
     SafeUrlPipe,
+    IssueViewerComponent,
     SortInternalStatusPipe
   ],
   imports: [
