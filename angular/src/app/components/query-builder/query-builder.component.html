@@ -139,6 +139,7 @@
                   queryForm.get('dataType')?.value !== QueryDataType.ENUM &&
                   child.get('operator')?.value &&
                   queryForm.get('node')?.value?.property !== 'internal_status' &&
+                  queryForm.get('node')?.value?.property !== 'file_format' &&
                   !child.get('operator')?.value!.includes('EMPTY')
                 ">
                 <mat-form-field class="example-form-field" appearance="outline">
@@ -163,6 +164,19 @@
                     <mat-option value="SPECIFY_SYNC_SCHEDULED">SPECIFY_SYNC_SCHEDULED</mat-option>
                     <mat-option value="SPECIFY_SYNC_FAILED">SPECIFY_SYNC_FAILED</mat-option>
                     <mat-option value="SPECIFY_SYNCHRONISED">SPECIFY_SYNCHRONISED</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div
+                *ngIf="
+                  queryForm.get('dataType')?.value !== QueryDataType.ENUM &&
+                  child.get('operator')?.value &&
+                  queryForm.get('node')?.value?.property === 'file_format' &&
+                  !child.get('operator')?.value!.includes('EMPTY')
+                ">
+                <mat-form-field class="example-form-field" appearance="outline">
+                  <mat-select auto formControlName="value">
+                    <mat-option *ngFor="let format of FILE_FORMATS" [value]="format">{{ format }}</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>

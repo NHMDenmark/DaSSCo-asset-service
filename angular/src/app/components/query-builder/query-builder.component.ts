@@ -5,6 +5,7 @@ import {Moment} from 'moment-timezone';
 import {BehaviorSubject, map, Observable, Subject, takeUntil} from 'rxjs';
 import {CacheService} from '../../services/cache.service';
 import {QueryItem} from '../../types/queryItem';
+export const FILE_FORMATS = ['CR3', 'DNG', 'JPEG', 'PDF', 'PNG', 'RAF', 'RAW', 'TIF', 'TXT'] as const;
 
 @Component({
   selector: 'dassco-query-builder',
@@ -13,6 +14,7 @@ import {QueryItem} from '../../types/queryItem';
 })
 export class QueryBuilderComponent implements OnInit, OnDestroy {
   @ViewChild('enumInput', {static: false}) enumInput: HTMLInputElement | undefined;
+  FILE_FORMATS = FILE_FORMATS;
 
   operators_string = ['EQUAL', 'STARTS WITH', 'ENDS WITH', 'CONTAINS', 'EMPTY'];
 
@@ -117,6 +119,7 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
         this.setOperatorsAndDataType(choice);
       }
     });
+    this.queryForm.valueChanges.subscribe((data) => console.log(data));
   }
 
   save(childIdx: number | undefined) {
@@ -136,8 +139,9 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
       } else {
         value = where.get('value')?.value;
       }
-      if (this.queryForm.get('dataType')?.value === QueryDataType.ENUM)
+      if (this.queryForm.get('dataType')?.value === QueryDataType.ENUM) {
         this.cacheService.setEnumValues(this.selectedEnumValues);
+      }
 
       const newQueryField = {
         operator: where.get('operator')?.value,
@@ -148,6 +152,7 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
     });
     if (childIdx !== undefined) this.wheres.at(childIdx).markAsUntouched();
 
+    console.log(this.chosenNode.value.node, this.chosenNode.value.property, innerList);
     this.saveQueryEvent.emit({
       node: this.chosenNode.value.node,
       property: this.chosenNode.value.property,
