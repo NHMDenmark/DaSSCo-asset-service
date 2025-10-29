@@ -1,6 +1,6 @@
-import {AfterViewInit, Component, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
+import {AfterViewInit, Component, inject, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from '../../services/queries.service';
-import {filter, iif, map, Observable, of, take} from 'rxjs';
+import {filter, iif, map, Observable, of, switchMap, take} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {Query, QueryView, QueryWhere, QueryResponse} from '../../types/query-types';
 import {MatTableDataSource} from '@angular/material/table';
@@ -35,6 +35,15 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) set matSort(sort: MatSort) {
     this.dataSource.sort = sort;
   }
+  private queriesService = inject(QueriesService);
+  dialog = inject(MatDialog);
+  private _snackBar = inject(MatSnackBar);
+  private cacheService = inject(CacheService);
+  private assetGroupService = inject(AssetGroupService);
+  private queryToOtherPages = inject(QueryToOtherPages);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private detailedViewService = inject(DetailedViewService);
 
   displayedColumns: string[] = [
     'select',
@@ -97,34 +106,16 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   );
 
   nodes$: Observable<Map<string, string[]> | undefined> = iif(
-    () => {
-      // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
-      return this.cacheService.getNodeProperties() == undefined;
-    },
-    this.propertiesCall$, // if it's undefined
-    this.propertiesCached$ // if it's not undefined
+    () => this.cacheService.getNodeProperties() == undefined,
+    this.propertiesCall$,
+    this.propertiesCached$
   );
 
   queryItems$: Observable<QueryItem[] | undefined> = iif(
-    () => {
-      // is this the "best" way of doing it? no clue. but it works. ¯\_(ツ)_/¯
-      return this.cacheService.getQueryItems() == undefined;
-    },
-    this.queryItemsCall$, // if it's undefined
-    this.queryItemsCached$ // if it's not undefined
+    () => this.cacheService.getQueryItems() == undefined,
+    this.queryItemsCall$,
+    this.queryItemsCached$
   );
-
-  constructor(
-    private queriesService: QueriesService,
-    public dialog: MatDialog,
-    private _snackBar: MatSnackBar,
-    private cacheService: CacheService,
-    private assetGroupService: AssetGroupService,
-    private queryToOtherPages: QueryToOtherPages,
-    private router: Router,
-    private route: ActivatedRoute,
-    private detailedViewService: DetailedViewService
-  ) {}
 
   ngOnInit(): void {
     this.queryItems$.pipe(filter(isNotUndefined), take(1)).subscribe((_queryItems) => {
@@ -160,14 +151,14 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       handlerComponent.instance.savedQuery = savedQuery;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
-      handlerComponent.instance.saveQueryEvent.subscribe((queries) => {
+      handlerComponent.instance.saveQueryEvent.pipe(take(1)).subscribe((queries) => {
         this.queries.set(childIdx.toString(), queries);
         this.cacheService.setQueries({
           title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined,
           map: this.queries
         });
       });
-      handlerComponent.instance.removeComponentEvent.subscribe(() => {
+      handlerComponent.instance.removeComponentEvent.pipe(take(1)).subscribe(() => {
         this.queries.delete(childIdx.toString());
         handlerComponent.destroy();
       });
@@ -190,29 +181,51 @@ export class QueriesComponent implements OnInit, AfterViewInit {
           nodeMap.set(where.node, [{property: where.property, fields: where.fields}]);
         }
       });
-      const qv2s = Array.from(nodeMap).map((value) => {
-        return {select: value[0], where: value[1]} as Query;
-      });
+      const qv2s = Array.from(nodeMap).map((value) => ({select: value[0], where: value[1]} as Query));
 
-      const response: QueryResponse = {id: parseInt(key), query: qv2s};
+      const response: QueryResponse = {id: parseInt(key, 10), query: qv2s};
       queryResponses.push(response);
       this.selection.clear();
     });
 
-    this.queriesService.getAssetsFromQuery(queryResponses, this.limit).subscribe((result) => {
-      if (result) {
-        this.dataSource.data = result;
-      }
-    });
+    this.dataSource.data = [];
+    this.queriesService
+      .getAssetsFromQuery(queryResponses, this.limit)
+      .pipe(take(1))
+      .subscribe({
+        next: (result) => {
+          if (result === undefined || result === null) {
+            this.openSnackBar({}, 'No results found');
+            return;
+          }
+          if (result.length === 0) {
+            this.openSnackBar({}, 'No results found');
+            return;
+          }
+          if (result.length > 0) {
+            this.dataSource.data = result;
+          }
+        },
+        error: (error: Error) => this.openSnackBar(undefined, 'Error ' + error.message)
+      });
 
     this.loadingAssetCount = true;
-    this.queriesService.getAssetCountFromQuery(queryResponses, this.limit).subscribe((count) => {
-      if (count != undefined) {
-        if (count >= 10000) this.assetCount = '10000+';
-        else this.assetCount = count.toString();
-        this.loadingAssetCount = false;
-      }
-    });
+    this.queriesService
+      .getAssetCountFromQuery(queryResponses, this.limit)
+      .pipe(take(1))
+      .subscribe({
+        next: (count) => {
+          if (count != undefined) {
+            if (count >= 10000) {
+              this.assetCount = '10000+';
+            } else {
+              this.assetCount = count.toString();
+            }
+          }
+        },
+        error: (error) => console.error(error),
+        complete: () => (this.loadingAssetCount = false)
+      });
   }
 
   clearAll() {
@@ -229,20 +242,23 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   saveSearch() {
     const dialogRef = this.dialog.open(SaveSearchDialogComponent);
 
-    dialogRef.afterClosed().subscribe((title: string | undefined) => {
-      if (title) {
-        this.queriesService
-          .saveSearch({name: title.trim(), query: JSON.stringify(Object.fromEntries(this.queries))})
-          .subscribe((saved) => {
-            this.openSnackBar(saved, 'The search "' + title.trim() + '" has been saved.');
-            if (!saved) return;
-            this.queryData = {title: saved?.name, map: new Map(Object.entries(JSON.parse(saved.query)))};
-            this.queryUpdatedTitle = saved.name;
-            this.cacheService.setQueryTitle(saved.name);
-            this.cacheService.setQueries(this.queryData);
-          });
-      }
-    });
+    dialogRef
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((title: string | undefined) => {
+        if (title) {
+          this.queriesService
+            .saveSearch({name: title.trim(), query: JSON.stringify(Object.fromEntries(this.queries))})
+            .subscribe((saved) => {
+              this.openSnackBar(saved, 'The search "' + title.trim() + '" has been saved.');
+              if (!saved) return;
+              this.queryData = {title: saved?.name, map: new Map(Object.entries(JSON.parse(saved.query)))};
+              this.queryUpdatedTitle = saved.name;
+              this.cacheService.setQueryTitle(saved.name);
+              this.cacheService.setQueries(this.queryData);
+            });
+        }
+      });
   }
 
   savedSearchesDialog(): void {
@@ -250,33 +266,35 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       width: '300px'
     });
 
-    // deleting a saved query
-    dialogRef.componentInstance.deleteQuery$.pipe(filter(isNotUndefined)).subscribe((queryName) => {
-      this.queriesService
-        .deleteSavedSearch(queryName)
-        .pipe(take(1))
-        .subscribe((deleted) => {
-          this.openSnackBar(deleted, 'The search has been deleted.');
-          if (this.queryData?.title === deleted) {
-            this.queryData = undefined;
-            this.queryUpdatedTitle = undefined;
-            this.cacheService.clearQueryCache();
-            this.queryHandlerEle?.clear();
-            this.queries.clear();
-          }
-        });
-    });
+    dialogRef.componentInstance.deleteQuery$
+      .pipe(
+        filter(isNotUndefined),
+        switchMap((queryName) => this.queriesService.deleteSavedSearch(queryName)),
+        take(1)
+      )
+      .subscribe((deleted) => {
+        this.openSnackBar(deleted, 'The search has been deleted.');
+        if (this.queryData?.title === deleted) {
+          this.queryData = undefined;
+          this.queryUpdatedTitle = undefined;
+          this.cacheService.clearQueryCache();
+          this.queryHandlerEle?.clear();
+          this.queries.clear();
+        }
+      });
 
-    // opening saved query
-    dialogRef.afterClosed().subscribe((queryMap: {title: string; map: Map<string, QueryView[]>} | undefined) => {
-      if (queryMap) {
-        this.queryData = queryMap;
-        this.queryUpdatedTitle = queryMap.title.trim();
-        this.queryHandlerEle?.clear();
-        this.dataSource.data = [];
-        this.addSelectFromData(queryMap.map);
-      }
-    });
+    dialogRef
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((queryMap: {title: string; map: Map<string, QueryView[]>} | undefined) => {
+        if (queryMap) {
+          this.queryData = queryMap;
+          this.queryUpdatedTitle = queryMap.title.trim();
+          this.queryHandlerEle?.clear();
+          this.dataSource.data = [];
+          this.addSelectFromData(queryMap.map);
+        }
+      });
   }
 
   addSelectFromData(query: Map<string, QueryView[]>) {

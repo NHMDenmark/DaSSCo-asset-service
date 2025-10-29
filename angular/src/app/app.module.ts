@@ -55,8 +55,8 @@ import {NgOptimizedImage} from '@angular/common';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {AssetCardComponent} from './components/queries/asset-card/asset-card.component';
 import {SafeUrlPipe} from './pipes/safe-url.pipe';
-import {ExternDetailedViewComponent} from './components/detailed-view/extern/extern-detailed-view.component';
-import {SortInternalStatusPipe} from "./pipes/sort-internal-status.pipe";
+import {ExternDetailedViewComponent} from './components/detailed-view/extern-detailed-view/extern-detailed-view.component';
+import {SortInternalStatusPipe} from './pipes/sort-internal-status.pipe';
 
 @NgModule({
   declarations: [

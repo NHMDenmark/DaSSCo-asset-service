@@ -9,8 +9,8 @@ import {BulkUpdateComponent} from './components/bulk-update/bulk-update.componen
 import {QueriesComponent} from './components/queries/queries.component';
 import {DetailedViewComponent} from './components/detailed-view/detailed-view.component';
 import {AssetGroupsComponent} from './components/asset-groups/asset-groups.component';
-import {ExternDetailedViewComponent} from './components/detailed-view/extern/extern-detailed-view.component';
-import {HasRightsGuard} from "./guards/has-rights.guard";
+import {ExternDetailedViewComponent} from './components/detailed-view/extern-detailed-view/extern-detailed-view.component';
+import {HasRightsGuard} from './guards/has-rights.guard';
 
 const routes: Routes = [
   {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
@@ -24,7 +24,7 @@ const routes: Routes = [
   {
     path: 'extern/detailed-view/:asset_guid',
     component: ExternDetailedViewComponent,
-    canActivate: [HasRightsGuard],
+    canActivate: [HasRightsGuard]
   },
   {path: '**', redirectTo: 'statistics', pathMatch: 'prefix'}
 ];
