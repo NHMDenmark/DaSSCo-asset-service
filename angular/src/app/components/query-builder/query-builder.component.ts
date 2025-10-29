@@ -119,7 +119,6 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
         this.setOperatorsAndDataType(choice);
       }
     });
-    this.queryForm.valueChanges.subscribe((data) => console.log(data));
   }
 
   save(childIdx: number | undefined) {
@@ -152,7 +151,6 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
     });
     if (childIdx !== undefined) this.wheres.at(childIdx).markAsUntouched();
 
-    console.log(this.chosenNode.value.node, this.chosenNode.value.property, innerList);
     this.saveQueryEvent.emit({
       node: this.chosenNode.value.node,
       property: this.chosenNode.value.property,
