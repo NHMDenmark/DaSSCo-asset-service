@@ -27,4 +27,12 @@ public interface DirectoryRepository {
         WHERE d.access = 'WRITE'::access_type AND sa.asset_guid = :asset_guid
 """)
     Directory getWriteableDirectory(String asset_guid);
+
+    @SqlQuery("""
+        SELECT d.*, sa.asset_guid 
+        FROM directories d 
+            LEFT JOIN shared_assets sa ON sa.directory_id = d.directory_id 
+        WHERE d.directory_id = :directory_id
+""")
+    Directory getDirectoryById(Long directory_id);
 }

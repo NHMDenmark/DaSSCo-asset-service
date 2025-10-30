@@ -44,7 +44,7 @@ public class Asset {
     @Schema(description = "Date and time when the original raw image was taken", example = "2023-05-24T00:00:00.000Z")
     public Instant date_asset_taken;
     @Schema(description = "Date and time the asset was marked as deleted in the metadata", example = "2023-05-24T00:00:00.000Z")
-    public Instant date_asset_deleted;
+    public Instant date_asset_deleted_ars; //TODO -> Change name from "date_asset_deleted" to "date_asset_deleted_ars". System populates with the timestamp when the deletion of all asset files have synced with ERDA
     @Schema(description = "Date and time the asset was last audited", example = "2023-05-24T00:00:00.000Z")
     public Instant date_audited;
     @Schema(description = "User from the last audit event", example = "2023-05-24T00:00:00.000Z")
@@ -130,6 +130,18 @@ public class Asset {
     public transient Integer updating_pipeline_id;
     public String updating_pipeline;
 
+    // new new fields
+    @Schema(description = "User that first successfully synced files with ERDA", example = "2023-05-24T00:00:00.000Z")
+    public String asset_created_by;
+    @Schema(description = "User that removed the last or all files from an asset and synced with ERDA", example = "2023-05-24T00:00:00.000Z")
+    public String asset_deleted_by;
+    @Schema(description = "User that last updated the asset files", example = "2023-05-24T00:00:00.000Z")
+    public String asset_updated_by;
+    @Schema(description = "The date the initial create asset sync with ERDA", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_asset_created_ars;
+    @Schema(description = "The date the last update of an asset that has synced with ERDA", example = "2023-05-24T00:00:00.000Z")
+    public Instant date_asset_updated_ars;
+
     public String getAsset_guid() {
         return asset_guid;
     }
@@ -154,7 +166,7 @@ public class Asset {
                ", created_date=" + created_date +
                ", date_metadata_updated=" + date_metadata_updated +
                ", date_asset_taken=" + date_asset_taken +
-               ", date_asset_deleted=" + date_asset_deleted +
+               ", date_asset_deleted_ars=" + date_asset_deleted_ars +
                ", date_asset_finalised=" + date_asset_finalised +
                ", institution='" + institution + '\'' +
                ", parent_guid='" + parent_guids + '\'' +
@@ -178,6 +190,11 @@ public class Asset {
                ", issues=" + issues +
                ", digitiser='" + digitiser + '\'' +
                ", complete_digitiser_list=" + complete_digitiser_list +
+               ", asset_created_by=" + asset_created_by +
+               ", asset_deleted_by=" + asset_deleted_by +
+               ", asset_updated_by=" + asset_updated_by +
+               ", date_asset_created_ars=" + date_asset_created_ars +
+               ", date_asset_updated_ars=" + date_asset_updated_ars +
                '}';
     }
 
@@ -187,11 +204,68 @@ public class Asset {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Asset asset = (Asset) o;
-        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(asset_specimen, asset.asset_specimen) && Objects.equals(funding, asset.funding) && Objects.equals(asset_subject, asset.asset_subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted, asset.date_asset_deleted) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
+        return multi_specimen == asset.multi_specimen && asset_locked == asset.asset_locked && audited == asset.audited && Objects.equals(asset_pid, asset.asset_pid) && Objects.equals(asset_guid, asset.asset_guid) && status == asset.status && Objects.equals(asset_specimen, asset.asset_specimen) && Objects.equals(funding, asset.funding) && Objects.equals(asset_subject, asset.asset_subject) && Objects.equals(payload_type, asset.payload_type) && Objects.equals(file_formats, asset.file_formats) && Objects.equals(restricted_access, asset.restricted_access) && Objects.equals(tags, asset.tags) && Objects.equals(date_metadata_updated, asset.date_metadata_updated) && Objects.equals(date_asset_taken, asset.date_asset_taken) && Objects.equals(date_asset_deleted_ars, asset.date_asset_deleted_ars) && Objects.equals(date_asset_finalised, asset.date_asset_finalised) && Objects.equals(institution, asset.institution) && Objects.equals(parent_guids, asset.parent_guids) && Objects.equals(collection, asset.collection) && Objects.equals(httpInfo, asset.httpInfo) && internal_status == asset.internal_status && Objects.equals(updateUser, asset.updateUser) && Objects.equals(events, asset.events) && Objects.equals(error_message, asset.error_message) && Objects.equals(error_timestamp, asset.error_timestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, asset_specimen, funding, asset_subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
+        return Objects.hash(asset_pid, asset_guid, status, multi_specimen, asset_specimen, funding, asset_subject, payload_type, file_formats, asset_locked, restricted_access, tags, audited, date_metadata_updated, date_asset_taken, date_asset_deleted_ars, date_asset_finalised, institution, parent_guids, collection, httpInfo, internal_status, updateUser, events, error_message, error_timestamp);
+    }
+
+    public void mapEvents(){
+        events.sort(Comparator.comparing(e -> e.timestamp));
+        for (Event event : events) {
+            if(List.of(
+                    DasscoEvent.UPDATE_ASSET,
+                    DasscoEvent.UPDATE_ASSET_METADATA,
+                    DasscoEvent.BULK_UPDATE_ASSET_METADATA
+            ).contains(event.event) && audited){
+                audited = false;
+                audited_by = null;
+            }
+            if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
+                audited = true;
+                if (date_audited == null || event.timestamp.isAfter(date_audited)) {
+                    date_audited = event.timestamp;
+                    audited_by = event.user;
+                }
+
+            }
+            else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (date_pushed_to_specify == null || date_pushed_to_specify.isAfter(event.timestamp))) {
+                date_pushed_to_specify = event.timestamp;
+            }
+            else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event) && date_metadata_updated == null) {
+                date_metadata_updated = event.timestamp;
+                metadata_updated_by = event.user;
+
+            }
+            else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event) && (date_metadata_updated == null || event.timestamp.isAfter(date_metadata_updated))) {
+                date_metadata_updated = event.timestamp;
+                metadata_updated_by = event.user;
+
+            }
+            else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
+                if (date_metadata_updated == null) {
+                    date_metadata_updated = event.timestamp;
+                }
+                //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
+                pipeline = event.pipeline;
+                metadata_created_by = event.user;
+            }
+            else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
+            }
+            else if (DasscoEvent.CREATE_ASSET.equals(event.event) && asset_created_by == null) {
+                asset_created_by = event.user;
+                date_asset_created_ars = event.timestamp;
+            }
+            else if (DasscoEvent.DELETE_ASSET.equals(event.event)) {
+                asset_deleted_by = event.user;
+                date_asset_deleted_ars = event.timestamp;
+            }
+            else if (DasscoEvent.UPDATE_ASSET.equals(event.event)) {
+                asset_updated_by = event.user;
+                date_asset_updated_ars = event.timestamp;
+            }
+        }
     }
 }

@@ -30,6 +30,7 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(DasscoIllegalActionExceptionMapper.class);
     register(Caches.class);
     register(AssetGroups.class);
+    register(AssetChangeApi.class);
     register(Logs.class);
     register(Externalpublishers.class);
     register(Mappings.class);

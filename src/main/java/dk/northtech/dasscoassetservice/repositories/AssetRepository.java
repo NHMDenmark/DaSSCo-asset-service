@@ -160,8 +160,9 @@ public interface AssetRepository extends SqlObject {
         }
         Asset asset1 = asset.get();
         List<Event> events = readEvents_internal(assetId);
-
-        for (Event event : events) {
+        asset1.events = events;
+        asset1.mapEvents();
+        /*for (Event event : events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 asset1.audited = true;
             } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (asset1.date_pushed_to_specify == null) || asset1.date_pushed_to_specify.isAfter(event.timestamp)) {
@@ -175,8 +176,7 @@ public interface AssetRepository extends SqlObject {
             } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
                 asset1.date_asset_deleted = event.timestamp;
             }
-        }
-        asset1.events = events;
+        }*/
         return Optional.of(asset1);
     }
 

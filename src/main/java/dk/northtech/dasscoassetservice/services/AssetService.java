@@ -57,6 +57,7 @@ public class AssetService {
     private final UserService userService;
     private final SpecimenService specimenService;
     private final AssetSyncService assetSyncService;
+    private final AssetChangeService assetChangeService;
 
     @Inject
     public AssetService(InstitutionService institutionService
@@ -76,6 +77,7 @@ public class AssetService {
             , UserService userService
             , AssetSyncService assetSyncService
             , FundingService fundingService
+            , AssetChangeService assetChangeService
             , SpecimenService specimenService, RoleService roleService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
@@ -94,6 +96,7 @@ public class AssetService {
         this.extendableEnumService = extendableEnumService;
         this.userService = userService;
         this.fundingService = fundingService;
+        this.assetChangeService = assetChangeService;
         this.specimenService = specimenService;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
@@ -191,7 +194,8 @@ public class AssetService {
             assetToBeMapped.role_restrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.ASSET, assetToBeMapped.asset_guid);
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
-            mapEvents(assetToBeMapped);
+            assetToBeMapped.mapEvents();
+//            mapEvents(assetToBeMapped);
 
             return Optional.of(assetToBeMapped);
         });
@@ -200,7 +204,7 @@ public class AssetService {
 
     }
 
-    private void mapEvents(Asset assetToBeMapped) {
+    /*private void mapEvents(Asset assetToBeMapped) {
         for (Event event : assetToBeMapped.events) {
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 assetToBeMapped.audited = true;
@@ -232,7 +236,7 @@ public class AssetService {
                 assetToBeMapped.date_asset_deleted = event.timestamp;
             }
         }
-    }
+    }*/
 
     public List<Asset> getAssets(List<String> assetGuids) {
         return this.jdbi.withHandle(h -> {
@@ -391,7 +395,8 @@ public class AssetService {
                 if (assetRoleRestrictions.containsKey(asset.asset_guid)) {
                     asset.role_restrictions = assetRoleRestrictions.get(asset.asset_guid);
                 }
-                mapEvents(asset);
+                asset.mapEvents();
+//                mapEvents(asset);
             }).toList();
         });
     }
@@ -971,10 +976,8 @@ public class AssetService {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             assetRepository.updateAssetStatus(asset);
-            eventRepository.insertEvent(asset.asset_guid
-                    , DasscoEvent.CREATE_ASSET
-                    , user.dassco_user_id
-                    , optPipl.map(Pipeline::pipeline_id).orElse(null));
+//            eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET, user.dassco_user_id, optPipl.map(Pipeline::pipeline_id).orElse(null)); //TODO should create asset be here?
+            this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET, assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
             return h;
         });
 
@@ -1130,11 +1133,12 @@ public class AssetService {
         if (asset.asset_locked) {
             throw new DasscoIllegalActionException("Asset is locked");
         }
-        if (asset.date_asset_deleted != null) {
+        if (asset.date_asset_deleted_ars != null) {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id, null);
 
         Optional<AssetSpecimen> specimenWithSpecifyId = asset.asset_specimen.stream().filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
         if (specimenWithSpecifyId.isPresent()) {

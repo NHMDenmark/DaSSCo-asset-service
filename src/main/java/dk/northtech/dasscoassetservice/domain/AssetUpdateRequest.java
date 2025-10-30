@@ -12,6 +12,10 @@ public record AssetUpdateRequest(
         @Schema(description = "The name of the pipeline that sent a create, update or delete request to the storage service", example = "ti-p1")
         @Nullable String pipeline,
         @Schema(description = "The name of the person who imaged the specimens (creating the assets)", example = "THBO")
-        @Nullable String digitiser) {
+        @Nullable String digitiser,
+        @Nullable String asset_guid,
+        @Schema(description = "The directory_id for the sync event", example = "1")
+        @Nullable Long directory_id
+) {
 
 }

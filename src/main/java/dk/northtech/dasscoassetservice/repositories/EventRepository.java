@@ -17,6 +17,12 @@ public interface EventRepository extends SqlObject {
     """)
     public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId);
 
+    @SqlUpdate("""
+    INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id, change_list) 
+    VALUES ( :assetGuid, :event,  :userId, :pipelineId, :change_list)
+    """)
+    public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId, List<String> change_list);
+
     @SqlQuery("""
     SELECT event
         , timestamp

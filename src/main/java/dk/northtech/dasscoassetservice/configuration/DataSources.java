@@ -63,6 +63,7 @@ public class DataSources {
             .registerRowMapper(ConstructorMapper.factory(Specimen.class))
             .registerRowMapper(ConstructorMapper.factory(Event.class))
             .registerRowMapper(ConstructorMapper.factory(Funding.class))
+            .registerRowMapper(ConstructorMapper.factory(AssetChange.class))
             .registerRowMapper(ConstructorMapper.factory(Legality.class))
             .registerRowMapper(ConstructorMapper.factory(Issue.class))
             .registerRowMapper(ConstructorMapper.factory(Publication.class))
