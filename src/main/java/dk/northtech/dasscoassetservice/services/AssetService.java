@@ -807,6 +807,12 @@ public class AssetService {
                     , DasscoEvent.UPDATE_ASSET_METADATA
                     , user.dassco_user_id
                     , pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
+
+            if(AssetStatus.FOR_DELETION.name().equals(updatedAsset.status)){
+                eventRepository.insertEvent(existing.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id, pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
+            }
+
+
             //Specimens
             List<AssetSpecimen> finalSpecimen = new ArrayList<>();
             for (AssetSpecimen s : specimensToDetach) {

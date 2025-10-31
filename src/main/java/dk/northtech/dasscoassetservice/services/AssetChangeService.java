@@ -50,7 +50,7 @@ public class AssetChangeService {
             if(!changes.isEmpty()){
                 List<Event> events = eventRepository.getAssetEvents(asset_guid);
                 var hasEvent = events.stream().anyMatch(e -> e.event.equals(DasscoEvent.CREATE_ASSET));
-                eventRepository.insertEvent(asset_guid, hasEvent ? event : DasscoEvent.CREATE_ASSET, Math.toIntExact(userId), null, hasEvent ? null : changes);
+                eventRepository.insertEvent(asset_guid, hasEvent ? event : DasscoEvent.CREATE_ASSET, Math.toIntExact(userId), null, hasEvent ? changes: null);
                 assetChangeRepository.deleteAll(directory_id);
             }
         }
