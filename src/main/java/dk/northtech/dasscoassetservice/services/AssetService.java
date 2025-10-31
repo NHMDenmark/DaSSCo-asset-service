@@ -34,6 +34,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import java.sql.Array;
+
 @Service
 public class AssetService {
     private final InstitutionService institutionService;
@@ -263,7 +265,7 @@ public class AssetService {
                     .list();
 
             Map<String, List<Event>> assetEvents = h.createQuery("""
-                            SELECT asset_guid, username, timestamp, event, pipeline_name from event
+                            SELECT asset_guid, username, timestamp, event, pipeline_name, change_list from event
                             LEFT JOIN dassco_user USING (dassco_user_id)
                             LEFT JOIN pipeline USING (pipeline_id)
                             WHERE asset_guid IN (<assetGuids>)
@@ -278,11 +280,14 @@ public class AssetService {
                                 Timestamp timestamp = rs.getTimestamp("timestamp");
                                 String event = rs.getString("event");
                                 String pipelineName = rs.getString("pipeline_name");
+                                Array change_list = rs.getArray("change_list");
                                 Event newEvent = new Event(
                                         username,
                                         timestamp != null ? timestamp.toInstant() : null,
                                         event != null ? DasscoEvent.valueOf(event) : null,
-                                        pipelineName
+                                        pipelineName,
+                                        change_list == null ? null : Arrays.asList((String[]) change_list.getArray())
+
                                 );
                                 assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
                             }

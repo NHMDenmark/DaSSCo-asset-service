@@ -215,7 +215,7 @@
           <mat-list-item style="display: block">
             <span class="bold-text">Events:&nbsp;</span>
             <div class="events">
-              <ng-container *ngFor="let event of asset.events; let last = last">
+              <ng-container *ngFor="let event of asset.events; let lastEvent = last">
                 <div style="display: flex; font-size: 0.875rem; width: fit-content; align-items: center; gap: 0.5rem">
                   <span>
                     {{ event.event }}
@@ -225,7 +225,10 @@
                   |
                   <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
                 </div>
-                <div *ngIf="!last">
+                <div *ngIf="event.event === 'UPDATE_ASSET'">
+                  <span class="event-change" *ngFor="let change of event.change_list; let lastChange = last"><b>{{change}}{{lastChange ? '' : ', '}}</b></span>
+                </div>
+                <div *ngIf="!lastEvent">
                   <hr />
                 </div>
               </ng-container>

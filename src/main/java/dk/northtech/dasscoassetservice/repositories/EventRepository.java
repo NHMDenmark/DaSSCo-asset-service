@@ -28,6 +28,7 @@ public interface EventRepository extends SqlObject {
         , timestamp
         , username AS user
         , pipeline_name AS pipeline
+        , change_list
     FROM event 
         LEFT JOIN pipeline USING (pipeline_id)
         LEFT JOIN dassco_user USING (dassco_user_id)

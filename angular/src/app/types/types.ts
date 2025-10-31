@@ -82,6 +82,7 @@ export interface Event {
   event: string | undefined;
   pipeline: string | undefined;
   workstation: string | undefined;
+  change_list: string[] | undefined;
 }
 
 export interface AssetGroup {
