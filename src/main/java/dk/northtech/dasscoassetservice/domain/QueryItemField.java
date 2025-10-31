@@ -13,6 +13,7 @@ public enum QueryItemField {
     AUDITED("audited", "audited", "event"),
     AUDITED_BY("audited_by", "event_user.username", "event"),
     CAMERA_SETTING_CONTROL("camera_setting_control", "camera_setting_control", "asset"),
+    CHANGE_LIST("change_list", "event.change_list", "event"),
     COLLECTION("collection", "collection_name", "collection"),
     COMPLETE_DIGITISER_LIST("complete_digitiser_list", "complete_digitiser_list", ""), // FIELD DOES NOT EXIST YET,
     DATE_ASSET_CREATED_ARS("date_asset_created_ars", "date_asset_created_ars", "event"),

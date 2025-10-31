@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static dk.northtech.dasscoassetservice.domain.QueryDataType.*;
 
@@ -31,7 +32,7 @@ public class QueryInner {
     }
 
     public Map<String, Map<String, Object>> toBasicPostgreSQLQueryString(String column, String table, int index) {
-        String eventfiler = table.equals("event") ? "(#BASE# and %s)".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
+        String eventfiler = table.equals("event") && !Objects.equals(column, QueryItemField.CHANGE_LIST.getDisplayName()) ? "(#BASE# and %s)".formatted(this.eventTypeByMetadataColumn(column)) : "#BASE#";
         if(table.equals("event") && List.of("after", "before", "between").contains(operator.toLowerCase())) {
             column = "event.timestamp::date"; // move it to QueryItem?
         }else{

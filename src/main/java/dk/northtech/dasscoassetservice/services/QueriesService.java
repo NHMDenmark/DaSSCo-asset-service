@@ -176,6 +176,7 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.ASSET_UPDATED_BY.getDisplayName(), "String", QueryItemField.ASSET_UPDATED_BY.getTableName()), // EVENT USER
                 new QueryProperty(QueryItemField.AUDITED.getDisplayName(), "boolean", QueryItemField.AUDITED.getTableName()), // EVENT TYPE
                 new QueryProperty(QueryItemField.AUDITED_BY.getDisplayName(), "String", QueryItemField.AUDITED_BY.getTableName()), // EVENT USER
+                new QueryProperty(QueryItemField.CHANGE_LIST.getDisplayName(), "String", QueryItemField.CHANGE_LIST.getTableName()),
                 new QueryProperty(QueryItemField.DATE_ASSET_CREATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_CREATED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_ASSET_DELETED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_DELETED_ARS.getTableName()), // EVENT TYPE + TIME
                 new QueryProperty(QueryItemField.DATE_ASSET_UPDATED_ARS.getDisplayName(), "Instant", QueryItemField.DATE_ASSET_UPDATED_ARS.getTableName()), // EVENT TYPE + TIME

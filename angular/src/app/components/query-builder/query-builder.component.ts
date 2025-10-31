@@ -183,7 +183,7 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
       nodeProperty.property.includes('timestamp')
     ) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.DATE);
-    } else if (nodeProperty.property.includes('file_format')) {
+    } else if (nodeProperty.property.includes('file_format') || nodeProperty.property.includes('change_list')) {
       this.queryForm.get('dataType')?.setValue(QueryDataType.LIST);
     } else if (
       ['asset_locked', 'push_to_specify', 'make_public', 'multi_specimen'].some((key) =>
