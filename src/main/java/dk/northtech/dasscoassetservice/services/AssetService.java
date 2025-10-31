@@ -982,7 +982,6 @@ public class AssetService {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             assetRepository.updateAssetStatus(asset);
-//            eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET, user.dassco_user_id, optPipl.map(Pipeline::pipeline_id).orElse(null)); //TODO should create asset be here?
             this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET, assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
             return h;
         });
@@ -1143,8 +1142,8 @@ public class AssetService {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
-        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
 
         Optional<AssetSpecimen> specimenWithSpecifyId = asset.asset_specimen.stream().filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
         if (specimenWithSpecifyId.isPresent()) {

@@ -336,7 +336,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> optionalAsset = assetService.getAsset("deleteAssetIsAlreadyDeleted");
         assertThat(optionalAsset.isPresent()).isTrue();
         Asset deletedAsset = optionalAsset.get();
-        assertThat(deletedAsset.events.get(0).event).isEqualTo(DasscoEvent.DELETE_ASSET_METADATA);
+        assertThat(deletedAsset.events.getLast().event).isEqualTo(DasscoEvent.DELETE_ASSET_METADATA);
         assertThat(deletedAsset.date_asset_deleted_ars).isNotNull();
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.deleteAsset("deleteAssetIsAlreadyDeleted", user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset is already deleted");
@@ -447,7 +447,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid, user);
         resultEvents.forEach(x -> System.out.println(x));
-        assertThat(resultEvents.size()).isEqualTo(5);
+        assertThat(resultEvents.size()).isEqualTo(4);
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt2.isPresent()).isTrue();
         Asset resultAsset = resultOpt2.get();

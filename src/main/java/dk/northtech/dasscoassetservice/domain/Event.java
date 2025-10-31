@@ -15,6 +15,7 @@ public class Event {
     @Schema(description = "The name of the pipeline that sent a create, update or delete request to the storage service", example = "ti-p1")
     public String pipeline;
 
+
     @JdbiConstructor
     public Event(String user, Instant timestamp, DasscoEvent event, String pipeline) {
         this.timestamp = timestamp;
