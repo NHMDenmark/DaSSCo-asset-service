@@ -1,6 +1,6 @@
-import {AfterViewInit, Component, inject, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
+import {AfterViewInit, Component, inject, OnDestroy, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {QueriesService} from '../../services/queries.service';
-import {filter, iif, map, Observable, of, switchMap, take} from 'rxjs';
+import {filter, iif, map, Observable, of, Subject, switchMap, take, takeUntil} from 'rxjs';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {Query, QueryView, QueryWhere, QueryResponse} from '../../types/query-types';
 import {MatTableDataSource} from '@angular/material/table';
@@ -27,7 +27,7 @@ import {QueryItem} from '../../types/queryItem';
   templateUrl: './queries.component.html',
   styleUrls: ['./queries.component.scss']
 })
-export class QueriesComponent implements OnInit, AfterViewInit {
+export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('queryHandlerContainer', {read: ViewContainerRef, static: true}) queryHandlerEle:
     | ViewContainerRef
     | undefined;
@@ -44,6 +44,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private detailedViewService = inject(DetailedViewService);
+  private destroy = new Subject();
 
   displayedColumns: string[] = [
     'select',
@@ -151,14 +152,14 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       handlerComponent.instance.savedQuery = savedQuery;
       const childIdx = this.queryHandlerEle!.indexOf(handlerComponent.hostView);
       handlerComponent.instance.idx = childIdx;
-      handlerComponent.instance.saveQueryEvent.pipe(take(1)).subscribe((queries) => {
+      handlerComponent.instance.saveQueryEvent.pipe(takeUntil(this.destroy)).subscribe((queries) => {
         this.queries.set(childIdx.toString(), queries);
         this.cacheService.setQueries({
           title: this.queryData && this.queryData.title ? this.queryUpdatedTitle : undefined,
           map: this.queries
         });
       });
-      handlerComponent.instance.removeComponentEvent.pipe(take(1)).subscribe(() => {
+      handlerComponent.instance.removeComponentEvent.pipe(takeUntil(this.destroy)).subscribe(() => {
         this.queries.delete(childIdx.toString());
         handlerComponent.destroy();
       });
@@ -270,7 +271,7 @@ export class QueriesComponent implements OnInit, AfterViewInit {
       .pipe(
         filter(isNotUndefined),
         switchMap((queryName) => this.queriesService.deleteSavedSearch(queryName)),
-        take(1)
+        takeUntil(this.destroy)
       )
       .subscribe((deleted) => {
         this.openSnackBar(deleted, 'The search has been deleted.');
@@ -565,5 +566,9 @@ export class QueriesComponent implements OnInit, AfterViewInit {
 
   trackByGuuid(_index: number, asset: Asset) {
     return asset.asset_guid;
+  }
+  ngOnDestroy(): void {
+    this.destroy.next(true);
+    this.destroy.complete();
   }
 }
