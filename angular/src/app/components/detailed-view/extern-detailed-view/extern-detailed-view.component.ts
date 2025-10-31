@@ -3,7 +3,7 @@ import {ActivatedRoute} from '@angular/router';
 import {BehaviorSubject, filter, map, switchMap, tap} from 'rxjs';
 import {ExternDetailedViewService} from '../../../services/extern-detailed-view.service';
 import {DomSanitizer} from '@angular/platform-browser';
-import {WikiPageUrl} from "../../../utility";
+import {WikiPageUrl} from '../../../utility';
 
 @Component({
   selector: 'dassco-extern-detailed-view',
@@ -42,8 +42,8 @@ export class ExternDetailedViewComponent {
         }),
         tap({
           next: () => {
-            this.loadingImage.next(false)
-          },
+            this.loadingImage.next(false);
+          }
         })
       )
     )
@@ -52,5 +52,4 @@ export class ExternDetailedViewComponent {
   trackByGuid(_index: number, guid: string) {
     return guid;
   }
-
 }

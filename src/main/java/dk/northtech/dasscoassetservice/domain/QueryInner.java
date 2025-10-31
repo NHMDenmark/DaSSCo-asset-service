@@ -75,10 +75,15 @@ public class QueryInner {
             String sql = eventfiler.replace("#BASE#", "%s %s".formatted(column, operator));
             return Map.of(sql, Map.of());
         }
-        if(operator.equalsIgnoreCase("in")) {
+        if (operator.equalsIgnoreCase("in")) {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
-            String sql = eventfiler.replace("#BASE#", "upper(%s) %s any(%s)".formatted(":" + preparedParam, operator, column));
+            String safeValue = value.replace("'", "''").toUpperCase();
+            String sql = eventfiler.replace(
+                    "#BASE#",
+                    "('%s' %s ANY(%s))".formatted(safeValue, operator, column)
+            );
+
             return Map.of(sql, Map.of(preparedParam, value));
         }
         if(operator.equalsIgnoreCase("after")) {

@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Issue Details</h2>
+
+<mat-dialog-content class="issue-content">
+  <div class="field">
+    <span class="label">Name:</span>
+    <span class="value">{{ issue.name || '—' }}</span>
+  </div>
+  <div class="field">
+    <span class="label">Category:</span>
+    <span class="value">{{ issue.category || '—' }}</span>
+  </div>
+
+  <div class="field">
+    <span class="label">Timestamp:</span>
+    <span class="value">{{ issue.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+  </div>
+
+  <!-- Separate Status -->
+  <div class="field">
+    <span class="label">Status:</span>
+    <span class="value">
+      <span class="status-chip" [ngClass]="issue.solved ? 'resolved' : 'open'">
+        {{ issue.status || '—' }}
+      </span>
+    </span>
+  </div>
+
+  <!-- Separate Solved Field -->
+  <div class="field">
+    <span class="label">Solved:</span>
+    <span class="value">
+      <mat-icon class="solved-icon" *ngIf="issue.solved" color="primary">check_circle</mat-icon>
+      <mat-icon class="solved-icon" *ngIf="!issue.solved" color="warn">highlight_off</mat-icon>
+    </span>
+  </div>
+
+  <div class="field" *ngIf="issue.description">
+    <span class="label">Description:</span>
+    <span class="value multiline">{{ issue.description }}</span>
+  </div>
+
+  <div class="field" *ngIf="issue.notes">
+    <span class="label">Notes:</span>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="dialogRef.close()">Close</button>
+</mat-dialog-actions>

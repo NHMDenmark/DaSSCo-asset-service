@@ -3,11 +3,13 @@ import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {Asset} from '../../types/types';
+import {Asset, Issue} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages';
 import {EMPTY, switchMap, take} from 'rxjs';
 import {DatePipe} from '@angular/common';
-import {WikiPageUrl} from "../../utility";
+import {WikiPageUrl} from '../../utility';
+import {MatDialog} from '@angular/material/dialog';
+import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -16,7 +18,12 @@ import {WikiPageUrl} from "../../utility";
   styleUrls: ['./detailed-view.component.scss']
 })
 export class DetailedViewComponent implements OnInit {
-  // Asset Guid is retrieved from the URL:
+  private detailedViewService = inject(DetailedViewService);
+  private sanitizer = inject(DomSanitizer);
+  private route = inject(ActivatedRoute);
+  private _snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private queryToDetailedViewService = inject(QueryToOtherPages);
   assetGuid: string = '';
   currentIndex: number = -1;
   assetList: string[] = this.queryToDetailedViewService.getAssets();
@@ -25,13 +32,6 @@ export class DetailedViewComponent implements OnInit {
   wikiPageUrl = inject(WikiPageUrl);
 
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
-  constructor(
-    private detailedViewService: DetailedViewService,
-    private sanitizer: DomSanitizer,
-    private route: ActivatedRoute,
-    private _snackBar: MatSnackBar,
-    private queryToDetailedViewService: QueryToOtherPages
-  ) {}
 
   ngOnInit(): void {
     this.route.params.subscribe((params: Params) => {
@@ -229,10 +229,20 @@ export class DetailedViewComponent implements OnInit {
     });
   }
 
+  openIssueDialog(issue: Issue) {
+    this.dialog.open(IssueViewerComponent, {
+      maxWidth: '500px',
+      data: issue
+    });
+  }
+
   openSnackBar(message: string, action: string) {
     this._snackBar.open(message, action);
   }
   trackBy(_index: number, guid: string) {
     return guid;
+  }
+  trackByIssueId(_index: number, issue: Issue) {
+    return issue.issue_id;
   }
 }

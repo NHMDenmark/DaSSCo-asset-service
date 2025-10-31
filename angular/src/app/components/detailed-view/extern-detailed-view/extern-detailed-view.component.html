@@ -4,20 +4,25 @@
 </ng-container>
 
 <ng-container *ngIf="assetMetaData$ | async as asset">
-  <a [href]="wikiPageUrl" target="_blank" matTooltip="Open wiki page in a new tab"
-     style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 9999" mat-mini-fab
-     color="primary" aria-label="Wiki page link">
+  <a
+    [href]="wikiPageUrl"
+    target="_blank"
+    matTooltip="Open wiki page in a new tab"
+    style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 50"
+    mat-mini-fab
+    color="primary"
+    aria-label="Wiki page link">
     <mat-icon>help</mat-icon>
   </a>
   <div class="asset-thumbnail">
-    <ng-container *ngIf="(loadingImage$ | async)">
+    <ng-container *ngIf="loadingImage$ | async">
       <mat-spinner></mat-spinner>
     </ng-container>
-    <ng-container *ngIf="(thumbnail$ | async) as thumbnail; else noThumbnail">
-      <img [src]="thumbnail" [alt]="asset?.asset_guid"/>
+    <ng-container *ngIf="thumbnail$ | async as thumbnail; else noThumbnail">
+      <img [src]="thumbnail" [alt]="asset?.asset_guid" />
     </ng-container>
     <ng-template #noThumbnail>
-      <img *ngIf="!(loadingImage$ | async)" src="assets/placeholder.png" alt="placeholder"/>
+      <img *ngIf="(loadingImage$ | async) === false" src="assets/placeholder.png" alt="placeholder" />
     </ng-template>
   </div>
   <div class="asset-metadata" #assetMetadata>
