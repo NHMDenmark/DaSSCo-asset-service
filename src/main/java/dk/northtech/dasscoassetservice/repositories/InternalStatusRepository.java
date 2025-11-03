@@ -48,16 +48,17 @@ public class InternalStatusRepository {
     String dailyAmountCypherSql = statusBaseCypherSql.replace("#and#", Matcher.quoteReplacement("AND e.timestamp >= $today"));
 
     String statusBaseSql = """
-            select internal_asset_status.internal_status, count(asset.*)
+            select internal_asset_status.internal_status, count(asset.*) filter (where e.asset_guid  is not null)
             from internal_asset_status
-            left join asset on asset.internal_status = internal_asset_status.internal_status #where#
+            left join asset on asset.internal_status = internal_asset_status.internal_status
+            left join event e on e.asset_guid = asset.asset_guid and e.event = 'CREATE_ASSET_METADATA' #where#
             group by internal_asset_status.internal_status
             order by internal_asset_status.internal_status asc
             """;
 
     String totalAmountSql = statusBaseSql.replaceAll("#where#|, #params", "");
-    String dailyAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("AND date_asset_taken::date >= CURRENT_DATE"));
-    String customAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("AND date_asset_taken::date >= TO_TIMESTAMP(:startDate) and date_asset_taken::date <= TO_TIMESTAMP(:endDate)"));
+    String dailyAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("AND e.timestamp::date >= CURRENT_DATE"));
+    String customAmountSql = statusBaseSql.replace("#where#", Matcher.quoteReplacement("AND e.timestamp::date >= TO_TIMESTAMP(:startDate) and e.timestamp::date <= TO_TIMESTAMP(:endDate)"));
 //where e.timestamp::date >= TO_TIMESTAMP(:startDate) AND e.timestamp::date <= TO_TIMESTAMP(:endDate)
 
     /**
