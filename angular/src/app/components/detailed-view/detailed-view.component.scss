@@ -40,8 +40,8 @@
   left: 50%;
   transform: translate(-50%);
   display: flex;
-  justify-content: space-around;
-  width: 30vw;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .icon-display {
@@ -94,17 +94,31 @@
   font-family: graphikbold;
   align-self: flex-start;
 }
-.events {
+.scrollable-list-container {
   max-height: 10rem;
   overflow-y: auto;
   display: flex;
-  padding-inline: 0.5rem;
+  padding-block: 0.5rem;
+  flex: 1;
   width: 100%;
   flex-direction: column;
   gap: 0.25rem;
 }
+.scrollable-list-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  font-size: 0.875rem;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+}
+.scrollable-list-header {
+  font-weight: 700;
+  font-family: 'graphikBold';
+  font-size: 12px;
+}
 
-.event-change{
+.event-change {
   font-size: 12px;
   font-style: italic;
 }

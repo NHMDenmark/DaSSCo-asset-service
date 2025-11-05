@@ -1,5 +1,3 @@
-import {Moment} from 'moment-timezone';
-
 export enum AssetStatus {
   WORKING_COPY,
   ARCHIVE,
@@ -35,14 +33,20 @@ export interface Asset {
   restricted_access: string[] | undefined;
   tags: Map<string, string> | undefined;
   audited: boolean | undefined;
-  created_date: Moment | undefined;
-  date_metadata_updated: Moment | undefined;
-  date_asset_taken: Moment | undefined;
-  date_asset_deleted: Moment | undefined;
-  date_asset_finalised: Moment | undefined;
-  date_metadata_taken: Moment | undefined;
+  created_date: string | undefined;
+  date_metadata_updated: string | undefined;
+  date_asset_taken: string | undefined;
+  date_asset_deleted: string | undefined;
+  date_asset_finalised: string | undefined;
+  date_metadata_taken: string | undefined;
+  date_metadata_ingested: string | undefined;
+  date_audited: string | undefined;
+  date_pushed_to_specify: string | undefined;
+  audited_by: string | undefined;
+  mos_id?: string | undefined;
   institution: string | undefined;
   parent_guids: string[] | undefined;
+  complete_digitiser_list: string[] | undefined;
   collection: string | undefined;
   httpInfo: string | undefined;
   internal_status: string | undefined;
@@ -55,6 +59,16 @@ export interface Asset {
   error_message: string | undefined;
   error_timestamp: string | undefined;
   writeAccess: boolean | undefined;
+  camera_setting_control: string | undefined;
+  metadata_version: string | undefined;
+  metadata_source: string | undefined;
+  metadata_created_by: string | undefined;
+  make_public: boolean | undefined;
+  push_to_specify: boolean | undefined;
+  specify_attachment_remarks: string | undefined;
+  specify_attachment_title: string | undefined;
+  legality: Legality | undefined;
+  role_restrictions: Record<'name', string>[] | undefined;
 }
 
 export interface AssetSpecimen {

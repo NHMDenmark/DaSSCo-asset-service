@@ -115,6 +115,8 @@ public class Asset {
     public String specify_attachment_remarks;
     @Schema(description = "Populated by integration server, depending on the type of asset. Does gets updated by later syncs.")
     public String specify_attachment_title;
+    @Schema(description = "Id of legality.")
+    public Integer legality_id;
 
     @Schema(description = "Metadata can be updated manually, via pipelines and via Specify. We want to be able to search for this field specifically. It should only contain the last user that did an update. When bulk update the user doing that should also be noted in this field.")
     public String metadata_updated_by;
@@ -222,6 +224,7 @@ public class Asset {
             ).contains(event.event) && audited){
                 audited = false;
                 audited_by = null;
+                date_audited = null;
             }
             if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
                 audited = true;
@@ -229,7 +232,6 @@ public class Asset {
                     date_audited = event.timestamp;
                     audited_by = event.user;
                 }
-
             }
             else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (date_pushed_to_specify == null || date_pushed_to_specify.isAfter(event.timestamp))) {
                 date_pushed_to_specify = event.timestamp;

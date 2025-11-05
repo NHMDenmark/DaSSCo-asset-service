@@ -170,10 +170,6 @@ public class AssetService {
     }
 
     public Optional<Asset> getAsset(String assetGuid) {
-
-//        if (asset.isPresent()) {
-//            Asset assetToBeMapped = asset.get();
-
         return jdbi.withHandle(h -> {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             Optional<Asset> asset = assetRepository.readAssetInternalNew(assetGuid);
@@ -197,48 +193,9 @@ public class AssetService {
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
             assetToBeMapped.mapEvents();
-//            mapEvents(assetToBeMapped);
-
             return Optional.of(assetToBeMapped);
         });
-
-//        }
-
     }
-
-    /*private void mapEvents(Asset assetToBeMapped) {
-        for (Event event : assetToBeMapped.events) {
-            if (DasscoEvent.AUDIT_ASSET.equals(event.event)) {
-                assetToBeMapped.audited = true;
-                if (assetToBeMapped.date_audited == null || event.timestamp.isAfter(assetToBeMapped.date_audited)) {
-                    assetToBeMapped.date_audited = event.timestamp;
-                    assetToBeMapped.audited_by = event.user;
-                }
-
-            } else if (DasscoEvent.SYNCHRONISE_SPECIFY.equals(event.event) && (assetToBeMapped.date_pushed_to_specify == null || assetToBeMapped.date_pushed_to_specify.isAfter(event.timestamp))) {
-                assetToBeMapped.date_pushed_to_specify = event.timestamp;
-            } else if (DasscoEvent.BULK_UPDATE_ASSET_METADATA.equals(event.event)
-                       && assetToBeMapped.date_metadata_updated == null) {
-                assetToBeMapped.date_metadata_updated = event.timestamp;
-                assetToBeMapped.metadata_updated_by = event.user;
-
-            } else if (DasscoEvent.UPDATE_ASSET_METADATA.equals(event.event)
-                       && (assetToBeMapped.date_metadata_updated == null || event.timestamp.isAfter(assetToBeMapped.date_metadata_updated))) {
-                assetToBeMapped.date_metadata_updated = event.timestamp;
-                assetToBeMapped.metadata_updated_by = event.user;
-
-            } else if (DasscoEvent.CREATE_ASSET_METADATA.equals(event.event)) {
-                if (assetToBeMapped.date_metadata_updated == null) {
-                    assetToBeMapped.date_metadata_updated = event.timestamp;
-                }
-                //The pipeline field is always taken from the create event, even if later updates are present with different pipeline
-                assetToBeMapped.pipeline = event.pipeline;
-                assetToBeMapped.metadata_created_by = event.user;
-            } else if (DasscoEvent.DELETE_ASSET_METADATA.equals(event.event)) {
-                assetToBeMapped.date_asset_deleted = event.timestamp;
-            }
-        }
-    }*/
 
     public List<Asset> getAssets(List<String> assetGuids) {
         return this.jdbi.withHandle(h -> {

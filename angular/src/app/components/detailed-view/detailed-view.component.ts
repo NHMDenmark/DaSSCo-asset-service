@@ -1,15 +1,16 @@
-import {Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset, Issue} from '../../types/types';
-import {QueryToOtherPages} from '../../services/query-to-other-pages';
-import {EMPTY, switchMap, take} from 'rxjs';
+import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
+import {BehaviorSubject, combineLatest, EMPTY, filter, map, Subject, switchMap, takeUntil} from 'rxjs';
 import {DatePipe} from '@angular/common';
 import {WikiPageUrl} from '../../utility';
 import {MatDialog} from '@angular/material/dialog';
 import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
+import {isNotUndefined} from '@northtech/ginnungagap';
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -17,35 +18,22 @@ import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
   templateUrl: './detailed-view.component.html',
   styleUrls: ['./detailed-view.component.scss']
 })
-export class DetailedViewComponent implements OnInit {
+export class DetailedViewComponent implements OnInit, OnDestroy {
   private detailedViewService = inject(DetailedViewService);
   private sanitizer = inject(DomSanitizer);
   private route = inject(ActivatedRoute);
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private queryToDetailedViewService = inject(QueryToOtherPages);
-  assetGuid: string = '';
-  currentIndex: number = -1;
-  assetList: string[] = this.queryToDetailedViewService.getAssets();
-  dataLoaded: boolean = false;
+  private readonly destroy = new Subject<void>();
+  @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
+
+  dataLoaded = false;
   datePipe = inject(DatePipe);
   wikiPageUrl = inject(WikiPageUrl);
 
-  @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
-
-  ngOnInit(): void {
-    this.route.params.subscribe((params: Params) => {
-      this.assetGuid = params['asset_guid'];
-      this.initializeCurrentAsset(this.assetGuid);
-      this.metadataContainer?.nativeElement?.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    });
-  }
-
-  asset!: Asset;
-  // TODO: For now: Barcodes only
+  assetSubject = new BehaviorSubject<Asset | undefined>(undefined);
+  asset$ = this.assetSubject.asObservable();
   specimenBarcodes?: string | undefined;
   fileFormats?: string | undefined;
   restrictedAccess?: string | undefined;
@@ -57,57 +45,98 @@ export class DetailedViewComponent implements OnInit {
   assetFiles?: string[] | undefined;
   displayedColumns: string[] = ['Files'];
 
-  initializeCurrentAsset(assetGuid: string) {
-    this.currentIndex = this.assetList.indexOf(this.assetGuid);
+  assetGuid = new BehaviorSubject<string>('');
+  assetList = new BehaviorSubject<string[]>([]);
+  assetList$ = this.assetList.asObservable();
+  currentIndex$ = combineLatest([this.assetGuid.asObservable(), this.assetList.asObservable()]).pipe(
+    map(([assetGuid, assetList]) => {
+      if (assetList && assetGuid) {
+        return assetList.indexOf(assetGuid);
+      }
+      return -1;
+    })
+  );
 
-    this.fetchData(assetGuid);
-  }
+  isPreviousDisabled$ = this.currentIndex$.pipe(map((currentIndex) => currentIndex <= 0));
+  previousAsset$ = combineLatest([this.assetList.asObservable(), this.currentIndex$]).pipe(
+    map(([assetList, currentIndex]) => {
+      if (currentIndex <= 0) {
+        return undefined;
+      }
+      return assetList[currentIndex - 1];
+    })
+  );
+  nextAsset$ = combineLatest([this.assetList.asObservable(), this.currentIndex$]).pipe(
+    map(([assetList, currentIndex]) => {
+      if (assetList.length === currentIndex - 1) {
+        return undefined;
+      }
+      return assetList[currentIndex + 1];
+    })
+  );
 
-  fetchData(assetGuid: string) {
-    this.detailedViewService
-      .getAssetMetadata(assetGuid)
+  constructor() {
+    this.assetGuid
+      .asObservable()
       .pipe(
-        take(1),
-        switchMap((assetResponse) => {
-          if (assetResponse) {
-            this.asset = assetResponse;
-            const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
-            this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
-            this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
-            this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
-            this.tags = Object.entries(assetResponse?.tags ?? {})
-              .map(([key, value]) => `${key}: ${value}`)
-              .join(', ');
-            this.events = assetResponse.events?.map(
-              (event) =>
-                `Event: ${event.event}, Timestamp: ${this.datePipe.transform(
-                  event?.timestamp?.toString(),
-                  'dd/MM-yyyy HH:mm'
-                )}`
-            );
-            return this.detailedViewService.getFileList(assetGuid).pipe(
-              switchMap((fileList) => {
-                if (fileList) {
-                  this.assetFiles = fileList.map((filePath) => {
-                    let parts: string[] = filePath.split('/');
-                    return parts[parts.length - 1];
-                  });
-                  if (fileList.length > 0) {
-                    return this.detailedViewService.getThumbnail(
-                      assetResponse.institution ?? '',
-                      assetResponse.collection ?? '',
-                      assetGuid
-                    );
-                  }
-                  return EMPTY;
+        takeUntil(this.destroy),
+        filter((assetGuid) => assetGuid.length > 0),
+        switchMap((assetGuid) => this.detailedViewService.getAssetMetadata(assetGuid))
+      )
+      .subscribe((assetResponse) => {
+        if (assetResponse) {
+          this.assetSubject.next(assetResponse);
+          this.dataLoaded = true;
+          const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
+          this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
+          this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
+          this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
+          this.tags = Object.entries(assetResponse?.tags ?? {})
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+          this.events = assetResponse.events?.map(
+            (event) =>
+              `Event: ${event.event}, Timestamp: ${this.datePipe.transform(
+                event?.timestamp?.toString(),
+                'dd/MM-yyyy HH:mm'
+              )}`
+          );
+        }
+      });
+
+    this.asset$
+      .pipe(
+        takeUntil(this.destroy),
+        filter((asset) => isNotUndefined<Asset>(asset)),
+        switchMap((asset) => {
+          const assetGuid = asset?.asset_guid;
+          if (!assetGuid) return EMPTY;
+          return this.detailedViewService.getFileList(assetGuid).pipe(
+            switchMap((fileList) => {
+              if (fileList) {
+                this.assetFiles = fileList.map((filePath) => {
+                  const parts: string[] = filePath.split('/');
+                  return parts[parts.length - 1];
+                });
+                if (fileList.length > 0) {
+                  return this.detailedViewService.getThumbnail(
+                    asset?.institution ?? '',
+                    asset?.collection ?? '',
+                    assetGuid
+                  );
+                } else {
+                  this.assetFiles = [];
+                  this.thumbnailUrl = '';
                 }
                 return EMPTY;
-              })
-            );
-          }
-          return EMPTY;
-        }),
-        take(1)
+              } else {
+                this.assetFiles = [];
+                this.thumbnailUrl = '';
+              }
+              return EMPTY;
+            })
+          );
+        })
       )
       .subscribe({
         next: (blob) => {
@@ -116,41 +145,33 @@ export class DetailedViewComponent implements OnInit {
             this.thumbnailUrl = this.sanitizer.bypassSecurityTrustUrl(objectUrl);
           }
         },
-        error: (err: Error) => console.log(err),
-        complete: () => (this.dataLoaded = true)
+        error: (err: Error) => console.log(err)
       });
   }
-
-  showNextAsset(): void {
-    if (this.currentIndex < this.assetList.length - 1) {
-      this.currentIndex++;
-      this.assetGuid = this.assetList[this.currentIndex];
-      this.fetchData(this.assetGuid);
-    }
+  ngOnInit(): void {
+    this.route.params.pipe(takeUntil(this.destroy)).subscribe((params: Params) => {
+      this.assetGuid.next(params['asset_guid']);
+      this.metadataContainer?.nativeElement?.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+    this.assetList.next(this.queryToDetailedViewService.getAssets());
   }
-
-  isNextDisabled(): boolean {
-    return this.currentIndex === this.assetList.length - 1;
-  }
-
-  showPreviousAsset(): void {
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this.assetGuid = this.assetList[this.currentIndex];
-      this.fetchData(this.assetGuid);
-    }
-  }
-
-  isPreviousDisabled(): boolean {
-    return this.currentIndex === 0;
+  ngOnDestroy(): void {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   downloadCsv() {
-    let currentAsset: string[] = [this.asset.asset_guid!];
+    const asset = this.assetSubject.getValue();
+    if (!asset?.asset_guid) return;
+
+    const currentAsset: string[] = [asset.asset_guid];
     this.detailedViewService.postCsv(currentAsset).subscribe({
       next: (response) => {
         if (response.status === 200) {
-          let guid: string = response.body;
+          const guid: string = response.body;
           this.detailedViewService.getFile(guid, 'assets.csv').subscribe({
             next: (data) => {
               const url = window.URL.createObjectURL(data);
@@ -165,7 +186,7 @@ export class DetailedViewComponent implements OnInit {
               window.URL.revokeObjectURL(url);
 
               this.detailedViewService.deleteFile(guid).subscribe({
-                next: () => {},
+                next: () => undefined,
                 error: () => {
                   this.openSnackBar("There's been an error deleting the CSV file", 'Close');
                 }
@@ -184,10 +205,12 @@ export class DetailedViewComponent implements OnInit {
   }
 
   downloadZip() {
-    let currentAsset: string[] = [this.asset.asset_guid!];
+    const asset = this.assetSubject.getValue();
+    if (!asset?.asset_guid) return;
+    const currentAsset: string[] = [asset.asset_guid];
     this.detailedViewService.postCsv(currentAsset).subscribe({
       next: (response) => {
-        let guid: string = response.body;
+        const guid: string = response.body;
         if (response.status === 200) {
           this.detailedViewService.postZip(guid, currentAsset).subscribe({
             next: (response) => {
@@ -239,8 +262,8 @@ export class DetailedViewComponent implements OnInit {
   openSnackBar(message: string, action: string) {
     this._snackBar.open(message, action);
   }
-  trackBy(_index: number, guid: string) {
-    return guid;
+  trackBy(_index: number, value: string) {
+    return value;
   }
   trackByIssueId(_index: number, issue: Issue) {
     return issue.issue_id;

@@ -4,7 +4,7 @@ import {MatSnackBar, MatSnackBarDismiss} from '@angular/material/snack-bar';
 import {HttpErrorResponse, HttpResponse} from '@angular/common/http';
 import {map, Observable} from 'rxjs';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {QueryToOtherPages} from '../../services/query-to-other-pages';
+import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {CacheService} from '../../services/cache.service';
 import {Asset} from '../../types/types';
 

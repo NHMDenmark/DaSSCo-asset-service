@@ -1,17 +1,25 @@
-import {InjectionToken} from "@angular/core";
-import {checkNotUndefined} from "@northtech/ginnungagap";
+import {InjectionToken} from '@angular/core';
+import {checkNotUndefined} from '@northtech/ginnungagap';
 
 export const FileProxy = new InjectionToken<string>('File Proxy Url', {
-  providedIn: "root",
-  factory: () => checkNotUndefined((window as any).frontendProperties?.fileProxyRootUrl, 'missing fileproxy in frontendProperties'),
+  providedIn: 'root',
+  factory: () =>
+    checkNotUndefined((window as any).frontendProperties?.fileProxyRootUrl, 'missing fileproxy in frontendProperties')
 });
 
 export const AssetService = new InjectionToken<string>('Asset Service Url', {
-  providedIn: "root",
-  factory: () => checkNotUndefined((window as any).frontendProperties?.rootUrl, 'missing assetservice in frontendProperties'),
+  providedIn: 'root',
+  factory: () =>
+    checkNotUndefined((window as any).frontendProperties?.rootUrl, 'missing assetservice in frontendProperties')
 });
 
 export const WikiPageUrl = new InjectionToken<string>('Wiki Page Url', {
-  providedIn: "root",
-  factory: () => checkNotUndefined((window as any).frontendProperties?.wikiPageUrl, 'missing wiki page url in frontendProperties'),
+  providedIn: 'root',
+  factory: () =>
+    checkNotUndefined((window as any).frontendProperties?.wikiPageUrl, 'missing wiki page url in frontendProperties')
+});
+export const ExternalLink = new InjectionToken<string>('External Link', {
+  providedIn: 'root',
+  factory: () =>
+    checkNotUndefined((window as any).frontendProperties?.externalLink, 'missing external link in frontendProperties')
 });

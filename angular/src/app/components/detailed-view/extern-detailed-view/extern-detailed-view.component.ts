@@ -49,7 +49,7 @@ export class ExternDetailedViewComponent {
     )
   );
 
-  trackByGuid(_index: number, guid: string) {
+  trackBy(_index: number, guid: string) {
     return guid;
   }
 }

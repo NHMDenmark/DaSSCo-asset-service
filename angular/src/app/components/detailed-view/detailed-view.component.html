@@ -1,5 +1,5 @@
 <div *ngIf="dataLoaded; else loading">
-  <div *ngIf="asset">
+  <div *ngIf="asset$ | async as asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
         <img [src]="thumbnailUrl" alt="Thumbnail" />
@@ -28,15 +28,43 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Asset Pid:&nbsp;</span>
-            {{ asset.asset_pid }}
+            <span class="bold-text">Specimens:&nbsp;</span>
+            {{ specimenBarcodes }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Status:&nbsp;</span>
-            {{ asset.status }}
+            <span class="bold-text">Date Metadata Ingested:&nbsp;</span>
+            {{ asset.date_metadata_ingested | date : 'dd/MM-yyyy HH:mm' }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Workstation:&nbsp;</span>
+            {{ asset.workstation }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Pipeline:&nbsp;</span>
+            {{ asset.pipeline }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Institution:&nbsp;</span>
+            {{ asset.institution }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Collection:&nbsp;</span>
+            {{ asset.collection }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -49,8 +77,53 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Specimens:&nbsp;</span>
-            {{ specimenBarcodes }}
+            <span class="bold-text">Mos Id:&nbsp;</span>
+            {{ asset.mos_id ?? '' }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Digitiser:&nbsp;</span>
+            {{ asset.digitiser }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <div style="width: 100%">
+              <span class="bold-text">Complete Digitiser List:&nbsp;</span>
+              <div *ngIf="asset.complete_digitiser_list?.length" class="scrollable-list-row scrollable-list-header">
+                <span>Username</span>
+              </div>
+              <div *ngIf="asset.complete_digitiser_list?.length" class="scrollable-list-container">
+                <ng-container
+                  *ngFor="let digitiser of asset.complete_digitiser_list; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3 / span 3">
+                      {{ digitiser }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Asset Pid:&nbsp;</span>
+            {{ asset.asset_pid }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Status:&nbsp;</span>
+            {{ asset.status }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -98,6 +171,13 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
+            <span class="bold-text">Role Restriction:&nbsp;</span>
+            {{ asset.role_restrictions | roleRestriction }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
             <span class="bold-text">Tags:&nbsp;</span>
             {{ tags }}
           </mat-list-item>
@@ -112,15 +192,15 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Created Date:&nbsp;</span>
-            {{ asset.created_date }}
+            <span class="bold-text">Date Audited:&nbsp;</span>
+            {{ asset.date_audited | date : 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Date Metadata Updated:&nbsp;</span>
-            {{ asset.date_metadata_updated }}
+            <span class="bold-text">Audited By:&nbsp;</span>
+            {{ asset.audited_by }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -128,6 +208,13 @@
           <mat-list-item>
             <span class="bold-text">Date Asset Taken:&nbsp;</span>
             {{ asset.date_asset_taken }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Date Metadata Updated:&nbsp;</span>
+            {{ asset.date_metadata_updated | date : 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -152,30 +239,35 @@
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
+
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Institution:&nbsp;</span>
-            {{ asset.institution }}
-          </mat-list-item>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="list-item-container">
-          <mat-list-item>
-            <span class="bold-text" style="margin-bottom: auto">Parent Guids:&nbsp;</span>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem">
-              <a
-                *ngFor="let parentGuid of asset.parent_guids; trackBy: trackBy"
-                [routerLink]="['/detailed-view', parentGuid]">
-                {{ parentGuid }}
-              </a>
+            <div style="width: 100%">
+              <span class="bold-text">Parent Guids:&nbsp;</span>
+              <div *ngIf="asset.parent_guids?.length" class="scrollable-list-row scrollable-list-header">
+                <span>Guid</span>
+              </div>
+              <div *ngIf="asset.parent_guids?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let parentGuid of asset.parent_guids; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 2">
+                      {{ parentGuid }}
+                    </span>
+
+                    <button
+                      type="button"
+                      [routerLink]="['/detailed-view', parentGuid]"
+                      mat-stroked-button
+                      style="width: fit-content; justify-self: flex-end">
+                      View
+                    </button>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
             </div>
-          </mat-list-item>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="list-item-container">
-          <mat-list-item>
-            <span class="bold-text">Collection:&nbsp;</span>
-            {{ asset.collection }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -195,65 +287,165 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Issues:&nbsp;</span>
-
-            <div style="padding: 0.5rem; display: flex; gap: 0.25rem; flex-wrap: wrap">
-              <button
-                type="button"
-                style="flex-shrink: 0"
-                [color]="issue.solved ? 'primary' : 'warn'"
-                (click)="openIssueDialog(issue)"
-                *ngFor="let issue of asset?.issues; trackBy: trackByIssueId"
-                mat-raised-button>
-                {{ issue.name }}
-              </button>
+            <span class="bold-text">Camera Setting Control:&nbsp;</span>
+            {{ asset.camera_setting_control }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Metadata Version:&nbsp;</span>
+            {{ asset.metadata_version }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Metadata Source:&nbsp;</span>
+            {{ asset.metadata_source }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Metadata Created By:&nbsp;</span>
+            {{ asset.metadata_created_by }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Make Public:&nbsp;</span>
+            {{ asset.make_public }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Push To Specify:&nbsp;</span>
+            {{ asset.push_to_specify }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Date Pushed To Specify:&nbsp;</span>
+            {{ asset.date_pushed_to_specify | date : 'dd/MM-YYYY HH:mm' }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Specify Attachment Remarks:&nbsp;</span>
+            {{ asset.specify_attachment_remarks }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <span class="bold-text">Specify Attachment Title:&nbsp;</span>
+            {{ asset.specify_attachment_title }}
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item>
+            <div style="width: 100%">
+              <span class="bold-text">Legality:&nbsp;</span>
+              <div *ngIf="asset.legality" class="scrollable-list-row scrollable-list-header">
+                <span>Copyright</span>
+                <span style="text-align: center">License</span>
+                <span style="text-align: end">Credit</span>
+              </div>
+              <div *ngIf="asset.legality as legality" class="scrollable-list-container">
+                <div class="scrollable-list-row">
+                  <span>
+                    {{ legality.copyright }}
+                  </span>
+                  <span style="text-align: center">{{ legality.license }}</span>
+                  <span style="text-align: end">{{ legality.credit }}</span>
+                </div>
+              </div>
             </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item style="display: block">
-            <span class="bold-text">Events:&nbsp;</span>
-            <div class="events">
-              <ng-container *ngFor="let event of asset.events; let lastEvent = last">
-                <div style="display: flex; font-size: 0.875rem; width: fit-content; align-items: center; gap: 0.5rem">
-                  <span>
-                    {{ event.event }}
-                  </span>
-                  |
-                  <span>{{ event?.user }}</span>
-                  |
-                  <span>{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
-                </div>
-                <div *ngIf="event.event === 'UPDATE_ASSET'">
-                  <span class="event-change" *ngFor="let change of event.change_list; let lastChange = last"><b>{{change}}{{lastChange ? '' : ', '}}</b></span>
-                </div>
-                <div *ngIf="!lastEvent">
-                  <hr />
-                </div>
-              </ng-container>
+            <div style="width: 100%">
+              <span class="bold-text">Events:&nbsp;</span>
+              <div *ngIf="asset.events?.length" class="scrollable-list-row scrollable-list-header">
+                <span>Event</span>
+                <span style="text-align: center">User</span>
+                <span style="text-align: end">Date</span>
+              </div>
+              <div *ngIf="asset.events?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let event of asset.events; let last = last">
+                  <div class="scrollable-list-row">
+                    <span>
+                      {{ event.event }}
+                    </span>
+
+                    <span style="text-align: center">{{ event?.user }}</span>
+
+                    <span style="text-align: end">{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+                  </div>
+                  <div *ngIf="event.event === 'UPDATE_ASSET'">
+                    <span
+                      class="event-change"
+                      *ngFor="let change of event.change_list; let lastChange = last; trackBy: trackBy">
+                      <b>{{ change }}{{ lastChange ? '' : ', ' }}</b>
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
             </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Digitiser:&nbsp;</span>
-            {{ asset.digitiser }}
-          </mat-list-item>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="list-item-container">
-          <mat-list-item>
-            <span class="bold-text">Workstation:&nbsp;</span>
-            {{ asset.workstation }}
-          </mat-list-item>
-        </div>
-        <mat-divider></mat-divider>
-        <div class="list-item-container">
-          <mat-list-item>
-            <span class="bold-text">Pipeline:&nbsp;</span>
-            {{ asset.pipeline }}
+            <div style="width: 100%">
+              <span class="bold-text">Issues:&nbsp;</span>
+              <div
+                *ngIf="asset?.issues?.length"
+                class="scrollable-list-row scrollable-list-header"
+                style="grid-template-columns: repeat(4, 1fr)">
+                <span>Name</span>
+                <span>Status</span>
+                <span style="text-align: center">Solved</span>
+                <span></span>
+              </div>
+              <div *ngIf="asset?.issues?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let issue of asset?.issues; let last = last; trackBy: trackByIssueId">
+                  <div class="scrollable-list-row" style="grid-template-columns: repeat(4, 1fr)">
+                    <span>
+                      {{ issue.name }}
+                    </span>
+                    <span>
+                      {{ issue.status }}
+                    </span>
+                    <span style="text-align: center">
+                      <mat-icon class="solved-icon" *ngIf="issue.solved" color="primary">check_circle</mat-icon>
+                      <mat-icon class="solved-icon" *ngIf="!issue.solved" color="warn">highlight_off</mat-icon>
+                    </span>
+                    <button
+                      type="button"
+                      (click)="openIssueDialog(issue)"
+                      mat-stroked-button
+                      style="width: fit-content; justify-self: flex-end">
+                      View
+                    </button>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -289,32 +481,27 @@
     </div>
 
     <div class="icons">
-      <mat-icon
-        *ngIf="assetList.length > 1"
-        fontIcon="arrow_back"
-        class="icon-display"
-        (click)="showPreviousAsset()"
-        [class.disabled]="isPreviousDisabled()"
-        [ngClass]="{'disabled': isPreviousDisabled()}"
-        [attr.disabled]="isPreviousDisabled() ? true : null"
-        title="Previous Asset"></mat-icon>
-      <!--
-      <mat-icon fontIcon="download" class="icon-display" (click)="exportCsv()" title="Download CSV"></mat-icon>
-      -->
-      <button (click)="downloadCsv()">Download CSV File</button>
-      <button (click)="downloadZip()">Create and Download Complete Asset</button>
-      <mat-icon
-        *ngIf="assetList.length > 1"
-        fontIcon="arrow_forward"
-        class="icon-display"
-        (click)="showNextAsset()"
-        [class.disabled]="isNextDisabled()"
-        [ngClass]="{'disabled': isNextDisabled()}"
-        [attr.disabled]="isNextDisabled() ? true : null"
-        title="Next Asset"></mat-icon>
+      <button
+        *ngIf="previousAsset$ | async as previousAsset"
+        [disabled]="!previousAsset"
+        [routerLink]="['/detailed-view', previousAsset]"
+        type="button"
+        mat-icon-button>
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <button (click)="downloadCsv()" color="primary" mat-stroked-button>Download CSV File</button>
+      <button (click)="downloadZip()" color="accent" mat-stroked-button>Create and Download Complete Asset</button>
+      <button
+        *ngIf="nextAsset$ | async as nextAsset"
+        [disabled]="!nextAsset"
+        [routerLink]="['/detailed-view', nextAsset]"
+        type="button"
+        mat-icon-button>
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
     </div>
   </div>
-  <div *ngIf="!asset">
+  <div *ngIf="(asset$ | async) === undefined">
     <p>No asset has been found with this asset_guid.</p>
   </div>
 </div>

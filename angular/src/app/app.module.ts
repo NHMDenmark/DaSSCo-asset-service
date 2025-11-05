@@ -58,6 +58,8 @@ import {SafeUrlPipe} from './pipes/safe-url.pipe';
 import {ExternDetailedViewComponent} from './components/detailed-view/extern-detailed-view/extern-detailed-view.component';
 import {SortInternalStatusPipe} from './pipes/sort-internal-status.pipe';
 import {IssueViewerComponent} from './components/issue-viewer/issue-viewer.component';
+import {RoleRestrictionPipe} from './pipes/role-restriction.pipe';
+import {LinkTrimPipe} from './pipes/link-trim.pipe';
 
 @NgModule({
   declarations: [
@@ -126,7 +128,9 @@ import {IssueViewerComponent} from './components/issue-viewer/issue-viewer.compo
     MatMenuModule,
     MatSortModule,
     MatRippleModule,
-    NgOptimizedImage
+    NgOptimizedImage,
+    RoleRestrictionPipe,
+    LinkTrimPipe
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [MatDatepickerModule, ChartComponent],

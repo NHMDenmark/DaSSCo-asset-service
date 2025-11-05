@@ -1,8 +1,9 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {AuthService} from './services/auth.service';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
+import {ExternalLink} from './utility';
 
 @Component({
   selector: 'dassco-root',
@@ -11,12 +12,12 @@ import {ReplaySubject} from 'rxjs';
 })
 export class AppComponent {
   activeMenu: ReplaySubject<string | undefined> = new ReplaySubject<string | undefined>(1);
+  private oidcSecurityService = inject(OidcSecurityService);
+  authService = inject(AuthService);
+  private router = inject(Router);
+  externalLink = inject(ExternalLink);
 
-  constructor(
-    private oidcSecurityService: OidcSecurityService,
-    public authService: AuthService,
-    private router: Router
-  ) {
+  constructor() {
     this.setActiveRoute();
   }
 

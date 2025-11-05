@@ -72,7 +72,6 @@ public class Queries {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public int getAssetCount(QueriesReceived[] queries, @PathParam("limit") int limit, @Context SecurityContext securityContext) {
         User user = userService.from(securityContext);
-        if (queries.length == 0) return 0;
         // The frontend should just use the getNodeProperties and count them
         return this.queriesService.getAssetsFromQuery(Arrays.asList(queries), limit, user).size();
     }

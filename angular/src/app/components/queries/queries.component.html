@@ -179,7 +179,7 @@
 
     <ng-template #gridViewContainer>
       <div class="grid-list-container">
-        <ng-container *ngFor="let asset of dataSource.data; trackBy: trackByGuuid">
+        <ng-container *ngFor="let asset of dataSource._pageData(dataSource.data); trackBy: trackByGuuid">
           <dassco-asset-card
             [asset]="asset"
             [checked]="selection.isSelected(asset)"

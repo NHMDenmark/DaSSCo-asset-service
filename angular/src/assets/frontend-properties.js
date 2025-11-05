@@ -4,4 +4,5 @@ var frontendProperties = {
   fileProxyRootUrl: 'http://localhost:8080',
   clientId: 'dassco-asset-service',
   wikiPageUrl: 'http://localhost:8080/wiki/',
-}
+  externalLink: 'https://dassco.dk'
+};

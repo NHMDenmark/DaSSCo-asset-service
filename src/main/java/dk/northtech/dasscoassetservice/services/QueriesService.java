@@ -36,93 +36,93 @@ public class QueriesService {
     List<String> propertiesDigitiser = Arrays.asList("asset_created_by", "asset_deleted_by", "asset_updated_by", "audited_by");
 
     String assetSql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                    , $$
-                        MATCH (a:Asset) ${asset:-}
-                        MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                        MATCH (e:Event)<-[:CHANGED_BY]-(a)
-                        MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                        MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
-                        ${optionals}
-                      
-                          RETURN a.asset_guid
-                              , a.asset_pid
-                              , a.status
-                              , a.multi_specimen
-                              , a.funding
-                              , a.subject
-                              , a.payload_type
-                              , a.file_formats
-                              , a.asset_taken_date
-                              , a.internal_status
-                              , a.asset_locked
-                              , parent.asset_guid AS parent_guid
-                              , a.restricted_access
-                              , a.tags
-                              , a.error_message
-                              , a.error_timestamp
-                              , collect(s)
-                              , i.name AS institution_name
-                              , c.name AS collection_name
-                              , p.name AS pipeline_name
-                              , w.name AS workstation_name
-                              , e.timestamp AS creation_date
-                              , a.date_asset_finalised
-                              , u.name AS user_name
-                              , a.date_metadata_taken
-                              , a.date_asset_taken
-                              , ${writeAccess:-null}
-                         LIMIT ${limit:-200}
-                      $$)
-                    AS (asset_guid agtype
-                    , asset_pid agtype
-                    , status agtype
-                    , multi_specimen agtype
-                    , funding agtype
-                    , subject agtype
-                    , payload_type agtype
-                    , file_formats agtype
-                    , asset_taken_date agtype
-                    , internal_status agtype
-                    , asset_locked agtype
-                    , parent_guid agtype
-                    , restricted_access agtype
-                    , tags agtype
-                    , error_message agtype
-                    , error_timestamp agtype
-                    , specimens agtype
-                    , institution_name agtype
-                    , collection_name agtype
-                    , pipeline_name agtype
-                    , workstation_name agtype
-                    , creation_date agtype
-                    , date_asset_finalised agtype
-                    , user_name agtype
-                    , date_metadata_taken agtype
-                    , date_asset_taken agtype
-                    , write_access agtype);
-                  """;
+            SELECT * FROM ag_catalog.cypher(
+            'dassco'
+                , $$
+                    MATCH (a:Asset) ${asset:-}
+                    MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                    MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                    MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                    MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
+                    ${optionals}
+            
+                      RETURN a.asset_guid
+                          , a.asset_pid
+                          , a.status
+                          , a.multi_specimen
+                          , a.funding
+                          , a.subject
+                          , a.payload_type
+                          , a.file_formats
+                          , a.asset_taken_date
+                          , a.internal_status
+                          , a.asset_locked
+                          , parent.asset_guid AS parent_guid
+                          , a.restricted_access
+                          , a.tags
+                          , a.error_message
+                          , a.error_timestamp
+                          , collect(s)
+                          , i.name AS institution_name
+                          , c.name AS collection_name
+                          , p.name AS pipeline_name
+                          , w.name AS workstation_name
+                          , e.timestamp AS creation_date
+                          , a.date_asset_finalised
+                          , u.name AS user_name
+                          , a.date_metadata_taken
+                          , a.date_asset_taken
+                          , ${writeAccess:-null}
+                     LIMIT ${limit:-200}
+                  $$)
+                AS (asset_guid agtype
+                , asset_pid agtype
+                , status agtype
+                , multi_specimen agtype
+                , funding agtype
+                , subject agtype
+                , payload_type agtype
+                , file_formats agtype
+                , asset_taken_date agtype
+                , internal_status agtype
+                , asset_locked agtype
+                , parent_guid agtype
+                , restricted_access agtype
+                , tags agtype
+                , error_message agtype
+                , error_timestamp agtype
+                , specimens agtype
+                , institution_name agtype
+                , collection_name agtype
+                , pipeline_name agtype
+                , workstation_name agtype
+                , creation_date agtype
+                , date_asset_finalised agtype
+                , user_name agtype
+                , date_metadata_taken agtype
+                , date_asset_taken agtype
+                , write_access agtype);
+            """;
 
     String assetCountSql = """
-                SELECT * FROM ag_catalog.cypher(
-                'dassco'
-                    , $$
-                         MATCH (a:Asset) ${asset:-}
-                         ${parentIsNull:-}
-                         MATCH (c:Collection)<-[:IS_PART_OF]-(a)
-                         MATCH (e:Event)<-[:CHANGED_BY]-(a)
-                         MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
-                         MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
-                         ${optionals}
-                         RETURN count(DISTINCT a) as count
-                         LIMIT ${limit:-200}
-                      $$)
-                    as (count agtype);
-                  """;
+            SELECT * FROM ag_catalog.cypher(
+            'dassco'
+                , $$
+                     MATCH (a:Asset) ${asset:-}
+                     ${parentIsNull:-}
+                     MATCH (c:Collection)<-[:IS_PART_OF]-(a)
+                     MATCH (e:Event)<-[:CHANGED_BY]-(a)
+                     MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
+                     MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
+                     ${optionals}
+                     RETURN count(DISTINCT a) as count
+                     LIMIT ${limit:-200}
+                  $$)
+                as (count agtype);
+            """;
 
     @Inject
-    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi")Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
+    public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi") Jdbi jdbi, @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
         this.readonlyJdbi = readonlyJdbi;
@@ -168,7 +168,7 @@ public class QueriesService {
                 new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "String", QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation", QueryItemField.WORKSTATION.getTableName())
 
-                )));
+        )));
         //
         queryItems.add(new QueryItem("event", List.of(
                 new QueryProperty(QueryItemField.ASSET_CERATED_BY.getDisplayName(), "String", QueryItemField.ASSET_CERATED_BY.getTableName()), // EVENT USER
@@ -238,20 +238,20 @@ public class QueriesService {
         String whereFilters = queries.stream().map(queryReceived -> queryReceived.query.stream().map(query -> query.where.stream().map(queryWhere -> {
             var table = query.select;
             var column = queryWhere.property;
-            return  "(" + queryWhere.fields.stream().map(queryInner -> {
+            return "(" + queryWhere.fields.stream().map(queryInner -> {
                 var index = counter.getAndIncrement();
                 var queryInnerResult = queryInner.toBasicPostgreSQLQueryString(column, table, index);
                 var queryInnerResultEntry = queryInnerResult.entrySet().iterator().next();
                 var tableUsed = QueryItemField.fromDisplayName(column).getTableName();
                 paramMap.putAll(queryInnerResultEntry.getValue());
                 tablesUsed.add(tableUsed);
-                if(column.equalsIgnoreCase("multi_specimen")) {
+                if (column.equalsIgnoreCase("multi_specimen")) {
                     leftJoins.append(" join lateral (select count(as2.*) as count from asset_specimen as2 where as2.asset_guid = asset.asset_guid) as specimens on true");
                 }
-                if(column.equalsIgnoreCase("pipeline")) {
+                if (column.equalsIgnoreCase("pipeline")) {
                     tablesUsed.add("event");
                 }
-                if(column.equalsIgnoreCase("asset_deleted_by")) {
+                if (column.equalsIgnoreCase("asset_deleted_by")) {
                     tablesUsed.add("pipeline");
                 }
                 return queryInnerResultEntry.getKey();
@@ -290,30 +290,32 @@ public class QueriesService {
         }
 
         String sql = """
-            select
-                DISTINCT asset_guid,
-                collection.institution_name as institution,
-                collection_name as collection,
-                file_formats,
-                creation_event.timestamp as created_date
-            from asset
-            #LeftJoins# #where# #collectionAccess# limit :limit
-        """
+                    select
+                        DISTINCT asset_guid,
+                        collection.institution_name as institution,
+                        collection_name as collection,
+                        file_formats,
+                        creation_event.timestamp as created_date
+                    from asset
+                    #LeftJoins# #where# #collectionAccess# #limit#
+                """
                 .replace("#LeftJoins#", leftJoins.toString())
                 .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
-                .replace("#collectionAccess#", fullAccess ? "" : (whereFilters.isEmpty() ? "where" : " and collection_name in (%s)".formatted(collectionsAccess.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))));
+                .replace("#collectionAccess#", fullAccess ? "" : (whereFilters.isEmpty() ? "where" : " and collection_name in (%s)".formatted(collectionsAccess.stream().map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))))
+                .replace("#limit#", limit > 0 ? "limit :limit" : "");
 
         return readonlyJdbi.withHandle(h ->
                 {
-                    List<QueryResultAsset> queryResultAssets = h.createQuery(sql)
-                            .bindMap(paramMap)
-                            .bind("limit", Math.min(limit, 10000))
-                            .mapTo(QueryResultAsset.class)
+                    var query = h.createQuery(sql).bindMap(paramMap);
+                    if (limit > 0) {
+                        query.bind("limit", Math.min(limit, 10000));
+                    }
+                    List<QueryResultAsset> queryResultAssets = query.mapTo(QueryResultAsset.class)
                             .list();
 
                     List<String> assetGuids = queryResultAssets.stream().map(QueryResultAsset::asset_guid).toList();
 
-                    if(assetGuids.isEmpty()){
+                    if (assetGuids.isEmpty()) {
                         return List.of();
                     }
 
@@ -334,10 +336,10 @@ public class QueriesService {
                                         String event = rs.getString("event");
                                         String pipelineName = rs.getString("pipeline_name");
                                         Event newEvent = new Event(
-                                            username,
-                                            timestamp != null ? timestamp.toInstant() : null,
-                                            event != null ? DasscoEvent.valueOf(event) : null,
-                                            pipelineName
+                                                username,
+                                                timestamp != null ? timestamp.toInstant() : null,
+                                                event != null ? DasscoEvent.valueOf(event) : null,
+                                                pipelineName
                                         );
                                         assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
                                     }
@@ -390,7 +392,7 @@ public class QueriesService {
 
         Map<String, String> optionals = getOptionalsMap();
 
-        for (Query query: queryReceived.query) {
+        for (Query query : queryReceived.query) {
             if (query.select.equalsIgnoreCase("Asset")) { // a
                 String eventTimestamps = checkForEventUserProperties(query.where); // cos event timestamps are set as if it belongs to the asset
 
@@ -447,7 +449,7 @@ public class QueriesService {
                     whereMap.put("pipeline", "WHERE (" + where + ")\n");
                 }
             }
-            if (query.select.equalsIgnoreCase("Collection"))  { // c
+            if (query.select.equalsIgnoreCase("Collection")) { // c
                 collectionString = joinFields(query.where, "c");
             }
             if (query.select.equalsIgnoreCase("Specimen")) { // s
@@ -536,7 +538,7 @@ public class QueriesService {
         StringJoiner updatedJoiner = new StringJoiner(" and ");
         StringJoiner auditedJoiner = new StringJoiner(" and ");
         List<QueryWhere> toRemove = new ArrayList<>();
-        
+
 
         for (QueryWhere where : wheres) {
             if (propertiesDigitiser.contains(where.property)) {

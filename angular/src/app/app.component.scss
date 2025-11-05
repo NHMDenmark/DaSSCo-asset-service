@@ -52,15 +52,14 @@
     margin-left: 5rem;
   }
 
-  .navigation-menu {
-    button {
-      font-size: 20px;
-      font-family: geomatrix-bold;
-      color: $secondaryColor;
-    }
+  button,
+  a {
+    font-size: 20px;
+    font-family: geomatrix-bold;
+    color: $secondaryColor;
+  }
 
-    button:hover {
-      color: $secondaryColorHover;
-    }
+  button:hover {
+    color: $secondaryColorHover;
   }
 }

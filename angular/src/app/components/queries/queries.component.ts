@@ -18,7 +18,7 @@ import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-gro
 import {AssetGroupService} from '../../services/asset-group.service';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
-import {QueryToOtherPages} from '../../services/query-to-other-pages';
+import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {QueryItem} from '../../types/queryItem';
 
@@ -547,6 +547,12 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
       .map((asset) => asset.asset_guid)
       .filter((guid) => isNotUndefined<string>(guid)) as string[];
 
+    try {
+      const assetGuidsStringified = JSON.stringify(assetGuids);
+      sessionStorage.setItem('currentAssetsFromQuery', assetGuidsStringified);
+    } catch {
+      console.error("Couldn't stringify asset guids");
+    }
     this.queryToOtherPages.setAssets(assetGuids);
     this.queryToOtherPages.setDataSource(this.dataSource);
 

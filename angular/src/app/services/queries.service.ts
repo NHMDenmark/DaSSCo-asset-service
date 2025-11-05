@@ -84,10 +84,10 @@ export class QueriesService {
     return this.oidcSecurityService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
-          .post<number>(`${this.baseUrl}/assetcount/${limit}`, JSON.stringify(queries), {
+          .post<number>(`${this.baseUrl}/assetcount/${0}`, JSON.stringify(queries), {
             headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json; charset=utf-8'}
           })
-          .pipe(catchError(this.handleError(`get ${this.baseUrl}/assetcount${limit}`, undefined)))
+          .pipe(catchError(this.handleError(`get ${this.baseUrl}/assetcount/${limit}`, undefined)))
       )
     );
   }

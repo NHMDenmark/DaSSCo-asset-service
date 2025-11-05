@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.domain.Asset;
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
+import dk.northtech.dasscoassetservice.domain.Legality;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
 import org.apache.age.jdbc.base.Agtype;
@@ -205,6 +206,7 @@ public interface AssetRepository extends SqlObject {
     }
 
 
+
     default List<Event> readEvents_internal(String guid) {
         String sql =
                 """
@@ -389,6 +391,4 @@ public interface AssetRepository extends SqlObject {
             return h;
         });
     }
-
-
 }
