@@ -11,6 +11,10 @@
 npm-debug.log
 yarn-error.log
 
+
+# Test images
+src/assets/examples/dassco-test-thumbnail.jpeg
+
 # IDEs and editors
 .idea/
 .project

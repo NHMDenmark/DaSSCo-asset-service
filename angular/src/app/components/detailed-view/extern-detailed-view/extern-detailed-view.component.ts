@@ -2,8 +2,10 @@ import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {BehaviorSubject, filter, map, switchMap, tap} from 'rxjs';
 import {ExternDetailedViewService} from '../../../services/extern-detailed-view.service';
-import {DomSanitizer} from '@angular/platform-browser';
+import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {WikiPageUrl} from '../../../utility';
+import {Dialog} from '@angular/cdk/dialog';
+import {AssetThumbnailModalComponent} from '../asset-thumbnail-modal/asset-thumbnail-modal.component';
 
 @Component({
   selector: 'dassco-extern-detailed-view',
@@ -14,7 +16,9 @@ import {WikiPageUrl} from '../../../utility';
 export class ExternDetailedViewComponent {
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
+  private cdkDialog = inject(Dialog);
   wikiPageUrl = inject(WikiPageUrl);
+  baseUrl = window.location.origin;
   externDetailedViewService = inject(ExternDetailedViewService);
   assetGuid$ = this.route.paramMap.pipe(map((params) => params.get('asset_guid')));
   loading = new BehaviorSubject(true);
@@ -30,6 +34,8 @@ export class ExternDetailedViewComponent {
         .pipe(tap({next: () => this.loading.next(false)}))
     )
   );
+
+  assetFileList = this.assetMetaData$.pipe();
 
   thumbnail$ = this.assetMetaData$.pipe(
     filter((asset) => asset !== null && asset !== undefined),
@@ -48,6 +54,15 @@ export class ExternDetailedViewComponent {
       )
     )
   );
+
+  openAssetThumbnailModal(thumbnailUrl: SafeUrl) {
+    if (!thumbnailUrl) {
+      return;
+    }
+    this.cdkDialog.open(AssetThumbnailModalComponent, {
+      data: thumbnailUrl
+    });
+  }
 
   trackBy(_index: number, guid: string) {
     return guid;

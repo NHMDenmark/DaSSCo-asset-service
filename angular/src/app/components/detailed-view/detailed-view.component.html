@@ -2,16 +2,18 @@
   <div *ngIf="asset$ | async as asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl">
-        <img [src]="thumbnailUrl" alt="Thumbnail" />
+        <img (click)="openAssetThumbnailModal()" [src]="thumbnailUrl" class="zoom-pointer" alt="Thumbnail" />
       </ng-container>
-      <ng-container *ngIf="!thumbnailUrl">No thumbnail found.</ng-container>
+      <ng-container *ngIf="!thumbnailUrl">
+        <img src="assets/placeholder.png" alt="Placeholder for thumbnail" />
+      </ng-container>
     </div>
 
     <a
       [href]="wikiPageUrl"
       target="_blank"
       matTooltip="Open wiki page in a new tab"
-      style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 50"
+      style="position: absolute; bottom: calc(12.5vh - 20px); left: calc(47.5vw - 20px); z-index: 50"
       mat-mini-fab
       color="primary"
       aria-label="Wiki page link">
@@ -254,13 +256,17 @@
                       {{ parentGuid }}
                     </span>
 
-                    <button
+                    <a
                       type="button"
-                      [routerLink]="['/detailed-view', parentGuid]"
+                      [href]="baseUrl + '/ars/detailed-view/' + parentGuid"
+                      target="_blank"
                       mat-stroked-button
-                      style="width: fit-content; justify-self: flex-end">
+                      style="width: fit-content; justify-self: flex-end; display: flex; align-items: center">
                       View
-                    </button>
+                      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; translate: 0 -1px">
+                        open_in_new
+                      </mat-icon>
+                    </a>
                   </div>
                   <div *ngIf="!last">
                     <hr />
@@ -450,6 +456,54 @@
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
+          <mat-list-item>
+            <div style="width: 100%">
+              <span class="bold-text">External Publishers:&nbsp;</span>
+              <div *ngIf="asset.external_publishers?.length" class="scrollable-list-row scrollable-list-header">
+                <span>Name</span>
+                <span style="grid-column: span 2">Description</span>
+              </div>
+              <div *ngIf="asset.external_publishers?.length" class="scrollable-list-container">
+                <ng-container
+                  *ngFor="let publisher of asset.external_publishers; let last = last; trackBy: trackByPublicationId">
+                  <div class="scrollable-list-row">
+                    <span>
+                      {{ publisher.name }}
+                    </span>
+                    <span style="grid-column: span 2">
+                      {{ publisher.description }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item *ngIf="assetFiles$ | async as files">
+            <div style="width: 100%">
+              <span class="bold-text">Files:&nbsp;</span>
+              <div class="scrollable-list-container">
+                <ng-container *ngFor="let file of files; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row" style="grid-template-columns: repeat(4, 1fr)">
+                    <span>
+                      {{ file }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
+        <div class="list-item-container">
           <mat-list-item style="overflow-x: auto">
             <span class="bold-text">Error message:&nbsp;</span>
             <span style="font-size: 0.875rem; color: crimson; text-wrap: balance">
@@ -467,17 +521,6 @@
           </mat-list-item>
         </div>
       </mat-list>
-    </div>
-
-    <div *ngIf="assetFiles" class="asset-files">
-      <table mat-table [dataSource]="assetFiles" class="asset-files-table">
-        <ng-container matColumnDef="Files">
-          <th mat-header-cell *matHeaderCellDef>Files</th>
-          <td mat-cell *matCellDef="let file">{{ file }}</td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
     </div>
 
     <div class="icons">

@@ -69,8 +69,15 @@ export interface Asset {
   specify_attachment_title: string | undefined;
   legality: Legality | undefined;
   role_restrictions: Record<'name', string>[] | undefined;
+  external_publishers: ExternalPublisher[] | undefined;
 }
 
+export interface ExternalPublisher {
+  asset_guid: string;
+  description: string | undefined;
+  name: string;
+  publication_id: number;
+}
 export interface AssetSpecimen {
   specimen_id: number | undefined;
   asset_guid: string | undefined;

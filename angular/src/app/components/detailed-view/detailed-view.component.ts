@@ -3,7 +3,7 @@ import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {Asset, Issue} from '../../types/types';
+import {Asset, ExternalPublisher, Issue} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {BehaviorSubject, combineLatest, EMPTY, filter, map, Subject, switchMap, takeUntil} from 'rxjs';
 import {DatePipe} from '@angular/common';
@@ -11,6 +11,8 @@ import {WikiPageUrl} from '../../utility';
 import {MatDialog} from '@angular/material/dialog';
 import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
 import {isNotUndefined} from '@northtech/ginnungagap';
+import {Dialog} from '@angular/cdk/dialog';
+import {AssetThumbnailModalComponent} from './asset-thumbnail-modal/asset-thumbnail-modal.component';
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -24,6 +26,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private cdkDialog = inject(Dialog);
   private queryToDetailedViewService = inject(QueryToOtherPages);
   private readonly destroy = new Subject<void>();
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
@@ -32,6 +35,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   datePipe = inject(DatePipe);
   wikiPageUrl = inject(WikiPageUrl);
 
+  baseUrl = window.location.origin;
   assetSubject = new BehaviorSubject<Asset | undefined>(undefined);
   asset$ = this.assetSubject.asObservable();
   specimenBarcodes?: string | undefined;
@@ -42,8 +46,8 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
 
   thumbnailUrl?: SafeUrl;
 
-  assetFiles?: string[] | undefined;
-  displayedColumns: string[] = ['Files'];
+  assetFiles = new BehaviorSubject<string[]>([]);
+  assetFiles$ = this.assetFiles.asObservable();
 
   assetGuid = new BehaviorSubject<string>('');
   assetList = new BehaviorSubject<string[]>([]);
@@ -114,10 +118,12 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
           return this.detailedViewService.getFileList(assetGuid).pipe(
             switchMap((fileList) => {
               if (fileList) {
-                this.assetFiles = fileList.map((filePath) => {
-                  const parts: string[] = filePath.split('/');
-                  return parts[parts.length - 1];
-                });
+                this.assetFiles.next(
+                  fileList.map((filePath) => {
+                    const parts: string[] = filePath.split('/');
+                    return parts[parts.length - 1];
+                  })
+                );
                 if (fileList.length > 0) {
                   return this.detailedViewService.getThumbnail(
                     asset?.institution ?? '',
@@ -125,12 +131,12 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
                     assetGuid
                   );
                 } else {
-                  this.assetFiles = [];
+                  this.assetFiles.next([]);
                   this.thumbnailUrl = '';
                 }
                 return EMPTY;
               } else {
-                this.assetFiles = [];
+                this.assetFiles.next([]);
                 this.thumbnailUrl = '';
               }
               return EMPTY;
@@ -262,8 +268,20 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   openSnackBar(message: string, action: string) {
     this._snackBar.open(message, action);
   }
+
+  openAssetThumbnailModal() {
+    if (!this.thumbnailUrl) {
+      return;
+    }
+    this.cdkDialog.open(AssetThumbnailModalComponent, {
+      data: this.thumbnailUrl
+    });
+  }
   trackBy(_index: number, value: string) {
     return value;
+  }
+  trackByPublicationId(_index: number, value: ExternalPublisher) {
+    return value.publication_id;
   }
   trackByIssueId(_index: number, issue: Issue) {
     return issue.issue_id;

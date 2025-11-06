@@ -8,7 +8,7 @@
     [href]="wikiPageUrl"
     target="_blank"
     matTooltip="Open wiki page in a new tab"
-    style="position: absolute; top: calc(10vh - 20px); left: calc(5vh - 20px); z-index: 50"
+    style="position: absolute; bottom: calc(12.5vh - 20px); left: calc(47.5vw - 20px); z-index: 50"
     mat-mini-fab
     color="primary"
     aria-label="Wiki page link">
@@ -19,7 +19,11 @@
       <mat-spinner></mat-spinner>
     </ng-container>
     <ng-container *ngIf="thumbnail$ | async as thumbnail; else noThumbnail">
-      <img [src]="thumbnail" [alt]="asset?.asset_guid" />
+      <img
+        [src]="thumbnail"
+        class="zoom-pointer"
+        (click)="openAssetThumbnailModal(thumbnail)"
+        [alt]="asset?.asset_guid" />
     </ng-container>
     <ng-template #noThumbnail>
       <img *ngIf="(loadingImage$ | async) === false" src="assets/placeholder.png" alt="placeholder" />
@@ -36,12 +40,24 @@
       <mat-divider></mat-divider>
       <div class="list-item-container">
         <mat-list-item>
-          <span class="bold-text">Specimens:&nbsp;</span>
-          <ul>
-            <li *ngFor="let pid of asset?.specimen_pid">
-              {{ pid }}
-            </li>
-          </ul>
+          <div style="width: 100%">
+            <span class="bold-text">Specimens:&nbsp;</span>
+            <div *ngIf="asset?.specimen_pid?.length" class="scrollable-list-row scrollable-list-header">
+              <span>Pid</span>
+            </div>
+            <div *ngIf="asset.specimen_pid?.length" class="scrollable-list-container">
+              <ng-container *ngFor="let pid of asset.specimen_pid; let last = last; trackBy: trackBy">
+                <div class="scrollable-list-row">
+                  <span style="grid-column: span 3">
+                    {{ pid }}
+                  </span>
+                </div>
+                <div *ngIf="!last">
+                  <hr />
+                </div>
+              </ng-container>
+            </div>
+          </div>
         </mat-list-item>
         <mat-divider></mat-divider>
         <div class="list-item-container">
@@ -67,12 +83,21 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Barcodes:&nbsp;</span>
-            <ul>
-              <li *ngFor="let barcode of asset?.barcode">
-                {{ barcode }}
-              </li>
-            </ul>
+            <div style="width: 100%">
+              <span class="bold-text">Barcodes:&nbsp;</span>
+              <div *ngIf="asset?.barcode?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let barcode of asset?.barcode; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3">
+                      {{ barcode }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -113,23 +138,44 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">File Formats:&nbsp;</span>
-            <ul>
-              <li *ngFor="let format of asset?.file_formats">
-                {{ format }}
-              </li>
-            </ul>
+            <div style="width: 100%">
+              <span class="bold-text">File Formats:&nbsp;</span>
+              <div *ngIf="asset?.file_formats?.length" class="scrollable-list-row scrollable-list-header">
+                <span>Format</span>
+              </div>
+              <div *ngIf="asset.file_formats?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let format of asset.file_formats; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3">
+                      {{ format }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Funding:&nbsp;</span>
-            <ul>
-              <li *ngFor="let funding of asset?.funding">
-                {{ funding }}
-              </li>
-            </ul>
+            <div style="width: 100%">
+              <span class="bold-text">Funding:&nbsp;</span>
+              <div *ngIf="asset.funding?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let funding of asset.funding; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3">
+                      {{ funding }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -207,13 +253,17 @@
                     <span style="grid-column: span 2">
                       {{ parentGuid }}
                     </span>
-                    <button
+                    <a
                       type="button"
-                      [routerLink]="['/extern/detailed-view', parentGuid]"
+                      [href]="baseUrl + '/ars/extern/detailed-view/' + parentGuid"
+                      target="_blank"
                       mat-stroked-button
-                      style="width: fit-content; justify-self: flex-end">
+                      style="width: fit-content; justify-self: flex-end; display: flex; align-items: center">
                       View
-                    </button>
+                      <mat-icon style="font-size: 1rem; width: 1rem; height: 1rem; translate: 0 -1px">
+                        open_in_new
+                      </mat-icon>
+                    </a>
                   </div>
                   <div *ngIf="!last">
                     <hr />
@@ -260,4 +310,8 @@
       </div>
     </mat-list>
   </div>
+  <!-- <div class="icons">
+    <button color="primary" mat-stroked-button>Download CSV File</button>
+    <button color="accent" mat-stroked-button>Create and Download Complete Asset</button>
+  </div> -->
 </ng-container>

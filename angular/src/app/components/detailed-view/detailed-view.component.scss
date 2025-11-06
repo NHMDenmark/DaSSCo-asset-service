@@ -1,7 +1,7 @@
 .asset-metadata {
   position: absolute;
   top: 10vh;
-  left: 5vh;
+  left: 2.5vw;
   width: 45vw;
   bottom: 12.5vh;
   overflow-y: auto;
@@ -9,24 +9,13 @@
   padding: 10px;
 }
 
-.asset-files {
-  position: absolute;
-  top: 55vh;
-  right: 5vh;
-  width: 45vw;
-  height: 32.5vh;
-  border: 1px solid #ccc;
-  padding: 10px;
-  overflow-y: auto;
-}
-
 .asset-thumbnail {
   position: absolute;
   top: 10vh;
-  right: 5vh;
+  right: 2.5vw;
   width: 45vw;
-  height: 40vh;
-  overflow-y: hidden;
+  bottom: 12.5vh;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -34,6 +23,9 @@
   padding: 10px;
 }
 
+img.zoom-pointer:hover {
+  cursor: zoom-in;
+}
 .icons {
   position: absolute;
   bottom: 5vh;
