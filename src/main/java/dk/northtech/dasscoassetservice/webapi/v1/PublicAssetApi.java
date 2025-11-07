@@ -6,6 +6,7 @@ import dk.northtech.dasscoassetservice.domain.PublicAsset;
 import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.services.PublicAssetService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -40,6 +41,7 @@ public class PublicAssetApi {
 
     @GET
     @Path("/metadata/{assetGuid}")
+    @Operation(summary = "Get asset metadata for external users", description = "Returns limited metadata for external users. Can be used without a token.")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = PublicAsset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
