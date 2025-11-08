@@ -217,12 +217,24 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Mime types:&nbsp;</span>
-            <ul>
-              <li *ngFor="let mimetype of asset?.mime_type">
-                {{ mimetype }}
-              </li>
-            </ul>
+            <div style="width: 100%">
+              <span class="bold-text">Mime Types:&nbsp;</span>
+              <div *ngIf="asset.mime_type?.length" class="scrollable-list-row scrollable-list-header">
+                <span style="grid-column: span 3">Type</span>
+              </div>
+              <div *ngIf="asset.mime_type?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let mime_type of asset.mime_type; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3">
+                      {{ mime_type }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -307,11 +319,48 @@
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
+        <div class="list-item-container">
+          <mat-list-item *ngIf="assetFileList$ | async as files">
+            <div style="width: 100%">
+              <span class="bold-text">Files:&nbsp;</span>
+              <div class="scrollable-list-container">
+                <ng-container *ngFor="let file of files; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row" style="grid-template-columns: repeat(4, 1fr)">
+                    <span style="grid-column: span 3">
+                      {{ file }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </mat-list-item>
+        </div>
+        <mat-divider></mat-divider>
       </div>
     </mat-list>
   </div>
-  <!-- <div class="icons">
-    <button color="primary" mat-stroked-button>Download CSV File</button>
-    <button color="accent" mat-stroked-button>Create and Download Complete Asset</button>
-  </div> -->
+  <div class="icons">
+    <button
+      (click)="downloadCsv(asset.asset_guid)"
+      color="primary"
+      mat-stroked-button
+      [disabled]="downloading$ | async">
+      <div style="align-items: center; display: flex; gap: 0.5rem">
+        Download CSV File
+        <mat-spinner [diameter]="18" *ngIf="downloading$ | async"></mat-spinner>
+      </div>
+    </button>
+    <button
+      (click)="downloadBundle(asset.institution, asset.collection, asset.asset_guid)"
+      color="accent"
+      mat-stroked-button>
+      <div style="align-items: center; display: flex; gap: 0.5rem">
+        Download Complete Asset
+        <mat-spinner [diameter]="18" *ngIf="downloading$ | async"></mat-spinner>
+      </div>
+    </button>
+  </div>
 </ng-container>
