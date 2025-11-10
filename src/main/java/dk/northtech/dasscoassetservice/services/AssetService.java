@@ -222,7 +222,7 @@ public class AssetService {
                     .list();
 
             Map<String, List<Event>> assetEvents = h.createQuery("""
-                            SELECT asset_guid, username, timestamp, event, pipeline_name, change_list from event
+                            SELECT asset_guid, username, timestamp, event, pipeline_name, change_list, bulk_update_uuid from event
                             LEFT JOIN dassco_user USING (dassco_user_id)
                             LEFT JOIN pipeline USING (pipeline_id)
                             WHERE asset_guid IN (<assetGuids>)
@@ -238,12 +238,14 @@ public class AssetService {
                                 String event = rs.getString("event");
                                 String pipelineName = rs.getString("pipeline_name");
                                 Array change_list = rs.getArray("change_list");
+                                String  bulk_update_uuid = rs.getString("bulk_update_uuid");
                                 Event newEvent = new Event(
                                         username,
                                         timestamp != null ? timestamp.toInstant() : null,
                                         event != null ? DasscoEvent.valueOf(event) : null,
                                         pipelineName,
-                                        change_list == null ? null : Arrays.asList((String[]) change_list.getArray())
+                                        change_list == null ? null : Arrays.asList((String[]) change_list.getArray()),
+                                        bulk_update_uuid
 
                                 );
                                 assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);

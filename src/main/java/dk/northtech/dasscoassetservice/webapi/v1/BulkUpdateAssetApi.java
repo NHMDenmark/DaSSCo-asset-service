@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.Digitiser;
 import dk.northtech.dasscoassetservice.domain.Funding;
+import dk.northtech.dasscoassetservice.domain.bulkupdatepayload.BulkUpdatePayload;
 import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import dk.northtech.dasscoassetservice.services.CacheService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @Path("/v1/assets/bulkupdate")
@@ -87,6 +89,27 @@ public class BulkUpdateAssetApi {
     public Response getGroupedIssuesForAssets(List<String> assetGuids) {
         List<Map<String, Object>> grouped = bulkUpdateService.getGroupedIssues(assetGuids);
         return Response.ok(grouped).build();
+    }
+
+    @POST
+    @Path("/digitisers/grouped")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupedDigitisers(List<String> assetGuids) {
+        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedDigitisers(assetGuids);
+        return Response.ok(grouped).build();
+    }
+
+
+    @PATCH
+    @Path("/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Perform bulk update on selected assets",
+            description = "Applies partial updates, issue changes, and digitiser updates. Returns the generated bulk_update_uuid.")
+    public Response bulkUpdate(BulkUpdatePayload payload) {
+        UUID bulkUpdateUuid = bulkUpdateService.processBulkUpdate(payload);
+        return Response.ok(Map.of("bulkUpdateUuid", bulkUpdateUuid)).build();
     }
 
 }

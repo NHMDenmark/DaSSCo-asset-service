@@ -20,15 +20,19 @@ public class Event {
     @Schema(description = "The change list of the event", example = "[\"file_updated\"]")
     @Nullable
     public List<String> change_list = new ArrayList<>();
+    @Schema(description = "The uuid of the bulk update", example = "550e8400-e29b-41d4-a716-446655440000")
+    public String bulk_update_uuid;
+
 
 
     @JdbiConstructor
-    public Event(String user, Instant timestamp, DasscoEvent event, String pipeline, List<String> change_list) {
+    public Event(String user, Instant timestamp, DasscoEvent event, String pipeline, List<String> change_list, String bulk_update_uuid) {
         this.timestamp = timestamp;
         this.event = event;
         this.user = user;
         this.pipeline = pipeline;
         this.change_list = change_list;
+        this.bulk_update_uuid = bulk_update_uuid;
     }
 
     public Event() {

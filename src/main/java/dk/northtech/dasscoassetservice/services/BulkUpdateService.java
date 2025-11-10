@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.repositories.DigitiserListRepository;
 import dk.northtech.dasscoassetservice.repositories.DigitiserRepository;
 import dk.northtech.dasscoassetservice.repositories.FundingRepository;
 import jakarta.inject.Inject;
@@ -100,6 +101,7 @@ public class BulkUpdateService {
 
         return groupedList;
     }
+
     public List<Issue> listIssuesByAssetGuids(List<String> assetGuids) {
         return jdbi.withHandle(h ->
                 h.createQuery("""
@@ -119,6 +121,37 @@ public class BulkUpdateService {
                         .mapTo(Issue.class)
                         .list()
         );
+    }
+
+    public List<Map<String, Object>> getGroupedDigitisers(List<String> assetGuids) {
+        List<DigitiserLink> links = jdbi.withHandle(h ->
+                h.attach(DigitiserListRepository.class)
+                        .listDigitisersByAssetGuids(assetGuids)
+        );
+
+        record DigitiserKey(String dassco_user_id, String username) {}
+
+        Map<DigitiserKey, List<DigitiserLink>> grouped = links.stream()
+                .collect(Collectors.groupingBy(
+                        l -> new DigitiserKey(l.dassco_user_id(), l.username())
+                ));
+
+        List<Map<String, Object>> groupedList = new ArrayList<>();
+
+        for (var entry : grouped.entrySet()) {
+            DigitiserKey key = entry.getKey();
+            List<DigitiserLink> list = entry.getValue();
+
+            groupedList.add(Map.of(
+                    "dasscoUserId", key.dassco_user_id(),
+                    "username", key.username(),
+                    "digitiserListIds", list.stream().map(DigitiserLink::digitiser_list_id).toList(),
+                    "assetGuids", list.stream().map(DigitiserLink::asset_guid).distinct().toList(),
+                    "count", list.size()
+            ));
+        }
+
+        return groupedList;
     }
 
     public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user) {

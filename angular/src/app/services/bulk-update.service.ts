@@ -4,6 +4,14 @@ import {catchError, Observable, throwError} from 'rxjs';
 import {AssetService} from '../utility';
 import {Digitiser, Funding} from '../types/types';
 
+export interface GroupedDigitiser {
+  dasscoUserId: number;
+  username: string;
+  digitiserListIds: number[];
+  assetGuids: string[];
+  count: number;
+}
+
 export interface GroupedIssue {
   category: string;
   name: string;
@@ -27,6 +35,42 @@ export interface BulkIssueActionResult {
   updatedCount: number;
   assetGuids: string[];
   message?: string;
+}
+
+export interface BulkUpdatePayload {
+  assetGuids: string[];
+  fields?: Partial<AssetPatchFields>;
+  issues?: IssuePatchBlock;
+  digitisers?: DigitiserPatchBlock;
+}
+
+export interface AssetPatchFields {
+  asset_locked: boolean;
+  audited: boolean;
+  funding: number;
+  asset_subject: string;
+  status: string;
+  camera_setting_control: string;
+  metadata_source: string;
+  push_to_specify: boolean;
+  role_restrictions: string[];
+  payload_type: string;
+  legality: {
+    copyright: string;
+    license: string;
+    credit: string;
+  };
+}
+
+export interface IssuePatchBlock {
+  add?: Array<Omit<GroupedIssue, 'issueIds' | 'assetGuids' | 'count'>>;
+  update?: Array<BulkIssueAction>;
+  delete?: number[];
+}
+
+export interface DigitiserPatchBlock {
+  add?: Array<{dasscoUserId: number; assetGuids: string[]}>;
+  delete?: number[];
 }
 
 @Injectable({
@@ -72,6 +116,11 @@ export class BulkUpdateService {
     return this.http
       .post<GroupedIssue[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issues/grouped`, assetGuids)
       .pipe(catchError(this.handleError<GroupedIssue[]>('getGroupedIssues')));
+  }
+  getGroupedDigitisers(assetGuids: string[]): Observable<GroupedDigitiser[]> {
+    return this.http
+      .post<GroupedDigitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids)
+      .pipe(catchError(this.handleError<GroupedDigitiser[]>('getGroupedDigitisers')));
   }
 
   private handleError<T>(operation = 'operation') {

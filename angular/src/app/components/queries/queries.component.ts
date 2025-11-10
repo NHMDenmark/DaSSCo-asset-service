@@ -374,17 +374,16 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   isAllSelected() {
     // assets selection
     const numSelected = this.selection.selected.length;
-    const numRows = this.dataSource.data.length;
+    const numRows = this.dataSource._pageData(this.dataSource.data).length;
     return numSelected === numRows;
   }
 
   toggleAllRows() {
-    // asset rows
     if (this.isAllSelected()) {
       this.selection.clear();
       return;
     }
-    this.selection.select(...this.dataSource.data);
+    this.selection.select(...this.dataSource._pageData(this.dataSource.data));
   }
 
   addToGroup() {

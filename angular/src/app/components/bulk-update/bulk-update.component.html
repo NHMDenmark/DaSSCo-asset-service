@@ -107,6 +107,57 @@
       </div>
     </div>
 
+    <!-- Digitisers Section -->
+    <ng-container *ngIf="groupedDigitisers$ | async">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <span>Complete Digitiser List</span>
+            &nbsp;
+            <span>({{ digitisers.length }})</span>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <ng-container *ngIf="digitisers.length > 0">
+          <div formArrayName="complete_digitiser_list" class="items-container">
+            <div *ngFor="let digitiserGroup of digitisers.controls; let i = index" [formGroupName]="i" class="card">
+              <div class="card-header">
+                <div class="card-info">
+                  <h3>{{ digitiserGroup.get('username')?.value }}</h3>
+                  <span class="badge" *ngIf="digitiserGroup.get('count')?.value">
+                    {{ digitiserGroup.get('count')?.value }} occurrences
+                  </span>
+                  <span class="badge-new" *ngIf="digitiserGroup.get('isNew')?.value">New</span>
+                </div>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  (click)="deleteDigitiser(i)"
+                  matTooltip="Remove digitiser">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+        <div class="header-actions header-actions-start">
+          <mat-form-field appearance="outline" class="select-field">
+            <mat-label>Add Digitiser</mat-label>
+            <mat-select (selectionChange)="addDigitiser($event.value)" [value]="null">
+              <mat-option
+                *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
+                [value]="digitiser"
+                [disabled]="digitiser.dasscoUserId !== undefined && isDigitiserAdded(digitiser.dasscoUserId)">
+                {{ digitiser.username }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-expansion-panel>
+    </ng-container>
+
+    <!-- Issues Section -->
     <ng-container *ngIf="groupedIssues$ | async as groupedIssues">
       <mat-expansion-panel>
         <mat-expansion-panel-header>
@@ -116,73 +167,112 @@
             <span>({{ issues.length }})</span>
           </mat-panel-title>
         </mat-expansion-panel-header>
-        <div class="issues-header-actions">
+
+        <ng-container *ngIf="issues.length > 0">
+          <div formArrayName="issues" class="items-container">
+            <div *ngFor="let issueGroup of issues.controls; let i = index" [formGroupName]="i" class="card">
+              <div class="card-header card-header-extended">
+                <h3>Issue {{ i + 1 }}</h3>
+                <div class="card-header-right">
+                  <span class="badge" *ngIf="issueGroup.get('count')?.value">
+                    {{ issueGroup.get('count')?.value }} occurrences
+                  </span>
+                  <button mat-icon-button type="button" color="warn" (click)="deleteIssue(i)" matTooltip="Delete issue">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+              <div class="form-field-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Name</mat-label>
+                  <input matInput type="text" formControlName="name" [id]="'name_' + i" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Category</mat-label>
+                  <mat-select formControlName="category" [id]="'category_' + i">
+                    <mat-option
+                      *ngFor="let category of issueCategoriesList$ | async; trackBy: trackBy"
+                      [value]="category">
+                      {{ category }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="form-field-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>Status</mat-label>
+                  <mat-select formControlName="status" [id]="'status_' + i">
+                    <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
+                      {{ status }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Solved</mat-label>
+                  <mat-select formControlName="solved" [id]="'solved_' + i">
+                    <mat-option [value]="true">Yes</mat-option>
+                    <mat-option [value]="false">No</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" [id]="'description_' + i" rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Notes</mat-label>
+                <textarea matInput formControlName="notes" [id]="'notes_' + i" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+        </ng-container>
+        <div class="header-actions header-actions-end">
           <button mat-stroked-button type="button" (click)="addIssue()">
             <mat-icon>add</mat-icon>
             Add Issue
           </button>
         </div>
-        <div formArrayName="issues" class="issues-container">
-          <div *ngFor="let issueGroup of issues.controls; let i = index" [formGroupName]="i" class="issue-card">
-            <div class="issue-header">
-              <h3>Issue {{ i + 1 }}</h3>
-              <div class="issue-header-right">
-                <span class="issue-count-badge" *ngIf="issueGroup.get('count')?.value">
-                  {{ issueGroup.get('count')?.value }} occurrences
-                </span>
-                <button mat-icon-button type="button" color="warn" (click)="deleteIssue(i)" matTooltip="Delete issue">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </div>
-            <div class="form-field-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Category</mat-label>
-                <mat-select formControlName="category" [id]="'category_' + i">
-                  <mat-option
-                    *ngFor="let category of issueCategoriesList$ | async; trackBy: trackBy"
-                    [value]="category">
-                    {{ category }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Name</mat-label>
-                <input matInput type="text" formControlName="name" [id]="'name_' + i" />
-              </mat-form-field>
-            </div>
-            <div class="form-field-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Status</mat-label>
-                <mat-select formControlName="status" [id]="'status_' + i">
-                  <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
-                    {{ status }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Solved</mat-label>
-                <mat-select formControlName="solved" [id]="'solved_' + i">
-                  <mat-option [value]="true">Yes</mat-option>
-                  <mat-option [value]="false">No</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Description</mat-label>
-              <textarea matInput formControlName="description" [id]="'description_' + i" rows="2"></textarea>
+      </mat-expansion-panel>
+      <!-- Legality Section -->
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <span>Legality</span>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+        <div [formGroup]="legality" class="form-section">
+          <p class="warning-text">
+            Setting a new legality will overwrite any existing legality information for these assets.
+          </p>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Copyright</mat-label>
+              <input matInput type="text" formControlName="copyright" id="copyright" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Notes</mat-label>
-              <textarea matInput formControlName="notes" [id]="'notes_' + i" rows="2"></textarea>
+            <mat-form-field appearance="outline">
+              <mat-label>License</mat-label>
+              <input matInput type="text" formControlName="license" id="license" />
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Credit</mat-label>
+              <input matInput type="text" formControlName="credit" id="credit" />
+            </mat-form-field>
+            <button
+              *ngIf="legality.dirty || legality.touched"
+              mat-stroked-button
+              color="warn"
+              style="height: fit-content; width: fit-content"
+              type="button"
+              (click)="legality.reset()">
+              Clear
+            </button>
           </div>
         </div>
       </mat-expansion-panel>
     </ng-container>
     <div class="button-container">
-      <button mat-stroked-button (click)="cancel()">Cancel</button>
-      <button mat-raised-button color="primary" (click)="save()">Save</button>
+      <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+      <button mat-raised-button type="submit" color="primary" (click)="save()">Save</button>
     </div>
   </form>
 </div>
