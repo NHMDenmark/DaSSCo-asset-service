@@ -1,225 +1,136 @@
-import {Component, ElementRef, OnInit, TemplateRef, ViewChild} from '@angular/core';
-import {BulkUpdateService} from '../../services/bulk-update.service';
-import {MatSnackBar, MatSnackBarDismiss} from '@angular/material/snack-bar';
-import {HttpErrorResponse, HttpResponse} from '@angular/common/http';
-import {map, Observable} from 'rxjs';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
-import {CacheService} from '../../services/cache.service';
-import {Asset} from '../../types/types';
+import {Component, inject} from '@angular/core';
+import {Asset, Digitiser, Funding, Legality} from '../../types/types';
+import {FormArray, FormControl, FormGroup} from '@angular/forms';
+import {DIALOG_DATA, DialogRef} from '@angular/cdk/dialog';
+import {BulkUpdateService, GroupedIssue} from 'src/app/services/bulk-update.service';
 
 @Component({
   selector: 'dassco-bulk-update',
   templateUrl: './bulk-update.component.html',
   styleUrls: ['./bulk-update.component.scss']
 })
-export class BulkUpdateComponent implements OnInit {
-  @ViewChild('confirmationDialog') confirmationDialog: TemplateRef<any> = {} as TemplateRef<any>;
-  private dialogRef!: MatDialogRef<any>;
+export class BulkUpdateComponent {
+  bulkUpdateService = inject(BulkUpdateService);
+  dialogRef = inject(DialogRef);
+  data: {assets: Asset[]} = inject(DIALOG_DATA);
+  digitiserList$ = this.bulkUpdateService.getDigitiserList();
+  fundingList$ = this.bulkUpdateService.getFundingList();
+  subjectsList$ = this.bulkUpdateService.getSubjects();
+  rolesList$ = this.bulkUpdateService.getRoles();
+  issueCategoriesList$ = this.bulkUpdateService.getIssueCategories();
+  statusesList$ = this.bulkUpdateService.getStatuses();
+  groupedIssues$ = this.bulkUpdateService.getGroupedIssues(this.data.assets.map((asset) => asset.asset_guid as string));
+  deletedIssueIds: number[] = [];
 
-  dropdownValueMap: Map<string, object[]> | undefined = new Map();
+  constructor() {
+    if (!this.data.assets) {
+      return;
+    }
 
-  constructor(
-    private bulkUpdateService: BulkUpdateService,
-    private _snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private queryToOtherPages: QueryToOtherPages,
-    private cacheService: CacheService
-  ) {}
-
-  ngOnInit(): void {
-    this.cacheService.cachedDropdownValues$
-      .pipe(
-        map((values) => {
-          if (values) {
-            return new Map(Object.entries(values));
-          }
-          return undefined;
-        })
-      )
-      .subscribe((data) => {
-        this.dropdownValueMap = data;
-        const ws = this.dropdownValueMap?.get('workstations') as {[key: string]: any} | undefined;
-        if (ws) {
-          Object.keys(ws).forEach((key) => {
-            const workstation = ws[key];
-            this.workstationList.push(workstation.name);
-          });
-        }
-        const pl = this.dropdownValueMap?.get('pipelines') as {[key: string]: any} | undefined;
-        if (pl) {
-          Object.keys(pl).forEach((key) => {
-            const pipeline = pl[key];
-            this.pipelineList.push(pipeline.name);
-          });
-        }
+    this.groupedIssues$.subscribe((issues) => {
+      issues.forEach((issue) => {
+        this.patchIssue(issue);
       });
-    this.assetList = this.queryToOtherPages.getFullAssets();
-
-    this.allAssetsLocked = this.assetList.every((asset) => asset.asset_locked);
-    if (this.allAssetsLocked) {
-      this.assetLocked = 'true';
-    }
-    if (!this.allAssetsLocked) {
-      this.someAssetsLocked = this.assetList.some((asset) => asset.asset_locked);
-    }
-  }
-
-  // TAGS:
-  tags: {key: string; value: string}[] = [];
-  newTag: string = '';
-  newDescription: string = '';
-  submitted: boolean = false;
-  @ViewChild('tagInput') tagInput!: ElementRef;
-
-  // ASSET STATUS:
-  statusList = [
-    'WORKING_COPY',
-    'ARCHIVE',
-    'BEING_PROCESSED',
-    'PROCESSING_HALTED',
-    'ISSUE_WITH_MEDIA',
-    'ISSUE_WITH_METADATA',
-    'FOR_DELETION'
-  ];
-  status: string = '';
-
-  // Asset List
-  assetList: Asset[] = [];
-
-  // ASSET_LOCKED:
-  allAssetsLocked!: boolean;
-  someAssetsLocked: boolean = false;
-  assetLocked: string = '';
-
-  // SUBJECT:
-  subject: string = '';
-
-  // FUNDING:
-  funding: string = '';
-
-  // PAYLOAD_TYPE
-  payloadType: string = '';
-
-  // PARENT_GUID
-  parentGuid: string = '';
-
-  // DIGITISER
-  digitiser: string = '';
-
-  workstation: string = '';
-  workstationList: string[] = [];
-
-  pipeline: string = '';
-  pipelineList: string[] = [];
-
-  add(event: any): void {
-    event.preventDefault();
-    this.submitted = true;
-    if (this.newTag && this.newDescription) {
-      this.tags.push({key: this.newTag.trim(), value: this.newDescription.trim()});
-      this.newTag = '';
-      this.newDescription = '';
-      this.submitted = false;
-
-      this.tagInput.nativeElement.focus();
-    }
-  }
-
-  remove(pair: {key: string; value: string}): void {
-    const index = this.tags.indexOf(pair);
-    if (index >= 0) {
-      this.tags.splice(index, 1);
-    }
-  }
-
-  updateAssets() {
-    // Creation of the JSON Body:
-    const json = this.createJson();
-
-    // Creation of the url:
-    const assets: string = this.assetList.map((item) => `assets=${item.asset_guid}`).join('&');
-
-    this.bulkUpdateService.updateAssets(json, assets).subscribe({
-      next: (response: HttpResponse<any>) => {
-        const assets: any[] = response.body;
-        const assetGuid: string[] = assets.map((asset) => asset.asset_guid);
-        this.showSuccessSnackBar(`Assets have been updated: ${assetGuid.join(', ')}`).subscribe(() => {
-          this.resetForm();
-        });
-      },
-      error: (error: HttpErrorResponse) => {
-        this._snackBar.open('Cannot Bulk Update Assets: ' + error.error.errorMessage, 'Close');
-      }
     });
   }
 
-  createJson() {
-    const jsonObject: {[key: string]: any} = {};
+  cancel() {
+    this.dialogRef.close();
+  }
 
-    if (!isEmpty(this.tags)) {
-      const tagsObject: {[key: string]: string} = {};
+  save() {
+    const formValue = this.bulkUpdateForm.value;
+    this.dialogRef.close({
+      ...formValue,
+      deletedIssueIds: this.deletedIssueIds
+    });
+  }
 
-      this.tags.forEach((pair) => {
-        tagsObject[pair.key] = pair.value;
-      });
+  get issues() {
+    return this.bulkUpdateForm.controls.issues as FormArray;
+  }
 
-      jsonObject['tags'] = tagsObject;
+  bulkUpdateForm = new FormGroup({
+    digitiser: new FormControl<number | null>(null), // check
+    complete_digitiser_list: new FormControl<string[] | null>(null),
+    asset_locked: new FormControl<boolean | null>(null), // check
+    audited: new FormControl<boolean | null>(null), // check
+    camera_setting_control: new FormControl<string | null>(null), // check
+    metadata_source: new FormControl<string | null>(null), // check
+    push_to_specify: new FormControl<boolean | null>(null), // check
+    issues: new FormArray<
+      FormGroup<{
+        category: FormControl<string | null>;
+        name: FormControl<string | null>;
+        description: FormControl<string | null>;
+        status: FormControl<string | null>;
+        solved: FormControl<boolean | null>;
+        notes: FormControl<string | null>;
+        issueIds: FormControl<number[] | null>;
+        assetGuids: FormControl<string[] | null>;
+        count: FormControl<number | null>;
+      }>
+    >([]),
+    legality: new FormControl<Legality | null>(null),
+    role_restrictions: new FormControl<string[] | null>(null), //  check
+    status: new FormControl<string | null>(null), // check
+    funding: new FormControl<number | null>(null), // check
+    asset_subject: new FormControl<string | null>(null), // check
+    payload_type: new FormControl<string | null>(null)
+  });
+
+  patchIssue(issue: Partial<GroupedIssue>) {
+    this.issues.push(
+      new FormGroup({
+        category: new FormControl<string | null>(issue.category ?? null),
+        name: new FormControl<string | null>(issue.name ?? null),
+        description: new FormControl<string | null>(issue.description ?? null),
+        status: new FormControl<string | null>(issue.status ?? null),
+        solved: new FormControl<boolean | null>(issue.solved ?? null),
+        notes: new FormControl<string | null>(issue.notes ?? null),
+        issueIds: new FormControl<number[] | null>(issue.issueIds ?? null),
+        assetGuids: new FormControl<string[] | null>(issue.assetGuids ?? null),
+        count: new FormControl<number | null>(issue.count ?? null)
+      })
+    );
+  }
+
+  addIssue() {
+    this.issues.push(
+      new FormGroup({
+        category: new FormControl<string | null>(null),
+        name: new FormControl<string | null>(null),
+        description: new FormControl<string | null>(null),
+        status: new FormControl<string | null>(null),
+        solved: new FormControl<boolean | null>(false),
+        notes: new FormControl<string | null>(null),
+        issueIds: new FormControl<number[] | null>(null),
+        assetGuids: new FormControl<string[] | null>(this.data.assets.map((asset) => asset.asset_guid as string)),
+        count: new FormControl<number | null>(0)
+      })
+    );
+  }
+
+  deleteIssue(index: number) {
+    const issueGroup = this.issues.at(index);
+    const issueIds = issueGroup.get('issueIds')?.value;
+
+    // If this issue has existing IDs, add them to the deleted list
+    if (issueIds && issueIds.length > 0) {
+      this.deletedIssueIds = [...this.deletedIssueIds, ...issueIds];
     }
 
-    if (!isEmpty(this.status)) jsonObject['status'] = this.status;
-    if (!isEmpty(this.assetLocked)) jsonObject['asset_locked'] = this.assetLocked;
-    if (!isEmpty(this.subject)) jsonObject['subject'] = this.subject;
-    if (!isEmpty(this.funding)) jsonObject['funding'] = this.funding;
-    if (!isEmpty(this.payloadType)) jsonObject['payload_type'] = this.payloadType;
-    if (!isEmpty(this.parentGuid)) jsonObject['parent_guid'] = this.parentGuid;
-    if (!isEmpty(this.digitiser)) jsonObject['digitiser'] = this.digitiser;
-    jsonObject['pipeline'] = this.pipeline;
-    jsonObject['workstation'] = this.workstation;
-
-    return jsonObject;
-
-    function isEmpty(value: any): boolean {
-      return value === '' || (Array.isArray(value) && value !== null && Object.keys(value).length === 0);
-    }
+    // Remove the issue from the form array
+    this.issues.removeAt(index);
   }
 
-  showSuccessSnackBar(message: string): Observable<MatSnackBarDismiss> {
-    const snackBarRef = this._snackBar.open(message, 'Close');
-    return snackBarRef.afterDismissed();
+  trackByDasscoUserId(_index: number, digitiser: Digitiser) {
+    return digitiser.dasscoUserId;
   }
-
-  onSubmit(form: any) {
-    if (form.valid) {
-      this.dialogRef = this.dialog.open(this.confirmationDialog, {
-        data: {assets: this.assetList.map((asset) => asset.asset_guid)}
-      });
-
-      this.dialogRef.afterClosed().subscribe((result) => {
-        if (result === 'proceed') {
-          this.updateAssets();
-        }
-      });
-    }
+  trackBy(_index: number, status: string) {
+    return status;
   }
-
-  onCancel(): void {
-    this.dialog.closeAll();
-  }
-
-  onDialogProceed() {
-    this.dialogRef.close('proceed');
-  }
-
-  resetForm() {
-    this.status = '';
-    this.assetLocked = '';
-    this.subject = '';
-    this.funding = '';
-    this.payloadType = '';
-    this.parentGuid = '';
-    this.digitiser = '';
-    this.workstation = '';
-    this.pipeline = '';
+  trackByFundingId(_index: number, funding: Funding) {
+    return funding.funding_id;
   }
 }

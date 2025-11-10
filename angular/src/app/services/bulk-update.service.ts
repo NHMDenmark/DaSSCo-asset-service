@@ -1,40 +1,77 @@
-import { Injectable } from '@angular/core';
-//import {OidcSecurityService} from "angular-auth-oidc-client";
-import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {catchError, Observable, switchMap, throwError} from "rxjs";
-import {OidcSecurityService} from "angular-auth-oidc-client";
+import {inject, Injectable} from '@angular/core';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {catchError, Observable, throwError} from 'rxjs';
+import {AssetService} from '../utility';
+import {Digitiser, Funding} from '../types/types';
+
+export interface GroupedIssue {
+  category: string;
+  name: string;
+  description: string;
+  status: string;
+  solved: boolean;
+  notes: string;
+  issueIds: number[];
+  assetGuids: string[];
+  count: number;
+}
+
+export interface BulkIssueAction {
+  issueIds: number[];
+  action: 'update' | 'delete';
+  values?: Partial<Pick<GroupedIssue, 'category' | 'name' | 'description' | 'status' | 'solved' | 'notes'>>;
+}
+
+export interface BulkIssueActionResult {
+  issueIds: number[];
+  updatedCount: number;
+  assetGuids: string[];
+  message?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class BulkUpdateService {
-  // TODO: GET ASSETS FROM THE FRONTEND! THIS IS JUST MOCK DATA!
-  baseUrl = "api/v1/assetmetadata/bulkUpdate?"
+  private readonly http = inject(HttpClient);
+  private apiUrl = inject(AssetService);
 
-  constructor(public oidcSecurityService: OidcSecurityService,
-              private http: HttpClient) { }
+  getDigitiserList() {
+    return this.http
+      .get<Digitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers`)
+      .pipe(catchError(this.handleError<Digitiser[]>('getDigitiserList')));
+  }
 
-  updateAssets(updatedFields : Object, assets : String): Observable<any> {
-    let username;
-    this.oidcSecurityService.checkAuth().subscribe(({isAuthenticated, userData}) => {
-      if (isAuthenticated && userData){
-        username = userData.preferred_username;
-      }
-    })
+  getFundingList() {
+    return this.http
+      .get<Funding[]>(`${this.apiUrl}api/v1/assets/bulkupdate/funding`)
+      .pipe(catchError(this.handleError<Funding[]>('getFundingList')));
+  }
+  getSubjects() {
+    return this.http
+      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/subjects`)
+      .pipe(catchError(this.handleError<string[]>('getSubjects')));
+  }
+  getRoles() {
+    return this.http
+      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/roles`)
+      .pipe(catchError(this.handleError<string[]>('getRoles')));
+  }
+  getIssueCategories() {
+    return this.http
+      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issue-categories`)
+      .pipe(catchError(this.handleError<string[]>('getIssueCategories')));
+  }
+  getStatuses() {
+    return this.http
+      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/statuses`)
+      .pipe(catchError(this.handleError<string[]>('getStatuses')));
+  }
 
-    const updatedFieldsWithUsername = {
-      ...updatedFields, updateUser: username
-    }
-
-    return this.oidcSecurityService.getAccessToken()
-      .pipe(
-        switchMap((token) => {
-          return this.http.put(`${this.baseUrl}${assets}`, updatedFieldsWithUsername, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
-            .pipe(
-              catchError(this.handleError(`put ${this.baseUrl}`))
-            )
-        })
-      )
+  getGroupedIssues(assetGuids: string[]) {
+    return this.http
+      .post<GroupedIssue[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issues/grouped`, assetGuids)
+      .pipe(catchError(this.handleError<GroupedIssue[]>('getGroupedIssues')));
   }
 
   private handleError<T>(operation = 'operation') {
@@ -44,5 +81,4 @@ export class BulkUpdateService {
       return throwError(() => error);
     };
   }
-
 }

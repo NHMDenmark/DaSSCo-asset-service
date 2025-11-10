@@ -607,7 +607,7 @@ public class AssetService {
         LocalDateTime cacheStart = LocalDateTime.now();
         if (asset.digitiser != null && !asset.digitiser.isEmpty()) {
             logger.info("Adding Digitiser to Cache if absent in Persist Asset Method");
-            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser, asset.digitiser));
+            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser_id, asset.digitiser));
         }
 
 //        if (asset.specimens != null && !asset.specimens.isEmpty()) {
@@ -980,7 +980,7 @@ public class AssetService {
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id, null);
 
         logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(audit.user(), audit.user()));
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.dassco_user_id, audit.user()));
 
         return true;
     }
@@ -1019,7 +1019,7 @@ public class AssetService {
         statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Complete Upload Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.username, user.username));
+        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.dassco_user_id, user.username));
         // when asset is completed, it's going to be synced to Specify
         assetSyncService.sendAssetToQueue(new ARSUpdate(asset));
         return true;

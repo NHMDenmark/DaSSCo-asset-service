@@ -163,6 +163,8 @@ public class AssetApi {
         return new ArrayList<>(Arrays.asList(InternalRole.values()));
     }
 
+
+
     @POST
     @Path("/readaccess")
     @Hidden

@@ -23,8 +23,8 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     private final CollectionCache collectionCache;
     private final WorkstationService workstationService;
     private final WorkstationCache workstationCache;
-    private final DigitiserRepository digitiserRepository;
     private final DigitiserCache digitiserCache;
+    private final DigitiserRepository digitiserRepository;
     private final SubjectCache subjectCache;
     CollectionService collectionService;
     private final PayloadTypeCache payloadTypeCache;
@@ -37,9 +37,10 @@ public class CacheInitializer implements ApplicationListener<ContextRefreshedEve
     public CacheInitializer(InstitutionCache institutionCache,
                             CollectionService collectionService,
                             CollectionCache collectionCache,
-                            WorkstationCache workstationCache
-                            , WorkstationService workstationService,
-                            DigitiserRepository digitiserRepository, DigitiserCache digitiserCache,
+                            WorkstationCache workstationCache,
+                            WorkstationService workstationService,
+                            DigitiserRepository digitiserRepository,
+                            DigitiserCache digitiserCache,
                             SubjectCache subjectCache,
                             PayloadTypeCache payloadTypeCache,
                             PreparationTypeCache preparationTypeCache,

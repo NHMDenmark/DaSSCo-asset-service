@@ -58,7 +58,7 @@ import {SortInternalStatusPipe} from './pipes/sort-internal-status.pipe';
 import {IssueViewerComponent} from './components/issue-viewer/issue-viewer.component';
 import {RoleRestrictionPipe} from './pipes/role-restriction.pipe';
 import {LinkTrimPipe} from './pipes/link-trim.pipe';
-
+import {MatBadgeModule} from '@angular/material/badge';
 @NgModule({
   declarations: [
     AppComponent,
@@ -97,6 +97,7 @@ import {LinkTrimPipe} from './pipes/link-trim.pipe';
     MatIconModule,
     MatButtonModule,
     MatInputModule,
+    MatBadgeModule,
     FormsModule,
     BrowserAnimationsModule,
     MatOptionModule,

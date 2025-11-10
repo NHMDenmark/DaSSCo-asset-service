@@ -1,125 +1,188 @@
-<form class="bulk-update-form" #bulkUpdateForm="ngForm" (ngSubmit)="onSubmit(bulkUpdateForm)">
-  <mat-accordion [multi]="true">
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Tags</mat-panel-title>
-      </mat-expansion-panel-header>
-      <div class="tag-container">
-        <div class="tag" *ngFor="let item of tags">
-          {{item.key}}
-          <button mat-icon-button color="warn" (click)="remove(item)">
-            <mat-icon>close</mat-icon>
-          </button>
+<div class="bulk-update-container">
+  <div class="header-container">
+    <h1>Bulk Update Assets</h1>
+    <button
+      tabindex="-1"
+      mat-stroked-button
+      [matMenuTriggerFor]="assetMenu"
+      [matBadge]="data.assets.length || 0"
+      matBadgePosition="before"
+      matBadgeColor="primary">
+      Assets
+    </button>
+
+    <mat-menu #assetMenu="matMenu">
+      <div class="asset-list-container">
+        <div *ngFor="let asset of data.assets; let last = last">
+          <span>{{ asset.asset_guid }}</span>
+          <hr *ngIf="!last" />
         </div>
       </div>
-      <div style="width: 100%">
-        <mat-form-field appearance="fill">
-          <mat-label>Tag</mat-label>
-          <input matInput #tagInput placeholder="Tag" [(ngModel)]="newTag" name="tag" (keydown.enter)="add($event)">
+    </mat-menu>
+  </div>
+  <form [formGroup]="bulkUpdateForm">
+    <!-- Basic Information Section -->
+    <div class="form-section">
+      <h2 class="section-title">Basic Information</h2>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Digitiser</mat-label>
+          <mat-select formControlName="digitiser">
+            <mat-option
+              *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
+              [value]="digitiser.dasscoUserId">
+              {{ digitiser.username }}
+            </mat-option>
+          </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Description</mat-label>
-          <input matInput placeholder="Description" [(ngModel)]="newDescription" name="description" (keydown.enter)="add($event)">
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
+              {{ status }}
+            </mat-option>
+          </mat-select>
         </mat-form-field>
-        <button mat-raised-button color="primary" (click)="add($event)" [disabled]="!newTag || !newDescription">Add</button>
+        <mat-form-field appearance="outline">
+          <mat-label>Subject</mat-label>
+          <mat-select formControlName="asset_subject">
+            <mat-option *ngFor="let subject of subjectsList$ | async; trackBy: trackBy" [value]="subject">
+              {{ subject }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Funding</mat-label>
+          <mat-select formControlName="funding">
+            <mat-option
+              *ngFor="let funding of fundingList$ | async; trackBy: trackByFundingId"
+              [value]="funding.funding_id">
+              {{ funding.funding }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Status</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Status</mat-label>
-        <mat-select name="status" [(ngModel)]="status">
-          <mat-option [value]="''"></mat-option>
-          <mat-option *ngFor="let status of statusList" [value]="status">
-            {{ status }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Asset Locked</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Asset Locked</mat-label>
-        <mat-select name="asset_locked" [(ngModel)]="assetLocked" [disabled]="allAssetsLocked">
-          <mat-option [value]="''"></mat-option>
-          <mat-option [value]="false">False</mat-option>
-          <mat-option [value]="true">True</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Subject</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Subject</mat-label>
-        <input matInput placeholder="Ex. Folder" value="" [(ngModel)]="subject" name="subject">
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Funding</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Funding</mat-label>
-        <input matInput placeholder="Ex. 500.000kr" value="" [(ngModel)]="funding" name="funding">
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Payload Type</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Payload Type</mat-label>
-        <input matInput placeholder="Ex. CT Scan" value="" [(ngModel)]="payloadType" name="payload_type">
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Parent Guid</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Parent Guid</mat-label>
-        <input matInput placeholder="Ex. TEST_PARENT" value="" [(ngModel)]="parentGuid" name="parent_guid">
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-expansion-panel>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Digitiser</mat-panel-title>
-      </mat-expansion-panel-header>
-      <mat-form-field appearance="fill">
-        <mat-label>Digitiser</mat-label>
-        <input matInput placeholder="Ex. Niels Nielsen" value="" [(ngModel)]="digitiser" name="digitiser">
-      </mat-form-field>
-    </mat-expansion-panel>
-    <mat-form-field appearance="fill">
-      <mat-label>Workstation</mat-label>
-      <mat-select name="workstation" [(ngModel)]="workstation" #workstationSelect="ngModel" required>
-        <mat-option *ngFor="let workstation of workstationList" [value]="workstation">{{workstation}}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field appearance="fill">
-      <mat-label>Pipeline</mat-label>
-      <mat-select name="pipeline" [(ngModel)]="pipeline" #pipelineSelect="ngModel" required>
-        <mat-option *ngFor="let pipeline of pipelineList" [value]="pipeline">{{pipeline}}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <br>
-    <div *ngIf="someAssetsLocked">
-      <p>Some of the assets are locked. As unlocking is not possible from the Bulk Update endpoint, you must either choose "True" for "Asset Locked" or choose different assets. </p>
     </div>
-    <button type="submit" [disabled]="assetList.length == 0">Update Assets</button>
-  </mat-accordion>
-  <ng-template #confirmationDialog let-data>
-    <h2 mat-dialog-title>Confirm</h2>
-    <mat-dialog-content>Are you sure you want to bulk update assets: {{ data.assets.join(', ') }}?</mat-dialog-content>
-    <mat-dialog-actions>
-      <button mat-button (click)="onCancel()">Cancel</button>
-      <button mat-button color="primary" (click)="onDialogProceed()">Proceed</button>
-    </mat-dialog-actions>
-  </ng-template>
-</form>
+
+    <!-- Access & Restrictions Section -->
+    <div class="form-section">
+      <h2 class="section-title">Access & Restrictions</h2>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Role Restrictions</mat-label>
+          <mat-select multiple formControlName="role_restrictions">
+            <mat-option *ngFor="let role of rolesList$ | async; trackBy: trackBy" [value]="role">
+              {{ role }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="checkbox-field">
+          <mat-checkbox formControlName="asset_locked">Asset Locked</mat-checkbox>
+        </div>
+        <div class="checkbox-field">
+          <mat-checkbox formControlName="audited">Audited</mat-checkbox>
+        </div>
+        <div class="checkbox-field">
+          <mat-checkbox formControlName="push_to_specify">Push to Specify</mat-checkbox>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical Details Section -->
+    <div class="form-section">
+      <h2 class="section-title">Technical Details</h2>
+      <div class="form-grid">
+        <mat-form-field style="grid-column: span 2" appearance="outline">
+          <mat-label>Camera Setting Control</mat-label>
+          <input matInput type="text" formControlName="camera_setting_control" id="camera_setting_control" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Payload Type</mat-label>
+          <input type="text" matInput formControlName="payload_type" id="payload_type" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Metadata Source</mat-label>
+          <input matInput type="text" formControlName="metadata_source" id="metadata_source" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <ng-container *ngIf="groupedIssues$ | async as groupedIssues">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <span>Issues</span>
+            &nbsp;
+            <span>({{ issues.length }})</span>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="issues-header-actions">
+          <button mat-stroked-button type="button" (click)="addIssue()">
+            <mat-icon>add</mat-icon>
+            Add Issue
+          </button>
+        </div>
+        <div formArrayName="issues" class="issues-container">
+          <div *ngFor="let issueGroup of issues.controls; let i = index" [formGroupName]="i" class="issue-card">
+            <div class="issue-header">
+              <h3>Issue {{ i + 1 }}</h3>
+              <div class="issue-header-right">
+                <span class="issue-count-badge" *ngIf="issueGroup.get('count')?.value">
+                  {{ issueGroup.get('count')?.value }} occurrences
+                </span>
+                <button mat-icon-button type="button" color="warn" (click)="deleteIssue(i)" matTooltip="Delete issue">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div class="form-field-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="category" [id]="'category_' + i">
+                  <mat-option
+                    *ngFor="let category of issueCategoriesList$ | async; trackBy: trackBy"
+                    [value]="category">
+                    {{ category }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Name</mat-label>
+                <input matInput type="text" formControlName="name" [id]="'name_' + i" />
+              </mat-form-field>
+            </div>
+            <div class="form-field-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Status</mat-label>
+                <mat-select formControlName="status" [id]="'status_' + i">
+                  <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
+                    {{ status }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Solved</mat-label>
+                <mat-select formControlName="solved" [id]="'solved_' + i">
+                  <mat-option [value]="true">Yes</mat-option>
+                  <mat-option [value]="false">No</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Description</mat-label>
+              <textarea matInput formControlName="description" [id]="'description_' + i" rows="2"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Notes</mat-label>
+              <textarea matInput formControlName="notes" [id]="'notes_' + i" rows="2"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </ng-container>
+    <div class="button-container">
+      <button mat-stroked-button (click)="cancel()">Cancel</button>
+      <button mat-raised-button color="primary" (click)="save()">Save</button>
+    </div>
+  </form>
+</div>

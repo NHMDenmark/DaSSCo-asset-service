@@ -21,6 +21,8 @@ import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-d
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {QueryItem} from '../../types/queryItem';
+import {BulkUpdateComponent} from '../bulk-update/bulk-update.component';
+import {Dialog} from '@angular/cdk/dialog';
 
 @Component({
   selector: 'dassco-queries',
@@ -40,6 +42,7 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   private _snackBar = inject(MatSnackBar);
   private cacheService = inject(CacheService);
   private assetGroupService = inject(AssetGroupService);
+  cdkDialog = inject(Dialog);
   private queryToOtherPages = inject(QueryToOtherPages);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -532,9 +535,11 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   bulkUpdate() {
     const assets = this.selection.selected;
-    this.queryToOtherPages.setFullAssets(assets);
-    this.queryToOtherPages.setDataSource(this.dataSource);
-    this.router.navigate(['bulk-update']);
+    this.dialog.open(BulkUpdateComponent, {
+      data: {
+        assets: assets ?? []
+      }
+    });
   }
 
   areAssetsSelected() {

@@ -1,213 +1,136 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import dk.northtech.dasscoassetservice.cache.DigitiserCache;
-import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
-import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
-import dk.northtech.dasscoassetservice.cache.SubjectCache;
-import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.*;
-import dk.northtech.dasscoassetservice.repositories.AssetRepository;
-import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
-import io.micrometer.observation.ObservationRegistry;
+import dk.northtech.dasscoassetservice.repositories.DigitiserRepository;
+import dk.northtech.dasscoassetservice.repositories.FundingRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
-import java.net.http.HttpClient;
-import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 public class BulkUpdateService {
-    private final WorkstationService workstationService;
-    private final PipelineService pipelineService;
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(BulkUpdateService.class);
+
     private final RightsValidationService rightsValidationService;
+    private final AssetService assetService;
     private final Jdbi jdbi;
-    private final DigitiserCache digitiserCache;
-    private final SubjectCache subjectCache;
-    private final PayloadTypeCache payloadTypeCache;
-
-    private static final Logger logger = LoggerFactory.getLogger(BulkUpdateService.class);
-
-    private final ExtendableEnumService extendableEnumService;
-    Cache<String, Instant> assetsGettingCreated;
-
-    AssetService assetService;
 
     @Inject
-    public BulkUpdateService(InstitutionService institutionService
-            , CollectionService collectionService
-            , WorkstationService workstationService
-            , @Lazy FileProxyClient fileProxyClient
-            , Jdbi jdbi
-            , StatisticsDataServiceV2 statisticsDataServiceV2
-            , PipelineService pipelineService
-            , RightsValidationService rightsValidationService
-            , DigitiserCache digitiserCache
-            , SubjectCache subjectCache
-            , PayloadTypeCache payloadTypeCache
-            , PreparationTypeCache preparationTypeCache
-            , FileProxyConfiguration fileProxyConfiguration
-            , ObservationRegistry observationRegistry
-            , ExtendableEnumService extendableEnumService
-            , AssetService assetService) {
-        this.workstationService = workstationService;
-
-        this.pipelineService = pipelineService;
+    public BulkUpdateService(
+            Jdbi jdbi,
+            RightsValidationService rightsValidationService,
+            AssetService assetService
+    ) {
         this.jdbi = jdbi;
-        this.digitiserCache = digitiserCache;
-        this.subjectCache = subjectCache;
-        this.payloadTypeCache = payloadTypeCache;
         this.rightsValidationService = rightsValidationService;
-        this.extendableEnumService = extendableEnumService;
-        this.assetsGettingCreated = Caffeine.newBuilder()
-                .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
         this.assetService = assetService;
     }
 
+    public List<Digitiser> getDigitisers() {
+        return jdbi.withHandle(h -> h.attach(DigitiserRepository.class).listDigitisers());
+    }
+    public List<Funding> getFunding() {
+        return jdbi.withHandle(h -> h.attach(FundingRepository.class).listFunds());
+    }
+    public List<String> getSubjects() {
+        return jdbi.withHandle(h -> h.createQuery("SELECT subject FROM subject ORDER BY subject").mapTo(String.class).list());
+    }
+    public List<String> getRoles() {
+        return jdbi.withHandle(h -> h.createQuery("SELECT role from role ORDER BY role").mapTo(String.class).list());
+    }
+    public List<String> getIssueCategories() {
+        return jdbi.withHandle(h -> h.createQuery("SELECT issue_category from issue_category ORDER BY issue_category").mapTo(String.class).list());
+    }
+
+    public List<String> getStatuses() {
+        return jdbi.withHandle(h -> h.createQuery("SELECT asset_status FROM asset_status order by asset_status").mapTo(String.class).list());
+    }
+
+    public List<Map<String, Object>> getGroupedIssues(List<String> assetGuids) {
+        List<Issue> issues = listIssuesByAssetGuids(assetGuids);
+
+        // Key for grouping
+        record IssueKey(
+                String category,
+                String name,
+                String description,
+                String status,
+                Boolean solved,
+                String notes
+        ) {}
+
+        Map<IssueKey, List<Issue>> grouped = issues.stream()
+                .collect(Collectors.groupingBy(
+                        i -> new IssueKey(
+                                i.category(),
+                                i.name(),
+                                i.description(),
+                                i.status(),
+                                i.solved(),
+                                i.notes()
+                        )
+                ));
+
+        // Build a structured list your frontend can easily render
+        List<Map<String, Object>> groupedList = new ArrayList<>();
+        for (var entry : grouped.entrySet()) {
+            IssueKey k = entry.getKey();
+            List<Issue> group = entry.getValue();
+
+            groupedList.add(Map.of(
+                    "category", k.category(),
+                    "name", k.name(),
+                    "description", k.description(),
+                    "status", k.status(),
+                    "solved", k.solved(),
+                    "notes", k.notes(),
+                    "issueIds", group.stream().map(Issue::issue_id).toList(),
+                    "assetGuids", group.stream().map(Issue::asset_guid).distinct().toList(),
+                    "count", group.size()
+            ));
+        }
+
+        return groupedList;
+    }
+    public List<Issue> listIssuesByAssetGuids(List<String> assetGuids) {
+        return jdbi.withHandle(h ->
+                h.createQuery("""
+            SELECT issue_id,
+                   asset_guid,
+                   category,
+                   name,
+                   description,
+                   status,
+                   solved,
+                   notes,
+                   timestamp
+              FROM issue
+             WHERE asset_guid IN (<assetGuids>)
+            """)
+                        .bindList("assetGuids", assetGuids)
+                        .mapTo(Issue.class)
+                        .list()
+        );
+    }
+
     public List<Asset> bulkUpdate(List<String> assetList, Asset updatedAsset, User user) {
-               /* Bulk-Updatable fields:
-            Tags (Added, not replaced).
-            Status
-            Asset_Locked (Only for locking, not unlocking)
-            Subject ️
-            Funding
-            Payload_Type
-            Parent_Guid
-            Digitiser
-        */
-
-//        // Validation
-        if (updatedAsset == null) {
-            throw new IllegalArgumentException("Empty body, please specify fields to update");
-        }
-        if (assetList.isEmpty()) {
-            throw new IllegalArgumentException("Assets to update cannot be empty.");
-        }
-
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
-
-        if (assets.size() != assetList.size()) {
-            throw new IllegalArgumentException("One or more assets were not found!");
-        }
-
-        for (Asset asset : assets) {
-            rightsValidationService.requireWriteRights(user, asset.institution, asset.collection);
-        }
-
-
-        // Check that the bulk update will not set the asset to be its own parent:
-        for (Asset asset : assets) {
-
-            if (asset.parent_guids.contains(asset.asset_guid)) {
-                throw new IllegalArgumentException("Asset cannot be its own parent");
-            }
-        }
-
-        // Parent_guid does not exist:
-
-        updatedAsset.parent_guids.forEach(p -> {
-
-            Optional<Asset> optParent = this.getAsset(p);
-            if (optParent.isEmpty()) {
-                throw new IllegalArgumentException("asset_parent does not exist!");
-            }
-        });
-
-
-        // Do not allow unlocking:
-        if (!updatedAsset.asset_locked) {
-            for (Asset asset : assets) {
-                if (asset.asset_locked) {
-                    throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
-                }
-            }
-        }
-
-//        String sql = this.bulkUpdateSqlStatementFactory(assetList, updatedAsset);
-//        AgtypeMapBuilder builder = this.bulkUpdateBuilderFactory(updatedAsset);
-
-        // Create the new BULK_UPDATE_ASSET_METADATA event:
-        Event event = new Event();
-        event.event = DasscoEvent.BULK_UPDATE_ASSET_METADATA;
-        event.user = user.username;
-        event.pipeline = updatedAsset.pipeline;
-        event.timestamp = Instant.now();
-//
-        assets.forEach(asset -> {
-            Map<String, String> existingTags = new HashMap<>(asset.tags);
-            for (Map.Entry<String, String> entry : updatedAsset.tags.entrySet()) {
-                if (existingTags.containsKey(entry.getKey())) {
-                    if (!existingTags.get(entry.getKey()).equals(entry.getValue())) {
-                        existingTags.put(entry.getKey(), entry.getValue());
-                    }
-                } else {
-                    existingTags.put(entry.getKey(), entry.getValue());
-                }
-            }
-            asset.tags = existingTags;
-        });
-
-        List<Asset> bulkUpdateSuccess = jdbi.onDemand(BulkUpdateRepository.class).bulkUpdate(updatedAsset, event, assets, assetList);
-
-        logger.info("Adding Digitiser to Cache if absent in Bulk Update Asset Method");
-        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
-
-//        if (updatedAsset.subject != null && !updatedAsset.subject.isEmpty()) {
-//            if (!subjectCache.getSubjectMap().containsKey(updatedAsset.subject)) {
-//                this.subjectCache.clearCache();
-//                List<String> subjectList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listSubjects();
-//                });
-//                if (!subjectList.isEmpty()) {
-//                    for (String subject : subjectList) {
-//                        this.subjectCache.putSubjectsInCacheIfAbsent(subject);
-//                    }
-//                }
-//            }
-//        }
-
-//        if (updatedAsset.payload_type != null && !updatedAsset.payload_type.isEmpty()) {
-//            if (!payloadTypeCache.getPayloadTypeMap().containsKey(updatedAsset.payload_type)) {
-//                this.payloadTypeCache.clearCache();
-//                List<String> payloadTypeList = jdbi.withHandle(handle -> {
-//                    AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//                    return assetRepository.listPayloadTypes();
-//                });
-//                if (!payloadTypeList.isEmpty()) {
-//                    for (String payloadType : payloadTypeList) {
-//                        this.payloadTypeCache.putPayloadTypesInCacheIfAbsent(payloadType);
-//                    }
-//                }
-//            }
-//        }
-        return bulkUpdateSuccess;
-
-    }
-
-
-    public Optional<Asset> getAsset(String assetGuid) {
-        return jdbi.onDemand(AssetRepository.class).readAsset(assetGuid);
-    }
-
-
-    public List<Asset> readMultipleAssets(List<String> assets) {
-        return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assets);
+        // Placeholder for your future implementation
+        logger.info("Bulk update requested for {} assets by user {}", assetList.size(), user.username);
+        // TODO: validate rights, update assets, etc.
+        return List.of();
     }
 
     public List<Asset> readMultipleAssetsSQL(List<String> assetGuids) {
         return this.assetService.getAssets(assetGuids);
     }
-
     public String createCSVString(List<Asset> assets) {
         String csv = "";
         if (assets.isEmpty()) {
@@ -215,7 +138,7 @@ public class BulkUpdateService {
         }
         StringBuilder csvBuilder = new StringBuilder();
         Field[] fields = Asset.class.getDeclaredFields();
-        String headers = String.join(",", Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
+        String headers = String.join(",",  Arrays.stream(fields).map(Field::getName).collect(Collectors.toList()));
         csvBuilder.append(headers).append("\n");
         for (Asset asset : assets) {
             StringJoiner joiner = new StringJoiner(",");
@@ -232,7 +155,6 @@ public class BulkUpdateService {
         }
         return csvBuilder.toString();
     }
-
     public String escapeCsvValue(String value) {
         if (value == null) return "";
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
@@ -240,10 +162,4 @@ public class BulkUpdateService {
         }
         return value;
     }
-
-    // For Mocking.
-    public HttpClient createHttpClient() {
-        return HttpClient.newHttpClient();
-    }
-
 }

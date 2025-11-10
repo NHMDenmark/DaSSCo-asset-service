@@ -72,6 +72,11 @@ export interface Asset {
   external_publishers: ExternalPublisher[] | undefined;
 }
 
+export interface Funding {
+  funding_id: number;
+  funding: string;
+}
+
 export interface ExternalPublisher {
   asset_guid: string;
   description: string | undefined;
@@ -115,8 +120,8 @@ export interface AssetGroup {
 }
 
 export interface Digitiser {
-  userId: string | undefined;
-  name: string | undefined;
+  dasscoUserId: number | undefined;
+  username: string | undefined;
 }
 
 export interface DasscoError {

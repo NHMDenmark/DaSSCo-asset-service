@@ -22,6 +22,6 @@ public class DigitiserCache {
     }
 
     public void putDigitiserInCacheIfAbsent(Digitiser digitiser){
-        digitiserMap.putIfAbsent(digitiser.userId(), digitiser);
+        digitiserMap.putIfAbsent(digitiser.username(), digitiser);
     }
 }

@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.configuration;
 
+import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DasscoIllegalActionExceptionMapper;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.IllegalArguementExceptionMapper;
 import dk.northtech.dasscoassetservice.webapi.v1.*;
@@ -37,5 +38,6 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(Lists.class);
     register(AssetSync.class);
     register(PublicAssetApi.class);
+    register(BulkUpdateAssetApi.class);
   }
 }
