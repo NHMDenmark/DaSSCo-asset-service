@@ -256,15 +256,57 @@ public class BulkUpdateService {
             if (payload.fundingIds() != null && !payload.fundingIds().isEmpty()) {
                 handleFundingAssignments(handle, payload.assetGuids(), payload.fundingIds(), bulkUpdateUuid);
             }
+            if (payload.roleRestrictions() != null && !payload.roleRestrictions().isEmpty()) {
+                handleRoleRestrictions(handle, payload.assetGuids(), payload.roleRestrictions(), bulkUpdateUuid);
+            }
             if (payload.fields() != null
                     && Boolean.TRUE.equals(payload.fields().get("audited"))) {
                 auditAssets(user, new Audit(user.username), assets, handle, bulkUpdateUuid);
             }
+
             createBulkUpdateEvents(handle, payload.assetGuids(), user, bulkUpdateUuid);
         });
 
 
         return bulkUpdateUuid;
+    }
+
+    private void handleRoleRestrictions(Handle handle,
+                                        List<String> assetGuids,
+                                        List<String> roleRestrictions,
+                                        UUID bulkUpdateUuid) {
+
+        if (roleRestrictions == null || roleRestrictions.isEmpty()) {
+            logger.debug("No role restrictions provided for bulk update {}", bulkUpdateUuid);
+            return;
+        }
+
+        logger.info("Bulk update {}: linking {} role restrictions to {} assets",
+                bulkUpdateUuid, roleRestrictions.size(), assetGuids.size());
+
+        String sql = """
+        INSERT INTO asset_role_restriction (role, asset_guid)
+        SELECT :role, :assetGuid
+        WHERE NOT EXISTS (
+            SELECT 1 FROM asset_role_restriction
+             WHERE role = :role
+               AND asset_guid = :assetGuid
+        )
+        """;
+
+        var batch = handle.prepareBatch(sql);
+        for (String assetGuid : assetGuids) {
+            for (String role : roleRestrictions) {
+                batch.bind("assetGuid", assetGuid)
+                        .bind("role", role)
+                        .add();
+            }
+        }
+
+        batch.execute();
+
+        logger.info("Bulk update {}: role restriction associations inserted or already existed",
+                bulkUpdateUuid);
     }
 
     private void createBulkUpdateEvents(Handle handle,

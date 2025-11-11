@@ -133,12 +133,17 @@ export class BulkUpdateComponent {
 
   save() {
     const fundingValue = this.bulkUpdateForm.controls.funding.value;
+    const roleRestrictionsValue = this.bulkUpdateForm.controls.roleRestrictions.value;
     const payload: BulkUpdatePayload = {
       assetGuids: this.data.assets.map((a) => a.asset_guid as string),
       fields: this.fields.dirty ? this.filterNullValues(this.fields.value) : undefined,
       funding:
         fundingValue && fundingValue.length > 0 && this.bulkUpdateForm.controls.funding.dirty
           ? fundingValue
+          : undefined,
+      roleRestrictions:
+        roleRestrictionsValue && roleRestrictionsValue.length > 0 && this.bulkUpdateForm.controls.roleRestrictions.dirty
+          ? roleRestrictionsValue
           : undefined,
       issues: this.issues.dirty || this.deletedIssueIds.length > 0 ? this.buildIssuesBlock() : undefined,
       digitisers:
@@ -162,7 +167,26 @@ export class BulkUpdateComponent {
       .pipe(
         take(1),
         catchError((error) => {
-          const errorMessage = error?.error?.message || error?.message || 'An error occurred while updating assets';
+          // Extract error message from various possible error response formats
+          let errorMessage = 'An error occurred while updating assets';
+
+          if (error?.error) {
+            // Check for different error message formats from backend
+            if (typeof error.error === 'string') {
+              errorMessage = error.error;
+            } else if (error.error.errorMessage) {
+              errorMessage = error.error.errorMessage;
+            } else if (error.error.message) {
+              errorMessage = error.error.message;
+            } else if (error.error.body) {
+              errorMessage = error.error.body;
+            } else if (error.error.error) {
+              errorMessage = error.error.error;
+            }
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+
           this.updateStateSubject.next({state: 'error', error: errorMessage});
           return of(null);
         })
@@ -272,6 +296,19 @@ export class BulkUpdateComponent {
     );
   }
 
+  get canSave(): boolean {
+    // Check if form has been interacted with
+    const hasFormChanges = this.bulkUpdateForm.dirty;
+    const hasDeletedIssues = this.deletedIssueIds.length > 0;
+    const hasDeletedDigitisers = this.deletedDigitiserIds.length > 0;
+    const hasNewDigitisers = this.hasNewDigitisers();
+    const hasNewIssues =
+      this.issues.length > 0 &&
+      (this.issues.value as IssueFormValue[]).some((issue) => !issue.issueIds || issue.issueIds.length === 0);
+
+    return hasFormChanges || hasDeletedIssues || hasDeletedDigitisers || hasNewDigitisers || hasNewIssues;
+  }
+
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
     // Only include newly added digitisers (those marked as new)
     const add = (this.digitisers.value as DigitiserFormValue[])
@@ -338,10 +375,10 @@ export class BulkUpdateComponent {
       camera_setting_control: new FormControl<string | null>(null),
       metadata_source: new FormControl<string | null>(null),
       push_to_specify: new FormControl<boolean | null>(null),
-      role_restrictions: new FormControl<string[] | null>(null),
       payload_type: new FormControl<string | null>(null)
     }),
     funding: new FormControl<number[] | null>(null),
+    roleRestrictions: new FormControl<string[] | null>(null),
     issues: new FormArray<
       FormGroup<{
         category: FormControl<string | null>;

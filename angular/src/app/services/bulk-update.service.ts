@@ -44,6 +44,7 @@ export interface BulkUpdatePayload {
   funding?: number[];
   issues?: IssuePatchBlock;
   legality?: Partial<Legality>;
+  roleRestrictions?: string[];
   digitisers?: DigitiserPatchBlock;
 }
 
@@ -56,7 +57,6 @@ export interface AssetPatchFields {
   camera_setting_control: string;
   metadata_source: string;
   push_to_specify: boolean;
-  role_restrictions: string[];
   payload_type: string;
 }
 

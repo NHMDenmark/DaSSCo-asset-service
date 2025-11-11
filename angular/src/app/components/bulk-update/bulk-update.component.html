@@ -68,6 +68,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Digitiser</mat-label>
               <mat-select [formControl]="digitiserIdControl">
+                <mat-option [value]="null">None</mat-option>
                 <mat-option
                   *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
                   [value]="digitiser.dasscoUserId">
@@ -78,6 +79,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Status</mat-label>
               <mat-select [formControl]="statusControl">
+                <mat-option [value]="null">None</mat-option>
                 <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
                   {{ status }}
                 </mat-option>
@@ -86,6 +88,7 @@
             <mat-form-field appearance="outline">
               <mat-label>Subject</mat-label>
               <mat-select [formControl]="subjectControl">
+                <mat-option [value]="null">None</mat-option>
                 <mat-option *ngFor="let subject of subjectsList$ | async; trackBy: trackBy" [value]="subject">
                   {{ subject }}
                 </mat-option>
@@ -108,14 +111,6 @@
         <div [formGroup]="fields" class="form-section">
           <h2 class="section-title">Access & Restrictions</h2>
           <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Role Restrictions</mat-label>
-              <mat-select multiple formControlName="role_restrictions">
-                <mat-option *ngFor="let role of rolesList$ | async; trackBy: trackBy" [value]="role">
-                  {{ role }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
             <div class="checkbox-field">
               <mat-checkbox formControlName="asset_locked">Asset Locked</mat-checkbox>
             </div>
@@ -125,6 +120,21 @@
             <div class="checkbox-field">
               <mat-checkbox formControlName="push_to_specify">Push to Specify</mat-checkbox>
             </div>
+          </div>
+        </div>
+
+        <!-- Role Restrictions Section -->
+        <div class="form-section">
+          <h2 class="section-title">Role Restrictions</h2>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Role Restrictions</mat-label>
+              <mat-select multiple formControlName="roleRestrictions">
+                <mat-option *ngFor="let role of rolesList$ | async; trackBy: trackBy" [value]="role">
+                  {{ role }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
 
@@ -247,6 +257,7 @@
                       <mat-form-field appearance="outline">
                         <mat-label>Category</mat-label>
                         <mat-select formControlName="category" [id]="'category_' + i">
+                          <mat-option [value]="null">None</mat-option>
                           <mat-option
                             *ngFor="let category of issueCategoriesList$ | async; trackBy: trackBy"
                             [value]="category">
@@ -259,6 +270,7 @@
                       <mat-form-field appearance="outline">
                         <mat-label>Status</mat-label>
                         <mat-select formControlName="status" [id]="'status_' + i">
+                          <mat-option [value]="null">None</mat-option>
                           <mat-option *ngFor="let status of statusesList$ | async; trackBy: trackBy" [value]="status">
                             {{ status }}
                           </mat-option>
@@ -267,6 +279,7 @@
                       <mat-form-field appearance="outline">
                         <mat-label>Solved</mat-label>
                         <mat-select formControlName="solved" [id]="'solved_' + i">
+                          <mat-option [value]="null">None</mat-option>
                           <mat-option [value]="true">Yes</mat-option>
                           <mat-option [value]="false">No</mat-option>
                         </mat-select>
@@ -341,7 +354,7 @@
             type="submit"
             color="primary"
             (click)="save()"
-            [disabled]="(updateState$ | async)?.state === 'loading'">
+            [disabled]="(updateState$ | async)?.state === 'loading' || !canSave">
             Save
           </button>
         </div>
