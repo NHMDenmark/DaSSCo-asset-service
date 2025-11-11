@@ -142,7 +142,9 @@ export class BulkUpdateComponent {
           : undefined,
       issues: this.issues.dirty || this.deletedIssueIds.length > 0 ? this.buildIssuesBlock() : undefined,
       digitisers:
-        this.digitisers.dirty || this.deletedDigitiserIds.length > 0 ? this.buildDigitisersBlock() : undefined,
+        this.digitisers.dirty || this.deletedDigitiserIds.length > 0 || this.hasNewDigitisers()
+          ? this.buildDigitisersBlock()
+          : undefined,
       legality: this.legality.dirty ? this.filterNullValues(this.legality.value) : undefined
     };
 
@@ -262,6 +264,12 @@ export class BulkUpdateComponent {
       ...(update.length > 0 && {update}),
       ...(deleteIds && {delete: deleteIds})
     };
+  }
+
+  private hasNewDigitisers(): boolean {
+    return (this.digitisers.value as DigitiserFormValue[]).some(
+      (d) => d.isNew === true && d.dasscoUserId !== null && d.dasscoUserId !== undefined
+    );
   }
 
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
@@ -439,6 +447,8 @@ export class BulkUpdateComponent {
           isNew: new FormControl<boolean | null>(true)
         })
       );
+      // Mark the FormArray as dirty when adding a new digitiser
+      this.digitisers.markAsDirty();
     }
   }
 
