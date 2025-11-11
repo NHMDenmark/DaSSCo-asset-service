@@ -6,7 +6,9 @@ import {
   BulkUpdateService,
   GroupedIssue,
   GroupedDigitiser,
-  BulkUpdatePayload
+  BulkUpdatePayload,
+  IssuePatchBlock,
+  DigitiserPatchBlock
 } from 'src/app/services/bulk-update.service';
 import {take} from 'rxjs';
 
@@ -54,45 +56,118 @@ export class BulkUpdateComponent {
   }
 
   save() {
-    const modifiedFields: Record<string, unknown> = {};
-    for (const [key, control] of Object.entries(this.bulkUpdateForm.controls)) {
-      if (control?.dirty && key !== 'issues' && key !== 'complete_digitiser_list') {
-        modifiedFields[key] = (control as any).value;
-      }
-    }
-
     const payload: BulkUpdatePayload = {
       assetGuids: this.data.assets.map((a) => a.asset_guid as string),
-      fields: Object.keys(modifiedFields).length > 0 ? modifiedFields : undefined,
-      issues: {
-        add: this.issues.value.filter((i: any) => !i.issueIds),
-        update: this.issues.value
-          .filter((i: any) => i.issueIds && i.issueIds.length > 0)
-          .map((i: any) => ({
-            issueIds: i.issueIds,
-            values: {
-              category: i.category,
-              name: i.name,
-              description: i.description,
-              status: i.status,
-              solved: i.solved,
-              notes: i.notes
-            }
-          })),
-        delete: this.deletedIssueIds.length > 0 ? this.deletedIssueIds : undefined
-      },
-      digitisers: {
-        add: this.digitisers.value
-          .filter((d: any) => d.isNew)
-          .map((d: any) => ({
-            dasscoUserId: d.dasscoUserId,
-            assetGuids: d.assetGuids
-          })),
-        delete: this.deletedDigitiserIds.length > 0 ? this.deletedDigitiserIds : undefined
-      }
+      fields: this.fields.dirty ? this.filterNullValues(this.fields.value) : undefined,
+      issues: this.issues.dirty || this.deletedIssueIds.length > 0 ? this.buildIssuesBlock() : undefined,
+      digitisers:
+        this.digitisers.dirty || this.deletedDigitiserIds.length > 0 ? this.buildDigitisersBlock() : undefined,
+      legality: this.legality.dirty ? this.filterNullValues(this.legality.value) : undefined
     };
 
-    this.dialogRef.close(payload);
+    // Remove undefined properties
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof BulkUpdatePayload] === undefined) {
+        delete payload[key as keyof BulkUpdatePayload];
+      }
+    });
+
+    this.bulkUpdateService
+      .bulkUpdate(payload)
+      .pipe(take(1))
+      .subscribe((result) => {
+        console.log(result);
+        this.dialogRef.close();
+      });
+  }
+
+  private filterNullValues(obj: Record<string, any>): Record<string, any> {
+    const filtered: Record<string, any> = {};
+    Object.keys(obj).forEach((key) => {
+      if (obj[key] !== null && obj[key] !== undefined) {
+        filtered[key] = obj[key];
+      }
+    });
+    return filtered;
+  }
+
+  private buildIssuesBlock(): IssuePatchBlock | undefined {
+    // Only include new issues (those without issueIds)
+    const add = this.issues.controls
+      .map((control, index) => ({control, index, value: this.issues.value[index]}))
+      .filter(({value}: any) => !value.issueIds || value.issueIds.length === 0)
+      .map(({value}: any) => ({
+        category: value.category,
+        name: value.name,
+        description: value.description,
+        status: value.status,
+        solved: value.solved,
+        notes: value.notes
+      }))
+      .filter(
+        (issue) =>
+          issue.category ||
+          issue.name ||
+          issue.description ||
+          issue.status !== undefined ||
+          issue.solved !== undefined ||
+          issue.notes
+      );
+
+    // Only include issues that have been modified (dirty) and have issueIds
+    const update = this.issues.controls
+      .map((control, index) => ({control: control as FormGroup, index, value: this.issues.value[index]}))
+      .filter(({control, value}: any) => control.dirty && value.issueIds && value.issueIds.length > 0)
+      .map(({value}: any) => ({
+        issueIds: value.issueIds,
+        action: 'update' as const,
+        values: {
+          ...(value.category !== null && value.category !== undefined && {category: value.category}),
+          ...(value.name !== null && value.name !== undefined && {name: value.name}),
+          ...(value.description !== null && value.description !== undefined && {description: value.description}),
+          ...(value.status !== null && value.status !== undefined && {status: value.status}),
+          ...(value.solved !== null && value.solved !== undefined && {solved: value.solved}),
+          ...(value.notes !== null && value.notes !== undefined && {notes: value.notes})
+        }
+      }))
+      .filter((action) => Object.keys(action.values).length > 0);
+
+    const deleteIds = this.deletedIssueIds.length > 0 ? this.deletedIssueIds : undefined;
+
+    if (add.length === 0 && update.length === 0 && !deleteIds) {
+      return undefined;
+    }
+
+    return {
+      ...(add.length > 0 && {add}),
+      ...(update.length > 0 && {update}),
+      ...(deleteIds && {delete: deleteIds})
+    };
+  }
+
+  private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
+    // Only include newly added digitisers (those marked as new)
+    const add = this.digitisers.value
+      .filter((d: any) => d.isNew && d.dasscoUserId)
+      .map((d: any) => ({
+        dasscoUserId: d.dasscoUserId,
+        assetGuids: d.assetGuids || this.data.assets.map((asset) => asset.asset_guid as string)
+      }));
+
+    const deleteIds = this.deletedDigitiserIds.length > 0 ? this.deletedDigitiserIds : undefined;
+
+    if (add.length === 0 && !deleteIds) {
+      return undefined;
+    }
+
+    return {
+      ...(add.length > 0 && {add}),
+      ...(deleteIds && {delete: deleteIds})
+    };
+  }
+
+  get fields() {
+    return this.bulkUpdateForm.controls.fields as FormGroup;
   }
 
   get issues() {
@@ -100,7 +175,7 @@ export class BulkUpdateComponent {
   }
 
   get digitisers() {
-    return this.bulkUpdateForm.controls.complete_digitiser_list as FormArray;
+    return this.bulkUpdateForm.controls.digitisers as FormArray;
   }
 
   get legality() {
@@ -108,22 +183,18 @@ export class BulkUpdateComponent {
   }
 
   bulkUpdateForm = new FormGroup({
-    digitiser: new FormControl<number | null>(null), // check
-    complete_digitiser_list: new FormArray<
-      FormGroup<{
-        dasscoUserId: FormControl<number | null>;
-        username: FormControl<string | null>;
-        digitiserListIds: FormControl<number[] | null>;
-        assetGuids: FormControl<string[] | null>;
-        count: FormControl<number | null>;
-        isNew: FormControl<boolean | null>;
-      }>
-    >([]), // check
-    asset_locked: new FormControl<boolean | null>(null), // check
-    audited: new FormControl<boolean | null>(null), // check
-    camera_setting_control: new FormControl<string | null>(null), // check
-    metadata_source: new FormControl<string | null>(null), // check
-    push_to_specify: new FormControl<boolean | null>(null), // check
+    fields: new FormGroup({
+      asset_locked: new FormControl<boolean | null>(null),
+      audited: new FormControl<boolean | null>(null),
+      funding: new FormControl<number | null>(null),
+      asset_subject: new FormControl<string | null>(null),
+      status: new FormControl<string | null>(null),
+      camera_setting_control: new FormControl<string | null>(null),
+      metadata_source: new FormControl<string | null>(null),
+      push_to_specify: new FormControl<boolean | null>(null),
+      role_restrictions: new FormControl<string[] | null>(null),
+      payload_type: new FormControl<string | null>(null)
+    }),
     issues: new FormArray<
       FormGroup<{
         category: FormControl<string | null>;
@@ -136,17 +207,22 @@ export class BulkUpdateComponent {
         assetGuids: FormControl<string[] | null>;
         count: FormControl<number | null>;
       }>
-    >([]), // check
+    >([]),
+    digitisers: new FormArray<
+      FormGroup<{
+        dasscoUserId: FormControl<number | null>;
+        username: FormControl<string | null>;
+        digitiserListIds: FormControl<number[] | null>;
+        assetGuids: FormControl<string[] | null>;
+        count: FormControl<number | null>;
+        isNew: FormControl<boolean | null>;
+      }>
+    >([]),
     legality: new FormGroup({
       copyright: new FormControl<string | null>(null),
       license: new FormControl<string | null>(null),
       credit: new FormControl<string | null>(null)
-    }), // check
-    role_restrictions: new FormControl<string[] | null>(null), //  check
-    status: new FormControl<string | null>(null), // check
-    funding: new FormControl<number | null>(null), // check
-    asset_subject: new FormControl<string | null>(null), // check
-    payload_type: new FormControl<string | null>(null) // check
+    })
   });
 
   patchIssue(issue: Partial<GroupedIssue>) {

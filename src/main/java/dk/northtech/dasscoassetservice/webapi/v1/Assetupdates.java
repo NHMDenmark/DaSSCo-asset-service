@@ -261,37 +261,6 @@ public class Assetupdates {
         return this.assetService.updateAsset(asset, userService.from(securityContext));
     }
 
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    @PUT
-    @Path("/bulkUpdate")
-    @Operation(summary = "Bulk Update Assets", description = """
-    Update metadata in many assets at the same time. Takes a list of asse_guid and a message of properties to be updated.
-    All assets in the list will have their properties overwritten by the values in the postbody. 
-    """)
-    @Consumes(APPLICATION_JSON)
-    @Produces(APPLICATION_JSON)
-    //@ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Asset>  bulkUpdate(@RequestBody(description = "The fields to update", required = true, content = @Content(schema = @Schema(implementation = Asset.class), examples = {@ExampleObject(value = """
-            {
-              "status": "BEING_PROCESSED",
-              "asset_locked": false,
-              "subject": "Folder",
-              "funding": "Hundredetusindvis af dollars",
-              "payload_type": "CT scan",
-              "digitiser": "Doris Digitiser",
-              "pipeline": "tb-pipeline-10",
-              "workstation": "tb-workstation-101",
-              "updateUser": "thomas@northtech.dk"
-            }
-            """)})) Asset asset
-            , @QueryParam("assets") List<String> assetGuids
-            , @Context SecurityContext securityContext){
-        // Pass an asset (the fields to be updated) and a list of assets to be updated.
-        // Return type?
-        // Roles Allowed?
-        return this.bulkUpdateService.bulkUpdate(assetGuids, asset, userService.from(securityContext));
-    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

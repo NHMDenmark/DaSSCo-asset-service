@@ -8,6 +8,7 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 public interface EventRepository extends SqlObject {
 
@@ -18,10 +19,16 @@ public interface EventRepository extends SqlObject {
     public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId);
 
     @SqlUpdate("""
-    INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id, change_list) 
+    INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id, change_list)
     VALUES ( :assetGuid, :event,  :userId, :pipelineId, :change_list)
     """)
     public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId, List<String> change_list);
+
+    @SqlUpdate("""
+    INSERT INTO event(asset_guid, event, dassco_user_id, bulk_update_uuid)
+    VALUES ( :assetGuid, :event,  :userId, :bulkUpdateUuid)
+    """)
+    public void insertBulkEvent(String assetGuid, DasscoEvent event, Integer userId, UUID bulkUpdateUuid);
 
     @SqlQuery("""
     SELECT event

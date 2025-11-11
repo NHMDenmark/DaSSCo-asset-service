@@ -4,14 +4,15 @@ import dk.northtech.dasscoassetservice.domain.Digitiser;
 import dk.northtech.dasscoassetservice.domain.Funding;
 import dk.northtech.dasscoassetservice.domain.bulkupdatepayload.BulkUpdatePayload;
 import dk.northtech.dasscoassetservice.services.BulkUpdateService;
-import dk.northtech.dasscoassetservice.services.CacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -86,8 +87,8 @@ public class BulkUpdateAssetApi {
             description = "Returns unique issues aggregated across multiple assets.")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getGroupedIssuesForAssets(List<String> assetGuids) {
-        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedIssues(assetGuids);
+    public Response getGroupedIssuesForAssets(List<String> assetGuids, @Context SecurityContext securityContext) {
+        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedIssues(assetGuids, securityContext);
         return Response.ok(grouped).build();
     }
 
@@ -95,8 +96,9 @@ public class BulkUpdateAssetApi {
     @Path("/digitisers/grouped")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getGroupedDigitisers(List<String> assetGuids) {
-        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedDigitisers(assetGuids);
+    public Response getGroupedDigitisers(List<String> assetGuids, @Context SecurityContext securityContext) {
+
+        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedDigitisers(assetGuids, securityContext);
         return Response.ok(grouped).build();
     }
 
@@ -107,8 +109,8 @@ public class BulkUpdateAssetApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Perform bulk update on selected assets",
             description = "Applies partial updates, issue changes, and digitiser updates. Returns the generated bulk_update_uuid.")
-    public Response bulkUpdate(BulkUpdatePayload payload) {
-        UUID bulkUpdateUuid = bulkUpdateService.processBulkUpdate(payload);
+    public Response bulkUpdate(BulkUpdatePayload payload, @Context SecurityContext securityContext) {
+        UUID bulkUpdateUuid = bulkUpdateService.processBulkUpdate(payload, securityContext);
         return Response.ok(Map.of("bulkUpdateUuid", bulkUpdateUuid)).build();
     }
 

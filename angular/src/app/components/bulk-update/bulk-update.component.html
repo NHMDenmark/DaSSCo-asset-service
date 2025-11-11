@@ -22,19 +22,9 @@
   </div>
   <form [formGroup]="bulkUpdateForm">
     <!-- Basic Information Section -->
-    <div class="form-section">
+    <div [formGroup]="fields" class="form-section">
       <h2 class="section-title">Basic Information</h2>
       <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Digitiser</mat-label>
-          <mat-select formControlName="digitiser">
-            <mat-option
-              *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
-              [value]="digitiser.dasscoUserId">
-              {{ digitiser.username }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Status</mat-label>
           <mat-select formControlName="status">
@@ -65,7 +55,7 @@
     </div>
 
     <!-- Access & Restrictions Section -->
-    <div class="form-section">
+    <div [formGroup]="fields" class="form-section">
       <h2 class="section-title">Access & Restrictions</h2>
       <div class="form-grid">
         <mat-form-field appearance="outline">
@@ -89,7 +79,7 @@
     </div>
 
     <!-- Technical Details Section -->
-    <div class="form-section">
+    <div [formGroup]="fields" class="form-section">
       <h2 class="section-title">Technical Details</h2>
       <div class="form-grid">
         <mat-form-field style="grid-column: span 2" appearance="outline">
@@ -119,7 +109,7 @@
         </mat-expansion-panel-header>
 
         <ng-container *ngIf="digitisers.length > 0">
-          <div formArrayName="complete_digitiser_list" class="items-container">
+          <div formArrayName="digitisers" class="items-container">
             <div *ngFor="let digitiserGroup of digitisers.controls; let i = index" [formGroupName]="i" class="card">
               <div class="card-header">
                 <div class="card-info">

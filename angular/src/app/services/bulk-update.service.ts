@@ -1,8 +1,9 @@
 import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
-import {catchError, Observable, throwError} from 'rxjs';
+import {catchError, Observable, switchMap, throwError} from 'rxjs';
 import {AssetService} from '../utility';
-import {Digitiser, Funding} from '../types/types';
+import {Digitiser, Funding, Legality} from '../types/types';
+import {OidcSecurityService} from 'angular-auth-oidc-client';
 
 export interface GroupedDigitiser {
   dasscoUserId: number;
@@ -41,6 +42,7 @@ export interface BulkUpdatePayload {
   assetGuids: string[];
   fields?: Partial<AssetPatchFields>;
   issues?: IssuePatchBlock;
+  legality?: Partial<Legality>;
   digitisers?: DigitiserPatchBlock;
 }
 
@@ -55,11 +57,6 @@ export interface AssetPatchFields {
   push_to_specify: boolean;
   role_restrictions: string[];
   payload_type: string;
-  legality: {
-    copyright: string;
-    license: string;
-    credit: string;
-  };
 }
 
 export interface IssuePatchBlock {
@@ -79,6 +76,7 @@ export interface DigitiserPatchBlock {
 export class BulkUpdateService {
   private readonly http = inject(HttpClient);
   private apiUrl = inject(AssetService);
+  private oidcService = inject(OidcSecurityService);
 
   getDigitiserList() {
     return this.http
@@ -113,14 +111,38 @@ export class BulkUpdateService {
   }
 
   getGroupedIssues(assetGuids: string[]) {
-    return this.http
-      .post<GroupedIssue[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issues/grouped`, assetGuids)
-      .pipe(catchError(this.handleError<GroupedIssue[]>('getGroupedIssues')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token: string) =>
+        this.http
+          .post<GroupedIssue[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issues/grouped`, assetGuids, {
+            headers: {'Authorization': 'Bearer ' + token}
+          })
+          .pipe(catchError(this.handleError<GroupedIssue[]>('getGroupedIssues')))
+      )
+    );
   }
-  getGroupedDigitisers(assetGuids: string[]): Observable<GroupedDigitiser[]> {
-    return this.http
-      .post<GroupedDigitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids)
-      .pipe(catchError(this.handleError<GroupedDigitiser[]>('getGroupedDigitisers')));
+
+  getGroupedDigitisers(assetGuids: string[]) {
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token: string) =>
+        this.http
+          .post<GroupedDigitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids, {
+            headers: {'Authorization': 'Bearer ' + token}
+          })
+          .pipe(catchError(this.handleError<GroupedDigitiser[]>('getGroupedDigitisers')))
+      )
+    );
+  }
+  bulkUpdate(payload: BulkUpdatePayload) {
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token: string) =>
+        this.http
+          .patch<string>(`${this.apiUrl}api/v1/assets/bulkupdate`, payload, {
+            headers: {'Authorization': 'Bearer ' + token}
+          })
+          .pipe(catchError(this.handleError<string>('bulkUpdate')))
+      )
+    );
   }
 
   private handleError<T>(operation = 'operation') {
