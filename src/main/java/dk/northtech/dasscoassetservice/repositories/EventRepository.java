@@ -13,34 +13,29 @@ import java.util.UUID;
 public interface EventRepository extends SqlObject {
 
     @SqlUpdate("""
-    INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id) 
-    VALUES ( :assetGuid, :event,  :userId, :pipelineId)
-    """)
+            INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id) 
+            VALUES ( :assetGuid, :event,  :userId, :pipelineId)
+            """)
     public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId);
 
     @SqlUpdate("""
-    INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id, change_list)
-    VALUES ( :assetGuid, :event,  :userId, :pipelineId, :change_list)
-    """)
+            INSERT INTO event(asset_guid, event, dassco_user_id, pipeline_id, change_list)
+            VALUES ( :assetGuid, :event,  :userId, :pipelineId, :change_list)
+            """)
     public void insertEvent(String assetGuid, DasscoEvent event, Integer userId, Integer pipelineId, List<String> change_list);
 
-    @SqlUpdate("""
-    INSERT INTO event(asset_guid, event, dassco_user_id, bulk_update_uuid)
-    VALUES ( :assetGuid, :event,  :userId, :bulkUpdateUuid)
-    """)
-    public void insertBulkEvent(String assetGuid, DasscoEvent event, Integer userId, UUID bulkUpdateUuid);
-
     @SqlQuery("""
-    SELECT event
-        , timestamp
-        , username AS user
-        , pipeline_name AS pipeline
-        , change_list
-    FROM event 
-        LEFT JOIN pipeline USING (pipeline_id)
-        LEFT JOIN dassco_user USING (dassco_user_id)
-    WHERE asset_guid = :assetGuid
-    ORDER BY timestamp DESC
-""")
+                SELECT event
+                    , timestamp
+                    , username AS user
+                    , pipeline_name AS pipeline
+                    , change_list
+                    , bulk_update_uuid
+                FROM event 
+                    LEFT JOIN pipeline USING (pipeline_id)
+                    LEFT JOIN dassco_user USING (dassco_user_id)
+                WHERE asset_guid = :assetGuid
+                ORDER BY timestamp DESC
+            """)
     List<Event> getAssetEvents(String assetGuid);
 }

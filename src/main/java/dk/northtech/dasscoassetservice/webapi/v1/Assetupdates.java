@@ -39,17 +39,13 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class Assetupdates {
 
     private final AssetService assetService;
-    private final BulkUpdateService bulkUpdateService;
     private final UserService userService;
-    private final RightsValidationService rightsValidationService;
     private static final Logger logger = LoggerFactory.getLogger(Assetupdates.class);
 
     @Inject
-    public Assetupdates(AssetService assetService, BulkUpdateService bulkUpdateService, UserService userService, RightsValidationService rightsValidationService) {
+    public Assetupdates(AssetService assetService, UserService userService) {
         this.assetService = assetService;
-        this.bulkUpdateService = bulkUpdateService;
         this.userService = userService;
-        this.rightsValidationService = rightsValidationService;
     }
 
     @POST

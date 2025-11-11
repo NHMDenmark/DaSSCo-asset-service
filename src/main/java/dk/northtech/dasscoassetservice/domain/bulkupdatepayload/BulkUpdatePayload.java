@@ -11,5 +11,6 @@ public record BulkUpdatePayload(
         Map<String, Object> fields,
         IssuePatchBlock issues,
         DigitiserPatchBlock digitisers,
-        Optional<Legality> legality
+        Optional<Legality> legality,
+        List<Integer> fundingIds
 ) {}

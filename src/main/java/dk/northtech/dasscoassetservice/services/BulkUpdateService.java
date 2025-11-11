@@ -235,12 +235,14 @@ public class BulkUpdateService {
             patchAssetFields(handle, payload.assetGuids(), payload.fields(), payload.legality(), bulkUpdateUuid);
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
-
+            if (payload.fundingIds() != null && !payload.fundingIds().isEmpty()) {
+                handleFundingAssignments(handle, payload.assetGuids(), payload.fundingIds(), bulkUpdateUuid);
+            }
             if (payload.fields() != null
                     && Boolean.TRUE.equals(payload.fields().get("audited"))) {
                 auditAssets(user, new Audit(user.username), assets, handle, bulkUpdateUuid);
             }
-            createBulkUpdateEvents(handle, payload.assetGuids(), bulkUpdateUuid);
+            createBulkUpdateEvents(handle, payload.assetGuids(), user, bulkUpdateUuid);
         });
 
 
@@ -249,6 +251,7 @@ public class BulkUpdateService {
 
     private void createBulkUpdateEvents(Handle handle,
                                         List<String> assetGuids,
+                                        User user,
                                         UUID bulkUpdateUuid) {
 
         if (assetGuids == null || assetGuids.isEmpty()) {
@@ -259,8 +262,8 @@ public class BulkUpdateService {
         logger.info("Creating {} bulk‑update events (UUID={})", assetGuids.size(), bulkUpdateUuid);
 
         String sql = """
-                INSERT INTO event (asset_guid, event, bulk_update_uuid, timestamp)
-                VALUES (:assetGuid, :event, :bulkUpdateUuid, NOW())
+                INSERT INTO event (asset_guid, event, dassco_user_id, bulk_update_uuid, timestamp)
+                VALUES (:assetGuid, :event, :dasscoUserId, :bulkUpdateUuid, NOW())
                 """;
 
         var batch = handle.prepareBatch(sql);
@@ -269,6 +272,7 @@ public class BulkUpdateService {
             batch.bind("assetGuid", assetGuid)
                     .bind("event", DasscoEvent.BULK_UPDATE_ASSET_METADATA.name())
                     .bind("bulkUpdateUuid", bulkUpdateUuid)
+                    .bind("dasscoUserId", user.dassco_user_id)
                     .add();
         }
 
@@ -323,6 +327,38 @@ public class BulkUpdateService {
         }
 
         logger.info("Finished digitiser operations for bulk update {}", bulkUpdateUuid);
+    }
+
+    private void handleFundingAssignments(Handle handle,
+                                          List<String> assetGuids,
+                                          List<Integer> fundingIds,
+                                          UUID bulkUpdateUuid) {
+        if (fundingIds == null || fundingIds.isEmpty()) {
+            logger.debug("No funding IDs provided for bulk update {}", bulkUpdateUuid);
+            return;
+        }
+
+        String sql = """
+        INSERT INTO asset_funding (asset_guid, funding_id)
+        SELECT :assetGuid, :fundingId
+        WHERE NOT EXISTS (
+            SELECT 1 FROM asset_funding
+             WHERE asset_guid = :assetGuid
+               AND funding_id = :fundingId
+        )
+        """;
+
+        var batch = handle.prepareBatch(sql);
+        for (String assetGuid : assetGuids) {
+            for (Integer fundingId : fundingIds) {
+                batch.bind("assetGuid", assetGuid)
+                        .bind("fundingId", fundingId)
+                        .add();
+            }
+        }
+        batch.execute();
+
+        logger.info("Bulk update {}: funding assignments inserted safely", bulkUpdateUuid);
     }
 
     private void handleIssueActions(Handle handle,
@@ -408,25 +444,24 @@ public class BulkUpdateService {
                                   Optional<Legality> legality,
                                   UUID bulkUpdateUuid) {
 
-        // ✅ Null/empty guard (parentheses fix operator precedence)
         if (((fields == null || fields.isEmpty()) && (legality == null || legality.isEmpty())) ||
                 assetGuids == null || assetGuids.isEmpty()) {
             logger.debug("No fields or legality to patch in bulk update {}", bulkUpdateUuid);
             return;
         }
 
-        // ✅ Work on a copy to avoid mutating caller map
         Map<String, Object> sqlFields = new LinkedHashMap<>();
         if (fields != null) {
             sqlFields.putAll(fields);
         }
 
-        // ✅ Remove non‑column or special keys
+        // Remove non-column or special keys
         sqlFields.remove("audited");
 
-        // ✅ Optionally insert new legality and include legality_id
+        // Insert new legality if provided and include legality_id in asset update
         legality.ifPresent(l -> {
-            Legality created = handle.attach(LegalityRepository.class).insertLegality(l);
+            var legalityRepo = handle.attach(LegalityRepository.class);
+            Legality created = legalityRepo.insertLegality(l);
             if (created != null && created.legality_id() != null) {
                 sqlFields.put("legality_id", created.legality_id());
                 logger.info("Bulk update {}: inserted new legality ID {} and linked to assets",
@@ -439,21 +474,51 @@ public class BulkUpdateService {
             return;
         }
 
-        // ✅ Construct dynamic SQL safely
+        // Build dynamic SQL
         String setClause = sqlFields.keySet().stream()
                 .map(k -> k + " = :" + k)
                 .collect(Collectors.joining(", "));
 
         String sql = "UPDATE asset SET " + setClause + " WHERE asset_guid IN (<assetGuids>)";
 
-        var update = handle.createUpdate(sql)
-                .bindList("assetGuids", assetGuids);
-
+        var update = handle.createUpdate(sql).bindList("assetGuids", assetGuids);
         sqlFields.forEach(update::bind);
 
         int affected = update.execute();
         logger.info("Bulk update {}: updated {} asset row(s) with fields {}",
                 bulkUpdateUuid, affected, sqlFields.keySet());
+
+        // If digitiser_id was included in fields, link it to digitiser_list
+        Object digitiserId = sqlFields.get("digitiser_id");
+        if (digitiserId != null) {
+            int id = (digitiserId instanceof Number)
+                    ? ((Number) digitiserId).intValue()
+                    : Integer.parseInt(digitiserId.toString());
+
+            logger.info("Bulk update {}: linking digitiser {} to {} assets",
+                    bulkUpdateUuid, id, assetGuids.size());
+
+            String insertSql = """
+            INSERT INTO digitiser_list (dassco_user_id, asset_guid)
+            SELECT :dasscoUserId, :assetGuid
+            WHERE NOT EXISTS (
+                SELECT 1 FROM digitiser_list
+                 WHERE dassco_user_id = :dasscoUserId
+                   AND asset_guid = :assetGuid
+            )
+            """;
+
+            var batch = handle.prepareBatch(insertSql);
+            for (String assetGuid : assetGuids) {
+                batch.bind("dasscoUserId", id)
+                        .bind("assetGuid", assetGuid)
+                        .add();
+            }
+            batch.execute();
+
+            logger.info("Bulk update {}: digitiser links inserted or already existed ({} -> {} assets)",
+                    bulkUpdateUuid, id, assetGuids.size());
+        }
     }
 
     private void auditAssets(User user,

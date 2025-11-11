@@ -41,6 +41,7 @@ export interface BulkIssueActionResult {
 export interface BulkUpdatePayload {
   assetGuids: string[];
   fields?: Partial<AssetPatchFields>;
+  funding?: number[];
   issues?: IssuePatchBlock;
   legality?: Partial<Legality>;
   digitisers?: DigitiserPatchBlock;
@@ -49,9 +50,9 @@ export interface BulkUpdatePayload {
 export interface AssetPatchFields {
   asset_locked: boolean;
   audited: boolean;
-  funding: number;
-  asset_subject: string;
+  subject: string;
   status: string;
+  digitiser_id: number;
   camera_setting_control: string;
   metadata_source: string;
   push_to_specify: boolean;
@@ -137,10 +138,10 @@ export class BulkUpdateService {
     return this.oidcService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
-          .patch<string>(`${this.apiUrl}api/v1/assets/bulkupdate`, payload, {
+          .patch<Record<'bulkUpdateUuid', string>>(`${this.apiUrl}api/v1/assets/bulkupdate`, payload, {
             headers: {'Authorization': 'Bearer ' + token}
           })
-          .pipe(catchError(this.handleError<string>('bulkUpdate')))
+          .pipe(catchError(this.handleError<Record<'bulkUpdateUuid', string>>('bulkUpdate')))
       )
     );
   }
