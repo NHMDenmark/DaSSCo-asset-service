@@ -1,4 +1,8 @@
-<div class="bulk-update-container">
+<div
+  class="bulk-update-container"
+  [style.height]="
+    (updateState$ | async)?.state === 'success' || (updateState$ | async)?.state === 'error' ? 'auto' : '80vh'
+  ">
   <!-- Success Screen -->
   <ng-container *ngIf="updateState$ | async as updateState">
     <div *ngIf="updateState.state === 'success'" class="success-container">
@@ -38,7 +42,7 @@
 
   <!-- Form Screen -->
   <ng-container *ngIf="updateState$ | async as updateState">
-    <div *ngIf="updateState.state === 'idle' || updateState.state === 'loading'">
+    <div class="form-wrapper" *ngIf="updateState.state === 'idle' || updateState.state === 'loading'">
       <div class="header-container">
         <h1>Bulk Update Assets</h1>
         <button
@@ -108,24 +112,9 @@
         </div>
 
         <!-- Access & Restrictions Section -->
-        <div [formGroup]="fields" class="form-section">
-          <h2 class="section-title">Access & Restrictions</h2>
-          <div class="form-grid">
-            <div class="checkbox-field">
-              <mat-checkbox formControlName="asset_locked">Asset Locked</mat-checkbox>
-            </div>
-            <div class="checkbox-field">
-              <mat-checkbox formControlName="audited">Audited</mat-checkbox>
-            </div>
-            <div class="checkbox-field">
-              <mat-checkbox formControlName="push_to_specify">Push to Specify</mat-checkbox>
-            </div>
-          </div>
-        </div>
-
-        <!-- Role Restrictions Section -->
         <div class="form-section">
-          <h2 class="section-title">Role Restrictions</h2>
+          <h2 class="section-title">Access & Restrictions</h2>
+
           <div class="form-grid">
             <mat-form-field appearance="outline">
               <mat-label>Role Restrictions</mat-label>
@@ -135,6 +124,15 @@
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <div [formGroup]="fields" class="checkbox-field">
+              <mat-checkbox formControlName="asset_locked">Asset Locked</mat-checkbox>
+            </div>
+            <div [formGroup]="fields" class="checkbox-field">
+              <mat-checkbox formControlName="audited">Audited</mat-checkbox>
+            </div>
+            <div [formGroup]="fields" class="checkbox-field">
+              <mat-checkbox formControlName="push_to_specify">Push to Specify</mat-checkbox>
+            </div>
           </div>
         </div>
 
@@ -341,24 +339,24 @@
             </mat-expansion-panel>
           </ng-container>
         </ng-container>
-        <div class="button-container">
-          <button
-            mat-stroked-button
-            type="button"
-            (click)="cancel()"
-            [disabled]="(updateState$ | async)?.state === 'loading'">
-            Cancel
-          </button>
-          <button
-            mat-raised-button
-            type="submit"
-            color="primary"
-            (click)="save()"
-            [disabled]="(updateState$ | async)?.state === 'loading' || !canSave">
-            Save
-          </button>
-        </div>
       </form>
+      <div class="button-container">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="cancel()"
+          [disabled]="(updateState$ | async)?.state === 'loading'">
+          Cancel
+        </button>
+        <button
+          mat-raised-button
+          type="button"
+          color="primary"
+          (click)="save()"
+          [disabled]="(updateState$ | async)?.state === 'loading' || !canSave">
+          Save
+        </button>
+      </div>
     </div>
   </ng-container>
 </div>

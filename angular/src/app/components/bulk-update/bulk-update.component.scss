@@ -1,17 +1,43 @@
 .bulk-update-container {
-  max-height: 80vh;
-  overflow-y: auto;
+  height: 80vh;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.header-container {
+  flex-shrink: 0; // Prevent header from shrinking
 }
 
 form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+  padding-right: 0.5rem; // Optional: space for scrollbar
+
+  // Remove flex from form itself, let children stack naturally
+  display: block;
+
+  > * {
+    margin-bottom: 1rem; // Replace the gap
+  }
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
 
   mat-form-field {
-    flex-grow: 1;
+    width: 100%;
   }
 }
 
@@ -47,6 +73,9 @@ form {
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
+}
+.form-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .checkbox-field {
