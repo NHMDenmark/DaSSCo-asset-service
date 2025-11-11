@@ -10,7 +10,7 @@ import {
   IssuePatchBlock,
   DigitiserPatchBlock
 } from 'src/app/services/bulk-update.service';
-import {take} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, filter, map, of, startWith, take} from 'rxjs';
 
 interface IssueFormValue {
   category: string | null;
@@ -56,6 +56,14 @@ interface DigitiserAddAction {
   assetGuids: string[];
 }
 
+type UpdateState = 'idle' | 'loading' | 'success' | 'error';
+
+interface UpdateResult {
+  state: UpdateState;
+  uuid?: string;
+  error?: string;
+}
+
 @Component({
   selector: 'dassco-bulk-update',
   templateUrl: './bulk-update.component.html',
@@ -71,10 +79,24 @@ export class BulkUpdateComponent {
   rolesList$ = this.bulkUpdateService.getRoles();
   issueCategoriesList$ = this.bulkUpdateService.getIssueCategories();
   statusesList$ = this.bulkUpdateService.getStatuses();
-  groupedIssues$ = this.bulkUpdateService.getGroupedIssues(this.data.assets.map((asset) => asset.asset_guid as string));
-  groupedDigitisers$ = this.bulkUpdateService.getGroupedDigitisers(
-    this.data.assets.map((asset) => asset.asset_guid as string)
+
+  updateStateSubject = new BehaviorSubject<UpdateResult>({state: 'idle'});
+  updateState$ = this.updateStateSubject.asObservable();
+
+  assetGuids = this.data.assets.map((asset) => asset.asset_guid as string);
+  groupedIssues$ = this.bulkUpdateService.getGroupedIssues(this.assetGuids).pipe(
+    startWith(null),
+    catchError(() => of(null))
   );
+  groupedDigitisers$ = this.bulkUpdateService.getGroupedDigitisers(this.assetGuids).pipe(
+    startWith(null),
+    catchError(() => of(null))
+  );
+
+  isLoadingGroupedData$ = combineLatest([this.groupedIssues$, this.groupedDigitisers$]).pipe(
+    map(([issues, digitisers]) => issues === null || digitisers === null)
+  );
+
   deletedIssueIds: number[] = [];
   deletedDigitiserIds: number[] = [];
 
@@ -83,16 +105,26 @@ export class BulkUpdateComponent {
       return;
     }
 
-    this.groupedIssues$.pipe(take(1)).subscribe((issues) => {
-      issues.forEach((issue) => {
-        this.patchIssue(issue);
+    this.groupedIssues$
+      .pipe(
+        filter((issues): issues is GroupedIssue[] => issues !== null),
+        take(1)
+      )
+      .subscribe((issues) => {
+        issues.forEach((issue) => {
+          this.patchIssue(issue);
+        });
       });
-    });
-    this.groupedDigitisers$.pipe(take(1)).subscribe((digitisers) => {
-      digitisers.forEach((digitiser) => {
-        this.patchDigitiser(digitiser);
+    this.groupedDigitisers$
+      .pipe(
+        filter((digitisers): digitisers is GroupedDigitiser[] => digitisers !== null),
+        take(1)
+      )
+      .subscribe((digitisers) => {
+        digitisers.forEach((digitiser) => {
+          this.patchDigitiser(digitiser);
+        });
       });
-    });
   }
 
   cancel() {
@@ -121,12 +153,27 @@ export class BulkUpdateComponent {
       }
     });
 
+    this.updateStateSubject.next({state: 'loading'});
+
     this.bulkUpdateService
       .bulkUpdate(payload)
-      .pipe(take(1))
+      .pipe(
+        take(1),
+        catchError((error) => {
+          const errorMessage = error?.error?.message || error?.message || 'An error occurred while updating assets';
+          this.updateStateSubject.next({state: 'error', error: errorMessage});
+          return of(null);
+        })
+      )
       .subscribe((result) => {
-        console.log(result);
-        this.dialogRef.close();
+        if (result?.bulkUpdateUuid) {
+          this.updateStateSubject.next({state: 'success', uuid: result.bulkUpdateUuid});
+        } else if (result === null) {
+          // Error already handled in catchError
+          return;
+        } else {
+          this.updateStateSubject.next({state: 'error', error: 'No UUID returned from server'});
+        }
       });
   }
 

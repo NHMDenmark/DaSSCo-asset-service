@@ -109,12 +109,12 @@ public class BulkUpdateService {
     public List<Map<String, Object>> getGroupedIssues(List<String> assetGuids, SecurityContext securityContext) {
         User user = this.userService.from(securityContext);
         List<Asset> assets = this.assetService.getAssets(assetGuids);
-        assets.forEach(asset -> {
-            this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
-        });
-        List<Issue> issues = listIssuesByAssetGuids(assetGuids);
+        assets.forEach(asset ->
+                this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection)
+        );
 
-        // Key for grouping
+        List<Issue> issues = listIssuesByAssetGuids(assetGuids); // already ordered by timestamp desc
+
         record IssueKey(
                 String category,
                 String name,
@@ -122,8 +122,7 @@ public class BulkUpdateService {
                 String status,
                 Boolean solved,
                 String notes
-        ) {
-        }
+        ){}
 
         Map<IssueKey, List<Issue>> grouped = issues.stream()
                 .collect(Collectors.groupingBy(
@@ -137,24 +136,42 @@ public class BulkUpdateService {
                         )
                 ));
 
-        // Build a structured list your frontend can easily render
-        List<Map<String, Object>> groupedList = new ArrayList<>();
-        for (var entry : grouped.entrySet()) {
-            IssueKey k = entry.getKey();
-            List<Issue> group = entry.getValue();
+        // Build a structured list, sorted by the newest timestamp within each group
+        List<Map<String, Object>> groupedList = grouped.entrySet().stream()
+                .map(entry -> {
+                    IssueKey k = entry.getKey();
+                    List<Issue> group = entry.getValue();
 
-            groupedList.add(Map.of(
-                    "category", k.category(),
-                    "name", k.name(),
-                    "description", k.description(),
-                    "status", k.status(),
-                    "solved", k.solved(),
-                    "notes", k.notes(),
-                    "issueIds", group.stream().map(Issue::issue_id).toList(),
-                    "assetGuids", group.stream().map(Issue::asset_guid).distinct().toList(),
-                    "count", group.size()
-            ));
-        }
+                    // Find newest timestamp in this group
+                    Instant newest = group.stream()
+                            .map(Issue::timestamp)
+                            .filter(Objects::nonNull)
+                            .max(Comparator.naturalOrder())
+                            .orElse(null);
+
+                    return Map.<String, Object>of(
+                            "category", k.category(),
+                            "name", k.name(),
+                            "description", k.description(),
+                            "status", k.status(),
+                            "solved", k.solved(),
+                            "notes", k.notes(),
+                            "issueIds", group.stream().map(Issue::issue_id).toList(),
+                            "assetGuids", group.stream().map(Issue::asset_guid).distinct().toList(),
+                            "count", group.size(),
+                            "newestTimestamp", newest
+                    );
+                })
+                // sort the groups by newest timestamp descending
+                .sorted((a, b) -> {
+                    Instant t1 = (Instant) a.get("newestTimestamp");
+                    Instant t2 = (Instant) b.get("newestTimestamp");
+                    if (t1 == null && t2 == null) return 0;
+                    if (t1 == null) return 1;
+                    if (t2 == null) return -1;
+                    return t2.compareTo(t1); // newest first
+                })
+                .toList();
 
         return groupedList;
     }
@@ -173,6 +190,7 @@ public class BulkUpdateService {
                                        timestamp
                                   FROM issue
                                  WHERE asset_guid IN (<assetGuids>)
+                                  ORDER BY timestamp DESC
                                 """)
                         .bindList("assetGuids", assetGuids)
                         .mapTo(Issue.class)
@@ -339,14 +357,14 @@ public class BulkUpdateService {
         }
 
         String sql = """
-        INSERT INTO asset_funding (asset_guid, funding_id)
-        SELECT :assetGuid, :fundingId
-        WHERE NOT EXISTS (
-            SELECT 1 FROM asset_funding
-             WHERE asset_guid = :assetGuid
-               AND funding_id = :fundingId
-        )
-        """;
+                INSERT INTO asset_funding (asset_guid, funding_id)
+                SELECT :assetGuid, :fundingId
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM asset_funding
+                     WHERE asset_guid = :assetGuid
+                       AND funding_id = :fundingId
+                )
+                """;
 
         var batch = handle.prepareBatch(sql);
         for (String assetGuid : assetGuids) {
@@ -417,7 +435,7 @@ public class BulkUpdateService {
                 String setClause = values.keySet().stream()
                         .map(k -> k + " = :" + k)
                         .collect(Collectors.joining(", "));
-
+                setClause = setClause + (setClause.isEmpty() ? "" : ", ") + "timestamp = NOW()";
                 String sql = "UPDATE issue SET " + setClause + " WHERE issue_id IN (<ids>)";
 
                 var q = handle.createUpdate(sql).bindList("ids", update.issueIds());
@@ -499,14 +517,14 @@ public class BulkUpdateService {
                     bulkUpdateUuid, id, assetGuids.size());
 
             String insertSql = """
-            INSERT INTO digitiser_list (dassco_user_id, asset_guid)
-            SELECT :dasscoUserId, :assetGuid
-            WHERE NOT EXISTS (
-                SELECT 1 FROM digitiser_list
-                 WHERE dassco_user_id = :dasscoUserId
-                   AND asset_guid = :assetGuid
-            )
-            """;
+                    INSERT INTO digitiser_list (dassco_user_id, asset_guid)
+                    SELECT :dasscoUserId, :assetGuid
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM digitiser_list
+                         WHERE dassco_user_id = :dasscoUserId
+                           AND asset_guid = :assetGuid
+                    )
+                    """;
 
             var batch = handle.prepareBatch(insertSql);
             for (String assetGuid : assetGuids) {
