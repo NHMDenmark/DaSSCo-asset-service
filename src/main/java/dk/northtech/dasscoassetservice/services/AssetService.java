@@ -704,7 +704,6 @@ public class AssetService {
 //        existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation = updatedAsset.workstation;
-//        existing.pipeline = updatedAsset.pipeline;
         existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
         if (existing.asset_locked && !updatedAsset.asset_locked) {
@@ -716,7 +715,6 @@ public class AssetService {
         existing.file_formats = updatedAsset.file_formats;
         existing.payload_type = updatedAsset.payload_type;
         existing.parent_guids = updatedAsset.parent_guids;
-//        existing.updateUser = updatedAsset.updateUser;
         existing.asset_pid = updatedAsset.asset_pid == null ? existing.asset_pid : updatedAsset.asset_pid;
         existing.metadata_version = updatedAsset.metadata_version;
         existing.metadata_source = updatedAsset.metadata_source;
@@ -903,9 +901,11 @@ public class AssetService {
 
 
 
-
-
-        this.assetSyncService.checkAndSync(existing);
+        if(existing.push_to_specify) {
+            // The specimen on the assetSpecimen is optional, make sure it is included when we sync specify.
+            existing.asset_specimen = specimenService.findAssetSpecimens(existing.asset_guid);
+            this.assetSyncService.checkAndSync(existing);
+        }
 
         //TODO fix queries
 //        statisticsDataServiceV2.refreshCachedData();
