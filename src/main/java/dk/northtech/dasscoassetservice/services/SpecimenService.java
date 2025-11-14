@@ -87,9 +87,9 @@ public class SpecimenService {
             }else{
                 return this.jdbi.withHandle(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-                    int count = specimenRepository.deleteSpecimenWithPid(pid);
+                    specimenRepository.deleteSpecimenWithPid(pid);
                     this.pidSpecimen.refresh(pid);
-                    return Response.status(Response.Status.OK).entity("%s specimen deleted with PID %s".formatted(count, pid)).build();
+                    return Response.status(Response.Status.OK).entity("specimen deleted with PID %s".formatted(pid)).build();
                 });
             }
         }
