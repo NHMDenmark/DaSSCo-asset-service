@@ -14,7 +14,7 @@ export class ExternDetailedViewService {
 
   getAssetMetaData(assetGuid: string) {
     return this.http
-      .get<PublicAssetMetadata>(`${this.url}api/extern/metadata/${assetGuid}`)
+      .get<PublicAssetMetadata>(`${this.url}/api/extern/metadata/${assetGuid}`)
       .pipe(catchError(() => of(null)));
   }
 
@@ -84,7 +84,7 @@ export class ExternDetailedViewService {
 
   checkAccess(asset_guid: string) {
     return this.http
-      .post<void>(`${this.url}api/v1/assets/readaccess`, undefined, {
+      .post<void>(`${this.url}/api/v1/assets/readaccess`, undefined, {
         params: {
           assetGuid: asset_guid
         }
