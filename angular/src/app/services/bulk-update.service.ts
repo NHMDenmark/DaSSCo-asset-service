@@ -81,33 +81,33 @@ export class BulkUpdateService {
 
   getDigitiserList() {
     return this.http
-      .get<Digitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers`)
+      .get<Digitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers`)
       .pipe(catchError(this.handleError<Digitiser[]>('getDigitiserList')));
   }
 
   getFundingList() {
     return this.http
-      .get<Funding[]>(`${this.apiUrl}api/v1/assets/bulkupdate/funding`)
+      .get<Funding[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/funding`)
       .pipe(catchError(this.handleError<Funding[]>('getFundingList')));
   }
   getSubjects() {
     return this.http
-      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/subjects`)
+      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/subjects`)
       .pipe(catchError(this.handleError<string[]>('getSubjects')));
   }
   getRoles() {
     return this.http
-      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/roles`)
+      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/roles`)
       .pipe(catchError(this.handleError<string[]>('getRoles')));
   }
   getIssueCategories() {
     return this.http
-      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issue-categories`)
+      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issue-categories`)
       .pipe(catchError(this.handleError<string[]>('getIssueCategories')));
   }
   getStatuses() {
     return this.http
-      .get<string[]>(`${this.apiUrl}api/v1/assets/bulkupdate/statuses`)
+      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/statuses`)
       .pipe(catchError(this.handleError<string[]>('getStatuses')));
   }
 
@@ -115,7 +115,7 @@ export class BulkUpdateService {
     return this.oidcService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
-          .post<GroupedIssue[]>(`${this.apiUrl}api/v1/assets/bulkupdate/issues/grouped`, assetGuids, {
+          .post<GroupedIssue[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issues/grouped`, assetGuids, {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError(this.handleError<GroupedIssue[]>('getGroupedIssues')))
@@ -127,7 +127,7 @@ export class BulkUpdateService {
     return this.oidcService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
-          .post<GroupedDigitiser[]>(`${this.apiUrl}api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids, {
+          .post<GroupedDigitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids, {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError(this.handleError<GroupedDigitiser[]>('getGroupedDigitisers')))
@@ -138,7 +138,7 @@ export class BulkUpdateService {
     return this.oidcService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
-          .patch<Record<'bulkUpdateUuid', string>>(`${this.apiUrl}api/v1/assets/bulkupdate`, payload, {
+          .patch<Record<'bulkUpdateUuid', string>>(`${this.apiUrl}/api/v1/assets/bulkupdate`, payload, {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError(this.handleError<Record<'bulkUpdateUuid', string>>('bulkUpdate')))
