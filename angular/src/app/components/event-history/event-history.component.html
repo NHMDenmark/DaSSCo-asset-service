@@ -1,0 +1,223 @@
+<div class="event-history-container">
+  <header class="page-header">
+    <h1>Event History</h1>
+  </header>
+  <div class="controls-container">
+    <mat-form-field appearance="outline" class="event-type-select">
+      <mat-label>Event Type</mat-label>
+      <mat-select
+        *ngIf="eventHistoryService.eventType$ | async as currentEventType; else eventTypeLoading"
+        [value]="currentEventType"
+        (selectionChange)="changeEventType($event.value)">
+        <mat-option *ngFor="let type of eventHistoryService.eventTypes$ | async" [value]="type">
+          {{ type }}
+        </mat-option>
+      </mat-select>
+      <ng-template #eventTypeLoading>
+        <mat-select disabled>
+          <mat-option>Loading...</mat-option>
+        </mat-select>
+      </ng-template>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="date-range-select">
+      <mat-label>Date Range</mat-label>
+      <mat-date-range-input [formGroup]="dateRangeForm" [rangePicker]="dateRangePicker">
+        <input matStartDate formControlName="start" placeholder="Start date" />
+        <input matEndDate formControlName="end" placeholder="End date" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matSuffix [for]="dateRangePicker"></mat-datepicker-toggle>
+      <mat-date-range-picker #dateRangePicker>
+        <mat-date-range-picker-actions>
+          <button mat-button matDateRangePickerCancel>Cancel</button>
+          <button mat-raised-button color="primary" matDateRangePickerApply>Apply</button>
+        </mat-date-range-picker-actions>
+      </mat-date-range-picker>
+      <button
+        mat-icon-button
+        matSuffix
+        *ngIf="dateRangeForm.value.start || dateRangeForm.value.end"
+        (click)="clearDateRange()"
+        type="button"
+        class="clear-date-button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-form-field>
+
+    <ng-container *ngIf="eventHistoryViewModel$ | async as limitVm">
+      <mat-form-field appearance="outline" class="limit-select">
+        <mat-label>Events per page</mat-label>
+        <mat-select [formControl]="limitControl">
+          <mat-option
+            *ngFor="let option of limitOptions"
+            [value]="option"
+            [disabled]="limitVm.eventsData.total < option">
+            {{ option }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </ng-container>
+
+    <mat-button-toggle-group
+      *ngIf="eventHistoryService.direction$ | async as currentDirection"
+      [value]="currentDirection"
+      (change)="changeDirection($event.value)"
+      class="direction-toggle">
+      <mat-button-toggle value="DESC">DESC</mat-button-toggle>
+      <mat-button-toggle value="ASC">ASC</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="events-container" *ngIf="eventHistoryViewModel$ | async as eventsVm">
+    <div class="events-header">
+      <span class="events-count" *ngIf="eventsVm.isBulkUpdateView; else regularCount">
+        Showing {{ eventsVm.bulkUpdateGroups.length }} bulk updates containing {{ eventsVm.eventsData.events.length }} /
+        {{ eventsVm.eventsData.total }} events
+      </span>
+      <ng-template #regularCount>
+        <span class="events-count">
+          Showing {{ eventsVm.eventsData.events.length }} / {{ eventsVm.eventsData.total }} events
+        </span>
+      </ng-template>
+    </div>
+
+    <mat-progress-spinner
+      *ngIf="eventHistoryService.loading$ | async"
+      mode="indeterminate"
+      diameter="40"
+      class="loading-spinner"></mat-progress-spinner>
+
+    <div *ngIf="(eventHistoryService.loading$ | async) === false">
+      <ng-container *ngIf="eventsVm.isBulkUpdateView; else regularEventsList">
+        <mat-accordion multi class="bulk-update-accordion">
+          <mat-expansion-panel
+            *ngFor="let group of eventsVm.bulkUpdateGroups; trackBy: trackBulkUpdateGroup"
+            class="bulk-update-panel">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                {{ group.bulkUpdateUuid || 'No bulk update UUID' }}
+              </mat-panel-title>
+              <mat-panel-description>
+                {{ group.events.length }} {{ group.events.length === 1 ? 'event' : 'events' }}
+              </mat-panel-description>
+            </mat-expansion-panel-header>
+
+            <div class="bulk-group-events">
+              <mat-card *ngFor="let groupedEvent of group.events; trackBy: trackGroupedEvent" class="event-card">
+                <mat-card-content>
+                  <div class="event-header">
+                    <span class="event-index">#{{ groupedEvent.displayIndex }}</span>
+                    <span class="event-type">{{ groupedEvent.event.event }}</span>
+                    <span class="event-timestamp">{{ groupedEvent.event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+                  </div>
+                  <div class="event-details">
+                    <div *ngIf="groupedEvent.event.user" class="event-detail">
+                      <strong>User:</strong>
+                      {{ groupedEvent.event.user }}
+                    </div>
+                    <div *ngIf="groupedEvent.event.pipeline" class="event-detail">
+                      <strong>Pipeline:</strong>
+                      {{ groupedEvent.event.pipeline }}
+                    </div>
+                    <div *ngIf="groupedEvent.event.asset_guid" class="event-detail">
+                      <strong>Asset:</strong>
+                      <a [routerLink]="['/detailed-view', groupedEvent.event.asset_guid]" class="asset-link">
+                        {{ groupedEvent.event.asset_guid }}
+                      </a>
+                    </div>
+                    <div *ngIf="groupedEvent.event.bulk_update_uuid" class="event-detail">
+                      <strong>Bulk Update UUID:</strong>
+                      {{ groupedEvent.event.bulk_update_uuid }}
+                    </div>
+                    <div
+                      *ngIf="groupedEvent.event.change_list && groupedEvent.event.change_list.length > 0"
+                      class="event-detail">
+                      <strong>Changes:</strong>
+                      <ul class="change-list">
+                        <li *ngFor="let change of groupedEvent.event.change_list">{{ change }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+
+        <div *ngIf="eventsVm.bulkUpdateGroups.length === 0" class="no-events">No events found</div>
+      </ng-container>
+
+      <ng-template #regularEventsList>
+        <div class="events-list">
+          <mat-card *ngFor="let event of eventsVm.eventsData.events; let i = index" class="event-card">
+            <mat-card-content>
+              <div class="event-header">
+                <span class="event-index">#{{ getEventIndex(eventsVm.eventsData.page, eventsVm.limit, i) }}</span>
+                <span class="event-type">{{ event.event }}</span>
+                <span class="event-timestamp">{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+              </div>
+              <div class="event-details">
+                <div *ngIf="event.user" class="event-detail">
+                  <strong>User:</strong>
+                  {{ event.user }}
+                </div>
+                <div *ngIf="event.pipeline" class="event-detail">
+                  <strong>Pipeline:</strong>
+                  {{ event.pipeline }}
+                </div>
+                <div *ngIf="event.asset_guid" class="event-detail">
+                  <strong>Asset:</strong>
+                  <a [routerLink]="['/detailed-view', event.asset_guid]" class="asset-link">
+                    {{ event.asset_guid }}
+                  </a>
+                </div>
+                <div *ngIf="event.bulk_update_uuid" class="event-detail">
+                  <strong>Bulk Update UUID:</strong>
+                  {{ event.bulk_update_uuid }}
+                </div>
+                <div *ngIf="event.change_list && event.change_list.length > 0" class="event-detail">
+                  <strong>Changes:</strong>
+                  <ul class="change-list">
+                    <li *ngFor="let change of event.change_list">{{ change }}</li>
+                  </ul>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div *ngIf="eventsVm.eventsData.events.length === 0" class="no-events" style="grid-column: span 2">
+            No events found
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination-controls" *ngIf="eventsVm.eventsData.events.length > 0">
+      <button
+        mat-raised-button
+        color="primary"
+        [disabled]="
+          eventsVm.eventsData.previousPage === null ||
+          eventsVm.eventsData.previousPage === undefined ||
+          (eventHistoryService.loading$ | async)
+        "
+        (click)="goToPreviousPage(eventsVm.eventsData.previousPage)">
+        <mat-icon>chevron_left</mat-icon>
+        Previous
+      </button>
+      <span class="page-info">Page {{ eventsVm.eventsData.page }}</span>
+      <button
+        mat-raised-button
+        color="primary"
+        [disabled]="
+          eventsVm.eventsData.nextPage === null ||
+          eventsVm.eventsData.nextPage === undefined ||
+          (eventHistoryService.loading$ | async)
+        "
+        (click)="goToNextPage(eventsVm.eventsData.nextPage)">
+        Next
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>

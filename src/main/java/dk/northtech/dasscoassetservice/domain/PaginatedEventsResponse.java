@@ -5,7 +5,7 @@ import java.util.List;
 
 public class PaginatedEventsResponse {
     @Schema(description = "Total number of events matching the filter")
-    public long totalCount;
+    public long total;
 
     @Schema(description = "Current page number")
     public int page;
@@ -17,12 +17,12 @@ public class PaginatedEventsResponse {
     public Integer previousPage;
 
     @Schema(description = "List of events for the current page")
-    public List<Event> events;
+    public List<EventExpanded> events;
 
-    public PaginatedEventsResponse(long totalCount, int page,
+    public PaginatedEventsResponse(long total, int page,
                                    Integer nextPage, Integer previousPage,
-                                   List<Event> events) {
-        this.totalCount = totalCount;
+                                   List<EventExpanded> events) {
+        this.total = total;
         this.page = page;
         this.nextPage = nextPage;
         this.previousPage = previousPage;

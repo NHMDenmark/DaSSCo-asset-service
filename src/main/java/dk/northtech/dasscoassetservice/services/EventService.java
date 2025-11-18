@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 
 import dk.northtech.dasscoassetservice.domain.Event;
+import dk.northtech.dasscoassetservice.domain.EventExpanded;
 import dk.northtech.dasscoassetservice.domain.PaginatedEventsResponse;
 import dk.northtech.dasscoassetservice.repositories.EventRepository;
 import jakarta.inject.Inject;
@@ -41,7 +42,7 @@ public class EventService {
         return jdbi.withExtension(EventRepository.class, repo -> {
             long total = repo.countEvents(type, start, end);
 
-            List<Event> events = repo
+            List<EventExpanded> events = repo
                     .getEvents(type, start, end, limit, offset, dir);
 
             int totalPages = (int) Math.ceil((double) total / limit);
@@ -51,4 +52,10 @@ public class EventService {
             return new PaginatedEventsResponse(total, page, next, prev, events);
         });
     }
+
+    public List<String> getEventTypes() {
+        return jdbi.withExtension(EventRepository.class, EventRepository::getEventTypes);
+    }
+
+
 }

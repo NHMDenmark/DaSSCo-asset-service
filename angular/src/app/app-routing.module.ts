@@ -10,6 +10,7 @@ import {DetailedViewComponent} from './components/detailed-view/detailed-view.co
 import {AssetGroupsComponent} from './components/asset-groups/asset-groups.component';
 import {ExternDetailedViewComponent} from './components/detailed-view/extern-detailed-view/extern-detailed-view.component';
 import {HasRightsGuard} from './guards/has-rights.guard';
+import {EventHistoryComponent} from './components/event-history/event-history.component';
 
 const routes: Routes = [
   {path: 'statistics', component: StatisticsComponent, canActivate: [AuthenticatedGuard]},
@@ -19,6 +20,7 @@ const routes: Routes = [
   {path: 'queries', component: QueriesComponent, canActivate: [AuthenticatedGuard]},
   {path: 'asset-groups', component: AssetGroupsComponent, canActivate: [AuthenticatedGuard]},
   {path: 'detailed-view/:asset_guid', component: DetailedViewComponent, canActivate: [AuthenticatedGuard]},
+  {path: 'event-history', component: EventHistoryComponent, canActivate: [AuthenticatedGuard]},
   {
     path: 'extern/detailed-view/:asset_guid',
     component: ExternDetailedViewComponent,

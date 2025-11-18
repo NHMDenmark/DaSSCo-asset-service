@@ -2,7 +2,10 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
+import dk.northtech.dasscoassetservice.domain.EventExpanded;
 import org.jdbi.v3.sqlobject.SqlObject;
+import org.jdbi.v3.sqlobject.config.RegisterBeanMapper;
+import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.customizer.Define;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
@@ -44,23 +47,25 @@ public interface EventRepository extends SqlObject {
 
 
     @SqlQuery("""
-        SELECT
-            e.timestamp,
-            du.username AS user,
-            e.event,
-            p.pipeline_name AS pipeline,
-            e.change_list,
-            e.bulk_update_uuid
-        FROM event e
-                 LEFT JOIN pipeline p USING (pipeline_id)
-                 LEFT JOIN dassco_user du USING (dassco_user_id)
-        WHERE e.event = :type
-          AND (:startDate::timestamp IS NULL OR e.timestamp >= :startDate::timestamp)
-          AND (:endDate::timestamp IS NULL OR e.timestamp <= :endDate::timestamp)
-        ORDER BY e.timestamp <direction>
-        LIMIT :limit OFFSET :offset
-        """)
-    List<Event> getEvents(
+    SELECT
+        e.asset_guid AS asset_guid,
+        e.event AS event,
+        e.timestamp AS timestamp,
+        du.username AS "user",
+        p.pipeline_name AS pipeline,
+        e.change_list AS change_list,
+        e.bulk_update_uuid AS bulk_update_uuid
+    FROM event e
+    LEFT JOIN pipeline p USING (pipeline_id)
+    LEFT JOIN dassco_user du USING (dassco_user_id)
+    WHERE e.event = :type
+      AND (:startDate::timestamp IS NULL OR e.timestamp >= :startDate::timestamp)
+      AND (:endDate::timestamp IS NULL OR e.timestamp <= :endDate::timestamp)
+    ORDER BY e.timestamp <direction>
+    LIMIT :limit OFFSET :offset
+""")
+    @RegisterConstructorMapper(EventExpanded.class)
+    List<EventExpanded> getEvents(
             @Bind("type") String type,
             @Bind("startDate") Instant startDate,
             @Bind("endDate") Instant endDate,
@@ -81,4 +86,7 @@ public interface EventRepository extends SqlObject {
             @Bind("startDate") Instant startDate,
             @Bind("endDate") Instant endDate
     );
+
+    @SqlQuery("SELECT event FROM event_type ORDER BY event")
+    List<String> getEventTypes();
 }

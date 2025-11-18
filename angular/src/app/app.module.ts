@@ -59,6 +59,7 @@ import {IssueViewerComponent} from './components/issue-viewer/issue-viewer.compo
 import {RoleRestrictionPipe} from './pipes/role-restriction.pipe';
 import {LinkTrimPipe} from './pipes/link-trim.pipe';
 import {MatBadgeModule} from '@angular/material/badge';
+import {EventHistoryComponent} from './components/event-history/event-history.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -83,6 +84,7 @@ import {MatBadgeModule} from '@angular/material/badge';
     AssetGroupsComponent,
     NewGroupDialogComponent,
     IllegalAssetGroupDialogComponent,
+    EventHistoryComponent,
     SafeUrlPipe,
     ExternDetailedViewComponent,
     SafeUrlPipe,

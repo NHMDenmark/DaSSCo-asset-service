@@ -17,6 +17,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Component
@@ -39,7 +41,7 @@ public class EventApi {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public PaginatedEventsResponse getEvents(@Context SecurityContext securityContext,
-                                             @QueryParam("type") String type,
+                                             @QueryParam("eventType") String type,
                                              @DefaultValue("DESC") @QueryParam("direction") String direction,
                                              @DefaultValue("1") @QueryParam("page") int page,
                                              @DefaultValue("50") @QueryParam("limit") int limit,
@@ -50,6 +52,16 @@ public class EventApi {
         }
 
         return eventService.getEvents(type, direction, page, limit, startDate, endDate);
+    }
+
+    @GET
+    @Path("types")
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    @Produces(APPLICATION_JSON)
+    public List<String> getEventTypes(@Context SecurityContext securityContext) {
+        return eventService.getEventTypes();
     }
 
 }
