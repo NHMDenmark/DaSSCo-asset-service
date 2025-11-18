@@ -79,13 +79,14 @@ public class QueryInner {
         if (operator.equalsIgnoreCase("in")) {
             operator = "=";
             String preparedParam = "%s_%s".formatted(column, index);
-            String safeValue = value.replace("'", "''").toUpperCase();
+
+            // Use a bind placeholder instead of embedding the literal
             String sql = eventfiler.replace(
                     "#BASE#",
-                    "('%s' %s ANY(%s))".formatted(safeValue, operator, column)
+                    "(:%s %s ANY(%s))".formatted(preparedParam, operator, column)
             );
 
-            return Map.of(sql, Map.of(preparedParam, value));
+            return Map.of(sql, Map.of(preparedParam, value.toUpperCase()));
         }
         if(operator.equalsIgnoreCase("after")) {
             operator = ">";
