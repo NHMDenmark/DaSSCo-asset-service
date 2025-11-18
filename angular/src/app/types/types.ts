@@ -109,6 +109,7 @@ export interface Event {
   pipeline: string | undefined;
   workstation: string | undefined;
   change_list: string[] | undefined;
+  bulk_update_uuid?: string | undefined;
 }
 
 export interface AssetGroup {

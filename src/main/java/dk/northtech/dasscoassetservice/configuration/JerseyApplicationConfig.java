@@ -39,5 +39,6 @@ public class JerseyApplicationConfig extends ResourceConfig {
     register(AssetSync.class);
     register(PublicAssetApi.class);
     register(BulkUpdateAssetApi.class);
+    register(EventApi.class);
   }
 }
