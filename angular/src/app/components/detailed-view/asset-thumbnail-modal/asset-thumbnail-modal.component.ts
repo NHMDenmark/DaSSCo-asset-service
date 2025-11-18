@@ -7,7 +7,7 @@ import {MatButtonModule} from '@angular/material/button';
 @Component({
   selector: 'dassco-asset-thumbnail-modal',
   template: `
-    <div class="container">
+    <div>
       <button tabindex="-1" type="button" mat-icon-button (click)="dialogRef.close()">
         <mat-icon>close</mat-icon>
       </button>
@@ -16,8 +16,9 @@ import {MatButtonModule} from '@angular/material/button';
   `,
   standalone: true,
   styles: [
-    'div { border-radius: 0.375rem; background-color: white; padding: 1.25rem; border: 1px solid #ccc; max-height: 100dvh; position: relative}',
-    'button[type="button"] { position: absolute; right: -10px; top: -10px; } '
+    'div { border-radius: 0.375rem; background-color: white; display: flex; padding: 1rem; border: 1px solid #ccc; max-height: 99dvh; position: relative}',
+    'button[type="button"] { position: absolute; right: -5px; top: -5px; } ',
+    'img { object-fit: contain; }'
   ],
   imports: [MatIconModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush
