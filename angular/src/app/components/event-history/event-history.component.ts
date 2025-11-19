@@ -1,10 +1,11 @@
-import {ChangeDetectionStrategy, Component, inject, OnDestroy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {EventHistoryService} from './event-history.service';
 import {combineLatest, debounceTime, distinctUntilChanged, map, Subject, takeUntil} from 'rxjs';
 import {DatePipe} from '@angular/common';
 import {FormControl, FormGroup} from '@angular/forms';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {EventExpanded, PaginatedEventsResponse} from './event-history.model';
+import {ActivatedRoute, Router} from '@angular/router';
 
 interface BulkUpdateGroupedEvent {
   event: EventExpanded;
@@ -33,10 +34,12 @@ interface EventHistoryViewModel {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DatePipe]
 })
-export class EventHistoryComponent implements OnDestroy {
+export class EventHistoryComponent implements OnInit, OnDestroy {
   readonly eventHistoryService = inject(EventHistoryService);
   readonly datePipe = inject(DatePipe);
   readonly snackBar = inject(MatSnackBar);
+  readonly activatedRoute = inject(ActivatedRoute);
+  readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
   readonly limitOptions = [10, 25, 50, 100, 250, 500] as const;
   readonly eventHistoryViewModel$ = combineLatest([
@@ -125,6 +128,11 @@ export class EventHistoryComponent implements OnDestroy {
     });
   }
 
+  ngOnInit(): void {
+    this.initializeFiltersFromQueryParams();
+    this.syncFiltersToQueryParams();
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -161,5 +169,95 @@ export class EventHistoryComponent implements OnDestroy {
     });
 
     return groups;
+  }
+
+  private initializeFiltersFromQueryParams(): void {
+    const params = this.activatedRoute.snapshot.queryParamMap;
+
+    const eventTypeParam = params.get('eventType');
+    if (eventTypeParam) {
+      this.eventHistoryService.setEventType(eventTypeParam);
+    }
+
+    const limitParam = params.get('limit');
+    const parsedLimit = limitParam ? Number(limitParam) : undefined;
+    if (parsedLimit && Number.isFinite(parsedLimit) && parsedLimit > 0) {
+      this.eventHistoryService.setLimit(parsedLimit);
+    }
+
+    const directionParam = params.get('direction');
+    if (directionParam === 'ASC' || directionParam === 'DESC') {
+      this.eventHistoryService.setDirection(directionParam);
+    }
+
+    const startDateParam = params.get('startDate');
+    const endDateParam = params.get('endDate');
+    const startDate = this.parseDateParam(startDateParam);
+    const endDate = this.parseDateParam(endDateParam);
+
+    if (startDate && endDate) {
+      this.eventHistoryService.setStartDate(startDate);
+      this.eventHistoryService.setEndDate(endDate);
+      this.dateRangeForm.setValue(
+        {
+          start: startDate,
+          end: endDate
+        },
+        {emitEvent: false}
+      );
+    } else {
+      this.dateRangeForm.setValue(
+        {
+          start: null,
+          end: null
+        },
+        {emitEvent: false}
+      );
+    }
+  }
+
+  private syncFiltersToQueryParams(): void {
+    const formatDate = (value: Date | undefined): string | null => (value ? value.toISOString() : null);
+    combineLatest([
+      this.eventHistoryService.eventType$,
+      this.eventHistoryService.limit$,
+      this.eventHistoryService.direction$,
+      this.eventHistoryService.startDate$,
+      this.eventHistoryService.endDate$
+    ])
+      .pipe(
+        map(([eventType, limit, direction, startDate, endDate]) => ({
+          eventType,
+          limit: String(limit),
+          direction,
+          startDate: formatDate(startDate),
+          endDate: formatDate(endDate)
+        })),
+        distinctUntilChanged(
+          (prev, curr) =>
+            prev.eventType === curr.eventType &&
+            prev.limit === curr.limit &&
+            prev.direction === curr.direction &&
+            prev.startDate === curr.startDate &&
+            prev.endDate === curr.endDate
+        ),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((queryParams) => {
+        void this.router.navigate([], {
+          relativeTo: this.activatedRoute,
+          queryParams,
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+      });
+  }
+
+  private parseDateParam(value: string | null): Date | undefined {
+    if (!value) {
+      return undefined;
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
   }
 }
