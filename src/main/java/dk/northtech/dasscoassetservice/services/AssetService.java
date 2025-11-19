@@ -331,7 +331,7 @@ public class AssetService {
                         }
                     });
 
-            Map<String, List<Publication>> assetPublishers = h.createUpdate("SELECT asset_guid, description, publisher, asset_publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
+            Map<String, List<Publication>> assetPublishers = h.createUpdate("SELECT asset_guid, description, publisher, asset_publisher_id as publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {

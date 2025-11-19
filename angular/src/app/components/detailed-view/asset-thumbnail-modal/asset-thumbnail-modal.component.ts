@@ -16,9 +16,8 @@ import {MatButtonModule} from '@angular/material/button';
   `,
   standalone: true,
   styles: [
-    'div { border-radius: 0.375rem; background-color: white; display: flex; padding: 1rem; border: 1px solid #ccc; max-height: 99dvh; position: relative}',
-    'button[type="button"] { position: absolute; right: -5px; top: -5px; } ',
-    'img { object-fit: contain; }'
+    'div { border-radius: 0.375rem; background-color: white; overflow-y: auto; padding: 1rem; border: 1px solid #ccc; max-height: 99dvh; position: relative}',
+    'button[type="button"] { position: absolute; right: -5px; top: -5px; } '
   ],
   imports: [MatIconModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush
