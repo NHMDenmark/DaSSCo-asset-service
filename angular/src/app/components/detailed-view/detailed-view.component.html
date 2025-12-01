@@ -131,8 +131,21 @@
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
-            <span class="bold-text">Funding:&nbsp;</span>
-            {{ asset.funding }}
+            <div style="width: 100%">
+              <span class="bold-text">Funding:&nbsp;</span>
+              <div *ngIf="asset.funding?.length" class="scrollable-list-container">
+                <ng-container *ngFor="let funding of asset.funding; let last = last; trackBy: trackBy">
+                  <div class="scrollable-list-row">
+                    <span style="grid-column: span 3">
+                      {{ funding }}
+                    </span>
+                  </div>
+                  <div *ngIf="!last">
+                    <hr />
+                  </div>
+                </ng-container>
+              </div>
+            </div>
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
