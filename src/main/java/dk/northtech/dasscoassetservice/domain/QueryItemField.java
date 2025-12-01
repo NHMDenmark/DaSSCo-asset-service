@@ -16,6 +16,7 @@ public enum QueryItemField {
     CHANGE_LIST("change_list", "event.change_list", "event"),
     COLLECTION("collection", "collection_name", "collection"),
     COMPLETE_DIGITISER_LIST("complete_digitiser_list", "complete_digitiser_list", ""), // FIELD DOES NOT EXIST YET,
+    CURRENTLY_AUDITED("currently_audited", "currently_audited", "asset"),
     DATE_ASSET_CREATED_ARS("date_asset_created_ars", "date_asset_created_ars", "event"),
     DATE_ASSET_DELETED_ARS("date_asset_deleted_ars", "date_asset_deleted_ars", "event"),
     DATE_ASSET_FINALISED("date_asset_finalised", "date_asset_finalised", "asset"),
