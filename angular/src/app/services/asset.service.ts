@@ -15,8 +15,7 @@ export class AssetService {
   private readonly oidcService = inject(OidcSecurityService);
 
   getAssetThumbnail(asset: Asset): Observable<string> {
-    const cacheKey = `${asset.institution}/${asset.collection}/${asset.asset_guid}`;
-
+    const cacheKey = `${asset.institution}/${asset.collection}/${asset.asset_guid}/${(asset.events?.length ?? 0)}`;
     if (this.thumbnailCache.has(cacheKey)) {
       const cachedThumbnail = this.thumbnailCache.get(cacheKey);
       if (cachedThumbnail) {
