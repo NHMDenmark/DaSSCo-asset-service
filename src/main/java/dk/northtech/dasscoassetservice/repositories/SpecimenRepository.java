@@ -104,6 +104,9 @@ public interface SpecimenRepository extends SqlObject {
     """)
     void deleteAssetSpecimen(String assetGuid, Integer specimenId);
 
+    @SqlUpdate("delete from specimen_role_restriction where specimen_id = :specimenId")
+    int deleteSpecimenRestrictionsWithSpecimenId(int specimenId);
+
     @SqlUpdate("delete from specimen where specimen_pid = :pid")
     int deleteSpecimenWithPid(String pid);
 

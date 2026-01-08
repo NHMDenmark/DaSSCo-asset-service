@@ -85,8 +85,9 @@ public class SpecimenService {
             if(!assetGuids.isEmpty()) {
                 return Response.status(Response.Status.FORBIDDEN).entity("Can't delete Specimen with PID: " + pid + ", it has the following assets attached " + assetGuids).build();
             }else{
-                return this.jdbi.withHandle(handle -> {
+                return this.jdbi.inTransaction(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+                    specimenRepository.deleteSpecimenRestrictionsWithSpecimenId(specimen.specimen_id());
                     specimenRepository.deleteSpecimenWithPid(pid);
                     this.pidSpecimen.refresh(pid);
                     return Response.status(Response.Status.OK).entity("specimen deleted with PID %s".formatted(pid)).build();
