@@ -47,7 +47,7 @@ public class QueriesService {
                     MATCH (u:User)<-[:INITIATED_BY]-(e) ${assetEvents:-WHERE e.event = 'CREATE_ASSET_METADATA'}
                     MATCH (i:Institution)<-[:BELONGS_TO]-(a) ${instCollAccess:-}
                     ${optionals}
-            
+
                       RETURN a.asset_guid
                           , a.asset_pid
                           , a.status
@@ -125,7 +125,7 @@ public class QueriesService {
 
     @Inject
     public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi") Jdbi jdbi,
-                          @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
+            @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
         this.readonlyJdbi = readonlyJdbi;
@@ -145,8 +145,8 @@ public class QueriesService {
                         QueryItemField.CAMERA_SETTING_CONTROL.getTableName()),
                 new QueryProperty(QueryItemField.COLLECTION.getDisplayName(), "collection",
                         QueryItemField.COLLECTION.getTableName()),
-                // new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(),
-                // "???", QueryItemField.COMPLETE_DIGITISER_LIST.getTableName()),
+                new QueryProperty(QueryItemField.COMPLETE_DIGITISER_LIST.getDisplayName(), "String",
+                        QueryItemField.COMPLETE_DIGITISER_LIST.getTableName()),
                 new QueryProperty(QueryItemField.CURRENTLY_AUDITED.getDisplayName(), "boolean",
                         QueryItemField.CURRENTLY_AUDITED.getTableName()),
                 new QueryProperty(QueryItemField.DATE_ASSET_FINALISED.getDisplayName(), "Instant",
@@ -321,10 +321,14 @@ public class QueriesService {
             leftJoins.append(" left join event using (asset_guid)");
             leftJoins.append(" left join dassco_user event_user on event_user.dassco_user_id = event.dassco_user_id");
         }
-        if (tablesUsed.contains("digitiser_user")) {
+        if (tablesUsed.contains("asset_digitiser")) {
+            leftJoins.append(
+                    " left join dassco_user asset_digitiser on asset_digitiser.dassco_user_id = asset.digitiser_id");
+        }
+        if (tablesUsed.contains("digitiser_list_user")) {
             leftJoins.append(" left join digitiser_list using (asset_guid)");
             leftJoins.append(
-                    " left join dassco_user digitiser_user on digitiser_user.dassco_user_id = digitiser_list.dassco_user_id");
+                    " left join dassco_user digitiser_list_user on digitiser_list_user.dassco_user_id = digitiser_list.dassco_user_id");
         }
         if (tablesUsed.contains("funding")) {
             leftJoins.append(" left join asset_funding using (asset_guid)");
@@ -364,8 +368,8 @@ public class QueriesService {
                 .replace("#collectionAccess#",
                         fullAccess ? ""
                                 : (whereFilters.isEmpty() ? "where"
-                                : " and collection_name in (%s)".formatted(collectionsAccess.stream()
-                                .map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))))
+                                        : " and collection_name in (%s)".formatted(collectionsAccess.stream()
+                                                .map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))))
                 .replace("#limit#", limit > 0 ? "limit :limit" : "");
 
         return readonlyJdbi.withHandle(h -> {
@@ -389,34 +393,34 @@ public class QueriesService {
                             left join pipeline using (pipeline_id)
                             where asset_guid in (<assetGuids>)
                             """)
-                    .bindList("assetGuids", assetGuids)
-                    .execute((statement, ctx) -> {
-                        try (ctx; var rs = statement.get().getResultSet()) {
-                            Map<String, List<Event>> assetEventsTemp = new HashMap<>();
-                            while (rs.next()) {
-                                String assetGuid = rs.getString("asset_guid");
-                                String username = rs.getString("username");
-                                Timestamp timestamp = rs.getTimestamp("timestamp");
-                                String event = rs.getString("event");
-                                String pipelineName = rs.getString("pipeline_name");
-                                Event newEvent = new Event(
-                                        username,
-                                        timestamp != null ? timestamp.toInstant() : null,
-                                        event != null ? DasscoEvent.valueOf(event) : null,
-                                        pipelineName);
-                                assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>())
-                                        .add(newEvent);
-                            }
-                            return assetEventsTemp;
-                        }
-                    });
+                            .bindList("assetGuids", assetGuids)
+                            .execute((statement, ctx) -> {
+                                try (ctx; var rs = statement.get().getResultSet()) {
+                                    Map<String, List<Event>> assetEventsTemp = new HashMap<>();
+                                    while (rs.next()) {
+                                        String assetGuid = rs.getString("asset_guid");
+                                        String username = rs.getString("username");
+                                        Timestamp timestamp = rs.getTimestamp("timestamp");
+                                        String event = rs.getString("event");
+                                        String pipelineName = rs.getString("pipeline_name");
+                                        Event newEvent = new Event(
+                                                username,
+                                                timestamp != null ? timestamp.toInstant() : null,
+                                                event != null ? DasscoEvent.valueOf(event) : null,
+                                                pipelineName);
+                                        assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>())
+                                                .add(newEvent);
+                                    }
+                                    return assetEventsTemp;
+                                }
+                            });
             Map<String, List<AssetSpecimen>> assetSpecimens = specimenService
                     .getMultiAssetSpecimens(new HashSet<>(assetGuids));
 
             return queryResultAssets.isEmpty() ? List.of()
                     : queryResultAssets.stream().map(queryResultAsset -> queryResultAsset
-                    .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
-                    .withSpecimen(assetSpecimens.get(queryResultAsset.asset_guid()))).toList();
+                            .withEvents(assetEvents.get(queryResultAsset.asset_guid()))
+                            .withSpecimen(assetSpecimens.get(queryResultAsset.asset_guid()))).toList();
         });
     }
 
@@ -451,7 +455,7 @@ public class QueriesService {
     }
 
     public String unwrapQuery(QueriesReceived queryReceived, int limit, boolean count, Set<String> collectionAccess,
-                              boolean fullAccess) {
+            boolean fullAccess) {
         String finalQuery;
         Map<String, String> whereMap = new HashMap<>();
         whereMap.put("limit", Integer.toString(limit));

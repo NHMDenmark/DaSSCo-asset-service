@@ -15,7 +15,7 @@ public enum QueryItemField {
     CAMERA_SETTING_CONTROL("camera_setting_control", "camera_setting_control", "asset"),
     CHANGE_LIST("change_list", "event.change_list", "event"),
     COLLECTION("collection", "collection_name", "collection"),
-    COMPLETE_DIGITISER_LIST("complete_digitiser_list", "complete_digitiser_list", ""), // FIELD DOES NOT EXIST YET,
+    COMPLETE_DIGITISER_LIST("complete_digitiser_list", "digitiser_list_user.username", "digitiser_list_user"),
     CURRENTLY_AUDITED("currently_audited", "currently_audited", "asset"),
     DATE_ASSET_CREATED_ARS("date_asset_created_ars", "date_asset_created_ars", "event"),
     DATE_ASSET_DELETED_ARS("date_asset_deleted_ars", "date_asset_deleted_ars", "event"),
@@ -27,7 +27,7 @@ public enum QueryItemField {
     DATE_METADATA_INGESTED("date_metadata_ingested", "date_metadata_ingested", "asset"),
     DATE_METADATA_UPDATED_ARS("date_metadata_updated_ars", "date_metadata_updated_ars", "event"),
     DATE_PUSHED_TO_SPECIFY("date_pushed_to_specify", "date_pushed_to_specify", "event"),
-    DIGITISER("digitiser", "digitiser_user.username", "digitiser_user"),
+    DIGITISER("digitiser", "asset_digitiser.username", "asset_digitiser"),
     FILE_FORMAT("file_format", "file_formats", "asset"),
     FUNDING("funding", "funding", "funding"),
     INSTITUTION("institution", "institution_name", "collection"),
@@ -74,10 +74,12 @@ public enum QueryItemField {
         return fieldName;
     }
 
-    public String getTableName() {return tableName;}
+    public String getTableName() {
+        return tableName;
+    }
 
     public static QueryItemField fromDisplayName(String displayName) {
-            return BY_DISPLAY.get(displayName);
+        return BY_DISPLAY.get(displayName);
     }
 
     public static QueryItemField fromFieldName(String fieldName) {
