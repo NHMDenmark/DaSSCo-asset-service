@@ -14,17 +14,31 @@
     }
   }
 
+  .table-container {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
   table {
     width: 100%;
+    box-shadow: none;
   }
 
   tr.detail-row {
     height: 0;
-    background-color: whitesmoke;
+    background-color: #fafafa;
+
+    td {
+      padding: 0;
+      border-bottom: none;
+      overflow: hidden;
+    }
   }
 
   tr.element-row:not(.expanded-row):hover {
-    background: whitesmoke;
+    background: #f5f5f5;
+    cursor: pointer;
   }
 
   tr.element-row:not(.expanded-row):active {
@@ -32,78 +46,201 @@
   }
 
   tr.element-row:is(.expanded-row) {
-    background: whitesmoke;
+    background: #f5f5f5;
   }
 
   .element-row td {
     border-bottom-width: 0;
   }
 
+  // Row actions (in table row)
+  .row-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: flex-end;
+  }
+
+  // Expanded detail area
   .element-detail {
     display: flex;
+    flex-direction: column;
     overflow: hidden;
-    gap: 4rem;
+    min-height: 0;
+  }
+
+  // Detail header with mode indicator and actions
+  .detail-header {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-  }
+    gap: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+    flex-wrap: wrap;
 
-  .element-description-attribution {
-    opacity: 0.5;
-  }
-
-  .add-item:hover {
-    cursor: pointer;
-    background-color: #e5e5e5;
-  }
-
-  .digitiser-div,
-  .edit-actions,
-  .detail-inner {
-    flex: 1;
-  }
-
-  .edit-actions {
-    .edit-btns {
+    .mode-indicator {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #1976d2;
+      padding: 0.5rem 1rem;
+      background: #e3f2fd;
+      border-radius: 4px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     }
 
-    .edit-btn-editing-false {
-      visibility: hidden;
-    }
+    .contextual-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
 
-    button {
-      margin-bottom: 0.5rem;
+      button {
+        mat-icon {
+          margin-right: 4px;
+        }
+      }
     }
   }
 
-  .download-actions {
-    .download-btns {
+  // Content area with two columns
+  .detail-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    min-height: 200px;
+    padding: 1rem;
+  }
+
+  .content-column {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+
+    .column-header {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+      font-weight: 500;
+      color: #424242;
+
+      mat-icon {
+        color: #757575;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      .select-all-btn {
+        margin-left: auto;
+        font-size: 0.75rem;
+      }
     }
 
-    .download-btn-editing-false {
-      visibility: hidden;
+    .empty-state {
+      padding: 2rem;
+      text-align: center;
+      color: #9e9e9e;
+      font-style: italic;
     }
+  }
 
-    button {
-      margin-bottom: 0.5rem;
+  // Asset list
+  .asset-list {
+    max-height: 300px;
+    overflow-y: auto;
+
+    mat-list-option {
+      border-bottom: 1px solid #f0f0f0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:not(.selectable) {
+        cursor: pointer;
+
+        &:hover {
+          background: #f5f5f5;
+        }
+      }
+
+      &.selectable {
+        cursor: pointer;
+      }
+    }
+  }
+
+  // Digitiser list
+  .digitiser-list {
+    max-height: 200px;
+    overflow-y: auto;
+
+    mat-list-option {
+      border-bottom: 1px solid #f0f0f0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.selectable {
+        cursor: pointer;
+      }
+    }
+  }
+
+  .creator-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.125rem 0.5rem;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .add-digitiser-form {
+    padding: 1rem;
+    border-top: 1px solid #e0e0e0;
+    background: #fafafa;
+
+    .digitiser-select {
+      width: 100%;
+    }
+  }
+
+  // Hide checkboxes when not in selection mode
+  mat-list-option:not(.selectable) {
+    ::ng-deep .mdc-checkbox {
+      display: none;
     }
   }
 }
 
-.list-option-digitiser-false:hover {
-  // i know this is messy, but until we get an acutal layout i'm not gonna spend more time on it lol
-  cursor: default;
-  ::ng-deep mat-pseudo-checkbox {
-    cursor: default;
-  }
-}
+// Responsive adjustments
+@media (max-width: 768px) {
+  .container {
+    .detail-content {
+      grid-template-columns: 1fr;
+      padding-inline: 0.5rem;
+    }
 
-.list-option-false,
-.list-option-digitiser-false {
-  ::ng-deep mat-pseudo-checkbox {
-    color: rgba(0, 0, 0, 0);
-    background-color: darkgrey;
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 }

@@ -112,6 +112,22 @@ export class AssetGroupService {
     );
   }
 
+  bulkAuditAssets(assetGuids: string[], user: string): Observable<{[key: string]: string} | undefined> {
+    return this.oidcSecurityService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .post<{[key: string]: string}>(
+            'api/v1/assetmetadata/bulk/audit',
+            {user, assetGuids},
+            {
+              headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
+            }
+          )
+          .pipe(catchError(this.handleError('bulk audit assets', undefined)))
+      )
+    );
+  }
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: any): Observable<T> => {
       console.error(error);

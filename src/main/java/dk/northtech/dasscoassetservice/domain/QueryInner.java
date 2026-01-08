@@ -64,6 +64,14 @@ public class QueryInner {
             return Map.of(sql, Map.of());
         }
 
+        // Handle audited (event group) - checks if any AUDIT_ASSET event exists
+        if (column.equalsIgnoreCase("audited") && operator.equalsIgnoreCase("equal")) {
+            String existsClause = value.equalsIgnoreCase("true") ? "EXISTS" : "NOT EXISTS";
+            String sql = "%s (SELECT 1 FROM event e WHERE e.asset_guid = asset.asset_guid AND e.event = 'AUDIT_ASSET')"
+                    .formatted(existsClause);
+            return Map.of(sql, Map.of());
+        }
+
         // Handle legal search across all 3 legality fields: copyright, license, credit
         if (column.equalsIgnoreCase("copyright") || column.equalsIgnoreCase("legal")) {
             String preparedParam = "copyright_" + index;

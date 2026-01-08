@@ -62,25 +62,14 @@ public class AssetService {
     private final AssetChangeService assetChangeService;
 
     @Inject
-    public AssetService(InstitutionService institutionService
-            , CollectionService collectionService
-            , WorkstationService workstationService
-            , @Lazy FileProxyClient fileProxyClient
-            , Jdbi jdbi
-            , StatisticsDataServiceV2 statisticsDataServiceV2
-            , PipelineService pipelineService
-            , RightsValidationService rightsValidationService
-            , DigitiserCache digitiserCache
-            , SubjectCache subjectCache
-            , PayloadTypeCache payloadTypeCache
-            , PreparationTypeCache preparationTypeCache
-            , FileProxyConfiguration fileProxyConfiguration
-            , ExtendableEnumService extendableEnumService
-            , UserService userService
-            , AssetSyncService assetSyncService
-            , FundingService fundingService
-            , AssetChangeService assetChangeService
-            , SpecimenService specimenService, RoleService roleService) {
+    public AssetService(InstitutionService institutionService, CollectionService collectionService,
+            WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi,
+            StatisticsDataServiceV2 statisticsDataServiceV2, PipelineService pipelineService,
+            RightsValidationService rightsValidationService, DigitiserCache digitiserCache, SubjectCache subjectCache,
+            PayloadTypeCache payloadTypeCache, PreparationTypeCache preparationTypeCache,
+            FileProxyConfiguration fileProxyConfiguration, ExtendableEnumService extendableEnumService,
+            UserService userService, AssetSyncService assetSyncService, FundingService fundingService,
+            AssetChangeService assetChangeService, SpecimenService specimenService, RoleService roleService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -128,7 +117,6 @@ public class AssetService {
         }
     }
 
-
     void validateIssue(Issue issue) {
         if (Strings.isNullOrEmpty(issue.category())) {
             throw new IllegalArgumentException("Issue category cannot be null");
@@ -145,7 +133,8 @@ public class AssetService {
     }
 
     void validateAndSetCollectionId(Asset asset) {
-        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection, asset.institution);
+        Optional<Collection> collectionOpt = collectionService.findCollectionInternal(asset.collection,
+                asset.institution);
         if (collectionOpt.isEmpty()) {
             throw new IllegalArgumentException("Collection doesnt exist");
         }
@@ -187,9 +176,11 @@ public class AssetService {
             FundingRepository fundingRepository = h.attach(FundingRepository.class);
             IssueRepository issueRepository = h.attach(IssueRepository.class);
             assetToBeMapped.issues = issueRepository.findIssuesByAssetGuid(assetToBeMapped.asset_guid);
-            assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream().map(Funding::funding).toList();
+            assetToBeMapped.funding = fundingRepository.getAssetFunds(assetToBeMapped.asset_guid).stream()
+                    .map(Funding::funding).toList();
             assetToBeMapped.parent_guids = assetRepository.getParents(assetToBeMapped.asset_guid);
-            assetToBeMapped.role_restrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.ASSET, assetToBeMapped.asset_guid);
+            assetToBeMapped.role_restrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.ASSET,
+                    assetToBeMapped.asset_guid);
             PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
             assetToBeMapped.external_publishers = publisherRepository.internal_listPublicationLinks(assetGuid);
             assetToBeMapped.mapEvents();
@@ -201,32 +192,34 @@ public class AssetService {
         return this.jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             var assets = h.createQuery("""
-                            SELECT
-                                asset.*
-                                , collection.collection_name
-                                , collection.institution_name
-                                , dassco_user.username AS digitiser
-                                , workstation.workstation_name
-                                , copyright
-                                , license
-                                , credit
-                            FROM asset
-                            LEFT JOIN collection USING(collection_id)
-                            LEFT JOIN workstation USING(workstation_id)
-                            LEFT JOIN legality USING(legality_id)
-                            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-                            WHERE asset_guid in (<asset_guids>)
-                            """)
+                    SELECT
+                        asset.*
+                        , collection.collection_name
+                        , collection.institution_name
+                        , dassco_user.username AS digitiser
+                        , workstation.workstation_name
+                        , copyright
+                        , license
+                        , credit
+                    FROM asset
+                    LEFT JOIN collection USING(collection_id)
+                    LEFT JOIN workstation USING(workstation_id)
+                    LEFT JOIN legality USING(legality_id)
+                    LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+                    WHERE asset_guid in (<asset_guids>)
+                    """)
                     .bindList("asset_guids", assetGuids)
                     .map(new AssetMapper())
                     .list();
 
-            Map<String, List<Event>> assetEvents = h.createQuery("""
-                            SELECT asset_guid, username, timestamp, event, pipeline_name, change_list, bulk_update_uuid from event
-                            LEFT JOIN dassco_user USING (dassco_user_id)
-                            LEFT JOIN pipeline USING (pipeline_id)
-                            WHERE asset_guid IN (<assetGuids>)
-                            """)
+            Map<String, List<Event>> assetEvents = h
+                    .createQuery(
+                            """
+                                    SELECT asset_guid, username, timestamp, event, pipeline_name, change_list, bulk_update_uuid from event
+                                    LEFT JOIN dassco_user USING (dassco_user_id)
+                                    LEFT JOIN pipeline USING (pipeline_id)
+                                    WHERE asset_guid IN (<assetGuids>)
+                                    """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -238,7 +231,7 @@ public class AssetService {
                                 String event = rs.getString("event");
                                 String pipelineName = rs.getString("pipeline_name");
                                 Array change_list = rs.getArray("change_list");
-                                String  bulk_update_uuid = rs.getString("bulk_update_uuid");
+                                String bulk_update_uuid = rs.getString("bulk_update_uuid");
                                 Event newEvent = new Event(
                                         username,
                                         timestamp != null ? timestamp.toInstant() : null,
@@ -247,19 +240,20 @@ public class AssetService {
                                         change_list == null ? null : Arrays.asList((String[]) change_list.getArray()),
                                         bulk_update_uuid
 
-                                );
+                    );
                                 assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
                             }
                             return assetEventsTemp;
                         }
                     });
-            Map<String, List<AssetSpecimen>> assetSpecimens = specimenService.getMultiAssetSpecimens(new HashSet<>(assetGuids));
+            Map<String, List<AssetSpecimen>> assetSpecimens = specimenService
+                    .getMultiAssetSpecimens(new HashSet<>(assetGuids));
             Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
-                            SELECT asset_guid, username
-                            FROM digitiser_list
-                            LEFT JOIN dassco_user USING (dassco_user_id)
-                            WHERE asset_guid in (<assetGuids>)
-                            """)
+                    SELECT asset_guid, username
+                    FROM digitiser_list
+                    LEFT JOIN dassco_user USING (dassco_user_id)
+                    WHERE asset_guid in (<assetGuids>)
+                    """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -267,17 +261,19 @@ public class AssetService {
                             while (rs.next()) {
                                 String assetGuid = rs.getString("asset_guid");
                                 String username = rs.getString("username");
-                                assetCompleteDigitiserListTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(username);
+                                assetCompleteDigitiserListTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>())
+                                        .add(username);
                             }
                             return assetCompleteDigitiserListTemp;
                         }
                     });
-            Map<String, List<Role>> assetRoleRestrictions = roleRepository.getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
+            Map<String, List<Role>> assetRoleRestrictions = roleRepository
+                    .getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
             Map<String, List<Issue>> assetIssues = h.createQuery("""
-                            SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
-                            FROM issue
-                            WHERE asset_guid in (<assetGuids>)
-                            """)
+                    SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
+                    FROM issue
+                    WHERE asset_guid in (<assetGuids>)
+                    """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -292,7 +288,9 @@ public class AssetService {
                                 String description = rs.getString("description");
                                 String notes = rs.getString("notes");
                                 boolean solved = rs.getBoolean("solved");
-                                var issue = new Issue(issueId, assetGuid, category, name, timestamp != null ? timestamp.toInstant() : null, status, description, notes, solved);
+                                var issue = new Issue(issueId, assetGuid, category, name,
+                                        timestamp != null ? timestamp.toInstant() : null, status, description, notes,
+                                        solved);
                                 assetSpecimensTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(issue);
                             }
                             return assetSpecimensTemp;
@@ -300,11 +298,11 @@ public class AssetService {
                     });
 
             Map<String, List<String>> assetFundings = h.createUpdate("""
-                            SELECT asset_guid, funding_id, funding
-                            FROM asset_funding
-                            INNER JOIN funding USING (funding_id)
-                            WHERE asset_guid in (<assetGuids>)
-                            """).bindList("assetGuids", assetGuids)
+                    SELECT asset_guid, funding_id, funding
+                    FROM asset_funding
+                    INNER JOIN funding USING (funding_id)
+                    WHERE asset_guid in (<assetGuids>)
+                    """).bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
                             Map<String, List<String>> assetFundingsTemp = new HashMap<>();
@@ -317,7 +315,8 @@ public class AssetService {
                         }
                     });
 
-            Map<String, Set<String>> assetParent = h.createUpdate("SELECT child_guid, parent_guid FROM parent_child WHERE child_guid in (<assetGuids>)")
+            Map<String, Set<String>> assetParent = h
+                    .createUpdate("SELECT child_guid, parent_guid FROM parent_child WHERE child_guid in (<assetGuids>)")
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -331,7 +330,8 @@ public class AssetService {
                         }
                     });
 
-            Map<String, List<Publication>> assetPublishers = h.createUpdate("SELECT asset_guid, description, publisher, asset_publisher_id as publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
+            Map<String, List<Publication>> assetPublishers = h.createUpdate(
+                    "SELECT asset_guid, description, publisher, asset_publisher_id as publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -342,7 +342,8 @@ public class AssetService {
                                 String publisher = rs.getString("publisher");
                                 Long publisherId = rs.getLong("publisher_id");
                                 var newPublisher = new Publication(publisherId, assetGuid, description, publisher);
-                                assetPublishersTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newPublisher);
+                                assetPublishersTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>())
+                                        .add(newPublisher);
                             }
                             return assetPublishersTemp;
                         }
@@ -360,7 +361,7 @@ public class AssetService {
                     asset.role_restrictions = assetRoleRestrictions.get(asset.asset_guid);
                 }
                 asset.mapEvents();
-//                mapEvents(asset);
+                // mapEvents(asset);
             }).toList();
         });
     }
@@ -370,7 +371,8 @@ public class AssetService {
         if (asset.parent_guids != null && asset.parent_guids.contains(asset.asset_guid)) {
             throw new IllegalArgumentException("Asset cannot be its own parent");
         }
-        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
+        Optional<Pipeline> pipelineOpt = pipelineService.findPipelineByInstitutionAndName(asset.pipeline,
+                asset.institution);
         if (pipelineOpt.isEmpty()) {
             throw new IllegalArgumentException("Pipeline doesnt exist in this institution");
         }
@@ -380,7 +382,8 @@ public class AssetService {
         }
         Workstation workstation = workstationOpt.get();
         if (workstation.status().equals(WorkstationStatus.OUT_OF_SERVICE)) {
-            throw new DasscoIllegalActionException("Workstation [" + workstation.status() + "] is marked as out of service");
+            throw new DasscoIllegalActionException(
+                    "Workstation [" + workstation.status() + "] is marked as out of service");
         }
         asset.workstation_id = workstation.workstation_id();
         if (asset.file_formats != null && !asset.file_formats.isEmpty()) {
@@ -393,7 +396,8 @@ public class AssetService {
         }
         if (asset.external_publishers != null) {
             for (Publication publication : asset.external_publishers) {
-                if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER, publication.name())) {
+                if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.EXTERNAL_PUBLISHER,
+                        publication.name())) {
                     throw new IllegalArgumentException("Publisher " + publication.name() + " doesnt exist");
                 }
             }
@@ -409,18 +413,19 @@ public class AssetService {
     }
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
-        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd
+        // HH:mm:ss");
         validateAssetFields(asset);
         if (assetsGettingCreated.getIfPresent(asset.asset_guid) != null) {
             logger.warn("Same asset uploaded in short time frame, guid: {}", asset.asset_guid);
             throw new DasscoIllegalActionException("Asset " + asset.asset_guid + " is already being processed");
         }
-        //Validation
+        // Validation
         Optional<Asset> assetOpt = getAsset(asset.asset_guid);
         if (assetOpt.isPresent()) {
             throw new IllegalArgumentException("Asset " + asset.asset_guid + " already exists");
         }
-//        });
+        // });
         if (allocation == 0) {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
@@ -483,75 +488,80 @@ public class AssetService {
                     throw new IllegalArgumentException("Specimen " + specimen.specimen_pid + " doesn't exist");
                 } else {
                     Specimen existing = specimensByPID.get();
-                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type, existing.specimen_id());
+                    specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type,
+                            existing.specimen_id());
                 }
 
             }
-            //Handle external publishers
+            // Handle external publishers
             if (asset.external_publishers != null) {
                 PublisherRepository publisherRepository = h.attach(PublisherRepository.class);
-                // Publication can be POSTED as a list of objects with name only. this ensures the asset_guid is set.
+                // Publication can be POSTED as a list of objects with name only. this ensures
+                // the asset_guid is set.
                 asset.external_publishers = asset.external_publishers.stream()
-                        // Publication can be POSTed as a list of objects with name only. this ensures the asset_guid is set.
+                        // Publication can be POSTed as a list of objects with name only. this ensures
+                        // the asset_guid is set.
                         .map(p -> new Publication(asset.asset_guid, p.description(), p.name()))
                         .map(publisherRepository::internal_publish)
                         .toList();
             }
 
-            //Handle parents
+            // Handle parents
             for (String s : asset.parent_guids) {
                 assetRepository.insert_parent_child(asset.asset_guid, s);
             }
             Integer pipelineId = null;
             String pipeline = asset.updating_pipeline != null ? asset.updating_pipeline : asset.pipeline;
             if (pipeline != null) {
-                Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(pipeline, asset.institution);
+                Optional<Pipeline> pipelineByInstitutionAndName = pipelineService
+                        .findPipelineByInstitutionAndName(pipeline, asset.institution);
                 if (pipelineByInstitutionAndName.isPresent()) {
                     pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
                 }
             }
-            //Issues
+            // Issues
             if (asset.issues != null) {
                 for (Issue issue : asset.issues) {
-                    issue = new Issue(issue.issue_id()
-                            , asset.asset_guid
-                            , issue.category()
-                            , issue.name()
-                            , issue.timestamp() != null ? issue.timestamp() : Instant.now()
-                            , issue.status()
-                            , issue.description()
-                            , issue.notes()
-                            , issue.solved());
+                    issue = new Issue(issue.issue_id(), asset.asset_guid, issue.category(), issue.name(),
+                            issue.timestamp() != null ? issue.timestamp() : Instant.now(), issue.status(),
+                            issue.description(), issue.notes(), issue.solved());
                     issueRepository.insert_issue(issue);
                 }
             }
-            //Event
-            eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET_METADATA, user.dassco_user_id, pipelineId);
-//            LocalDateTime createAssetEnd = LocalDateTime.now();
-//            logger.info("#5 Creating the asset took {} ms", Duration.between(createAssetStart, createAssetEnd).toMillis());
+            // Event
+            eventRepository.insertEvent(asset.asset_guid, DasscoEvent.CREATE_ASSET_METADATA, user.dassco_user_id,
+                    pipelineId);
+            // LocalDateTime createAssetEnd = LocalDateTime.now();
+            // logger.info("#5 Creating the asset took {} ms",
+            // Duration.between(createAssetStart, createAssetEnd).toMillis());
             // Open share
             try {
-//                Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
-//                        .observe(() -> {
-                asset.httpInfo = openHttpShare(new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection), user, allocation);
-//                        });
+                // Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
+                // .observe(() -> {
+                asset.httpInfo = openHttpShare(
+                        new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection),
+                        user, allocation);
+                // });
             } catch (Exception e) {
                 h.rollback();
                 throw new RuntimeException(e);
             }
             LocalDateTime httpInfoEnd = LocalDateTime.now();
-            logger.info("#4 HTTPInfo creation took {} ms in total.", Duration.between(httpInfoStart, httpInfoEnd).toMillis());
+            logger.info("#4 HTTPInfo creation took {} ms in total.",
+                    Duration.between(httpInfoStart, httpInfoEnd).toMillis());
 
             if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
 
-//                LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-//                //TEZT
-//                Observation.createNotStarted("persist:refresh-statistics-cache", observationRegistry)
-//                        .observe(statisticsDataServiceV2::refreshCachedData);
-//                LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
-//                logger.info("#6 Refreshing the cached data took {} ms", Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
+                // LocalDateTime refreshCachedDataStart = LocalDateTime.now();
+                // //TEZT
+                // Observation.createNotStarted("persist:refresh-statistics-cache",
+                // observationRegistry)
+                // .observe(statisticsDataServiceV2::refreshCachedData);
+                // LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
+                // logger.info("#6 Refreshing the cached data took {} ms",
+                // Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
 
-//            this.statisticsDataService.addAssetToCache(asset);
+                // this.statisticsDataService.addAssetToCache(asset);
                 refreshCaches(asset);
             } else {
                 // Do not persist asset if share wasnt created
@@ -559,12 +569,12 @@ public class AssetService {
                 assetsGettingCreated.invalidate(asset.asset_guid);
                 return asset;
             }
-            //you are here
+            // you are here
             return asset;
         });
 
-//        statisticsDataServiceV2.refreshCachedData();
-//        this.statisticsDataServiceV2.addAssetToCache(asset);
+        // statisticsDataServiceV2.refreshCachedData();
+        // this.statisticsDataServiceV2.addAssetToCache(asset);
         assetsGettingCreated.invalidate(asset.asset_guid);
         return resultAsset;
     }
@@ -594,13 +604,15 @@ public class AssetService {
         LocalDateTime getAssetStart = LocalDateTime.now();
         Optional<Asset> optionalAsset = getAsset(assetGuid);
         LocalDateTime getAssetEnd = LocalDateTime.now();
-        logger.info("#4.1.2 Getting complete asset from the DB took {} ms", Duration.between(getAssetStart, getAssetEnd).toMillis());
+        logger.info("#4.1.2 Getting complete asset from the DB took {} ms",
+                Duration.between(getAssetStart, getAssetEnd).toMillis());
         if (optionalAsset.isPresent()) {
             Asset found = optionalAsset.get();
             LocalDateTime checkValidationStart = LocalDateTime.now();
             rightsValidationService.checkReadRightsThrowing(user, found);
             LocalDateTime checkValidationEnd = LocalDateTime.now();
-            logger.info("#4.1.3 Validating Asset took {} ms", Duration.between(checkValidationStart, checkValidationEnd).toMillis());
+            logger.info("#4.1.3 Validating Asset took {} ms",
+                    Duration.between(checkValidationStart, checkValidationEnd).toMillis());
         }
         return optionalAsset;
     }
@@ -612,11 +624,11 @@ public class AssetService {
             digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(asset.digitiser_id, asset.digitiser));
         }
 
-//        if (asset.specimens != null && !asset.specimens.isEmpty()) {
-//            for (Specimen specimen : asset.specimens) {
-//                specimen.preparation_types().forEach(preparationTypeCache::putPreparationTypesInCacheIfAbsent);
-//            }
-//        }
+        // if (asset.specimens != null && !asset.specimens.isEmpty()) {
+        // for (Specimen specimen : asset.specimens) {
+        // specimen.preparation_types().forEach(preparationTypeCache::putPreparationTypesInCacheIfAbsent);
+        // }
+        // }
 
         if (asset.asset_subject != null && !asset.asset_subject.isEmpty()) {
             subjectCache.putSubjectsInCacheIfAbsent(asset.asset_subject);
@@ -653,16 +665,15 @@ public class AssetService {
             }
         }
         payloadTypeCache.clearCache();
-//        List<String> payloadTypeList = jdbi.withHandle(handle -> {
-//            AssetRepository assetRepository = handle.attach(AssetRepository.class);
-//
+        // List<String> payloadTypeList = jdbi.withHandle(handle -> {
+        // AssetRepository assetRepository = handle.attach(AssetRepository.class);
+        //
     }
 
-    //This is here for mocking
+    // This is here for mocking
     public HttpInfo openHttpShare(MinimalAsset minimalAsset, User updateUser, int allocation) {
         return fileProxyClient.openHttpShare(minimalAsset, updateUser, allocation);
     }
-
 
     public Asset updateAsset(Asset updatedAsset, User user) {
         Optional<Asset> assetOpt = getAsset(updatedAsset.asset_guid);
@@ -670,9 +681,9 @@ public class AssetService {
             throw new IllegalArgumentException("Asset " + updatedAsset.asset_guid + " does not exist");
         }
         rightsValidationService.requireWriteRights(user, assetOpt.get());
-//        if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
-//            throw new IllegalArgumentException("Update user must be provided");
-//        }
+        // if (Strings.isNullOrEmpty(updatedAsset.updateUser)) {
+        // throw new IllegalArgumentException("Update user must be provided");
+        // }
         validateAsset(updatedAsset);
         validateAndSetCollectionId(updatedAsset);
         Asset existing = assetOpt.get();
@@ -684,7 +695,8 @@ public class AssetService {
         Set<String> newFunding = new HashSet<>(updatedAsset.funding);
         Set<String> newDigitisers = new HashSet<>(updatedAsset.complete_digitiser_list);
         Set<String> existing_parents = new HashSet<>(existing.parent_guids);
-//        Set<String> existing_specimens = existing.specimens.stream().map(x -> x.specimen_pid()).collect(Collectors.toSet());
+        // Set<String> existing_specimens = existing.specimens.stream().map(x ->
+        // x.specimen_pid()).collect(Collectors.toSet());
         Set<Publication> existingPublications = new HashSet<>(existing.external_publishers);
         for (String funds : newFunding) {
             fundingService.ensureExists(funds);
@@ -697,17 +709,24 @@ public class AssetService {
         }
         ensureValuesExists(updatedAsset);
 
-        Set<String> updatedSpecimenPIDs = updatedAsset.asset_specimen.stream().map(a -> a.specimen_pid).collect(Collectors.toSet());
-        List<AssetSpecimen> specimensToDetach = existing.asset_specimen.stream().filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid)).toList();
-        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>() : updatedAsset.external_publishers.stream().map(publication -> new Publication(publication.publication_id(), existing.asset_guid, publication.description(), publication.name())).toList();
+        Set<String> updatedSpecimenPIDs = updatedAsset.asset_specimen.stream().map(a -> a.specimen_pid)
+                .collect(Collectors.toSet());
+        List<AssetSpecimen> specimensToDetach = existing.asset_specimen.stream()
+                .filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid)).toList();
+        updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>()
+                : updatedAsset.external_publishers.stream()
+                        .map(publication -> new Publication(publication.publication_id(), existing.asset_guid,
+                                publication.description(), publication.name()))
+                        .toList();
         existing.collection_id = updatedAsset.collection_id;
-//        existing.specimens = updatedAsset.specimens;
+        // existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;
         existing.workstation = updatedAsset.workstation;
         existing.date_asset_finalised = updatedAsset.date_asset_finalised;
         existing.status = updatedAsset.status;
         if (existing.asset_locked && !updatedAsset.asset_locked) {
-            throw new DasscoIllegalActionException("Cannot unlock using updateAsset API, use dedicated API for unlocking");
+            throw new DasscoIllegalActionException(
+                    "Cannot unlock using updateAsset API, use dedicated API for unlocking");
         }
         existing.asset_locked = updatedAsset.asset_locked;
         existing.asset_subject = updatedAsset.asset_subject;
@@ -730,7 +749,8 @@ public class AssetService {
         existing.specify_attachment_remarks = updatedAsset.specify_attachment_remarks;
         existing.specify_attachment_title = updatedAsset.specify_attachment_title;
         // Currently we just add new subject types if they do not exist
-        if (!Strings.isNullOrEmpty(existing.asset_subject) && !extendableEnumService.getSubjects().contains(existing.asset_subject)) {
+        if (!Strings.isNullOrEmpty(existing.asset_subject)
+                && !extendableEnumService.getSubjects().contains(existing.asset_subject)) {
             extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.SUBJECT, existing.asset_subject);
         }
         validateAssetFields(existing);
@@ -747,7 +767,8 @@ public class AssetService {
             Long legalityToDelete = null;
             if (updatedAsset.legality != null) {
                 if (existing.legality != null) {
-                    Legality legality = new Legality(existing.legality.legality_id(), updatedAsset.legality.copyright(), updatedAsset.legality.license(), updatedAsset.legality.credit());
+                    Legality legality = new Legality(existing.legality.legality_id(), updatedAsset.legality.copyright(),
+                            updatedAsset.legality.license(), updatedAsset.legality.credit());
                     legalityRepository.updateLegality(legality);
                     existing.legality = legality;
                 } else {
@@ -757,31 +778,32 @@ public class AssetService {
                 legalityToDelete = existing.legality.legality_id();
                 existing.legality = null;
             }
-            //Role restrictions
-            if (!Objects.equals(existing.role_restrictions, updatedAsset.role_restrictions) && updatedAsset.role_restrictions != null) {
+            // Role restrictions
+            if (!Objects.equals(existing.role_restrictions, updatedAsset.role_restrictions)
+                    && updatedAsset.role_restrictions != null) {
                 RoleRepository attach = h.attach(RoleRepository.class);
                 attach.setRestrictions(RestrictedObjectType.ASSET, updatedAsset.role_restrictions, existing.asset_guid);
-                existing.role_restrictions= updatedAsset.role_restrictions;
+                existing.role_restrictions = updatedAsset.role_restrictions;
             }
             repository.update_asset_internal(existing);
-            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(updatedAsset.updating_pipeline, existing.institution);
-            eventRepository.insertEvent(existing.asset_guid
-                    , DasscoEvent.UPDATE_ASSET_METADATA
-                    , user.dassco_user_id
-                    , pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
+            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService
+                    .findPipelineByInstitutionAndName(updatedAsset.updating_pipeline, existing.institution);
+            eventRepository.insertEvent(existing.asset_guid, DasscoEvent.UPDATE_ASSET_METADATA, user.dassco_user_id,
+                    pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
 
-            if(AssetStatus.FOR_DELETION.name().equals(updatedAsset.status)){
-                eventRepository.insertEvent(existing.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id, pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
+            if (AssetStatus.FOR_DELETION.name().equals(updatedAsset.status)) {
+                eventRepository.insertEvent(existing.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id,
+                        pipelineByInstitutionAndName.map(Pipeline::pipeline_id).orElse(null));
             }
 
-
-            //Specimens
+            // Specimens
             List<AssetSpecimen> finalSpecimen = new ArrayList<>();
             for (AssetSpecimen s : specimensToDetach) {
-                //If a specify id is connected to the specimen we can first delete the conenction to the asset when specify is synchronized
+                // If a specify id is connected to the specimen we can first delete the
+                // conenction to the asset when specify is synchronized
                 if (s.specify_collection_object_attachment_id != null) {
                     specimenRepository.detachSpecimen(existing.asset_guid, s.specimen_id);
-                    //makde sure detached specimen is included in specify update
+                    // makde sure detached specimen is included in specify update
                     s.asset_detached = true;
                     finalSpecimen.add(s);
                 } else {
@@ -789,29 +811,35 @@ public class AssetService {
                 }
             }
 
-//            Set<String> pids = existing.specimens.stream().map(s -> s.specimen_pid()).collect(Collectors.toSet());
-            Map<String, AssetSpecimen> pidExistingSpecimen = existing.asset_specimen.stream().collect(Collectors.toMap(s -> s.specimen_pid, s -> s));
+            // Set<String> pids = existing.specimens.stream().map(s ->
+            // s.specimen_pid()).collect(Collectors.toSet());
+            Map<String, AssetSpecimen> pidExistingSpecimen = existing.asset_specimen.stream()
+                    .collect(Collectors.toMap(s -> s.specimen_pid, s -> s));
             for (AssetSpecimen s : updatedAsset.asset_specimen) {
 
                 if (!pidExistingSpecimen.containsKey(s.specimen_pid)) {
                     Optional<Specimen> specimen = specimenService.findSpecimen(s.specimen_pid);
                     if (specimen.isPresent()) {
                         s.specimen = specimen.get();
-                        specimenRepository.attachSpecimen(updatedAsset.asset_guid, s.asset_preparation_type, specimen.get().specimen_id());
+                        specimenRepository.attachSpecimen(updatedAsset.asset_guid, s.asset_preparation_type,
+                                specimen.get().specimen_id());
                     } else {
-                        //this shouldnt happen
+                        // this shouldnt happen
                         throw new RuntimeException("Specimen not found: " + s.specimen_pid);
                     }
                 } else {
                     AssetSpecimen existingAssetSpecimen = pidExistingSpecimen.get(s.specimen_pid);
                     if (!existingAssetSpecimen.asset_preparation_type.equals(s.asset_preparation_type)) {
-                        specimenRepository.updateAssetSpecimen(updatedAsset.asset_guid, existingAssetSpecimen.specimen_id, existingAssetSpecimen.specify_collection_object_attachment_id, s.asset_preparation_type);
+                        specimenRepository.updateAssetSpecimen(updatedAsset.asset_guid,
+                                existingAssetSpecimen.specimen_id,
+                                existingAssetSpecimen.specify_collection_object_attachment_id,
+                                s.asset_preparation_type);
                     }
                 }
                 finalSpecimen.add(s);
             }
             existing.asset_specimen = finalSpecimen;
-            //Handle digitisers
+            // Handle digitisers
             for (String s : existingDigitiserList) {
                 if (!newDigitisers.contains(s)) {
                     User userRoRemove = userService.ensureExists(new User(s));
@@ -824,11 +852,12 @@ public class AssetService {
                     userRepository.addDigitiser(existing.asset_guid, userToAdd.dassco_user_id);
                 }
             }
-            //Handle funding
+            // Handle funding
             for (String s : existingFunding) {
                 if (!newFunding.contains(s)) {
                     Optional<Funding> fundingIfExists = fundingService.getFundingIfExists(s);
-                    fundingIfExists.ifPresent(funding -> fundingRepository.deFundAsset(existing.asset_guid, funding.funding_id()));
+                    fundingIfExists.ifPresent(
+                            funding -> fundingRepository.deFundAsset(existing.asset_guid, funding.funding_id()));
                 }
             }
             for (String s : newFunding) {
@@ -837,7 +866,7 @@ public class AssetService {
                     fundingRepository.fundAsset(existing.asset_guid, funding.funding_id());
                 }
             }
-            //Handle parents
+            // Handle parents
             for (String s : existing_parents) {
                 if (!existing.parent_guids.contains(s)) {
                     repository.delete_parent_child(existing.asset_guid, s);
@@ -848,7 +877,7 @@ public class AssetService {
                     repository.insert_parent_child(existing.asset_guid, s);
                 }
             }
-            //Handle publishers
+            // Handle publishers
             if (updatedAsset.external_publishers != null) {
                 Set<Long> updatedPublishers = new HashSet<>();
                 updatedAsset.external_publishers.forEach(extPbl -> {
@@ -865,20 +894,14 @@ public class AssetService {
                     }
                 });
             }
-            //Handle issues
+            // Handle issues
             if (updatedAsset.issues != null) {
                 Set<Integer> issue_ids = new HashSet<>();
                 for (Issue issue : existing.issues) {
-                    //Ensure time is set and asset id is correct
-                    issue = new Issue(issue.issue_id()
-                            , existing.asset_guid
-                            , issue.category()
-                            , issue.name()
-                            , issue.timestamp() != null ? issue.timestamp() : Instant.now()
-                            , issue.status()
-                            , issue.description()
-                            , issue.notes()
-                            , issue.solved());
+                    // Ensure time is set and asset id is correct
+                    issue = new Issue(issue.issue_id(), existing.asset_guid, issue.category(), issue.name(),
+                            issue.timestamp() != null ? issue.timestamp() : Instant.now(), issue.status(),
+                            issue.description(), issue.notes(), issue.solved());
                     if (issue.issue_id() != null) {
                         issue_ids.add(issue.issue_id());
                         issueRepository.updateIssue(issue);
@@ -886,7 +909,7 @@ public class AssetService {
                         issueRepository.insert_issue(issue);
                     }
                 }
-                //remove remaining
+                // remove remaining
                 for (int i : existing_issues.keySet()) {
                     if (!issue_ids.contains(i)) {
                         issueRepository.deleteIssue(i);
@@ -899,19 +922,19 @@ public class AssetService {
             return h;
         });
 
-
-
-        if(existing.push_to_specify) {
-            // The specimen on the assetSpecimen is optional, make sure it is included when we sync specify.
+        if (existing.push_to_specify) {
+            // The specimen on the assetSpecimen is optional, make sure it is included when
+            // we sync specify.
             existing.asset_specimen = specimenService.findAssetSpecimens(existing.asset_guid);
             this.assetSyncService.checkAndSync(existing);
         }
 
-        //TODO fix queries
-//        statisticsDataServiceV2.refreshCachedData();
+        // TODO fix queries
+        // statisticsDataServiceV2.refreshCachedData();
 
         logger.info("Adding Digitiser to Cache if absent in Update Asset Method");
-//        digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
+        // digitiserCache.putDigitiserInCacheIfAbsent(new
+        // Digitiser(updatedAsset.digitiser, updatedAsset.digitiser));
 
         return existing;
     }
@@ -919,13 +942,15 @@ public class AssetService {
     public void setIds(Asset asset) {
         Integer pipelineId = null;
         if (asset.pipeline != null) {
-            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService.findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
+            Optional<Pipeline> pipelineByInstitutionAndName = pipelineService
+                    .findPipelineByInstitutionAndName(asset.pipeline, asset.institution);
             if (pipelineByInstitutionAndName.isPresent()) {
                 pipelineId = pipelineByInstitutionAndName.get().pipeline_id();
             }
         }
         asset.updating_pipeline_id = pipelineId;
-        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection, asset.institution);
+        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection,
+                asset.institution);
         collectionInternal.ifPresent(collection -> asset.collection_id = collection.collection_id());
 
     }
@@ -939,25 +964,27 @@ public class AssetService {
         asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
         asset.error_message = null;
         asset.error_timestamp = null;
-        Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(), asset.institution);
-
+        Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(),
+                asset.institution);
 
         jdbi.withHandle(h -> {
             AssetRepository assetRepository = h.attach(AssetRepository.class);
             EventRepository eventRepository = h.attach(EventRepository.class);
             assetRepository.updateAssetStatus(asset);
-            this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET, assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
+            this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
+                    assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
             return h;
         });
 
-        //WP5a
-//        statisticsDataServiceV2.refreshCachedData();
+        // WP5a
+        // statisticsDataServiceV2.refreshCachedData();
 
-
-//        if (assetUpdateRequest.digitiser() != null && !assetUpdateRequest.digitiser().isEmpty()) {
-//            logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
-//            digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
-//        }
+        // if (assetUpdateRequest.digitiser() != null &&
+        // !assetUpdateRequest.digitiser().isEmpty()) {
+        // logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+        // digitiserCache.putDigitiserInCacheIfAbsent(new
+        // Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+        // }
         return true;
     }
 
@@ -972,14 +999,16 @@ public class AssetService {
         Asset asset = optAsset.get();
         rightsValidationService.checkReadRightsThrowing(user, asset);
         // Asset cannot have work in progress when auditing
-        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
+        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status)
+                || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
         if (Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
         Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null);
-        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id,
+                null);
 
         logger.info("Adding Digitiser to Cache if absent in Audit Asset Method");
         digitiserCache.putDigitiserInCacheIfAbsent(new Digitiser(user.dassco_user_id, audit.user()));
@@ -987,8 +1016,69 @@ public class AssetService {
         return true;
     }
 
+    public Map<String, String> bulkAuditAssets(User user, Audit audit, List<String> assetGuids) {
+        if (Strings.isNullOrEmpty(audit.user())) {
+            throw new IllegalArgumentException("Audit must have a user!");
+        }
+        if (assetGuids == null || assetGuids.isEmpty()) {
+            throw new IllegalArgumentException("Asset list cannot be empty!");
+        }
+
+        Map<String, String> results = new HashMap<>();
+        List<Asset> assetsToAudit = new ArrayList<>();
+
+        // Validate all assets first
+        for (String assetGuid : assetGuids) {
+            try {
+                Optional<Asset> optAsset = getAsset(assetGuid);
+                if (optAsset.isEmpty()) {
+                    results.put(assetGuid, "Asset does not exist");
+                    continue;
+                }
+                Asset asset = optAsset.get();
+
+                try {
+                    rightsValidationService.checkReadRightsThrowing(user, asset);
+                } catch (Exception e) {
+                    results.put(assetGuid, "No access rights");
+                    continue;
+                }
+
+                if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+                    results.put(assetGuid, "Asset must be complete before auditing");
+                    continue;
+                }
+
+                if (Objects.equals(asset.digitiser, audit.user())) {
+                    results.put(assetGuid, "Cannot audit asset digitized by the same user");
+                    continue;
+                }
+
+                assetsToAudit.add(asset);
+            } catch (Exception e) {
+                results.put(assetGuid, "Error: " + e.getMessage());
+            }
+        }
+
+        // Audit valid assets
+        EventRepository eventRepository = jdbi.onDemand(EventRepository.class);
+        for (Asset asset : assetsToAudit) {
+            try {
+                eventRepository.insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id, null);
+                results.put(asset.asset_guid, "Success");
+            } catch (Exception e) {
+                results.put(asset.asset_guid, "Error creating audit event: " + e.getMessage());
+            }
+        }
+
+        logger.info("Bulk audit completed: {} assets audited out of {} requested",
+                assetsToAudit.size(), assetGuids.size());
+
+        return results;
+    }
+
     public List<Event> getEvents(String assetGuid, User user) {
-        //TODO find a way to check rights witout loading entire asset
+        // TODO find a way to check rights witout loading entire asset
         Optional<Asset> assetOpt = this.getAsset(assetGuid);
         if (assetOpt.isEmpty()) {
             throw new IllegalArgumentException("Asset doesnt exist");
@@ -998,8 +1088,8 @@ public class AssetService {
         return jdbi.onDemand(EventRepository.class).getAssetEvents(assetGuid);
     }
 
-
-    // The upload of files to file proxy is completed. The asset is now awaiting ERDA synchronization.
+    // The upload of files to file proxy is completed. The asset is now awaiting
+    // ERDA synchronization.
     public boolean completeUpload(AssetUpdateRequest assetSmbRequest, User user) {
         if (assetSmbRequest.minimalAsset() == null) {
             throw new IllegalArgumentException("Asset cannot be null");
@@ -1027,8 +1117,10 @@ public class AssetService {
         return true;
     }
 
-    private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
-    private static final Set<InternalStatus> errorStatuses = Set.of(InternalStatus.ERDA_FAILED, InternalStatus.SPECIFY_SYNC_FAILED);
+    private static final Set<InternalStatus> permitted_statuses = Set.of(InternalStatus.ERDA_FAILED,
+            InternalStatus.SPECIFY_SYNC_FAILED, InternalStatus.ASSET_RECEIVED);
+    private static final Set<InternalStatus> errorStatuses = Set.of(InternalStatus.ERDA_FAILED,
+            InternalStatus.SPECIFY_SYNC_FAILED);
 
     public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
         InternalStatus assetStatus = null;
@@ -1071,7 +1163,6 @@ public class AssetService {
                 .DELETE()
                 .build();
 
-
         try (HttpClient httpClient = createHttpClient();) {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200 || response.statusCode() == 404) {
@@ -1106,10 +1197,13 @@ public class AssetService {
             throw new IllegalArgumentException("Asset is already deleted");
         }
 
-        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET, user.dassco_user_id, null);
-        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA, user.dassco_user_id, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET,
+                user.dassco_user_id, null);
+        jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.DELETE_ASSET_METADATA,
+                user.dassco_user_id, null);
 
-        Optional<AssetSpecimen> specimenWithSpecifyId = asset.asset_specimen.stream().filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
+        Optional<AssetSpecimen> specimenWithSpecifyId = asset.asset_specimen.stream()
+                .filter(specimen -> specimen.specify_collection_object_attachment_id != null).findAny();
         if (specimenWithSpecifyId.isPresent()) {
             assetSyncService.syncAsset(asset.asset_guid);
         }

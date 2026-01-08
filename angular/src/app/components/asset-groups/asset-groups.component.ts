@@ -33,10 +33,11 @@ export class AssetGroupsComponent {
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
-  displayedColumnsExpanded = [...this.displayedColumns, 'expand'];
+  displayedColumnsExpanded = [...this.displayedColumns, 'row_actions'];
   groupSelection = new SelectionModel<AssetGroup>(true, []);
   editing = false;
   downloadingCompleteAssets = false;
+  auditing = false;
   digitiserFormControl = new FormControl<string[] | null>(null);
 
   username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
@@ -79,12 +80,66 @@ export class AssetGroupsComponent {
     this.groupSelection.select(...this.dataSource.data.filter((group) => group.isCreator));
   }
 
+  expandElement(element: AssetGroup) {
+    if (this.expandedElement !== element) {
+      this.expandedElement = element;
+      this.editing = false;
+      this.downloadingCompleteAssets = false;
+      this.auditing = false;
+    }
+  }
+
+  toggleRowExpansion(element: AssetGroup) {
+    this.expandedElement = this.expandedElement === element ? undefined : element;
+    this.editing = false;
+    this.downloadingCompleteAssets = false;
+    this.auditing = false;
+  }
+
   editGroup() {
     this.editing = !this.editing;
   }
 
   downloadCompleteAssets() {
     this.downloadingCompleteAssets = !this.downloadingCompleteAssets;
+  }
+
+  toggleAuditing() {
+    this.auditing = !this.auditing;
+  }
+
+  auditSelectedAssets(assets: MatListOption[]) {
+    const selectedAssets: string[] = assets.map((option) => option.value);
+    if (selectedAssets.length === 0) return;
+
+    this.username$.subscribe((username) => {
+      this.assetGroupService.bulkAuditAssets(selectedAssets, username).subscribe({
+        next: (results) => {
+          if (results) {
+            const successCount = Object.values(results).filter((v) => v === 'Success').length;
+            const failCount = selectedAssets.length - successCount;
+            if (failCount > 0) {
+              const errors = Object.entries(results)
+                .filter(([_, v]) => v !== 'Success')
+                .map(([k, v]) => `${k}: ${v}`);
+              console.warn('Some assets failed to audit: \n', errors.join('\n'));
+              this.openSnackBar(
+                results,
+                `${successCount} asset${
+                  successCount > 1 ? 's' : ''
+                } audited, ${failCount} failed. \n \n Check the console for more details`
+              );
+            } else {
+              this.openSnackBar(results, `${successCount} asset(s) audited successfully`);
+            }
+          }
+        },
+        error: (error) => {
+          this.openSnackBar(undefined, 'Error auditing assets');
+          console.error('Bulk audit error:', error);
+        }
+      });
+    });
   }
 
   removeMatListOptionAssets(assets: MatListOption[], group: AssetGroup) {
