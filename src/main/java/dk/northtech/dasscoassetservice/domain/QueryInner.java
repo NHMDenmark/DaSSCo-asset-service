@@ -64,21 +64,23 @@ public class QueryInner {
             return Map.of(sql, Map.of());
         }
 
-        if (operator.equalsIgnoreCase("equal")
-                && ((!table.equals("event"))
-                        || !dataType.name().equals("BOOLEAN"))) {
-
-            operator = "=";
+        if (operator.equalsIgnoreCase("equal")) {
+            boolean isBoolean = dataType.name().equals("BOOLEAN");
             String preparedParam = "%s_%s".formatted(column, index);
 
-            String sql = eventFilter.replace(
-                    "#BASE#",
-                    "%s %s :%s".formatted(column, operator, preparedParam));
+            Object paramValue;
+            String sqlClause;
 
-            Object paramValue = dataType.name().equals("BOOLEAN")
-                    ? Boolean.parseBoolean(value)
-                    : value;
+            if (isBoolean) {
+                paramValue = Boolean.valueOf(value);
+                sqlClause = "%s = :%s".formatted(column, preparedParam);
+            } else {
+                paramValue = escapeLike(value);
+                // Using ILIKE with ESCAPE for exact case-insensitive match
+                sqlClause = "%s ILIKE :%s ESCAPE '\\'".formatted(column, preparedParam);
+            }
 
+            String sql = eventFilter.replace("#BASE#", sqlClause);
             return Map.of(sql, Map.of(preparedParam, paramValue));
         }
 
