@@ -359,7 +359,8 @@ public class QueriesService {
                         collection.institution_name as institution,
                         collection_name as collection,
                         file_formats,
-                        creation_event.timestamp as created_date
+                        creation_event.timestamp as created_date,
+                        date_asset_taken
                     from asset
                     #LeftJoins# #where# #collectionAccess# #limit#
                 """

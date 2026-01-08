@@ -1,6 +1,6 @@
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {Asset} from '../types/types';
+import {Asset, QueryResultAsset} from '../types/types';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {catchError, EMPTY, map, Observable, shareReplay, switchMap} from 'rxjs';
 import {FileProxy} from '../utility';
@@ -14,8 +14,8 @@ export class AssetService {
   private readonly http = inject(HttpClient);
   private readonly oidcService = inject(OidcSecurityService);
 
-  getAssetThumbnail(asset: Asset): Observable<string> {
-    const cacheKey = `${asset.institution}/${asset.collection}/${asset.asset_guid}/${(asset.events?.length ?? 0)}`;
+  getAssetThumbnail(asset: QueryResultAsset): Observable<string> {
+    const cacheKey = `${asset.institution}/${asset.collection}/${asset.asset_guid}/${asset.events?.length ?? 0}`;
     if (this.thumbnailCache.has(cacheKey)) {
       const cachedThumbnail = this.thumbnailCache.get(cacheKey);
       if (cachedThumbnail) {

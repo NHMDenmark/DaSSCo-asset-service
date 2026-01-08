@@ -7,30 +7,30 @@ import java.time.Instant;
 import java.util.List;
 
 public record QueryResultAsset(
-        @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
-        String asset_guid,
-        @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution")
-        String institution,
-        @Schema(description = "The collection name within the institution that holds the specimen", example = "test-collection")
-        String collection,
-        /*@Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
-        List<Specimen> specimens,*/
-        @Schema(description = "The format of the asset", example = "[\"JPEG\"]")
-        List<String> file_formats,
-        @Schema(description = "Date and time the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z")
-        Instant created_date,
-        @Schema(description = "List of the events associated with an asset")
-        @Nullable
-        List<Event> events,
-        @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid")
-        @Nullable
-        List<AssetSpecimen> asset_specimen
-) {
+                @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657") String asset_guid,
+                @Schema(description = "The name of the institution which owns and digitised the specimen", example = "test-institution") String institution,
+                @Schema(description = "The collection name within the institution that holds the specimen", example = "test-collection") String collection,
+                /*
+                 * @Schema(description =
+                 * "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid"
+                 * )
+                 * List<Specimen> specimens,
+                 */
+                @Schema(description = "The format of the asset", example = "[\"JPEG\"]") List<String> file_formats,
+                @Schema(description = "Date and time the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z") Instant created_date,
+                @Schema(description = "Date and time the asset was taken", example = "2023-05-24T00:00:00.000Z") Instant date_asset_taken,
+                @Schema(description = "List of the events associated with an asset") @Nullable List<Event> events,
+                @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid") @Nullable List<AssetSpecimen> asset_specimen) {
 
         public QueryResultAsset withEvents(List<Event> events) {
-                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, asset_specimen);
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date,
+                                date_asset_taken, events,
+                                asset_specimen);
         }
+
         public QueryResultAsset withSpecimen(List<AssetSpecimen> asset_specimen) {
-                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date, events, asset_specimen);
+                return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date,
+                                date_asset_taken, events,
+                                asset_specimen);
         }
 }

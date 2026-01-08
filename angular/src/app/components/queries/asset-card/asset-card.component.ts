@@ -1,7 +1,7 @@
 import {Component, EventEmitter, inject, Input, Output} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {AssetService} from 'src/app/services/asset.service';
-import {Asset, AssetSpecimen, Specimen} from 'src/app/types/types';
+import {AssetSpecimen, QueryResultAsset, Specimen} from 'src/app/types/types';
 @Component({
   selector: 'dassco-asset-card',
   host: {
@@ -11,14 +11,14 @@ import {Asset, AssetSpecimen, Specimen} from 'src/app/types/types';
   styleUrls: ['./asset-card.component.scss']
 })
 export class AssetCardComponent {
-  @Input() set asset(asset: Asset) {
+  @Input() set asset(asset: QueryResultAsset) {
     this.currentAsset.next(asset);
   }
   @Input() checked = false;
-  @Output() toggle = new EventEmitter<Asset>();
-  @Output() onClick = new EventEmitter<Asset>();
+  @Output() toggle = new EventEmitter<QueryResultAsset>();
+  @Output() onClick = new EventEmitter<QueryResultAsset>();
   assetService = inject(AssetService);
-  currentAsset = new BehaviorSubject<Asset | undefined>(undefined);
+  currentAsset = new BehaviorSubject<QueryResultAsset | undefined>(undefined);
   asset$ = this.currentAsset.asObservable();
 
   assetSpecimenToSpecimen(assetSpecimen: AssetSpecimen[]): Specimen[] {

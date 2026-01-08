@@ -137,8 +137,8 @@
         </ng-container>
 
         <ng-container matColumnDef="created_date">
-          <mat-header-cell *matHeaderCellDef mat-sort-header>Created Date</mat-header-cell>
-          <mat-cell *matCellDef="let element">{{ element.created_date | date : 'dd/MM-yyyy HH:mm' }}</mat-cell>
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Date Asset Taken</mat-header-cell>
+          <mat-cell *matCellDef="let element">{{ element.date_asset_taken | date : 'dd/MM-yyyy HH:mm' }}</mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="events">

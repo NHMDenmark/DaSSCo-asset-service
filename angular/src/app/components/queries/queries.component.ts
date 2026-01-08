@@ -11,7 +11,7 @@ import {SaveSearchDialogComponent} from '../dialogs/save-search-dialog/save-sear
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatPaginator} from '@angular/material/paginator';
 import {CacheService} from '../../services/cache.service';
-import {Asset, AssetGroup, AssetSpecimen, DasscoError, Specimen} from '../../types/types';
+import {AssetGroup, AssetSpecimen, DasscoError, QueryResultAsset, Specimen} from '../../types/types';
 import {MatSort, Sort} from '@angular/material/sort';
 import {SelectionModel} from '@angular/cdk/collections';
 import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-group-dialog.component';
@@ -59,8 +59,8 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
     'created_date',
     'events'
   ];
-  selection = new SelectionModel<Asset>(true, []);
-  dataSource = new MatTableDataSource<Asset>();
+  selection = new SelectionModel<QueryResultAsset>(true, []);
+  dataSource = new MatTableDataSource<QueryResultAsset>();
   limit = 200;
   queries: Map<string, QueryView[]> = new Map();
   nodes: Map<string, string[]> = new Map();
@@ -240,7 +240,7 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.assetCount = undefined;
     this.cacheService.clearQueryCache();
     this.newSelect(undefined);
-    this.queryToOtherPages.setDataSource(new MatTableDataSource<Asset>());
+    this.queryToOtherPages.setDataSource(new MatTableDataSource<QueryResultAsset>());
   }
 
   saveSearch() {
@@ -574,7 +574,7 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  trackByGuuid(_index: number, asset: Asset) {
+  trackByGuuid(_index: number, asset: QueryResultAsset) {
     return asset.asset_guid;
   }
   ngOnDestroy(): void {

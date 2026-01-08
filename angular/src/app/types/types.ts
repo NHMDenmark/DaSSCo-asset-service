@@ -18,6 +18,17 @@ export interface Issue {
   notes?: string;
   solved?: boolean;
 }
+
+export interface QueryResultAsset {
+  asset_guid: string | undefined;
+  institution: string | undefined;
+  collection: string | undefined;
+  file_formats: FileFormat[] | undefined;
+  created_date: string | undefined;
+  date_asset_taken: string | undefined;
+  events: Event[] | undefined;
+  asset_specimen: AssetSpecimen[] | undefined;
+}
 export interface Asset {
   asset_pid: string | undefined;
   asset_guid: string | undefined;

@@ -70,7 +70,7 @@
           <mat-icon style="font-size: 0.875rem; width: 0.875rem; height: 0.875rem; margin-right: 0.25rem">
             calendar_today
           </mat-icon>
-          {{ asset.created_date?.toString() | date : 'dd/MM-yyyy HH:mm' }}
+          {{ asset.date_asset_taken?.toString() | date : 'dd/MM-yyyy HH:mm' }}
         </span>
         <div *ngIf="asset.events as events; else noEvents">
           <button type="button" (click)="$event.stopPropagation()" mat-stroked-button [matMenuTriggerFor]="menu">

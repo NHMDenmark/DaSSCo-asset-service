@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {MatTableDataSource} from '@angular/material/table';
-import {Asset} from '../types/types';
+import {Asset, QueryResultAsset} from '../types/types';
 
 @Injectable({
   providedIn: 'root'
@@ -8,13 +8,13 @@ import {Asset} from '../types/types';
 export class QueryToOtherPages {
   private assets: string[] = [];
   private fullAsset: Asset[] = [];
-  private dataSource: MatTableDataSource<Asset> = new MatTableDataSource<Asset>();
+  private dataSource: MatTableDataSource<QueryResultAsset> = new MatTableDataSource<QueryResultAsset>();
 
   setAssets(assets: string[]): void {
     this.assets = assets;
   }
 
-  setDataSource(dataSource: MatTableDataSource<Asset>) {
+  setDataSource(dataSource: MatTableDataSource<QueryResultAsset>) {
     this.dataSource = dataSource;
   }
 
@@ -26,7 +26,7 @@ export class QueryToOtherPages {
     return this.assets;
   }
 
-  getDataSource(): MatTableDataSource<Asset> {
+  getDataSource(): MatTableDataSource<QueryResultAsset> {
     return this.dataSource;
   }
 
