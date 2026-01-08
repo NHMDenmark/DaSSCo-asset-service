@@ -29,6 +29,26 @@
           <mat-error *ngIf="timeFrameForm.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
           <mat-error *ngIf="timeFrameForm.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error>
         </mat-form-field>
+        <button mat-icon-button [matMenuTriggerFor]="presetMenu" matTooltip="Date presets" [matTooltipPosition]="'above'">
+          <mat-icon>schedule</mat-icon>
+        </button>
+        <mat-menu #presetMenu="matMenu">
+          <button mat-menu-item (click)="setDatePreset('2weeks')">
+            <span>Last 2 weeks</span>
+          </button>
+          <button mat-menu-item (click)="setDatePreset('1month')">
+            <span>Last month</span>
+          </button>
+          <button mat-menu-item (click)="setDatePreset('3months')">
+            <span>Last 3 months</span>
+          </button>
+          <button mat-menu-item (click)="setDatePreset('6months')">
+            <span>Last 6 months</span>
+          </button>
+          <button mat-menu-item (click)="setDatePreset('1year')">
+            <span>Last year</span>
+          </button>
+        </mat-menu>
       </div>
 
       <div class="time-frame-select">

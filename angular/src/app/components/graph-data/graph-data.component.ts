@@ -322,6 +322,40 @@ export class GraphDataComponent implements AfterViewInit, OnDestroy {
     if (clearView) this.viewForm.setValue(this.viewForm.value, {emitEvent: true});
   }
 
+  setDatePreset(preset: string) {
+    const today = moment();
+    let startDate: moment.Moment;
+
+    switch (preset) {
+      case '2weeks':
+        startDate = moment().subtract(2, 'weeks');
+        break;
+      case '1month':
+        startDate = moment().subtract(1, 'month');
+        break;
+      case '3months':
+        startDate = moment().subtract(3, 'months');
+        break;
+      case '6months':
+        startDate = moment().subtract(6, 'months');
+        break;
+      case '1year':
+        startDate = moment().subtract(1, 'year');
+        break;
+      default:
+        return;
+    }
+
+    // Set view to CUSTOM first
+    this.viewForm.setValue(ViewV2.CUSTOM, {emitEvent: false});
+    
+    // Set the date range in the form
+    this.timeFrameForm.patchValue({
+      start: startDate,
+      end: today
+    }, {emitEvent: true});
+  }
+
   refreshGraph() {
     this.specimenGraphService.refreshGraph()
       .pipe(
