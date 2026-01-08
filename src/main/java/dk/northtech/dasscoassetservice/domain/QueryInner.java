@@ -64,6 +64,34 @@ public class QueryInner {
             return Map.of(sql, Map.of());
         }
 
+        // Handle legal search across all 3 legality fields: copyright, license, credit
+        if (column.equalsIgnoreCase("copyright") || column.equalsIgnoreCase("legal")) {
+            String preparedParam = "copyright_" + index;
+
+            if (operator.equalsIgnoreCase("empty")) {
+                String sql = "(legality.copyright IS NULL AND legality.license IS NULL AND legality.credit IS NULL)";
+                return Map.of(sql, Map.of());
+            }
+
+            String paramValue;
+            if (operator.equalsIgnoreCase("equal")) {
+                paramValue = value;
+            } else if (operator.equalsIgnoreCase("starts with")) {
+                paramValue = value + "%";
+            } else if (operator.equalsIgnoreCase("ends with")) {
+                paramValue = "%" + value;
+            } else if (operator.equalsIgnoreCase("contains")) {
+                paramValue = "%" + value + "%";
+            } else {
+                paramValue = value;
+            }
+
+            String sql = "(legality.copyright ILIKE :" + preparedParam +
+                    " OR legality.license ILIKE :" + preparedParam +
+                    " OR legality.credit ILIKE :" + preparedParam + ")";
+            return Map.of(sql, Map.of(preparedParam, paramValue));
+        }
+
         if (operator.equalsIgnoreCase("equal")) {
             boolean isBoolean = dataType.name().equals("BOOLEAN");
             String preparedParam = "%s_%s".formatted(column, index);

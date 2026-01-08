@@ -371,7 +371,6 @@ public class QueriesService {
                                         : " and collection_name in (%s)".formatted(collectionsAccess.stream()
                                                 .map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))))
                 .replace("#limit#", limit > 0 ? "limit :limit" : "");
-
         return readonlyJdbi.withHandle(h -> {
             var query = h.createQuery(sql).bindMap(paramMap);
             if (limit > 0) {
