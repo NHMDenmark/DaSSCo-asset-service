@@ -28,6 +28,7 @@ public enum QueryItemField {
     DATE_METADATA_UPDATED_ARS("date_metadata_updated_ars", "date_metadata_updated_ars", "event"),
     DATE_PUSHED_TO_SPECIFY("date_pushed_to_specify", "date_pushed_to_specify", "event"),
     DIGITISER("digitiser", "asset_digitiser.username", "asset_digitiser"),
+    EXTERNAL_PUBLISHER("external publisher", "asset_publisher.publisher", "publisher"),
     FILE_FORMAT("file_format", "file_formats", "asset"),
     FUNDING("funding", "funding", "funding"),
     INSTITUTION("institution", "institution_name", "collection"),
@@ -53,7 +54,6 @@ public enum QueryItemField {
     STATUS("status", "status", "asset"),
     SUBJECT("subject", "subject", "asset"),
     UPDATE_USER("update_user", "update_user", ""), // TODO should this be deleted?
-    V2_FEATURE_EXTERNAL_PUBLISHER("External publisher", "publisher", "publisher"),
     WORKSTATION("workstation", "workstation_name", "workstation");
 
     private final String displayName;

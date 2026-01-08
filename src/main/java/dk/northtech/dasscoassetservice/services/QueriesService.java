@@ -155,6 +155,8 @@ public class QueriesService {
                         QueryItemField.DATE_ASSET_TAKEN.getTableName()),
                 new QueryProperty(QueryItemField.DATE_METADATA_INGESTED.getDisplayName(), "Instant",
                         QueryItemField.DATE_METADATA_INGESTED.getTableName()),
+                        new QueryProperty(QueryItemField.EXTERNAL_PUBLISHER.getDisplayName(), "String",
+                        QueryItemField.EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.DIGITISER.getDisplayName(), "digitiser",
                         QueryItemField.DIGITISER.getTableName()),
                 new QueryProperty(QueryItemField.FILE_FORMAT.getDisplayName(), "String",
@@ -202,11 +204,8 @@ public class QueriesService {
                         QueryItemField.SUBJECT.getTableName()),
                 // new QueryProperty(QueryItemField.UPDATE_USER.getDisplayName(), "String",
                 // QueryItemField.UPDATE_USER.getTableName()),
-                new QueryProperty(QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getDisplayName(), "String",
-                        QueryItemField.V2_FEATURE_EXTERNAL_PUBLISHER.getTableName()),
                 new QueryProperty(QueryItemField.WORKSTATION.getDisplayName(), "workstation",
                         QueryItemField.WORKSTATION.getTableName())
-
         )));
         //
         queryItems.add(new QueryItem("event", List.of(
