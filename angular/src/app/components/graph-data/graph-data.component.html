@@ -1,22 +1,24 @@
 <div class="container">
-  <div *ngIf="(statsWeek$ | async) as graphDataV2" class="data-container">
+  <div *ngIf="statsWeek$ | async as graphDataV2" class="data-container">
     <div class="chart-container">
       <dassco-chart [setChartDataV2]="graphDataV2" [setStatValue]="statValue" [setTitle]="title"></dassco-chart>
     </div>
     <div class="config">
       <div class="datepicker">
-        <button mat-icon-button (click)="clearCustomTimeFrame(true)"
-                #tooltip="matTooltip"
-                matTooltip="Clear time frame"
-                [matTooltipPosition]="'above'"
-                matTooltipHideDelay="5000">
+        <button
+          mat-icon-button
+          (click)="clearCustomTimeFrame(true)"
+          #tooltip="matTooltip"
+          matTooltip="Clear time frame"
+          [matTooltipPosition]="'above'"
+          matTooltipHideDelay="5000">
           <mat-icon>event_busy</mat-icon>
         </button>
         <mat-form-field appearance="outline">
           <mat-label>Enter custom date range</mat-label>
           <mat-date-range-input [formGroup]="timeFrameForm" [rangePicker]="picker">
-            <input matStartDate formControlName="start" placeholder="Start date">
-            <input matEndDate formControlName="end" placeholder="End date">
+            <input matStartDate formControlName="start" placeholder="Start date" />
+            <input matEndDate formControlName="end" placeholder="End date" />
           </mat-date-range-input>
           <mat-hint>DD-MM-YYYY – DD-MM-YYYY</mat-hint>
           <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -29,26 +31,6 @@
           <mat-error *ngIf="timeFrameForm.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
           <mat-error *ngIf="timeFrameForm.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error>
         </mat-form-field>
-        <button mat-icon-button [matMenuTriggerFor]="presetMenu" matTooltip="Date presets" [matTooltipPosition]="'above'">
-          <mat-icon>schedule</mat-icon>
-        </button>
-        <mat-menu #presetMenu="matMenu">
-          <button mat-menu-item (click)="setDatePreset('2weeks')">
-            <span>Last 2 weeks</span>
-          </button>
-          <button mat-menu-item (click)="setDatePreset('1month')">
-            <span>Last month</span>
-          </button>
-          <button mat-menu-item (click)="setDatePreset('3months')">
-            <span>Last 3 months</span>
-          </button>
-          <button mat-menu-item (click)="setDatePreset('6months')">
-            <span>Last 6 months</span>
-          </button>
-          <button mat-menu-item (click)="setDatePreset('1year')">
-            <span>Last year</span>
-          </button>
-        </mat-menu>
       </div>
 
       <div class="time-frame-select">
@@ -63,6 +45,7 @@
               <mat-option [value]="'year'">Total</mat-option>
               <mat-option [value]="'exponential'">Total + fluctuation</mat-option>
             </mat-optgroup>
+            <mat-option *ngIf="viewForm.value === 'custom'" [value]="'custom'">Custom date range</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -74,7 +57,6 @@
           <mat-button-toggle [value]="'workstation'">Workstation</mat-button-toggle>
         </mat-button-toggle-group>
       </div>
-
 
       <div class="refresh-btn">
         <button mat-button (click)="refreshGraph()">Reset cache</button>
