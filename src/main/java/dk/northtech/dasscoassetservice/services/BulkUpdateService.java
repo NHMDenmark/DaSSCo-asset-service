@@ -235,6 +235,35 @@ public class BulkUpdateService {
         return groupedList;
     }
 
+    public List<Map<String, Object>> getGroupedRoleRestrictions(List<String> assetGuids, SecurityContext securityContext) {
+        User user = this.userService.from(securityContext);
+        List<Asset> assets = this.assetService.getAssets(assetGuids);
+        assets.forEach(asset -> {
+            this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+        });
+
+        List<Map<String, Object>> restrictions = jdbi.withHandle(h ->
+                h.createQuery("""
+                        SELECT role,
+                               COUNT(DISTINCT asset_guid) as asset_count,
+                               ARRAY_AGG(DISTINCT asset_guid) as asset_guids
+                          FROM asset_role_restriction
+                         WHERE asset_guid IN (<assetGuids>)
+                         GROUP BY role
+                         ORDER BY role
+                        """)
+                        .bindList("assetGuids", assetGuids)
+                        .map((rs, ctx) -> Map.<String, Object>of(
+                                "role", rs.getString("role"),
+                                "assetGuids", Arrays.asList((String[]) rs.getArray("asset_guids").getArray()),
+                                "count", rs.getInt("asset_count")
+                        ))
+                        .list()
+        );
+
+        return restrictions;
+    }
+
     public UUID processBulkUpdate(BulkUpdatePayload payload, SecurityContext securityContext) {
         UUID bulkUpdateUuid = UUID.randomUUID();
         User user = userService.from(securityContext);
@@ -256,15 +285,19 @@ public class BulkUpdateService {
             if (payload.fundingIds() != null && !payload.fundingIds().isEmpty()) {
                 handleFundingAssignments(handle, payload.assetGuids(), payload.fundingIds(), bulkUpdateUuid);
             }
-            if (payload.roleRestrictions() != null && !payload.roleRestrictions().isEmpty()) {
+            if (payload.roleRestrictions() != null) {
                 handleRoleRestrictions(handle, payload.assetGuids(), payload.roleRestrictions(), bulkUpdateUuid);
             }
+
+            // Create bulk update events BEFORE audit events
+            // This ensures that when Asset.mapEvents() processes events chronologically,
+            // the AUDIT_ASSET event comes after BULK_UPDATE_ASSET_METADATA and isn't negated
+            createBulkUpdateEvents(handle, payload.assetGuids(), user, bulkUpdateUuid);
+
             if (payload.fields() != null
                     && Boolean.TRUE.equals(payload.fields().get("audited"))) {
                 auditAssets(user, new Audit(user.username), assets, handle, bulkUpdateUuid);
             }
-
-            createBulkUpdateEvents(handle, payload.assetGuids(), user, bulkUpdateUuid);
         });
 
 
@@ -273,40 +306,59 @@ public class BulkUpdateService {
 
     private void handleRoleRestrictions(Handle handle,
                                         List<String> assetGuids,
-                                        List<String> roleRestrictions,
+                                        RoleRestrictionPatchBlock roleRestrictions,
                                         UUID bulkUpdateUuid) {
 
-        if (roleRestrictions == null || roleRestrictions.isEmpty()) {
+        if (roleRestrictions == null) {
             logger.debug("No role restrictions provided for bulk update {}", bulkUpdateUuid);
             return;
         }
 
-        logger.info("Bulk update {}: linking {} role restrictions to {} assets",
-                bulkUpdateUuid, roleRestrictions.size(), assetGuids.size());
+        // ---------- ADD ----------
+        if (roleRestrictions.add() != null && !roleRestrictions.add().isEmpty()) {
+            logger.info("Bulk update {}: adding {} role restrictions to {} assets",
+                    bulkUpdateUuid, roleRestrictions.add().size(), assetGuids.size());
 
-        String sql = """
-        INSERT INTO asset_role_restriction (role, asset_guid)
-        SELECT :role, :assetGuid
-        WHERE NOT EXISTS (
-            SELECT 1 FROM asset_role_restriction
-             WHERE role = :role
-               AND asset_guid = :assetGuid
-        )
-        """;
+            String insertSql = """
+                INSERT INTO asset_role_restriction (role, asset_guid)
+                SELECT :role, :assetGuid
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM asset_role_restriction
+                     WHERE role = :role
+                       AND asset_guid = :assetGuid
+                )
+                """;
 
-        var batch = handle.prepareBatch(sql);
-        for (String assetGuid : assetGuids) {
-            for (String role : roleRestrictions) {
-                batch.bind("assetGuid", assetGuid)
-                        .bind("role", role)
-                        .add();
+            var insertBatch = handle.prepareBatch(insertSql);
+            for (String assetGuid : assetGuids) {
+                for (String role : roleRestrictions.add()) {
+                    insertBatch.bind("assetGuid", assetGuid)
+                            .bind("role", role)
+                            .add();
+                }
             }
+
+            insertBatch.execute();
+            logger.info("Bulk update {}: role restriction associations inserted or already existed",
+                    bulkUpdateUuid);
         }
 
-        batch.execute();
+        // ---------- DELETE ----------
+        if (roleRestrictions.delete() != null && !roleRestrictions.delete().isEmpty()) {
+            logger.info("Bulk update {}: deleting {} role restrictions from {} assets",
+                    bulkUpdateUuid, roleRestrictions.delete().size(), assetGuids.size());
 
-        logger.info("Bulk update {}: role restriction associations inserted or already existed",
-                bulkUpdateUuid);
+            handle.createUpdate("""
+                    DELETE FROM asset_role_restriction
+                    WHERE role IN (<roles>)
+                      AND asset_guid IN (<assetGuids>)
+                    """)
+                    .bindList("roles", roleRestrictions.delete())
+                    .bindList("assetGuids", assetGuids)
+                    .execute();
+
+            logger.info("Bulk update {}: role restrictions deleted", bulkUpdateUuid);
+        }
     }
 
     private void createBulkUpdateEvents(Handle handle,

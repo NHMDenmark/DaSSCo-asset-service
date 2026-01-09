@@ -102,6 +102,17 @@ public class BulkUpdateAssetApi {
         return Response.ok(grouped).build();
     }
 
+    @POST
+    @Path("/role-restrictions/grouped")
+    @Operation(summary = "Get grouped role restrictions for selected assets",
+            description = "Returns unique role restrictions aggregated across multiple assets.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupedRoleRestrictions(List<String> assetGuids, @Context SecurityContext securityContext) {
+        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedRoleRestrictions(assetGuids, securityContext);
+        return Response.ok(grouped).build();
+    }
+
 
     @PATCH
     @Path("/")

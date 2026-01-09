@@ -44,7 +44,7 @@ export interface BulkUpdatePayload {
   funding?: number[];
   issues?: IssuePatchBlock;
   legality?: Partial<Legality>;
-  roleRestrictions?: string[];
+  roleRestrictions?: RoleRestrictionPatchBlock;
   digitisers?: DigitiserPatchBlock;
 }
 
@@ -69,6 +69,17 @@ export interface IssuePatchBlock {
 export interface DigitiserPatchBlock {
   add?: Array<{dasscoUserId: number; assetGuids: string[]}>;
   delete?: number[];
+}
+
+export interface RoleRestrictionPatchBlock {
+  add?: string[];
+  delete?: string[];
+}
+
+export interface GroupedRoleRestriction {
+  role: string;
+  assetGuids: string[];
+  count: number;
 }
 
 @Injectable({
@@ -131,6 +142,20 @@ export class BulkUpdateService {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError(this.handleError<GroupedDigitiser[]>('getGroupedDigitisers')))
+      )
+    );
+  }
+
+  getGroupedRoleRestrictions(assetGuids: string[]) {
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token: string) =>
+        this.http
+          .post<GroupedRoleRestriction[]>(
+            `${this.apiUrl}/api/v1/assets/bulkupdate/role-restrictions/grouped`,
+            assetGuids,
+            {headers: {'Authorization': 'Bearer ' + token}}
+          )
+          .pipe(catchError(this.handleError<GroupedRoleRestriction[]>('getGroupedRoleRestrictions')))
       )
     );
   }

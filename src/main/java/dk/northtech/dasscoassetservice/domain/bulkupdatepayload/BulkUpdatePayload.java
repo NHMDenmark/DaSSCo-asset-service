@@ -13,5 +13,5 @@ public record BulkUpdatePayload(
         DigitiserPatchBlock digitisers,
         Optional<Legality> legality,
         List<Integer> fundingIds,
-        List<String> roleRestrictions
+        RoleRestrictionPatchBlock roleRestrictions
 ) {}

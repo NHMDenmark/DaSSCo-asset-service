@@ -6,9 +6,11 @@ import {
   BulkUpdateService,
   GroupedIssue,
   GroupedDigitiser,
+  GroupedRoleRestriction,
   BulkUpdatePayload,
   IssuePatchBlock,
-  DigitiserPatchBlock
+  DigitiserPatchBlock,
+  RoleRestrictionPatchBlock
 } from 'src/app/services/bulk-update.service';
 import {BehaviorSubject, catchError, combineLatest, filter, map, of, startWith, take} from 'rxjs';
 
@@ -92,13 +94,20 @@ export class BulkUpdateComponent {
     startWith(null),
     catchError(() => of(null))
   );
+  groupedRoleRestrictions$ = this.bulkUpdateService.getGroupedRoleRestrictions(this.assetGuids).pipe(
+    startWith(null),
+    catchError(() => of(null))
+  );
 
-  isLoadingGroupedData$ = combineLatest([this.groupedIssues$, this.groupedDigitisers$]).pipe(
-    map(([issues, digitisers]) => issues === null || digitisers === null)
+  isLoadingGroupedData$ = combineLatest([this.groupedIssues$, this.groupedDigitisers$, this.groupedRoleRestrictions$]).pipe(
+    map(([issues, digitisers, roleRestrictions]) => issues === null || digitisers === null || roleRestrictions === null)
   );
 
   deletedIssueIds: number[] = [];
   deletedDigitiserIds: number[] = [];
+  deletedRoles: string[] = [];
+  addedRoles: string[] = [];
+  originalRoles: string[] = [];
 
   constructor() {
     if (!this.data.assets) {
@@ -125,6 +134,14 @@ export class BulkUpdateComponent {
           this.patchDigitiser(digitiser);
         });
       });
+    this.groupedRoleRestrictions$
+      .pipe(
+        filter((restrictions): restrictions is GroupedRoleRestriction[] => restrictions !== null),
+        take(1)
+      )
+      .subscribe((restrictions) => {
+        this.originalRoles = restrictions.map((r) => r.role);
+      });
   }
 
   cancel() {
@@ -133,7 +150,6 @@ export class BulkUpdateComponent {
 
   save() {
     const fundingValue = this.bulkUpdateForm.controls.funding.value;
-    const roleRestrictionsValue = this.bulkUpdateForm.controls.roleRestrictions.value;
     const payload: BulkUpdatePayload = {
       assetGuids: this.data.assets.map((a) => a.asset_guid as string),
       fields: this.fields.dirty ? this.filterNullValues(this.fields.value) : undefined,
@@ -141,10 +157,7 @@ export class BulkUpdateComponent {
         fundingValue && fundingValue.length > 0 && this.bulkUpdateForm.controls.funding.dirty
           ? fundingValue
           : undefined,
-      roleRestrictions:
-        roleRestrictionsValue && roleRestrictionsValue.length > 0 && this.bulkUpdateForm.controls.roleRestrictions.dirty
-          ? roleRestrictionsValue
-          : undefined,
+      roleRestrictions: this.buildRoleRestrictionsBlock(),
       issues: this.issues.dirty || this.deletedIssueIds.length > 0 ? this.buildIssuesBlock() : undefined,
       digitisers:
         this.digitisers.dirty || this.deletedDigitiserIds.length > 0 || this.hasNewDigitisers()
@@ -305,8 +318,9 @@ export class BulkUpdateComponent {
     const hasNewIssues =
       this.issues.length > 0 &&
       (this.issues.value as IssueFormValue[]).some((issue) => !issue.issueIds || issue.issueIds.length === 0);
+    const hasRoleChanges = this.addedRoles.length > 0 || this.deletedRoles.length > 0;
 
-    return hasFormChanges || hasDeletedIssues || hasDeletedDigitisers || hasNewDigitisers || hasNewIssues;
+    return hasFormChanges || hasDeletedIssues || hasDeletedDigitisers || hasNewDigitisers || hasNewIssues || hasRoleChanges;
   }
 
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
@@ -335,6 +349,45 @@ export class BulkUpdateComponent {
       ...(add.length > 0 && {add}),
       ...(deleteIds && {delete: deleteIds})
     };
+  }
+
+  private buildRoleRestrictionsBlock(): RoleRestrictionPatchBlock | undefined {
+    const add = this.addedRoles.length > 0 ? this.addedRoles : undefined;
+    const deleteRoles = this.deletedRoles.length > 0 ? this.deletedRoles : undefined;
+
+    if (!add && !deleteRoles) {
+      return undefined;
+    }
+
+    return {
+      ...(add && {add}),
+      ...(deleteRoles && {delete: deleteRoles})
+    };
+  }
+
+  addRole(role: string) {
+    if (!this.addedRoles.includes(role) && !this.originalRoles.includes(role)) {
+      this.addedRoles = [...this.addedRoles, role];
+    }
+  }
+
+  deleteRole(role: string) {
+    // If it's a newly added role, just remove from addedRoles
+    if (this.addedRoles.includes(role)) {
+      this.addedRoles = this.addedRoles.filter((r) => r !== role);
+    }
+    // If it's an existing role, add to deletedRoles
+    else if (this.originalRoles.includes(role) && !this.deletedRoles.includes(role)) {
+      this.deletedRoles = [...this.deletedRoles, role];
+    }
+  }
+
+  isRoleDeleted(role: string): boolean {
+    return this.deletedRoles.includes(role);
+  }
+
+  undoDeleteRole(role: string) {
+    this.deletedRoles = this.deletedRoles.filter((r) => r !== role);
   }
 
   get fields() {
@@ -378,7 +431,6 @@ export class BulkUpdateComponent {
       payload_type: new FormControl<string | null>(null)
     }),
     funding: new FormControl<number[] | null>(null),
-    roleRestrictions: new FormControl<string[] | null>(null),
     issues: new FormArray<
       FormGroup<{
         category: FormControl<string | null>;

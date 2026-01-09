@@ -116,23 +116,30 @@
           <h2 class="section-title">Access & Restrictions</h2>
 
           <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Role Restrictions</mat-label>
-              <mat-select multiple formControlName="roleRestrictions">
-                <mat-option *ngFor="let role of rolesList$ | async; trackBy: trackBy" [value]="role">
-                  {{ role }}
-                </mat-option>
+            <mat-form-field [formGroup]="fields" appearance="outline">
+              <mat-label>Asset Locked</mat-label>
+              <mat-select formControlName="asset_locked">
+                <mat-option [value]="null">None (Leave unchanged)</mat-option>
+                <mat-option [value]="true">Yes</mat-option>
+                <mat-option [value]="false">No</mat-option>
               </mat-select>
             </mat-form-field>
-            <div [formGroup]="fields" class="checkbox-field">
-              <mat-checkbox formControlName="asset_locked">Asset Locked</mat-checkbox>
-            </div>
-            <div [formGroup]="fields" class="checkbox-field">
-              <mat-checkbox formControlName="audited">Audited</mat-checkbox>
-            </div>
-            <div [formGroup]="fields" class="checkbox-field">
-              <mat-checkbox formControlName="push_to_specify">Push to Specify</mat-checkbox>
-            </div>
+            <mat-form-field [formGroup]="fields" appearance="outline">
+              <mat-label>Audited</mat-label>
+              <mat-select formControlName="audited">
+                <mat-option [value]="null">None (Leave unchanged)</mat-option>
+                <mat-option [value]="true">Yes</mat-option>
+                <mat-option [value]="false">No</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field [formGroup]="fields" appearance="outline">
+              <mat-label>Push to Specify</mat-label>
+              <mat-select formControlName="push_to_specify">
+                <mat-option [value]="null">None (Leave unchanged)</mat-option>
+                <mat-option [value]="true">Yes</mat-option>
+                <mat-option [value]="false">No</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
         </div>
 
@@ -208,6 +215,86 @@
                       [value]="digitiser"
                       [disabled]="digitiser.dasscoUserId !== undefined && isDigitiserAdded(digitiser.dasscoUserId)">
                       {{ digitiser.username }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </mat-expansion-panel>
+          </ng-container>
+        </ng-container>
+
+        <!-- Role Restrictions Section -->
+        <ng-container *ngIf="groupedRoleRestrictions$ | async as groupedRoleRestrictions">
+          <ng-container *ngIf="groupedRoleRestrictions">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <span>Role Restrictions</span>
+                  &nbsp;
+                  <span>({{ originalRoles.length + addedRoles.length - deletedRoles.length }})</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <ng-container *ngIf="originalRoles.length > 0 || addedRoles.length > 0">
+                <div class="items-container">
+                  <!-- Existing role restrictions -->
+                  <div *ngFor="let restriction of groupedRoleRestrictions" class="card" [class.deleted]="isRoleDeleted(restriction.role)">
+                    <div class="card-header">
+                      <div class="card-info">
+                        <h3>{{ restriction.role }}</h3>
+                        <span class="badge" *ngIf="restriction.count">
+                          {{ restriction.count }} assets
+                        </span>
+                        <span class="badge-deleted" *ngIf="isRoleDeleted(restriction.role)">Marked for deletion</span>
+                      </div>
+                      <button
+                        *ngIf="!isRoleDeleted(restriction.role)"
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        (click)="deleteRole(restriction.role)"
+                        matTooltip="Remove role restriction">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                      <button
+                        *ngIf="isRoleDeleted(restriction.role)"
+                        mat-icon-button
+                        type="button"
+                        color="primary"
+                        (click)="undoDeleteRole(restriction.role)"
+                        matTooltip="Undo deletion">
+                        <mat-icon>undo</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Newly added role restrictions -->
+                  <div *ngFor="let role of addedRoles" class="card">
+                    <div class="card-header">
+                      <div class="card-info">
+                        <h3>{{ role }}</h3>
+                        <span class="badge-new">New</span>
+                      </div>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        (click)="deleteRole(role)"
+                        matTooltip="Remove role restriction">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <div class="header-actions header-actions-start">
+                <mat-form-field appearance="outline" class="select-field">
+                  <mat-label>Add Role Restriction</mat-label>
+                  <mat-select (selectionChange)="addRole($event.value); $event.source.value = null" [value]="null">
+                    <mat-option
+                      *ngFor="let role of rolesList$ | async; trackBy: trackBy"
+                      [value]="role"
+                      [disabled]="originalRoles.includes(role) || addedRoles.includes(role)">
+                      {{ role }}
                     </mat-option>
                   </mat-select>
                 </mat-form-field>
