@@ -698,6 +698,7 @@ public class QueriesService {
     public boolean checkRights(User user) {
         Set<String> roles = user.roles;
         if (roles.contains(InternalRole.ADMIN.roleName)
+                || roles.contains(InternalRole.USER.roleName)
                 || roles.contains(InternalRole.SERVICE_USER.roleName)
                 || roles.contains(InternalRole.DEVELOPER.roleName)) {
             return true;
