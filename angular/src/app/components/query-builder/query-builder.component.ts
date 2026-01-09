@@ -24,7 +24,7 @@ export class QueryBuilderComponent implements OnInit, OnDestroy {
     [QueryDataType.NUMBER, this.operators_string],
     [QueryDataType.ENUM, ['EQUAL', 'EMPTY']],
     [QueryDataType.DATE, ['AFTER', 'BEFORE', 'BETWEEN']],
-    [QueryDataType.LIST, ['IN']],
+    [QueryDataType.LIST, ['IN', 'EMPTY']],
     [QueryDataType.BOOLEAN, ['EQUAL', 'EMPTY']]
   ]);
 

@@ -160,10 +160,13 @@ public class QueryInner {
         }
 
         if (operator.equalsIgnoreCase("empty")) {
+            String sql;
 
-            operator = "IS NULL";
-
-            String sql = eventFilter.replace("#BASE#", "%s %s".formatted(column, operator));
+            if (column.equals("file_formats")) {
+                sql = eventFilter.replace("#BASE#", "(%s IS NULL OR %s = '{}')".formatted(column, column));
+            } else {
+                sql = eventFilter.replace("#BASE#", "%s IS NULL".formatted(column));
+            }
 
             return Map.of(sql, Map.of());
         }
