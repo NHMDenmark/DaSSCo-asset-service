@@ -1,7 +1,7 @@
 import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
-import {ActivatedRoute, Params} from '@angular/router';
+import {ActivatedRoute, Params, Router} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset, ExternalPublisher, Issue} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
@@ -27,6 +27,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private cdkDialog = inject(Dialog);
+  private router = inject(Router);
   private queryToDetailedViewService = inject(QueryToOtherPages);
   private readonly destroy = new Subject<void>();
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
@@ -167,6 +168,21 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy.next();
     this.destroy.complete();
+  }
+
+  handleAssetNavigation(assetGuid: string) {
+    if (!assetGuid) return;
+    this.thumbnailUrl = undefined;
+    this.assetFiles.next([]);
+    this.assetSubject.next(undefined);
+    this.dataLoaded = false;
+    this.assetGuid.next(assetGuid);
+    this.metadataContainer?.nativeElement?.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    this.assetList.next(this.queryToDetailedViewService.getAssets());
+    this.router.navigate(['/detailed-view', assetGuid]);
   }
 
   downloadCsv() {

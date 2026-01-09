@@ -1,12 +1,12 @@
 <div *ngIf="dataLoaded; else loading">
   <div *ngIf="asset$ | async as asset">
     <div class="asset-thumbnail">
-      <ng-container *ngIf="thumbnailUrl">
+      <ng-container *ngIf="thumbnailUrl; else noThumbnail">
         <img (click)="openAssetThumbnailModal()" [src]="thumbnailUrl" class="zoom-pointer" alt="Thumbnail" />
       </ng-container>
-      <ng-container *ngIf="!thumbnailUrl">
+      <ng-template #noThumbnail>
         <img src="assets/placeholder.png" alt="Placeholder for thumbnail" />
-      </ng-container>
+      </ng-template>
     </div>
 
     <a
@@ -540,7 +540,7 @@
       <button
         *ngIf="previousAsset$ | async as previousAsset"
         [disabled]="!previousAsset"
-        [routerLink]="['/detailed-view', previousAsset]"
+        (click)="handleAssetNavigation(previousAsset)"
         type="button"
         mat-icon-button>
         <mat-icon>arrow_back</mat-icon>
@@ -550,7 +550,7 @@
       <button
         *ngIf="nextAsset$ | async as nextAsset"
         [disabled]="!nextAsset"
-        [routerLink]="['/detailed-view', nextAsset]"
+        (click)="handleAssetNavigation(nextAsset)"
         type="button"
         mat-icon-button>
         <mat-icon>arrow_forward</mat-icon>
