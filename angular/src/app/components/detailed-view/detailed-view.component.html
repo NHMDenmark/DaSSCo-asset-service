@@ -547,6 +547,7 @@
       </button>
       <button (click)="downloadCsv()" color="primary" mat-stroked-button>Download CSV File</button>
       <button (click)="downloadZip()" color="accent" mat-stroked-button>Create and Download Complete Asset</button>
+      <button type="button" (click)="getTicketAndDownloadLargeFile()" mat-stroked-button>Download Large File</button>
       <button
         *ngIf="nextAsset$ | async as nextAsset"
         [disabled]="!nextAsset"

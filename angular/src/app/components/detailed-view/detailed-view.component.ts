@@ -5,7 +5,7 @@ import {ActivatedRoute, Params, Router} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset, ExternalPublisher, Issue} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
-import {BehaviorSubject, combineLatest, EMPTY, filter, map, Subject, switchMap, takeUntil} from 'rxjs';
+import {BehaviorSubject, combineLatest, EMPTY, filter, map, Subject, switchMap, take, takeUntil} from 'rxjs';
 import {DatePipe} from '@angular/common';
 import {WikiPageUrl} from '../../utility';
 import {MatDialog} from '@angular/material/dialog';
@@ -155,6 +155,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
         error: (err: Error) => console.log(err)
       });
   }
+
   ngOnInit(): void {
     this.route.params.pipe(takeUntil(this.destroy)).subscribe((params: Params) => {
       this.assetGuid.next(params['asset_guid']);
@@ -165,6 +166,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
     });
     this.assetList.next(this.queryToDetailedViewService.getAssets());
   }
+
   ngOnDestroy(): void {
     this.destroy.next();
     this.destroy.complete();
@@ -223,6 +225,26 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.openSnackBar(error.error, 'Close');
       }
+    });
+  }
+
+
+  getTicketAndDownloadLargeFile() {
+    const asset = this.assetSubject.getValue();
+    if (!asset) return;
+    this.detailedViewService.getFileTicket(asset).pipe(
+      take(1)
+    ).subscribe((ticket) => {
+      if (!ticket) return;
+      const url = this.detailedViewService.getLargeDownloadUrl(asset, ticket);
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.setAttribute('download', '');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     });
   }
 
@@ -293,12 +315,15 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
       data: this.thumbnailUrl
     });
   }
+
   trackBy(_index: number, value: string) {
     return value;
   }
+
   trackByPublicationId(_index: number, value: ExternalPublisher) {
     return value.publication_id;
   }
+
   trackByIssueId(_index: number, issue: Issue) {
     return issue.issue_id;
   }
