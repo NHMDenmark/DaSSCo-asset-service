@@ -1,7 +1,7 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {filter, map, startWith, take} from 'rxjs';
+import {filter, map, startWith, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -14,8 +14,11 @@ import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
 import {combineLatest} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
+import {
+  IllegalAssetGroupDialogComponent
+} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {DetailedViewService} from '../../services/detailed-view.service';
+import {QueryToOtherPages} from "../../services/query-to-other-pages.service";
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -30,6 +33,14 @@ import {DetailedViewService} from '../../services/detailed-view.service';
   ]
 })
 export class AssetGroupsComponent {
+  private readonly queryToOtherPagesService = inject(QueryToOtherPages);
+  private readonly assetGroupService = inject(AssetGroupService);
+  private readonly cacheService = inject(CacheService);
+  private readonly router = inject(Router);
+  readonly dialog = inject(MatDialog);
+  private _snackBar = inject(MatSnackBar);
+  private readonly authService = inject(AuthService);
+  private readonly detailedViewService = inject(DetailedViewService);
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
@@ -54,16 +65,6 @@ export class AssetGroupsComponent {
       return (this.dataSource.data = groups);
     })
   );
-
-  constructor(
-    private assetGroupService: AssetGroupService,
-    private cacheService: CacheService,
-    private router: Router,
-    public dialog: MatDialog,
-    private _snackBar: MatSnackBar,
-    private authService: AuthService,
-    private detailedViewService: DetailedViewService
-  ) {}
 
   isAllSelected() {
     const numSelected = this.groupSelection.selected.length;
@@ -112,33 +113,32 @@ export class AssetGroupsComponent {
     const selectedAssets: string[] = assets.map((option) => option.value);
     if (selectedAssets.length === 0) return;
 
-    this.username$.subscribe((username) => {
-      this.assetGroupService.bulkAuditAssets(selectedAssets, username).subscribe({
-        next: (results) => {
-          if (results) {
-            const successCount = Object.values(results).filter((v) => v === 'Success').length;
-            const failCount = selectedAssets.length - successCount;
-            if (failCount > 0) {
-              const errors = Object.entries(results)
-                .filter(([_, v]) => v !== 'Success')
-                .map(([k, v]) => `${k}: ${v}`);
-              console.warn('Some assets failed to audit: \n', errors.join('\n'));
-              this.openSnackBar(
-                results,
-                `${successCount} asset${
-                  successCount > 1 ? 's' : ''
-                } audited, ${failCount} failed. \n \n Check the console for more details`
-              );
-            } else {
-              this.openSnackBar(results, `${successCount} asset(s) audited successfully`);
-            }
+    this.username$.pipe(
+      switchMap((username) => this.assetGroupService.bulkAuditAssets(selectedAssets, username))).subscribe({
+      next: (results) => {
+        if (results) {
+          const successCount = Object.values(results).filter((v) => v === 'Success').length;
+          const failCount = selectedAssets.length - successCount;
+          if (failCount > 0) {
+            const errors = Object.entries(results)
+              .filter(([_, v]) => v !== 'Success')
+              .map(([k, v]) => `${k}: ${v}`);
+            console.warn('Some assets failed to audit: \n', errors.join('\n'));
+            this.openSnackBar(
+              results,
+              `${successCount} asset${
+                successCount > 1 ? 's' : ''
+              } audited, ${failCount} failed. \n \n Check the console for more details`
+            );
+          } else {
+            this.openSnackBar(results, `${successCount} asset(s) audited successfully`);
           }
-        },
-        error: (error) => {
-          this.openSnackBar(undefined, 'Error auditing assets');
-          console.error('Bulk audit error:', error);
         }
-      });
+      },
+      error: (error) => {
+        this.openSnackBar(undefined, 'Error auditing assets');
+        console.error('Bulk audit error:', error);
+      }
     });
   }
 
@@ -148,7 +148,6 @@ export class AssetGroupsComponent {
   }
 
   removeAssets(assets: string[], group: AssetGroup) {
-    // const selectedAssets: string[] = assets.map(option => option.value);
     this.assetGroupService.updateGroupRemoveAssets(group.group_name, assets).subscribe((updatedGroup) => {
       if (updatedGroup) {
         this.updateDataSourceGroup(group, updatedGroup, false);
@@ -176,7 +175,8 @@ export class AssetGroupsComponent {
               window.URL.revokeObjectURL(url);
 
               this.detailedViewService.deleteFile(guid).subscribe({
-                next: () => {},
+                next: () => {
+                },
                 error: () => {
                   this.openSnackBar(
                     "There's been an error deleting the CSV file",
@@ -223,7 +223,8 @@ export class AssetGroupsComponent {
                     window.URL.revokeObjectURL(url);
 
                     this.detailedViewService.deleteFile(guid).subscribe({
-                      next: () => {},
+                      next: () => {
+                      },
                       error: () => {
                         this.openSnackBar('There has been an error deleting the files', 'Close');
                       }
@@ -299,6 +300,10 @@ export class AssetGroupsComponent {
   }
 
   goToAsset(assetGuid: string) {
+    const currentExpandedGroup = this.expandedElement;
+    if (currentExpandedGroup?.assets) {
+      this.queryToOtherPagesService.setAssets(currentExpandedGroup?.assets ?? []);
+    }
     this.router.navigate(['/detailed-view/' + assetGuid]);
   }
 
