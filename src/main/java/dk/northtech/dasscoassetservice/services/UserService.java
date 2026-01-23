@@ -1,6 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.KeycloakUser;
 import dk.northtech.dasscoassetservice.domain.Pipeline;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
@@ -16,6 +17,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -88,6 +90,10 @@ public class UserService {
         return user;
     }
 
+
+    public List<User> persistKeycloakUsers(List<KeycloakUser> keycloakUsers) {
+        return this.jdbi.onDemand(UserRepository.class).insertKeycloakUsers(keycloakUsers);
+    }
     public User persistUser(User user) {
         if(Strings.isNullOrEmpty(user.username)) {
             throw new IllegalArgumentException("Username cannot be null");
@@ -125,6 +131,17 @@ public class UserService {
         return jdbi.onDemand(UserRepository.class).getDigitiserList(asset_guid);
     }
 
+
+    public Optional<User> getUserByKeycloakId(String keycloakId) {
+        return this.jdbi.withHandle(h ->  {
+            UserRepository userRepository = h.attach(UserRepository.class);
+            var user =  userRepository.getUserByKeycloakId(keycloakId);
+            if (user == null) {
+                return Optional.empty();
+            }
+            return Optional.of(user);
+        });
+    }
     public Optional<User> getUserIfExists(String username) {
         if(!this.initialised) {
             initUsers();

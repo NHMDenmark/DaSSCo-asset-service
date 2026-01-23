@@ -1,5 +1,6 @@
 package dk.northtech.dasscoassetservice.repositories;
 
+import dk.northtech.dasscoassetservice.domain.KeycloakUser;
 import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.repositories.helpers.DBConstants;
 import org.apache.age.jdbc.base.Agtype;
@@ -9,6 +10,7 @@ import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.customizer.BindFields;
 import org.jdbi.v3.sqlobject.customizer.BindMethods;
 import org.jdbi.v3.sqlobject.statement.GetGeneratedKeys;
+import org.jdbi.v3.sqlobject.statement.SqlBatch;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
@@ -64,5 +66,14 @@ public interface UserRepository extends SqlObject {
     default boolean userHasAccessToAsset(String user, String assetGuid){
         throw new UnsupportedOperationException("Not implemented");
     }
+
+    @GetGeneratedKeys
+    @SqlBatch("""
+    INSERT INTO dassco_user(username, keycloak_id)
+    VALUES (:username, :id)
+    ON CONFLICT (keycloak_id) DO UPDATE SET username = EXCLUDED.username
+    RETURNING *
+    """)
+    List<User> insertKeycloakUsers(@BindMethods List<KeycloakUser> keycloakUsers);
 
 }

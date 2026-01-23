@@ -204,17 +204,27 @@
                   </mat-selection-list>
 
                   <!-- Add digitisers form -->
-                  <div *ngIf="editing && (cachedDigitisers$ | async) as digitisers" class="add-digitiser-form">
+                  <div *ngIf="editing" >
+                    <div class="add-digitiser-form">
+                    <p style="font-weight: 600; font-size: 18px; margin-bottom: 4px;">Give user access.</p>
+                      <p style="font-size: 14px; color: #333333; margin-top: 0">
+                        Dropdown shows max 100 entries. Use search to find a specific user.
+                      </p>
+                    <mat-form-field appearance="outline" style="max-width: 256px" class="digitiser-search">
+                      <mat-label>Search</mat-label>
+                      <input matInput  type="text" [formControl]="search" />
+                    </mat-form-field>
                     <mat-form-field appearance="outline" class="digitiser-select">
-                      <mat-label>Add users</mat-label>
+                      <mat-label>Users</mat-label>
                       <mat-select [multiple]="true" [formControl]="digitiserFormControl">
-                        <ng-container *ngFor="let digitiser of digitisers | keyvalue">
-                          <mat-option *ngIf="!element.hasAccess.includes(digitiser.key)" [value]="digitiser.key">
-                            {{ digitiser.key }}
+                        <ng-container *ngFor="let keycloakUser of keycloakUsers$ | async">
+                          <mat-option *ngIf="!element.hasAccess.includes(keycloakUser.username)" [value]="keycloakUser">
+                            {{ keycloakUser.username }}
                           </mat-option>
                         </ng-container>
                       </mat-select>
                     </mat-form-field>
+                    </div>
                   </div>
 
                   <div *ngIf="element.hasAccess.length === 0" class="empty-state">No users have access</div>

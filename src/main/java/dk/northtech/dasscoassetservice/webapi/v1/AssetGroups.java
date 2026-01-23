@@ -1,9 +1,8 @@
 package dk.northtech.dasscoassetservice.webapi.v1;
 
-import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.AssetGroup;
-import dk.northtech.dasscoassetservice.domain.SecurityRoles;
+import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.services.AssetGroupService;
+import dk.northtech.dasscoassetservice.services.KeycloakService;
 import dk.northtech.dasscoassetservice.services.UserService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,13 +36,22 @@ public class AssetGroups {
 
     private final AssetGroupService assetGroupService;
     private final UserService userService;
+    private final KeycloakService keycloakService;
 
     @Inject
-    public AssetGroups(AssetGroupService assetGroupService, UserService userService) {
+    public AssetGroups(AssetGroupService assetGroupService, UserService userService,  KeycloakService keycloakService) {
         this.assetGroupService = assetGroupService;
         this.userService = userService;
+        this.keycloakService = keycloakService;
     }
 
+
+    @GET
+    @Path("keycloak/users")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<KeycloakUser> getUsers(@QueryParam("search") @DefaultValue("") String search) {
+        return this.keycloakService.getKeycloakUsers(search);
+    }
 
 
     @POST
@@ -149,6 +157,17 @@ public class AssetGroups {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public AssetGroup grantAccessToAssetGroup(@PathParam("groupName") String groupName, List<String> users, @Context SecurityContext securityContext) {
         return this.assetGroupService.grantAccessToAssetGroup(groupName, users, userService.from(securityContext));
+    }
+    @PUT
+    @Path("keycloak/grantAccess/{groupName}")
+    @Operation(summary = "Grant Access to Asset Group", description = "Gives access to other users to the Asset Group. Users have to have permission to see the assets in the Asset Group")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = AssetGroup.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public AssetGroup grantKeycloakUserAccessToAssetGroup(@PathParam("groupName") String groupName, List<KeycloakUser> keycloakUsers, @Context SecurityContext securityContext) {
+        return this.assetGroupService.grantKeycloakUserAccessToAssetGroup(groupName, keycloakUsers, userService.from(securityContext));
     }
 
     @PUT

@@ -1,13 +1,12 @@
 import {Component, inject} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {filter, map, startWith, switchMap, take} from 'rxjs';
+import {debounceTime, filter, map, startWith, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {SelectionModel} from '@angular/cdk/collections';
 import {MatListOption} from '@angular/material/list';
-import {CacheService} from '../../services/cache.service';
 import {FormControl} from '@angular/forms';
 import {AuthService} from '../../services/auth.service';
 import {MatDialog} from '@angular/material/dialog';
@@ -18,7 +17,8 @@ import {
   IllegalAssetGroupDialogComponent
 } from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {DetailedViewService} from '../../services/detailed-view.service';
-import {QueryToOtherPages} from "../../services/query-to-other-pages.service";
+import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
+import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -35,7 +35,6 @@ import {QueryToOtherPages} from "../../services/query-to-other-pages.service";
 export class AssetGroupsComponent {
   private readonly queryToOtherPagesService = inject(QueryToOtherPages);
   private readonly assetGroupService = inject(AssetGroupService);
-  private readonly cacheService = inject(CacheService);
   private readonly router = inject(Router);
   readonly dialog = inject(MatDialog);
   private _snackBar = inject(MatSnackBar);
@@ -49,10 +48,19 @@ export class AssetGroupsComponent {
   editing = false;
   downloadingCompleteAssets = false;
   auditing = false;
-  digitiserFormControl = new FormControl<string[] | null>(null);
+  digitiserFormControl = new FormControl<KeycloakUserFrontend[] | null>(null);
 
   username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
-  cachedDigitisers$ = this.cacheService.cachedDigitisers$;
+  search = new FormControl<string>('', {
+    nonNullable: true
+  });
+
+
+  keycloakUsers$ = this.search.valueChanges.pipe(
+    debounceTime(150),
+    startWith(''),
+    switchMap((search) => this.assetGroupService.getKeyCloakUsers(search))
+  );
 
   assetGroups$ = combineLatest([
     this.assetGroupService.assetGroups$.pipe(startWith([]), filter(isNotUndefined)),
@@ -159,7 +167,7 @@ export class AssetGroupsComponent {
     const selectedAssets: string[] = assets.map((option) => option.value);
     this.detailedViewService.postCsv(selectedAssets).subscribe({
       next: (response) => {
-        let guid: string = response.body;
+        const guid: string = response.body;
         if (response.status == 200) {
           this.detailedViewService.getFile(guid, 'assets.csv').subscribe({
             next: (data) => {
@@ -205,7 +213,7 @@ export class AssetGroupsComponent {
     this.detailedViewService.postCsv(selectedAssets).subscribe({
       next: (response) => {
         if (response.status == 200) {
-          let guid: string = response.body;
+          const guid: string = response.body;
           this.detailedViewService.postZip(guid, selectedAssets).subscribe({
             next: (response) => {
               if (response.status == 200) {
@@ -261,6 +269,8 @@ export class AssetGroupsComponent {
     const selectedUsers = this.digitiserFormControl.value;
     if (selectedUsers) {
       this.assetGroupService.grantAccess(group.group_name, selectedUsers).subscribe((response) => {
+
+        this.digitiserFormControl.reset(null);
         if ((response as DasscoError).errorCode) {
           const error = response as DasscoError;
           if (error.body) {
@@ -291,12 +301,10 @@ export class AssetGroupsComponent {
     if (remove) {
       this.dataSource.data.splice(i, 1);
       this.dataSource._updateChangeSubscription();
-    } else {
-      if (newGroup) {
+    } else if (newGroup) {
         this.dataSource.data[i].assets = newGroup.assets;
         this.dataSource.data[i].hasAccess = newGroup.hasAccess;
       }
-    }
   }
 
   goToAsset(assetGuid: string) {
@@ -332,4 +340,5 @@ export class AssetGroupsComponent {
       this._snackBar.open('An error occurred. Try again.', 'OK', {duration: 5000});
     }
   }
+
 }
