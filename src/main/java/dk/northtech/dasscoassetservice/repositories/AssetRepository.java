@@ -338,6 +338,7 @@ public interface AssetRepository extends SqlObject {
     default void deleteAsset(String assetGuid) {
         // Deletes Asset and removes connections to Specimens and Events.
         // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
+        String delete_asset_role_restriction = "DELETE FROM asset_role_restriction where asset_guid = :assetGuid";
         String delete_asset_specimen = """
             DELETE FROM asset_specimen 
             WHERE asset_guid = :assetGuid 
@@ -387,6 +388,7 @@ public interface AssetRepository extends SqlObject {
             h.createUpdate(delete_asset_funding).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_funding).execute();
             h.createUpdate(delete_parent_child).bind("parent_guid", assetGuid).bind("child_guid", assetGuid).execute();
+            h.createUpdate(delete_asset_role_restriction).bind("assetGuid", assetGuid).execute();
             h.createUpdate(delete_asset_metadata).bind("assetGuid", assetGuid).execute();
             return h;
         });
