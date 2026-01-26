@@ -278,7 +278,7 @@ public class BulkUpdateService {
         });
 
 
-        jdbi.useHandle(handle -> {
+        jdbi.useTransaction(handle -> {
             patchAssetFields(handle, payload.assetGuids(), payload.fields(), payload.legality(), bulkUpdateUuid);
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
