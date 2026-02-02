@@ -113,10 +113,14 @@
   // Content area with two columns
   .detail-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     min-height: 200px;
     padding: 1rem;
+  }
+
+  .assets-column {
+    grid-column: span 2;
   }
 
   .content-column {
@@ -185,6 +189,7 @@
   // Digitiser list
   .digitiser-list {
     max-height: 200px;
+    padding-top: 0;
     overflow-y: auto;
 
     mat-list-option {
@@ -215,7 +220,9 @@
   .add-digitiser-form {
     padding: 1rem;
     border-top: 1px solid #e0e0e0;
-    background: #fafafa;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+
 
     .digitiser-select {
       width: 100%;
@@ -236,6 +243,10 @@
     .detail-content {
       grid-template-columns: 1fr;
       padding-inline: 0.5rem;
+    }
+
+    .assets-column {
+      grid-column: span 1;
     }
 
     .detail-header {

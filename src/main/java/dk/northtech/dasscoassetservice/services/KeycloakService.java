@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import dk.northtech.dasscoassetservice.assets.KeycloakUserConfig;
+import dk.northtech.dasscoassetservice.domain.KeycloakUser;
+import dk.northtech.dasscoassetservice.domain.UserRepresentation;
 import dk.northtech.dasscoassetservice.utils.CustomKeycloakTokenDeserializer;
 import dk.northtech.dasscoassetservice.utils.KeycloakAuthenticator;
 import dk.northtech.dasscoassetservice.webapi.domain.KeycloakToken;
@@ -12,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 
 @Service
 public class KeycloakService {
@@ -116,7 +120,44 @@ public class KeycloakService {
         }
 
     }
+
     public KeycloakToken getQueueToken(){
         return newAccessToken();
+    }
+
+
+    public List<UserRepresentation> getUsers(String search) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI(this.keycloakUserConfig.keycloakUrl() + "admin/realms/" + this.keycloakUserConfig.realm() + "/users" + (!search.isEmpty() ? "?search=" + search : "")))
+                    .header("Authorization", "Bearer " + this.getUserServiceToken())
+                    .GET()
+                    .build();
+
+            try(HttpClient httpClient = HttpClient.newBuilder().build()) {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                String json = response.body();
+                LOGGER.debug("KeycloakService getUsers response status: {}, body: {}", response.statusCode(), json);
+                
+                if (response.statusCode() != 200) {
+                    throw new RuntimeException("Failed to get users from Keycloak. Status: " + response.statusCode() + ", Response: " + json);
+                }
+                
+                // Check if response is an array (starts with '[') or an error object (starts with '{')
+                if (json != null && json.trim().startsWith("{")) {
+                    throw new RuntimeException("Keycloak returned an error response: " + json);
+                }
+                
+                return objectMapper.readValue(json, new TypeReference<List<UserRepresentation>>() {});
+            }
+        } catch (URISyntaxException | IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<KeycloakUser> getKeycloakUsers(String search) {
+        return getUsers(search).stream()
+                .map(KeycloakUser::fromUserRepresentation)
+                .toList();
     }
 }
