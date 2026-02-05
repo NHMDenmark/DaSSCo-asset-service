@@ -116,6 +116,21 @@ export class DetailedViewService {
       );
   }
 
+  getFileTicket(asset: Asset) {
+    return this.oidcSecurityService.getAccessToken()
+      .pipe(
+        switchMap((token) => this.http.get(`${this.thumbnail}${asset.asset_guid}/ticket`, {
+          headers: {'Authorization': 'Bearer ' + token},
+          responseType: 'text'
+        }).pipe(
+          catchError(this.handleError(`${this.thumbnail}$\{asset.asset_guid}/ticket`, undefined))
+        ))
+      );
+  }
+  getLargeDownloadUrl(asset: Asset, ticket: string) {
+    return `${this.thumbnail}download/${asset.institution}/${asset.collection}/${asset.asset_guid}?ticket=${ticket}`;
+}
+
   private handleError<T>(operation = 'operation', result?: T) {
     return (error: Error): Observable<T> => {
       console.error(error);
