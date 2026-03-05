@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
 import dk.northtech.dasscoassetservice.domain.ARSUpdate;
 import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncAcknowledge;
 import dk.northtech.dasscoassetservice.services.KeycloakService;
 import jakarta.inject.Inject;
 import jakarta.jms.*;
@@ -29,6 +30,7 @@ public class QueueBroadcaster extends AbstractIdleService {
     private KeycloakService keycloakService;
     private AMQPConfig amqpConfig;
     QueueSender sender;
+    QueueSender syncAcknowledgeSender;
     QueueSession session;
     QueueConnection queueConnection;
     private Instant lastRestart;
@@ -64,6 +66,10 @@ public class QueueBroadcaster extends AbstractIdleService {
             queueConnection.start();
             this.session = queueConnection.createQueueSession(false, Session.DUPS_OK_ACKNOWLEDGE);
             Queue queue = session.createQueue(queueName());
+            Queue syncAcknowledge = session.createQueue(amqpConfig.specifyArsSyncAcknowledgeQueueName());
+            LOGGER.info("Creating sender for queue {}", amqpConfig.specifyArsSyncAcknowledgeQueueName());
+            syncAcknowledgeSender = session.createSender(syncAcknowledge);
+            syncAcknowledgeSender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
             sender = session.createSender(queue);
             sender.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
             lastRestart = Instant.now();
@@ -120,6 +126,23 @@ public class QueueBroadcaster extends AbstractIdleService {
         }
     }
 
+    public void sendSpecifyArsAcknowledge(SyncAcknowledge syncAcknowledge) {
+        synchronized (this) {
+            if (lastRestart.plus(58, ChronoUnit.MINUTES).isBefore(Instant.now())) {
+                this.shutDown();
+                this.startUp();
+            }
+        }
+        ObjectWriter ow = new ObjectMapper().registerModule(new JavaTimeModule()).writer().withDefaultPrettyPrinter();
+        try {
+            String json = ow.writeValueAsString(syncAcknowledge);
+            LOGGER.info("Sending asset {}", json);
+            syncAcknowledgeSender.send(textMessage(this.session, json));
+        } catch (JsonProcessingException | JMSException e) {
+            throw new RuntimeException("An error occurred when trying to send the asset(s).", e);
+        }
+    }
+
     private Message textMessage(QueueSession session, String message) {
         try {
             return session.createTextMessage(message);
@@ -134,6 +157,9 @@ public class QueueBroadcaster extends AbstractIdleService {
         try {
             if (this.sender != null) {
                 this.sender.close();
+            }
+            if(this.syncAcknowledgeSender != null) {
+                this.syncAcknowledgeSender.close();
             }
             if (this.queueConnection != null) {
                 this.queueConnection.stop();

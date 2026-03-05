@@ -407,8 +407,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList("JPEG");
         asset.payload_type = "nuclear";
         asset.updateUser = "Basviola";
-        asset.institution = "institution_2";
         asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
         asset.pipeline = "i2_p1";
         asset.collection = "i2_c1";
         asset.camera_setting_control = "Mom get the camera!";
@@ -1019,5 +1019,49 @@ class AssetServiceTest extends AbstractIntegrationTest {
         AssetSpecimen assetSpecimen = new AssetSpecimen(asset.asset_guid, specimen_pid, asset_preparation_type, false);
         asset.asset_specimen.add(assetSpecimen);
         return specimen;
+    }
+
+    @Test
+    void createAssetThenMinimalUpdate() {
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "Very big issue");
+        Asset asset = getTestAsset("createAssetThenMinimalUpdate");
+        asset.updating_pipeline = "i1_p1";
+        asset.complete_digitiser_list = Arrays.asList("Bazviola", "Karl-Børge");
+        asset.pipeline = "i1_p1";
+        asset.workstation = "i1_w1";
+        asset.legality = new Legality("Copy-rite", "loicense", "kredit");
+        asset.tags.put("Tag1", "value1");
+        asset.tags.put("Tag2", "value2");
+        asset.institution = "institution_1";
+        asset.collection = "i1_c1";
+        asset.asset_pid = "pid-createAsset";
+        asset.status = "BEING_PROCESSED";
+        asset.mos_id = "mos-1";
+        asset.funding = Arrays.asList("Hundredetusindvis af dollars", "Jeg er stadig i chok");
+        asset.file_formats = Arrays.asList("JPEG", "TIF");
+        asset.specify_attachment_remarks = "attachment_remarks";
+        asset.specify_attachment_title = "spezzify 'tachment";
+        asset.issues = Arrays.asList(new Issue(asset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        addSpecimen(asset,   "createAssetThenMinimalUpdate-sp-1","spid1","slide");
+        assetService.persistAsset(asset, user, 86);
+
+        Asset minimal = new Asset();
+        minimal.asset_guid = asset.asset_guid;
+        minimal.institution = "institution_1";
+        minimal.pipeline = "i1_p1";
+        minimal.collection = "i1_c1";
+        minimal.workstation = "i1_w1";
+        minimal.status = "BEING_PROCESSED";
+        minimal.tags = null;
+        minimal.complete_digitiser_list = null;
+        assetService.updateAsset(minimal, user);
+        Optional<Asset> asset1 = assetService.getAsset(minimal.asset_guid);
+        Asset result = asset1.orElseThrow(() -> new RuntimeException("a failure of epic proportions"));
+
+        assertThat(result.mos_id).isNull();
+        assertThat(result.tags).isEmpty();
+        assertThat(result.complete_digitiser_list).hasSize(2);
+
+
     }
 }

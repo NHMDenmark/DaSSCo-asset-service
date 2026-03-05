@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AMQPConfig (String host
         , String assetQueueName
         , String acknowledgeQueueName
+        , String specifyArsSyncQueueName
+        , String specifyArsSyncAcknowledgeQueueName
 //        , String clientId
 //        , String clientSecret
 //        , String tenantId

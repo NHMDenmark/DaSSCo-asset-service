@@ -87,6 +87,7 @@ public class Institutions {
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Institution createInstitution(Institution in, @Context SecurityContext securityContext) {
+        System.out.println("halløj");
         userService.from(securityContext);
         return institutionService.createInstitution(in);
     }

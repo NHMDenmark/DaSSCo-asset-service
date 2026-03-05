@@ -63,13 +63,13 @@ public class AssetService {
 
     @Inject
     public AssetService(InstitutionService institutionService, CollectionService collectionService,
-            WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi,
-            StatisticsDataServiceV2 statisticsDataServiceV2, PipelineService pipelineService,
-            RightsValidationService rightsValidationService, DigitiserCache digitiserCache, SubjectCache subjectCache,
-            PayloadTypeCache payloadTypeCache, PreparationTypeCache preparationTypeCache,
-            FileProxyConfiguration fileProxyConfiguration, ExtendableEnumService extendableEnumService,
-            UserService userService, AssetSyncService assetSyncService, FundingService fundingService,
-            AssetChangeService assetChangeService, SpecimenService specimenService, RoleService roleService) {
+                        WorkstationService workstationService, @Lazy FileProxyClient fileProxyClient, Jdbi jdbi,
+                        StatisticsDataServiceV2 statisticsDataServiceV2, PipelineService pipelineService,
+                        RightsValidationService rightsValidationService, DigitiserCache digitiserCache, SubjectCache subjectCache,
+                        PayloadTypeCache payloadTypeCache, PreparationTypeCache preparationTypeCache,
+                        FileProxyConfiguration fileProxyConfiguration, ExtendableEnumService extendableEnumService,
+                        UserService userService, AssetSyncService assetSyncService, FundingService fundingService,
+                        AssetChangeService assetChangeService, SpecimenService specimenService, RoleService roleService) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -192,22 +192,22 @@ public class AssetService {
         return this.jdbi.withHandle(h -> {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             var assets = h.createQuery("""
-                    SELECT
-                        asset.*
-                        , collection.collection_name
-                        , collection.institution_name
-                        , dassco_user.username AS digitiser
-                        , workstation.workstation_name
-                        , copyright
-                        , license
-                        , credit
-                    FROM asset
-                    LEFT JOIN collection USING(collection_id)
-                    LEFT JOIN workstation USING(workstation_id)
-                    LEFT JOIN legality USING(legality_id)
-                    LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-                    WHERE asset_guid in (<asset_guids>)
-                    """)
+                            SELECT
+                                asset.*
+                                , collection.collection_name
+                                , collection.institution_name
+                                , dassco_user.username AS digitiser
+                                , workstation.workstation_name
+                                , copyright
+                                , license
+                                , credit
+                            FROM asset
+                            LEFT JOIN collection USING(collection_id)
+                            LEFT JOIN workstation USING(workstation_id)
+                            LEFT JOIN legality USING(legality_id)
+                            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
+                            WHERE asset_guid in (<asset_guids>)
+                            """)
                     .bindList("asset_guids", assetGuids)
                     .map(new AssetMapper())
                     .list();
@@ -240,7 +240,7 @@ public class AssetService {
                                         change_list == null ? null : Arrays.asList((String[]) change_list.getArray()),
                                         bulk_update_uuid
 
-                    );
+                                );
                                 assetEventsTemp.computeIfAbsent(assetGuid, k -> new ArrayList<>()).add(newEvent);
                             }
                             return assetEventsTemp;
@@ -249,11 +249,11 @@ public class AssetService {
             Map<String, List<AssetSpecimen>> assetSpecimens = specimenService
                     .getMultiAssetSpecimens(new HashSet<>(assetGuids));
             Map<String, List<String>> assetCompleteDigitiserList = h.createQuery("""
-                    SELECT asset_guid, username
-                    FROM digitiser_list
-                    LEFT JOIN dassco_user USING (dassco_user_id)
-                    WHERE asset_guid in (<assetGuids>)
-                    """)
+                            SELECT asset_guid, username
+                            FROM digitiser_list
+                            LEFT JOIN dassco_user USING (dassco_user_id)
+                            WHERE asset_guid in (<assetGuids>)
+                            """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -270,10 +270,10 @@ public class AssetService {
             Map<String, List<Role>> assetRoleRestrictions = roleRepository
                     .getRoleRestrictionsFromListOfString(RestrictedObjectType.ASSET, new HashSet<>(assetGuids));
             Map<String, List<Issue>> assetIssues = h.createQuery("""
-                    SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
-                    FROM issue
-                    WHERE asset_guid in (<assetGuids>)
-                    """)
+                            SELECT issue_id, asset_guid, category, name, timestamp, status, description, notes, solved
+                            FROM issue
+                            WHERE asset_guid in (<assetGuids>)
+                            """)
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -298,11 +298,11 @@ public class AssetService {
                     });
 
             Map<String, List<String>> assetFundings = h.createUpdate("""
-                    SELECT asset_guid, funding_id, funding
-                    FROM asset_funding
-                    INNER JOIN funding USING (funding_id)
-                    WHERE asset_guid in (<assetGuids>)
-                    """).bindList("assetGuids", assetGuids)
+                            SELECT asset_guid, funding_id, funding
+                            FROM asset_funding
+                            INNER JOIN funding USING (funding_id)
+                            WHERE asset_guid in (<assetGuids>)
+                            """).bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
                             Map<String, List<String>> assetFundingsTemp = new HashMap<>();
@@ -331,7 +331,7 @@ public class AssetService {
                     });
 
             Map<String, List<Publication>> assetPublishers = h.createUpdate(
-                    "SELECT asset_guid, description, publisher, asset_publisher_id as publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
+                            "SELECT asset_guid, description, publisher, asset_publisher_id as publisher_id FROM asset_publisher WHERE asset_guid in (<assetGuids>)")
                     .bindList("assetGuids", assetGuids)
                     .execute((statement, ctx) -> {
                         try (ctx; var rs = statement.get().getResultSet()) {
@@ -413,6 +413,10 @@ public class AssetService {
     }
 
     public Asset persistAsset(Asset asset, User user, int allocation) {
+        return persistAsset(asset, user, allocation, true);
+    }
+
+    public Asset persistAsset(Asset asset, User user, int allocation, boolean openShare) {
         // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd
         // HH:mm:ss");
         validateAssetFields(asset);
@@ -535,17 +539,20 @@ public class AssetService {
             // logger.info("#5 Creating the asset took {} ms",
             // Duration.between(createAssetStart, createAssetEnd).toMillis());
             // Open share
-            try {
-                // Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
-                // .observe(() -> {
-                asset.httpInfo = openHttpShare(
-                        new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection),
-                        user, allocation);
-                // });
-            } catch (Exception e) {
-                h.rollback();
-                throw new RuntimeException(e);
+            if (openShare) {
+                try {
+                    // Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
+                    // .observe(() -> {
+                    asset.httpInfo = openHttpShare(
+                            new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection),
+                            user, allocation);
+                    // });
+                } catch (Exception e) {
+                    h.rollback();
+                    throw new RuntimeException(e);
+                }
             }
+
             LocalDateTime httpInfoEnd = LocalDateTime.now();
             logger.info("#4 HTTPInfo creation took {} ms in total.",
                     Duration.between(httpInfoStart, httpInfoEnd).toMillis());
@@ -715,9 +722,9 @@ public class AssetService {
                 .filter(s -> !updatedSpecimenPIDs.contains(s.specimen_pid)).toList();
         updatedAsset.external_publishers = updatedAsset.external_publishers == null ? new ArrayList<>()
                 : updatedAsset.external_publishers.stream()
-                        .map(publication -> new Publication(publication.publication_id(), existing.asset_guid,
-                                publication.description(), publication.name()))
-                        .toList();
+                .map(publication -> new Publication(publication.publication_id(), existing.asset_guid,
+                        publication.description(), publication.name()))
+                .toList();
         existing.collection_id = updatedAsset.collection_id;
         // existing.specimens = updatedAsset.specimens;
         existing.tags = updatedAsset.tags;

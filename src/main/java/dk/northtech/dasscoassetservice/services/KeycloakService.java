@@ -118,7 +118,6 @@ public class KeycloakService {
         } catch (URISyntaxException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public KeycloakToken getQueueToken(){

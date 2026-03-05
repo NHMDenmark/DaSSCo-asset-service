@@ -35,6 +35,7 @@ public interface EnumRepository extends SqlObject {
                         .execute();
                 return handle;
             });
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

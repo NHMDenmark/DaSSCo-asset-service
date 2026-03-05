@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ServiceManager;
 import dk.northtech.dasscoassetservice.amqp.AcknowledgeQueueListener;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
-import dk.northtech.dasscoassetservice.amqp.AssetQueueListener;
+import dk.northtech.dasscoassetservice.amqp.SpecifyUpdateQueueListener;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -22,10 +22,10 @@ public class Services {
     private final AcknowledgeQueueListener acknowledgeQueueListener;
 //    private final AssetQueueListener assetQueueListener;
 
-    public Services(QueueBroadcaster queueBroadcaster, AcknowledgeQueueListener acknowledgeQueueListener) {
+    public Services(QueueBroadcaster queueBroadcaster, AcknowledgeQueueListener acknowledgeQueueListener, SpecifyUpdateQueueListener specifyUpdateQueueListener) {
         this.acknowledgeQueueListener = acknowledgeQueueListener;
 //        this.assetQueueListener = assetQueueListener;
-        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, acknowledgeQueueListener));
+        this.serviceManager = new ServiceManager(ImmutableList.of(queueBroadcaster, acknowledgeQueueListener,  specifyUpdateQueueListener));
     }
 
     @PostConstruct
