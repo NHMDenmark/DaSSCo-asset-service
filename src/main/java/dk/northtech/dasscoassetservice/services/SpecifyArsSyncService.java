@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class SpecifyArsSyncService {
@@ -21,14 +22,18 @@ public class SpecifyArsSyncService {
     private final SpecimenService specimenService;
     private final PipelineService pipelineService;
     private final QueueBroadcaster queueBroadcaster;
+    private final WorkstationService workstationService;
+    private final ExtendableEnumService extendableEnumService;
 
     @Inject
-    public SpecifyArsSyncService(AssetService assetService, UserService userService, SpecimenService specimenService, PipelineService pipelineService, QueueBroadcaster queueBroadcaster) {
+    public SpecifyArsSyncService(AssetService assetService, UserService userService, SpecimenService specimenService, PipelineService pipelineService, QueueBroadcaster queueBroadcaster, WorkstationService workstationService, ExtendableEnumService extendableEnumService) {
         this.assetService = assetService;
         this.userService = userService;
         this.specimenService = specimenService;
+        this.extendableEnumService = extendableEnumService;
         this.pipelineService = pipelineService;
         this.queueBroadcaster = queueBroadcaster;
+        this.workstationService = workstationService;
     }
 
     public void handleSpecifyUpdate(SpecifyArsSyncMessage specifyArsSyncMessage) {
@@ -42,18 +47,29 @@ public class SpecifyArsSyncService {
                 mapAsset(existing, specifyArsSyncMessage);
             } else {
                 specifyAsset.pipeline = specifyAsset.pipeline == null ? "unknown" : specifyAsset.pipeline;
+                specifyAsset.workstation = specifyAsset.workstation == null ? "unknown" : specifyAsset.workstation;
                 log.info("pipeline is {}", specifyAsset.pipeline);
                 log.info("institution is {}", specifyAsset.institution);
                 if (pipelineService.findPipelineByInstitutionAndName(specifyAsset.pipeline, specifyAsset.institution).isEmpty()) {
                     pipelineService.persistPipeline(new Pipeline("unknown", specifyAsset.institution), specifyAsset.institution);
                 }
+                if(workstationService.findWorkstation(specifyAsset.workstation, specifyAsset.institution).isEmpty()) {
+                    workstationService.createWorkStation(specifyAsset.institution, new Workstation(specifyAsset.workstation, WorkstationStatus.IN_SERVICE, specifyAsset.institution));
+                }
                 for (AssetSpecimen specimen : specifyArsSyncMessage.asset.asset_specimen) {
                     specimenService.putSpecimen(specimen.specimen, user);
+                }
+                Set<String> fileFormats = extendableEnumService.getFileFormats();
+                for (String fileFormat : specifyArsSyncMessage.asset.file_formats) {
+                    if(!fileFormats.contains(fileFormat)) {
+                        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.FILE_FORMAT, fileFormat);
+                    }
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
                 queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.STARTED, specifyArsSyncMessage.specifySyncLogId, null));
             }
         } catch (Exception e1) {
+            log.error(e1.getMessage(), e1);
             queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, e1.getMessage()));
         }
 

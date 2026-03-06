@@ -434,6 +434,7 @@ public class AssetService {
             throw new IllegalArgumentException("Allocation cannot be 0");
         }
 
+
         asset.updateUser = user.username;
         for (AssetSpecimen assetSpecimen : asset.asset_specimen) {
             Optional<Specimen> specimen = specimenService.findSpecimen(assetSpecimen.specimen_pid);
@@ -547,35 +548,37 @@ public class AssetService {
                             new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection),
                             user, allocation);
                     // });
+                    LocalDateTime httpInfoEnd = LocalDateTime.now();
+                    logger.info("#4 HTTPInfo creation took {} ms in total.",
+                            Duration.between(httpInfoStart, httpInfoEnd).toMillis());
+
+                    if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
+
+                        // LocalDateTime refreshCachedDataStart = LocalDateTime.now();
+                        // //TEZT
+                        // Observation.createNotStarted("persist:refresh-statistics-cache",
+                        // observationRegistry)
+                        // .observe(statisticsDataServiceV2::refreshCachedData);
+                        // LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
+                        // logger.info("#6 Refreshing the cached data took {} ms",
+                        // Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
+
+                        // this.statisticsDataService.addAssetToCache(asset);
+                        refreshCaches(asset);
+                    } else {
+                        // Do not persist asset if share wasnt created
+                        h.rollback();
+                        assetsGettingCreated.invalidate(asset.asset_guid);
+                        return asset;
+                    }
                 } catch (Exception e) {
                     h.rollback();
                     throw new RuntimeException(e);
                 }
-            }
-
-            LocalDateTime httpInfoEnd = LocalDateTime.now();
-            logger.info("#4 HTTPInfo creation took {} ms in total.",
-                    Duration.between(httpInfoStart, httpInfoEnd).toMillis());
-
-            if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
-
-                // LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-                // //TEZT
-                // Observation.createNotStarted("persist:refresh-statistics-cache",
-                // observationRegistry)
-                // .observe(statisticsDataServiceV2::refreshCachedData);
-                // LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
-                // logger.info("#6 Refreshing the cached data took {} ms",
-                // Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
-
-                // this.statisticsDataService.addAssetToCache(asset);
-                refreshCaches(asset);
             } else {
-                // Do not persist asset if share wasnt created
-                h.rollback();
-                assetsGettingCreated.invalidate(asset.asset_guid);
-                return asset;
+                refreshCaches(asset);
             }
+
             // you are here
             return asset;
         });
