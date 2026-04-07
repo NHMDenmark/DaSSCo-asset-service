@@ -2,6 +2,7 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
+import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,9 @@ import java.util.*;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verify;
 
 class AssetServiceTest extends AbstractIntegrationTest {
 
@@ -443,7 +447,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result, user);
         result.payload_type = "nuclear";
         assetService.updateAsset(result, user);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob", null, null), user);
+        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null), user);
         assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid, user);
         resultEvents.forEach(x -> System.out.println(x));
@@ -721,7 +725,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testCompleteAssetAssetDoesntExist() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob", null, null), user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null), user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
@@ -737,7 +741,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.asset_pid = "pid-assetUploadComplete";
         asset.status = "BEING_PROCESSED";
         assetService.persistAsset(asset, user, 1);
-        assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("assetUploadComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null), user);
+        assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("assetUploadComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null), user);
         Optional<Asset> optAsset = assetService.getAsset("assetUploadComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("ASSET_RECEIVED");
@@ -745,13 +749,13 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
     @Test
     void testCompleteUploadAssetIsNull() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(null, "i2_w1", "i2_p1", "bob", null, null), user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(null, "i2_w1", "i2_p1", "bob", null, null, null), user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset cannot be null");
     }
 
     @Test
     void testCompleteUploadAssetDoesntExist() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i2_w1", "i2_p1", "bob", null, null), user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null), user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
@@ -767,7 +771,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.status = "BEING_PROCESSED";
         asset.asset_locked = true;
         assetService.persistAsset(asset, user, 1);
-        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("completeUploadAssetIsLocked", null, null, null), "i2_w1", "i2_p1", "bob", null, null), user));
+        DasscoIllegalActionException dasscoIllegalActionException = assertThrows(DasscoIllegalActionException.class, () -> assetService.completeUpload(new AssetUpdateRequest(new MinimalAsset("completeUploadAssetIsLocked", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null), user));
         assertThat(dasscoIllegalActionException).hasMessageThat().isEqualTo("Asset is locked");
     }
 
@@ -785,10 +789,48 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> optAsset = assetService.getAsset("assetComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
-        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null), user)).isTrue();
+        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null), user)).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
         assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("ERDA_SYNCHRONISED");
+    }
+
+    @Test
+    void testCompleteAssetSendsSucceededAcknowledgeWhenSpecifySyncLogIdPresent() {
+        Asset asset = getTestAsset("assetCompleteSpecifySyncSuccess");
+        asset.pipeline = "i2_p1";
+        asset.workstation = "i2_w1";
+        asset.institution = "institution_2";
+        asset.collection = "i2_c1";
+        asset.asset_pid = "pid-assetCompleteSpecifySyncSuccess";
+        asset.status = "BEING_PROCESSED";
+        assetService.persistAsset(asset, user, 1);
+        clearInvocations(queueBroadcaster);
+
+        assertThat(assetService.completeAsset(new AssetUpdateRequest(
+                new MinimalAsset("assetCompleteSpecifySyncSuccess", null, null, null),
+                "i2_w1", "i2_p1", "bob", null, null, 123L), user)).isTrue();
+
+        verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(syncAcknowledge ->
+                syncAcknowledge.specifySyncStatus() == SpecifySyncStatus.SUCCEEDED
+                        && syncAcknowledge.specifySyncLogId().equals(123L)
+                        && syncAcknowledge.additional_info() == null));
+    }
+
+    @Test
+    void testCompleteAssetSendsFailedAcknowledgeWhenSpecifySyncLogIdPresent() {
+        clearInvocations(queueBroadcaster);
+
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
+                () -> assetService.completeAsset(new AssetUpdateRequest(
+                        new MinimalAsset("non-existent-specify-sync", null, null, null),
+                        "i1_w1", "i1_p1", "bob", null, null, 456L), user));
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
+
+        verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(syncAcknowledge ->
+                syncAcknowledge.specifySyncStatus() == SpecifySyncStatus.FAILED
+                        && syncAcknowledge.specifySyncLogId().equals(456L)
+                        && "Asset doesnt exist!".equals(syncAcknowledge.additional_info())));
     }
 
     @Test

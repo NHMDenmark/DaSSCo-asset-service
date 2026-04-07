@@ -171,7 +171,7 @@ class QueriesServiceTest extends AbstractIntegrationTest {
 
         assetService.persistAsset(auditedAsset, user, 11);
         assetService.completeAsset(new AssetUpdateRequest( new MinimalAsset("audited", null, "NNAD", "i_c1")
-                , "i2_w1", "pl-01", user.username, null, null),user);
+                , "i2_w1", "pl-01", user.username, null, null, null),user);
         assetService.auditAsset(auditingUser, new Audit(auditingUser.username), "audited");
 
         long tomorrow = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();

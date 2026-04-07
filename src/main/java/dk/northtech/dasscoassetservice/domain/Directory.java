@@ -5,7 +5,6 @@ import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import java.time.Instant;
-import java.util.List;
 
 public record Directory(
         @Schema(description = "ID for the Directory", example = "")
@@ -29,6 +28,9 @@ public record Directory(
         String syncWorkstation,
         @Schema(description = "Pipeline attempting the synchronization", example = "ti-p1")
         String syncPipeline,
+        @Nullable
+        @Schema(description = "This is used to track synchronization actions originating in Specify", example = "123")
+        Long specifySyncLogId,
         @Schema(description = "The Global Unique Identifier generated for each asset", example = "ti-a01-202305241657")
         String assetGuid) {
 

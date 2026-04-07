@@ -26,7 +26,7 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         Asset asset = getTestAsset("testSendAssets");
         asset.asset_locked = true;
         assetService.persistAsset(asset, user, 777);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("testSendAssets", null, null, null),null,"i2_p1", "syncuser", null, null),user);
+        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("testSendAssets", null, null, null),null,"i2_p1", "syncuser", null, null, null),user);
         assetSyncService.syncAssets();
 
     }

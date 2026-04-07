@@ -3,6 +3,7 @@ package dk.northtech.dasscoassetservice.services;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Strings;
+import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
 import dk.northtech.dasscoassetservice.cache.DigitiserCache;
 import dk.northtech.dasscoassetservice.cache.PayloadTypeCache;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
@@ -10,6 +11,8 @@ import dk.northtech.dasscoassetservice.cache.SubjectCache;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.Collection;
+import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
+import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncAcknowledge;
 import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
@@ -60,6 +63,7 @@ public class AssetService {
     private final SpecimenService specimenService;
     private final AssetSyncService assetSyncService;
     private final AssetChangeService assetChangeService;
+    private final QueueBroadcaster queueBroadcaster;
 
     @Inject
     public AssetService(InstitutionService institutionService, CollectionService collectionService,
@@ -69,7 +73,8 @@ public class AssetService {
                         PayloadTypeCache payloadTypeCache, PreparationTypeCache preparationTypeCache,
                         FileProxyConfiguration fileProxyConfiguration, ExtendableEnumService extendableEnumService,
                         UserService userService, AssetSyncService assetSyncService, FundingService fundingService,
-                        AssetChangeService assetChangeService, SpecimenService specimenService, RoleService roleService) {
+                        AssetChangeService assetChangeService, SpecimenService specimenService, RoleService roleService,
+                        QueueBroadcaster queueBroadcaster) {
         this.institutionService = institutionService;
         this.collectionService = collectionService;
         this.workstationService = workstationService;
@@ -89,6 +94,7 @@ public class AssetService {
         this.fundingService = fundingService;
         this.assetChangeService = assetChangeService;
         this.specimenService = specimenService;
+        this.queueBroadcaster = queueBroadcaster;
         this.assetsGettingCreated = Caffeine.newBuilder()
                 .expireAfterWrite(fileProxyConfiguration.shareCreationBlockedSeconds(), TimeUnit.SECONDS).build();
         this.roleService = roleService;
@@ -542,28 +548,14 @@ public class AssetService {
             // Open share
             if (openShare) {
                 try {
-                    // Observation.createNotStarted("persist:openShareOnFP", observationRegistry)
-                    // .observe(() -> {
                     asset.httpInfo = openHttpShare(
                             new MinimalAsset(asset.asset_guid, asset.parent_guids, asset.institution, asset.collection),
                             user, allocation);
-                    // });
                     LocalDateTime httpInfoEnd = LocalDateTime.now();
                     logger.info("#4 HTTPInfo creation took {} ms in total.",
                             Duration.between(httpInfoStart, httpInfoEnd).toMillis());
 
                     if (asset.httpInfo.http_allocation_status() == HttpAllocationStatus.SUCCESS) {
-
-                        // LocalDateTime refreshCachedDataStart = LocalDateTime.now();
-                        // //TEZT
-                        // Observation.createNotStarted("persist:refresh-statistics-cache",
-                        // observationRegistry)
-                        // .observe(statisticsDataServiceV2::refreshCachedData);
-                        // LocalDateTime refreshCachedDataEnd = LocalDateTime.now();
-                        // logger.info("#6 Refreshing the cached data took {} ms",
-                        // Duration.between(refreshCachedDataStart, refreshCachedDataEnd).toMillis());
-
-                        // this.statisticsDataService.addAssetToCache(asset);
                         refreshCaches(asset);
                     } else {
                         // Do not persist asset if share wasnt created
@@ -966,36 +958,53 @@ public class AssetService {
     }
 
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest, User user) {
-        Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
-        if (optAsset.isEmpty()) {
-            throw new IllegalArgumentException("Asset doesnt exist!");
+        try {
+            Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
+            if (optAsset.isEmpty()) {
+                throw new IllegalArgumentException("Asset doesnt exist!");
+            }
+            Asset asset = optAsset.get();
+            asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
+            asset.error_message = null;
+            asset.error_timestamp = null;
+            Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(),
+                    asset.institution);
+
+            jdbi.withHandle(h -> {
+                AssetRepository assetRepository = h.attach(AssetRepository.class);
+                EventRepository eventRepository = h.attach(EventRepository.class);
+                assetRepository.updateAssetStatus(asset);
+                this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
+                        assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
+                return h;
+            });
+
+            if (assetUpdateRequest.specifySyncLogId() != null) {
+                queueBroadcaster.sendSpecifyArsAcknowledge(
+                        new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, assetUpdateRequest.specifySyncLogId(), null));
+            }
+
+            // WP5a
+            // statisticsDataServiceV2.refreshCachedData();
+
+            // if (assetUpdateRequest.digitiser() != null &&
+            // !assetUpdateRequest.digitiser().isEmpty()) {
+            // logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
+            // digitiserCache.putDigitiserInCacheIfAbsent(new
+            // Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
+            // }
+            return true;
+        } catch (RuntimeException e) {
+            if (assetUpdateRequest.specifySyncLogId() != null) {
+                try {
+                    queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(
+                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(), e.getMessage()));
+                } catch (RuntimeException acknowledgeException) {
+                    logger.warn("Failed to send Specify sync acknowledge for failed completeAsset", acknowledgeException);
+                }
+            }
+            throw e;
         }
-        Asset asset = optAsset.get();
-        asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
-        asset.error_message = null;
-        asset.error_timestamp = null;
-        Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(),
-                asset.institution);
-
-        jdbi.withHandle(h -> {
-            AssetRepository assetRepository = h.attach(AssetRepository.class);
-            EventRepository eventRepository = h.attach(EventRepository.class);
-            assetRepository.updateAssetStatus(asset);
-            this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
-                    assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
-            return h;
-        });
-
-        // WP5a
-        // statisticsDataServiceV2.refreshCachedData();
-
-        // if (assetUpdateRequest.digitiser() != null &&
-        // !assetUpdateRequest.digitiser().isEmpty()) {
-        // logger.info("Adding Digitiser to Cache if absent in Complete Asset Method");
-        // digitiserCache.putDigitiserInCacheIfAbsent(new
-        // Digitiser(assetUpdateRequest.digitiser(), assetUpdateRequest.digitiser()));
-        // }
-        return true;
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {
