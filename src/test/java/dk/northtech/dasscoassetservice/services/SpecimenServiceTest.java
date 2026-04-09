@@ -40,10 +40,13 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 ,null, collectionService.findCollectionInternal(updateSpecimen.collection
                 , updateSpecimen.institution).get().collection_id()
                 , Arrays.asList(new Role("NHMD")));
-        specimenService.putSpecimen(specimen, nhmdWithId);
-        updateSpecimen.asset_specimen = Arrays.asList(new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false));
+        specimen = specimenService.putSpecimen(specimen, nhmdWithId);
+        AssetSpecimen updateSpecimenLink = new AssetSpecimen(updateSpecimen.asset_guid,specimen.specimen_pid(),"pinning",false);
+        updateSpecimenLink.specimen_id = specimen.specimen_id();
+        updateSpecimenLink.specimen = specimen;
+        updateSpecimen.asset_specimen = Arrays.asList(updateSpecimenLink);
         assetService.persistAsset(updateSpecimen, nhmdWithId, 86);
-        Optional<Specimen> resultSpecimen = specimenService.findSpecimen("nhmd.plantz.updateSpecimenDoNotRemovePrepTypeInUse-1");
+        Optional<Specimen> resultSpecimen = specimenService.findSpecimen(updateSpecimen.institution, updateSpecimen.collection, "updateSpecimenDoNotRemovePrepTypeInUse-1");
         assertThat(resultSpecimen.isPresent()).isTrue();
         Specimen specimen1 = resultSpecimen.get();
         assertThat(specimen1.role_restrictions()).contains(new Role("NHMD"));
@@ -98,17 +101,28 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 , asset_1.institution).get().collection_id()
                 , Arrays.asList(new Role("NHMD")));
 
-        specimenService.putSpecimen(specimen_1, nhmdWithId);
-        specimenService.putSpecimen(specimen_2, nhmdWithId);
-        specimenService.putSpecimen(specimen_3, nhmdWithId);
-        asset_1.asset_specimen = Arrays.asList(new AssetSpecimen(asset_1.asset_guid,specimen_1.specimen_pid(),"slide",false),
-                new AssetSpecimen(asset_1.asset_guid,specimen_2.specimen_pid(),"pinning",false));
+        specimen_1 = specimenService.putSpecimen(specimen_1, nhmdWithId);
+        specimen_2 = specimenService.putSpecimen(specimen_2, nhmdWithId);
+        specimen_3 = specimenService.putSpecimen(specimen_3, nhmdWithId);
+        AssetSpecimen asset1Specimen1 = new AssetSpecimen(asset_1.asset_guid,specimen_1.specimen_pid(),"slide",false);
+        asset1Specimen1.specimen_id = specimen_1.specimen_id();
+        asset1Specimen1.specimen = specimen_1;
+        AssetSpecimen asset1Specimen2 = new AssetSpecimen(asset_1.asset_guid,specimen_2.specimen_pid(),"pinning",false);
+        asset1Specimen2.specimen_id = specimen_2.specimen_id();
+        asset1Specimen2.specimen = specimen_2;
+        asset_1.asset_specimen = Arrays.asList(asset1Specimen1, asset1Specimen2);
         assetService.persistAsset(asset_1, nhmdWithId, 86);
         Asset asset2 = AssetServiceTest.getTestAsset("findSpecimenByAssetGuids_2");
-        asset2.asset_specimen = Arrays.asList(new AssetSpecimen(asset_1.asset_guid,specimen_3.specimen_pid(),"pinning",false));
+        AssetSpecimen asset2Specimen = new AssetSpecimen(asset_1.asset_guid,specimen_3.specimen_pid(),"pinning",false);
+        asset2Specimen.specimen_id = specimen_3.specimen_id();
+        asset2Specimen.specimen = specimen_3;
+        asset2.asset_specimen = Arrays.asList(asset2Specimen);
         assetService.persistAsset(asset2, nhmdWithId, 86);
         Asset asset3 = AssetServiceTest.getTestAsset("findSpecimenByAssetGuids_3");
-        asset3.asset_specimen = Arrays.asList(new AssetSpecimen(asset_1.asset_guid,specimen_3.specimen_pid(),"pinning",false));
+        AssetSpecimen asset3Specimen = new AssetSpecimen(asset_1.asset_guid,specimen_3.specimen_pid(),"pinning",false);
+        asset3Specimen.specimen_id = specimen_3.specimen_id();
+        asset3Specimen.specimen = specimen_3;
+        asset3.asset_specimen = Arrays.asList(asset3Specimen);
         assetService.persistAsset(asset3, nhmdWithId, 86);
         Map<String, List<AssetSpecimen>> result = specimenService.getMultiAssetSpecimens(Set.of("findSpecimenByAssetGuids_1", "findSpecimenByAssetGuids_2", "findSpecimenByAssetGuids_3"));
 

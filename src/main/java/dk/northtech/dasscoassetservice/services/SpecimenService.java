@@ -1,7 +1,5 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.cache.PreparationTypeCache;
 import dk.northtech.dasscoassetservice.domain.*;
@@ -18,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class SpecimenService {
@@ -31,13 +28,6 @@ public class SpecimenService {
     private RightsValidationService rightsValidationService;
     private CollectionService collectionService;
 
-    LoadingCache<String, Specimen> pidSpecimen = Caffeine.newBuilder() // <user, <"read", ["collection2"]>>
-            .expireAfterWrite(12, TimeUnit.HOURS)
-            .maximumSize(25000)
-            .build(specimen_pid -> {
-                return getSpecimen(specimen_pid);
-            });
-
     @Inject
     public SpecimenService(Jdbi jdbi, PreparationTypeCache preparationTypeCache, ExtendableEnumService extendableEnumService, RightsValidationService rightsValidationService, CollectionService collectionService, RoleService roleService) {
         this.jdbi = jdbi;
@@ -48,34 +38,38 @@ public class SpecimenService {
         this.roleService = roleService;
     }
 
-    Optional<Specimen> findSpecimen(String pid) {
-        Specimen specimen = pidSpecimen.get(pid);
-        if (specimen == null) {
+    Optional<Specimen> findSpecimen(Integer specimenId) {
+        if (specimenId == null) {
             return Optional.empty();
-        } else {
-            return Optional.of(specimen);
         }
-    }
-
-    public Optional<Specimen> findSpecimen(String pid, User user) {
-        Specimen specimen = pidSpecimen.get(pid);
-        if (specimen == null) {
-            return Optional.empty();
-        } else {
-            if(!rightsValidationService.checkRightsSpecimen(user, specimen, false)){
-                throw new DasscoIllegalActionException("FORBIDDEN");
+        return jdbi.withHandle(handle -> {
+            RoleRepository roleRepository = handle.attach(RoleRepository.class);
+            SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
+            Optional<Specimen> specimenOpt = specimenRepository.findSpecimenById(specimenId);
+            if (specimenOpt.isEmpty()) {
+                return Optional.empty();
             }
+            Specimen specimen = specimenOpt.get();
+            specimen.role_restrictions().addAll(roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, specimen.specimen_id()));
             return Optional.of(specimen);
-        }
+        });
     }
 
-    public Response deleteSpecimen(String pid, User user) {
+    public Optional<Specimen> findSpecimen(String institution, String collection, String barcode, User user) {
+        Optional<Specimen> specimenOpt = findSpecimen(institution, collection, barcode);
+        if (specimenOpt.isPresent() && !rightsValidationService.checkRightsSpecimen(user, specimenOpt.get(), false)) {
+            throw new DasscoIllegalActionException("FORBIDDEN");
+        }
+        return specimenOpt;
+    }
+
+    public Response deleteSpecimen(String institution, String collection, String barcode, User user) {
         if(user.token == null) {
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
-        Optional<Specimen> optionalSpecimen = findSpecimen(pid);
+        Optional<Specimen> optionalSpecimen = findSpecimen(institution, collection, barcode);
         if (optionalSpecimen.isEmpty()) {
-            throw new NotFoundException("No specimen found with PID " + pid);
+            throw new NotFoundException("No specimen found with institution " + institution + ", collection " + collection + " and barcode " + barcode);
         }else{
             Specimen specimen = optionalSpecimen.get();
             if(!rightsValidationService.checkRightsSpecimen(user, specimen, true)){
@@ -83,14 +77,13 @@ public class SpecimenService {
             }
             List<String> assetGuids = this.jdbi.withHandle(h -> h.createQuery("select asset_guid from asset_specimen where specimen_id = :specimen_id").bind("specimen_id", specimen.specimen_id).mapTo(String.class).list());
             if(!assetGuids.isEmpty()) {
-                return Response.status(Response.Status.FORBIDDEN).entity("Can't delete Specimen with PID: " + pid + ", it has the following assets attached " + assetGuids).build();
+                return Response.status(Response.Status.FORBIDDEN).entity("Can't delete specimen with institution " + institution + ", collection " + collection + " and barcode " + barcode + ", it has the following assets attached " + assetGuids).build();
             }else{
                 return this.jdbi.inTransaction(handle -> {
                     SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
                     specimenRepository.deleteSpecimenRestrictionsWithSpecimenId(specimen.specimen_id());
-                    specimenRepository.deleteSpecimenWithPid(pid);
-                    this.pidSpecimen.refresh(pid);
-                    return Response.status(Response.Status.OK).entity("specimen deleted with PID %s".formatted(pid)).build();
+                    specimenRepository.deleteSpecimenWithCollectionAndBarcode(specimen.collection_id(), barcode);
+                    return Response.status(Response.Status.OK).entity("specimen deleted with institution %s, collection %s and barcode %s".formatted(institution, collection, barcode)).build();
                 });
             }
         }
@@ -100,39 +93,43 @@ public class SpecimenService {
         SpecimenRepository specimenRepository = jdbi.onDemand(SpecimenRepository.class);
         List<AssetSpecimen> assetSpecimens = specimenRepository.findAssetSpecimens(asset_guid);
         assetSpecimens.forEach(assetSpecimen -> {
-            Optional<Specimen> specimen = findSpecimen(assetSpecimen.specimen_pid);
+            Optional<Specimen> specimen = findSpecimen(assetSpecimen.specimen_id);
             specimen.ifPresent(value -> assetSpecimen.specimen = value);
         });
         return assetSpecimens;
     }
 
-    private Specimen getSpecimen(String specimen_pid) {
+    Optional<Specimen> findSpecimen(String institution, String collection, String barcode) {
+        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(collection, institution);
+        if (collectionInternal.isEmpty()) {
+            return Optional.empty();
+        }
+        Integer collectionId = collectionInternal.get().collection_id();
         return jdbi.withHandle(handle -> {
             RoleRepository roleRepository = handle.attach(RoleRepository.class);
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
-            Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen_pid);
-            if (!specimensByPID.isPresent()) {
-                return null;
-            } else {
-                Specimen specimen = specimensByPID.get();
-                specimen.role_restrictions().addAll(roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, specimen.specimen_id()));
-                return specimen;
+            Optional<Specimen> specimenOpt = specimenRepository.findSpecimenByCollectionAndBarcode(collectionId, barcode);
+            if (specimenOpt.isEmpty()) {
+                return Optional.empty();
             }
+            Specimen specimen = specimenOpt.get();
+            specimen.role_restrictions().addAll(roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, specimen.specimen_id()));
+            return Optional.of(specimen);
         });
     }
 
     public Specimen putSpecimen(Specimen specimen, User user) {
+        if (Strings.isNullOrEmpty(specimen.specimen_pid())) {
+            specimen.specimen_pid = generateDefaultSpecimenPid(specimen.institution(), specimen.collection(), specimen.barcode());
+        }
+        validateSpecimen(specimen);
+        Integer collectionId = getCollectionId(specimen.collection(), specimen.institution());
         return jdbi.inTransaction(h -> {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
 
-            Optional<Specimen> specimensByPID = specimenRepository.findSpecimensByPID(specimen.specimen_pid());
-            validateSpecimen(specimen);
-            if (specimensByPID.isEmpty()) {
-                Optional<Collection> collectionInternal = collectionService.findCollectionInternal(specimen.collection(), specimen.institution());
-                if (!collectionInternal.isPresent()) {
-                    throw new IllegalArgumentException("CollectionNotFound not found");
-                }
-                Specimen specimenWithCollectionId = new Specimen(specimen, null, collectionInternal.get().collection_id());
+            Optional<Specimen> existingSpecimen = specimenRepository.findSpecimenByCollectionAndBarcode(collectionId, specimen.barcode());
+            if (existingSpecimen.isEmpty()) {
+                Specimen specimenWithCollectionId = new Specimen(specimen, null, collectionId);
                 Integer specimen_id = specimenRepository.insert_specimen(specimenWithCollectionId);
 
                 if (!specimenWithCollectionId.role_restrictions().isEmpty()) {
@@ -149,14 +146,12 @@ public class SpecimenService {
                     roleRepository.setRestrictions(RestrictedObjectType.SPECIMEN, specimenWithCollectionId.role_restrictions(), specimen_id);
 
                 }
-                pidSpecimen.put(specimenWithCollectionId.specimen_pid(), new Specimen(specimenWithCollectionId, specimen_id, specimenWithCollectionId.collection_id()));
-                return specimenWithCollectionId;
+                return new Specimen(specimenWithCollectionId, specimen_id, specimenWithCollectionId.collection_id());
             } else {
-
-                if(!rightsValidationService.checkRightsSpecimen(user, specimensByPID.get(), true)){
+                if(!rightsValidationService.checkRightsSpecimen(user, existingSpecimen.get(), true)){
                     throw new DasscoIllegalActionException("FORBIDDEN");
                 }
-                return updateSpecimen(specimen, specimensByPID.get(), user);
+                return updateSpecimen(specimen, existingSpecimen.get(), user);
             }
         });
     }
@@ -191,7 +186,6 @@ public class SpecimenService {
                     , specimen.role_restrictions());
             specimenRepository
                     .updateSpecimen(updated);
-            pidSpecimen.put(specimen.specimen_pid(), updated);
 
             return updated;
         });
@@ -201,24 +195,59 @@ public class SpecimenService {
         return preparationTypeCache.getPreparationTypes();
     }
 
-    void validateAssetSpecimen(AssetSpecimen assetSpecimen) {
-        Optional<Specimen> specimenOpt = findSpecimen(assetSpecimen.specimen_pid);
-        if(specimenOpt.isEmpty()) {
-            throw new IllegalArgumentException("Specimen doesnt exist");
-        }
-        Specimen specimen = specimenOpt.get();
+    void validateAssetSpecimen(AssetSpecimen assetSpecimen, String defaultInstitution, String defaultCollection) {
+        Specimen specimen = resolveAssetSpecimenReference(assetSpecimen, defaultInstitution, defaultCollection);
         if(assetSpecimen.asset_preparation_type != null &&
            (specimen.preparation_types() == null || !specimen.preparation_types().contains(assetSpecimen.asset_preparation_type))) {
             throw new IllegalArgumentException("Specimen has no preparation type that matches asset preparation type: " + assetSpecimen.asset_preparation_type);
         }
     }
 
+    public Specimen resolveAssetSpecimenReference(AssetSpecimen assetSpecimen, String defaultInstitution, String defaultCollection) {
+        if (assetSpecimen.specimen_id != null) {
+            Optional<Specimen> specimenOpt = findSpecimen(assetSpecimen.specimen_id);
+            if (specimenOpt.isEmpty()) {
+                throw new IllegalArgumentException("Specimen with id " + assetSpecimen.specimen_id + " doesn't exist");
+            }
+            Specimen specimen = specimenOpt.get();
+            assetSpecimen.specimen = specimen;
+            assetSpecimen.specimen_id = specimen.specimen_id();
+            assetSpecimen.specimen_pid = specimen.specimen_pid();
+            return specimen;
+        }
+
+        Specimen embedded = assetSpecimen.specimen;
+        String institution = embedded != null && !Strings.isNullOrEmpty(embedded.institution()) ? embedded.institution() : defaultInstitution;
+        String collection = embedded != null && !Strings.isNullOrEmpty(embedded.collection()) ? embedded.collection() : defaultCollection;
+        String barcode = embedded != null ? embedded.barcode() : null;
+
+        if (Strings.isNullOrEmpty(institution) || Strings.isNullOrEmpty(collection) || Strings.isNullOrEmpty(barcode)) {
+            throw new IllegalArgumentException("Each asset specimen must reference an existing specimen by specimen_id or by institution/collection/barcode");
+        }
+
+        Optional<Specimen> specimenOpt = findSpecimen(institution, collection, barcode);
+        if (specimenOpt.isEmpty()) {
+            throw new IllegalArgumentException("Specimen " + institution + "." + collection + "." + barcode + " doesn't exist");
+        }
+        Specimen specimen = specimenOpt.get();
+        assetSpecimen.specimen = specimen;
+        assetSpecimen.specimen_id = specimen.specimen_id();
+        assetSpecimen.specimen_pid = specimen.specimen_pid();
+        return specimen;
+    }
+
     void validateSpecimen(Specimen specimen) {
-        if (Strings.isNullOrEmpty(specimen.specimen_pid())) {
-            throw new IllegalArgumentException("specimen_pid cannot be null or empty");
+        if (Strings.isNullOrEmpty(specimen.institution())) {
+            throw new IllegalArgumentException("Specimen institution cannot be null");
+        }
+        if (Strings.isNullOrEmpty(specimen.collection())) {
+            throw new IllegalArgumentException("Specimen collection cannot be null");
         }
         if (Strings.isNullOrEmpty(specimen.barcode())) {
             throw new IllegalArgumentException("Specimen barcode cannot be null");
+        }
+        if (Strings.isNullOrEmpty(specimen.specimen_pid())) {
+            specimen.specimen_pid = generateDefaultSpecimenPid(specimen.institution(), specimen.collection(), specimen.barcode());
         }
         if (specimen.preparation_types() == null || specimen.preparation_types().isEmpty()) {
             throw new IllegalArgumentException("a specimen must have at least one preparation_type");
@@ -231,6 +260,21 @@ public class SpecimenService {
                 throw new IllegalArgumentException(p + " is not a valid preparation_type");
             }
         }
+    }
+
+    private Integer getCollectionId(String collection, String institution) {
+        Optional<Collection> collectionInternal = collectionService.findCollectionInternal(collection, institution);
+        if (collectionInternal.isEmpty()) {
+            throw new IllegalArgumentException("CollectionNotFound not found");
+        }
+        return collectionInternal.get().collection_id();
+    }
+
+    private String generateDefaultSpecimenPid(String institution, String collection, String barcode) {
+        if (Strings.isNullOrEmpty(institution) || Strings.isNullOrEmpty(collection) || Strings.isNullOrEmpty(barcode)) {
+            throw new IllegalArgumentException("Cannot generate specimen_pid without institution, collection and barcode");
+        }
+        return institution + "." + collection + "." + barcode;
     }
 
     Map<String, List<AssetSpecimen>> getMultiAssetSpecimens(Set<String> assetGuids) {

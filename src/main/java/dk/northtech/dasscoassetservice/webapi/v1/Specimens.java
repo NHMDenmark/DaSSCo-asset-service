@@ -26,7 +26,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 
 @Component
-@Path("/v1/specimens/")
+@Path("/v1")
 @Tag(name = "Specimens", description = "Endpoints related to collection specimens")
 @SecurityRequirement(name = "dassco-idp")
 public class Specimens {
@@ -43,42 +43,51 @@ public class Specimens {
 
 
     @PUT
-    @Path("/{specimenPID}")
+    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
 //    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Specimen updateSpacemen(Specimen specimen
-            , @PathParam("specimenPID") String specimenPID
+    public Specimen updateSpacemen(@PathParam("institution") String institution
+            , @PathParam("collection") String collection
+            , @PathParam("barcode") String barcode
+            , Specimen specimen
             , @Context SecurityContext securityContext) {
-        if(!specimenPID.equals(specimen.specimen_pid())) {
-            throw new IllegalArgumentException("Specimen pid in object does not match specimen pid in path");
+        if(!institution.equals(specimen.institution()) || !collection.equals(specimen.collection()) || !barcode.equals(specimen.barcode())) {
+            throw new IllegalArgumentException("Specimen institution, collection and barcode in object must match path");
         }
-        specimenService.putSpecimen(specimen, userService.from(securityContext));
-        return specimen;
+        return specimenService.putSpecimen(specimen, userService.from(securityContext));
     }
 
     @GET
-    @Path("/{specimenPID}")
-    @Operation(summary = "Get Specimen with PID", description = "Get a specimen with PID")
+    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+    @Operation(summary = "Get specimen", description = "Get a specimen by institution, collection and barcode")
     @Produces(MediaType.APPLICATION_JSON)
-    public Specimen getSpecimen(@PathParam("specimenPID") String specimenPID, @Context SecurityContext securityContext){
-        return specimenService.findSpecimen(specimenPID, securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext)).orElseThrow(()->new NotFoundException("No specimen found with PID " + specimenPID));
+    public Specimen getSpecimen(@PathParam("institution") String institution
+            , @PathParam("collection") String collection
+            , @PathParam("barcode") String barcode
+            , @Context SecurityContext securityContext){
+        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
+        return specimenService.findSpecimen(institution, collection, barcode, user)
+                .orElseThrow(() -> new NotFoundException("No specimen found with institution " + institution + ", collection " + collection + " and barcode " + barcode));
     }
 
     @DELETE
-    @Path("/{specimenPID}")
-    @Operation(summary = "Delete Specimen with PID", description = "Delete a specimen with PID")
+    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+    @Operation(summary = "Delete specimen", description = "Delete a specimen by institution, collection and barcode")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = "403", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
-    public Response deleteSpecimen(@PathParam("specimenPID") String specimenPID, @Context SecurityContext securityContext){
-        return specimenService.deleteSpecimen(specimenPID, userService.from(securityContext));
+    public Response deleteSpecimen(@PathParam("institution") String institution
+            , @PathParam("collection") String collection
+            , @PathParam("barcode") String barcode
+            , @Context SecurityContext securityContext){
+        return specimenService.deleteSpecimen(institution, collection, barcode, userService.from(securityContext));
     }
 
     @GET
-    @Path("/preparationTypes")
+    @Path("/specimens/preparationTypes")
     @Operation(summary = "Get Preparation Type List")
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))

@@ -589,9 +589,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
         addSpecimen(asset, "creatAsset-sp-1", "spid1_updateAsset","slide");
 //        addSpecimen(asset, "creatAsset-sp-2", "spid2_updateAsset","pinning");
         Specimen specimen = new Specimen(asset.institution, asset.collection, "creatAsset-sp-1", "spid2_updateAsset", new HashSet<>(Arrays.asList("pinning", "slide")),null, null, new ArrayList<>() );
-        specimenService.putSpecimen(specimen, user);
+        specimen = specimenService.putSpecimen(specimen, user);
         assetService.persistAsset(asset, user, 11);
-        asset.asset_specimen.add(new AssetSpecimen(asset.asset_guid, specimen.specimen_pid(),"pinning", false));
+        AssetSpecimen secondSpecimen = new AssetSpecimen(asset.asset_guid, specimen.specimen_pid(),"pinning", false);
+        secondSpecimen.specimen_id = specimen.specimen_id();
+        secondSpecimen.specimen = specimen;
+        asset.asset_specimen.add(secondSpecimen);
         Long publication_id = asset.external_publishers.get(0).publication_id();
         assertThat(publication_id).isGreaterThan(0);
         asset.tags.remove("Tag1");
@@ -1057,15 +1060,17 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Collection> collectionInternal = collectionService.findCollectionInternal(asset.collection, asset.institution);
         Collection collection = collectionInternal.get();
         Specimen specimen = new Specimen(asset.institution, collection.name(), barcode, specimen_pid, new HashSet<>(Arrays.asList(asset_preparation_type)),null, collection.collection_id(), new ArrayList<>() );
-        specimenService.putSpecimen(specimen, user);
+        specimen = specimenService.putSpecimen(specimen, user);
         AssetSpecimen assetSpecimen = new AssetSpecimen(asset.asset_guid, specimen_pid, asset_preparation_type, false);
+        assetSpecimen.specimen_id = specimen.specimen_id();
+        assetSpecimen.specimen = specimen;
         asset.asset_specimen.add(assetSpecimen);
         return specimen;
     }
 
     @Test
     void createAssetThenMinimalUpdate() {
-        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "Very big issue");
+        extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.ISSUE_CATEGORY, "Very big issue!");
         Asset asset = getTestAsset("createAssetThenMinimalUpdate");
         asset.updating_pipeline = "i1_p1";
         asset.complete_digitiser_list = Arrays.asList("Bazviola", "Karl-Børge");
@@ -1083,7 +1088,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         asset.file_formats = Arrays.asList("JPEG", "TIF");
         asset.specify_attachment_remarks = "attachment_remarks";
         asset.specify_attachment_title = "spezzify 'tachment";
-        asset.issues = Arrays.asList(new Issue(asset.asset_guid, "Very big issue", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
+        asset.issues = Arrays.asList(new Issue(asset.asset_guid, "Very big issue!", "issue_1", Instant.now(), "500 ok", "This is an issue", "Notes", false));
         addSpecimen(asset,   "createAssetThenMinimalUpdate-sp-1","spid1","slide");
         assetService.persistAsset(asset, user, 86);
 
@@ -1094,7 +1099,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         minimal.collection = "i1_c1";
         minimal.workstation = "i1_w1";
         minimal.status = "BEING_PROCESSED";
-        minimal.tags = null;
+//        minimal.tags = null;
         minimal.complete_digitiser_list = null;
         assetService.updateAsset(minimal, user);
         Optional<Asset> asset1 = assetService.getAsset(minimal.asset_guid);

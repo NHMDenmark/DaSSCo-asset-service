@@ -49,6 +49,7 @@ public interface SpecimenRepository extends SqlObject {
     UPDATE specimen 
     SET preparation_types = :preparation_types
       , barcode = :barcode 
+      , specimen_pid = :specimen_pid
     WHERE specimen_id = :specimen_id
 """)
     void updateSpecimen(@BindMethods Specimen specimen);
@@ -88,6 +89,27 @@ public interface SpecimenRepository extends SqlObject {
             """)
     Optional<Specimen> findSpecimensByPID(String pid);
 
+    @SqlQuery("""
+            SELECT specimen.*
+                , collection.collection_name AS collection
+                , collection.institution_name AS institution
+            FROM specimen
+                LEFT JOIN collection USING (collection_id)
+            WHERE specimen.specimen_id = :specimenId
+            """)
+    Optional<Specimen> findSpecimenById(Integer specimenId);
+
+    @SqlQuery("""
+            SELECT specimen.*
+                , collection.collection_name AS collection
+                , collection.institution_name AS institution
+            FROM specimen
+                LEFT JOIN collection USING (collection_id)
+            WHERE specimen.collection_id = :collectionId
+              AND specimen.barcode = :barcode
+            """)
+    Optional<Specimen> findSpecimenByCollectionAndBarcode(Integer collectionId, String barcode);
+
     @SqlQuery("""  
     SELECT asset_guid FROM asset_specimen
     WHERE specimen_id = :specimenId AND preparation_type NOT IN (<preparationTypes>)
@@ -109,6 +131,9 @@ public interface SpecimenRepository extends SqlObject {
 
     @SqlUpdate("delete from specimen where specimen_pid = :pid")
     int deleteSpecimenWithPid(String pid);
+
+    @SqlUpdate("delete from specimen where collection_id = :collectionId and barcode = :barcode")
+    int deleteSpecimenWithCollectionAndBarcode(Integer collectionId, String barcode);
 
     @SqlUpdate("""
     UPDATE asset_specimen

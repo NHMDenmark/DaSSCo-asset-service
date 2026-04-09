@@ -100,7 +100,7 @@ public class SpecifyArsSyncService {
     private void mapAsset(Asset fromSpecify, Asset existing, SpecifyArsSyncMessage specifyArsSyncMessage) {
         for (String s : specifyArsSyncMessage.updatedFields) {
             switch (s) {
-                case "${asset_guid}.${file_format}": {
+                case "${asset_guid}.${file_format}", "${asset_guid}": {
                     break;
                 }
                 case "${file_format}":
