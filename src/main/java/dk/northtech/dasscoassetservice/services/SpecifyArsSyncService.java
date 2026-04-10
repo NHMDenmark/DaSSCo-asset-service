@@ -58,11 +58,13 @@ public class SpecifyArsSyncService {
             User user = new User("dassco-asset-service");
             user = userService.ensureExists(user);
             specifyAsset.digitiser = user.username;
+            SpecifySyncStatus status = SpecifySyncStatus.FAILED;
+            String additionalInfo = null;
             if (existing.isPresent()) {
                 Asset existingAsset = existing.get();
                 mapAsset(specifyArsSyncMessage.asset, existingAsset, specifyArsSyncMessage);
                 assetService.updateAsset(existingAsset, user);
-                fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection), specifyArsSyncMessage.specifySyncLogId));
+                status = fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection), specifyArsSyncMessage.specifySyncLogId));
             } else {
                 specifyAsset.status = SPECIFY_DEFAULT_CREATION_STATUS;
                 specifyAsset.pipeline = specifyAsset.pipeline == null ? "unknown" : specifyAsset.pipeline;
@@ -88,8 +90,15 @@ public class SpecifyArsSyncService {
                     extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status);
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
-                fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(specifyAsset.asset_guid, null, specifyAsset.institution, specifyAsset.collection), specifyArsSyncMessage.specifySyncLogId));
-                queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.STARTED, specifyArsSyncMessage.specifySyncLogId, null));
+                SpecifySyncStatus fpSyncStatus = fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(specifyAsset.asset_guid, null, specifyAsset.institution, specifyAsset.collection), specifyArsSyncMessage.specifySyncLogId));
+                if(fpSyncStatus == SpecifySyncStatus.STARTED) {
+                    status = fpSyncStatus;
+                } else {
+                    additionalInfo = "Created metadata but no file was present in parking space";
+                }
+            }
+            if(status != SpecifySyncStatus.STARTED) {
+                queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(status, specifyArsSyncMessage.specifySyncLogId, additionalInfo));
             }
         } catch (Exception e1) {
             log.error(e1.getMessage(), e1);

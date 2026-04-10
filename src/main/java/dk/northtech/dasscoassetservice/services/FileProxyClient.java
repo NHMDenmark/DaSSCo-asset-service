@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.configuration.FileProxyConfiguration;
 import dk.northtech.dasscoassetservice.domain.MinimalAsset;
 import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncParkingSpaceRequest;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
@@ -99,7 +100,7 @@ public class FileProxyClient {
         return prepareWorkDir(httpShareRequest, user);
     }
 
-    public void syncParkedFile(SyncParkingSpaceRequest syncParkingSpaceRequest) {
+    public SpecifySyncStatus syncParkedFile(SyncParkingSpaceRequest syncParkingSpaceRequest) {
         Gson gson = new Gson();
         try {
             String json = gson.toJson(syncParkingSpaceRequest);
@@ -112,16 +113,24 @@ public class FileProxyClient {
             try (HttpClient httpClient = HttpClient.newBuilder()
                     .build();) {
                 HttpResponse<String> send = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
+                if(send.statusCode() == 202) {
+                    return SpecifySyncStatus.STARTED;
+                }
+                if(send.statusCode() == 200) {
+                    return SpecifySyncStatus.SUCCEEDED;
+                }
+                if(send.statusCode() == 403) {
+                    return SpecifySyncStatus.FAILED;
+                }
                 if (send.statusCode() == 503) {
                     throw new RuntimeException("File proxy appears to be down, got 503 response");
                 }
-                if(send.statusCode() > 299) {
-                    if(send.body() != null) {
-                        System.out.println(send.body());
-                    }
-                    throw new RuntimeException("Failed to sync parked files, got status " + send.statusCode());
+
+                if(send.body() != null) {
+                    System.out.println(send.body());
                 }
+                throw new RuntimeException("Failed to sync parked files, got status " + send.statusCode());
+
             }
 
 
