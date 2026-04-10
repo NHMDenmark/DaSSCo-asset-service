@@ -182,7 +182,8 @@ public class SpecifyArsSyncService {
                     break;
 
                 case "${metadata_source}":
-                    existing.metadata_source = fromSpecify.metadata_source;
+                    //only on create
+//                    existing.metadata_source = fromSpecify.metadata_source;
                     break;
 
                 case "${metadata_version}":
