@@ -1,19 +1,18 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.google.common.base.Strings;
 import dk.northtech.dasscoassetservice.amqp.QueueBroadcaster;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifyArsSyncMessage;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncAcknowledge;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncParkingSpaceRequest;
+import dk.northtech.dasscoassetservice.repositories.ParkedFileRepository;
 import jakarta.inject.Inject;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
@@ -30,7 +29,9 @@ public class SpecifyArsSyncService {
     private final WorkstationService workstationService;
     private final ExtendableEnumService extendableEnumService;
     private final FileProxyClient fileProxyClient;
+    private final Jdbi jdbi;
     public static final String SPECIFY_DEFAULT_CREATION_STATUS = "SPECIFY_CREATED";
+
     @Inject
     public SpecifyArsSyncService(AssetService assetService
             , UserService userService
@@ -39,7 +40,8 @@ public class SpecifyArsSyncService {
             , QueueBroadcaster queueBroadcaster
             , WorkstationService workstationService
             , ExtendableEnumService extendableEnumService
-            , FileProxyClient fileProxyClient) {
+            , FileProxyClient fileProxyClient
+            , Jdbi jdbi) {
         this.assetService = assetService;
         this.userService = userService;
         this.specimenService = specimenService;
@@ -48,6 +50,7 @@ public class SpecifyArsSyncService {
         this.workstationService = workstationService;
         this.extendableEnumService = extendableEnumService;
         this.fileProxyClient = fileProxyClient;
+        this.jdbi = jdbi;
     }
 
 
@@ -58,13 +61,30 @@ public class SpecifyArsSyncService {
             User user = new User("dassco-asset-service");
             user = userService.ensureExists(user);
             specifyAsset.digitiser = user.username;
-            SpecifySyncStatus status = SpecifySyncStatus.FAILED;
-            String additionalInfo = null;
+
             if (existing.isPresent()) {
                 Asset existingAsset = existing.get();
+                boolean hasParkedFiles = hasParkedFiles(existingAsset.institution, existingAsset.collection, existingAsset.asset_guid);
+                if (hasParkedFiles && existingAsset.asset_locked) {
+                    queueBroadcaster.sendSpecifyArsAcknowledge(
+                            new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, "Asset is locked, but have parked files"));
+                    return;
+                }
+
                 mapAsset(specifyArsSyncMessage.asset, existingAsset, specifyArsSyncMessage);
                 assetService.updateAsset(existingAsset, user);
-                status = fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection), specifyArsSyncMessage.specifySyncLogId));
+
+                if (!hasParkedFiles) {
+                    queueBroadcaster.sendSpecifyArsAcknowledge(
+                            new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null));
+                    return;
+                }
+
+                acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
+                        new SyncParkingSpaceRequest(
+                                new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
+                                specifyArsSyncMessage.specifySyncLogId)),
+                        specifyArsSyncMessage.specifySyncLogId);
             } else {
                 specifyAsset.status = SPECIFY_DEFAULT_CREATION_STATUS;
                 specifyAsset.pipeline = specifyAsset.pipeline == null ? "unknown" : specifyAsset.pipeline;
@@ -90,20 +110,35 @@ public class SpecifyArsSyncService {
                     extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status);
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
-                SpecifySyncStatus fpSyncStatus = fileProxyClient.syncParkedFile(new SyncParkingSpaceRequest(new MinimalAsset(specifyAsset.asset_guid, null, specifyAsset.institution, specifyAsset.collection), specifyArsSyncMessage.specifySyncLogId));
-                if(fpSyncStatus == SpecifySyncStatus.STARTED) {
-                    status = fpSyncStatus;
-                } else {
-                    additionalInfo = "Created metadata but no file was present in parking space";
+
+                boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, specifyAsset.asset_guid);
+                if (!hasParkedFiles) {
+                    queueBroadcaster.sendSpecifyArsAcknowledge(
+                            new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null));
+                    return;
                 }
-            }
-            if(status != SpecifySyncStatus.STARTED) {
-                queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(status, specifyArsSyncMessage.specifySyncLogId, additionalInfo));
+
+                acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
+                        new SyncParkingSpaceRequest(
+                                new MinimalAsset(specifyAsset.asset_guid, null, specifyAsset.institution, specifyAsset.collection),
+                                specifyArsSyncMessage.specifySyncLogId)),
+                        specifyArsSyncMessage.specifySyncLogId);
             }
         } catch (Exception e1) {
             log.error(e1.getMessage(), e1);
             queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, e1.getMessage()));
         }
+    }
+
+    private void acknowledgeIfParkedFileSyncFinished(SpecifySyncStatus syncStatus, Long specifySyncLogId) {
+        if (syncStatus != SpecifySyncStatus.STARTED) {
+            queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(syncStatus, specifySyncLogId, null));
+        }
+    }
+
+    private boolean hasParkedFiles(String institution, String collection, String assetGuid) {
+        String pathPrefix = String.format("%s/%s/%s/", institution, collection, assetGuid);
+        return jdbi.withHandle(handle -> handle.attach(ParkedFileRepository.class).existsByPathPrefix(pathPrefix));
     }
 
     private void mapAsset(Asset fromSpecify, Asset existing, SpecifyArsSyncMessage specifyArsSyncMessage) {

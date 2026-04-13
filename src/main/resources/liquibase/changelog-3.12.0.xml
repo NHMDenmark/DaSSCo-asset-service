@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="3.12.0:SPECIMEN_COLLECTION_BARCODE_UNIQUE" author="THBO" context="default">
+        <addUniqueConstraint
+                tableName="specimen"
+                columnNames="collection_id, barcode"
+                constraintName="uq_specimen_collection_barcode"/>
+    </changeSet>
+
+    <changeSet id="3.12.0:ADD_PARKED_FILE" author="THBO" context="default">
+        <createTable tableName="parked_file">
+            <column name="parked_file_id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false" primaryKeyName="pk_parked_file"/>
+            </column>
+            <column name="path" type="text">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size_bytes" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp" type="timestamp" defaultValue="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="3.12.0:ADD_PARKED_FILE_INDEXES" author="THBO" context="default">
+        <createIndex tableName="parked_file" indexName="idx_parked_file_path">
+            <column name="path"/>
+        </createIndex>
+        <createIndex tableName="parked_file" indexName="idx_parked_file_timestamp">
+            <column name="timestamp"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="3.12.0:ADD_PARKED_FILE_PATH_UNIQUE" author="THBO" context="default">
+        <dropIndex tableName="parked_file" indexName="idx_parked_file_path"/>
+        <addUniqueConstraint tableName="parked_file" columnNames="path" constraintName="uq_parked_file_path"/>
+    </changeSet>
+
+
+    <changeSet id="VERSION-3.12.0" author="THBO" context="default">
+        <tagDatabase tag="VERSION-3.12.0"/>
+    </changeSet>
+
+</databaseChangeLog>
