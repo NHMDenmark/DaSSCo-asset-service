@@ -51,7 +51,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && ack.specifySyncLogId().equals(1001L)
-                        && "Asset is locked".equals(ack.additional_info())));
+                        && "Asset is locked, but have parked files".equals(ack.additional_info())));
         verify(fileProxyClient, never()).syncParkedFile(any(SyncParkingSpaceRequest.class));
     }
 
