@@ -26,7 +26,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 
 @Component
-@Path("/v1")
+@Path("/v1/institutions/{institution}/collections/{collection}/specimen/{barcode}")
 @Tag(name = "Specimens", description = "Endpoints related to collection specimens")
 @SecurityRequirement(name = "dassco-idp")
 public class Specimens {
@@ -43,7 +43,7 @@ public class Specimens {
 
 
     @PUT
-    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+//    @Path("/institutions/{institution}/collections/{collection}/specimen/{barcode}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
 //    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
@@ -54,6 +54,7 @@ public class Specimens {
             , @PathParam("barcode") String barcode
             , Specimen specimen
             , @Context SecurityContext securityContext) {
+        System.out.println("testtesttest");
         if(!institution.equals(specimen.institution()) || !collection.equals(specimen.collection()) || !barcode.equals(specimen.barcode())) {
             throw new IllegalArgumentException("Specimen institution, collection and barcode in object must match path");
         }
@@ -61,7 +62,7 @@ public class Specimens {
     }
 
     @GET
-    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+//    @Path("/institutions/{institution}/collections/{collection}/specimen/{barcode}")
     @Operation(summary = "Get specimen", description = "Get a specimen by institution, collection and barcode")
     @Produces(MediaType.APPLICATION_JSON)
     public Specimen getSpecimen(@PathParam("institution") String institution
@@ -74,7 +75,7 @@ public class Specimens {
     }
 
     @DELETE
-    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+//    @Path("/institutions/{institution}/collections/{collection}/specimen/{barcode}")
     @Operation(summary = "Delete specimen", description = "Delete a specimen by institution, collection and barcode")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = "403", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
@@ -86,13 +87,13 @@ public class Specimens {
         return specimenService.deleteSpecimen(institution, collection, barcode, userService.from(securityContext));
     }
 
-    @GET
-    @Path("/specimens/preparationTypes")
-    @Operation(summary = "Get Preparation Type List")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<String> getPreparationTypes(){
-        return this.specimenService.listPreparationTypes();
-    }
+//    @GET
+//    @Path("/specimens/preparationTypes")
+//    @Operation(summary = "Get Preparation Type List")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+//    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+//    public List<String> getPreparationTypes(){
+//        return this.specimenService.listPreparationTypes();
+//    }
 }
