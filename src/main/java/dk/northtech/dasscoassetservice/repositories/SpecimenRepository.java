@@ -33,9 +33,9 @@ public interface SpecimenRepository extends SqlObject {
     Integer insert_specimen(@BindMethods Specimen specimen);
 
     @SqlUpdate("""
-    INSERT INTO asset_specimen(asset_guid, preparation_type, specimen_id) VALUES (:assetGuid, :preparation_type ,:specimenId)
+    INSERT INTO asset_specimen(asset_guid, preparation_type, specimen_id, specify_collection_object_attachment_id) VALUES (:assetGuid, :preparation_type ,:specimenId, :collectionObjectAttachmentId);
     """)
-    void attachSpecimen(String assetGuid, String preparation_type, Integer specimenId);
+    void attachSpecimen(String assetGuid, String preparation_type, Integer specimenId, Long collectionObjectAttachmentId);
 
     @SqlUpdate("""
     UPDATE asset_specimen

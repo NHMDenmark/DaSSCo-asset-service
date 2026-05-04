@@ -67,24 +67,14 @@ public class SpecifyArsSyncService {
                 boolean hasParkedFiles = hasParkedFiles(existingAsset.institution, existingAsset.collection, existingAsset.asset_guid);
                 if (hasParkedFiles && existingAsset.asset_locked) {
                     queueBroadcaster.sendSpecifyArsAcknowledge(
-                            new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, "Asset is locked, but have parked files"));
+                            new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, "Asset is locked, but have parked files", existingAsset.asset_guid));
                     return;
                 }
 
                 mapAsset(specifyArsSyncMessage.asset, existingAsset, specifyArsSyncMessage);
                 assetService.updateAsset(existingAsset, user);
 
-                if (!hasParkedFiles) {
-                    queueBroadcaster.sendSpecifyArsAcknowledge(
-                            new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null));
-                    return;
-                }
-
-                acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
-                        new SyncParkingSpaceRequest(
-                                new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
-                                specifyArsSyncMessage.specifySyncLogId)),
-                        specifyArsSyncMessage.specifySyncLogId);
+                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, existingAsset, hasParkedFiles);
             } else {
                 specifyAsset.status = SPECIFY_DEFAULT_CREATION_STATUS;
                 specifyAsset.pipeline = specifyAsset.pipeline == null ? "unknown" : specifyAsset.pipeline;
@@ -112,27 +102,33 @@ public class SpecifyArsSyncService {
                 assetService.persistAsset(specifyAsset, user, 122, false);
 
                 boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, specifyAsset.asset_guid);
-                if (!hasParkedFiles) {
-                    queueBroadcaster.sendSpecifyArsAcknowledge(
-                            new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null));
-                    return;
-                }
-
-                acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
-                        new SyncParkingSpaceRequest(
-                                new MinimalAsset(specifyAsset.asset_guid, null, specifyAsset.institution, specifyAsset.collection),
-                                specifyArsSyncMessage.specifySyncLogId)),
-                        specifyArsSyncMessage.specifySyncLogId);
+                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, specifyAsset, hasParkedFiles);
             }
         } catch (Exception e1) {
             log.error(e1.getMessage(), e1);
-            queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, e1.getMessage()));
+
+            queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, e1.getMessage(), specifyArsSyncMessage.asset != null ? specifyArsSyncMessage.asset.asset_guid : null));
         }
     }
 
-    private void acknowledgeIfParkedFileSyncFinished(SpecifySyncStatus syncStatus, Long specifySyncLogId) {
+    private boolean checkParkingAndAcknowedge(SpecifyArsSyncMessage specifyArsSyncMessage, Asset specifyAsset, Asset existingAsset, boolean hasParkedFiles) {
+        if (!hasParkedFiles) {
+            queueBroadcaster.sendSpecifyArsAcknowledge(
+                    new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null, existingAsset.asset_guid));
+            return true;
+        }
+
+        acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
+                new SyncParkingSpaceRequest(
+                        new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
+                        specifyArsSyncMessage.specifySyncLogId)),
+                specifyArsSyncMessage.specifySyncLogId, specifyAsset.asset_guid);
+        return false;
+    }
+
+    private void acknowledgeIfParkedFileSyncFinished(SpecifySyncStatus syncStatus, Long specifySyncLogId, String asset_guid) {
         if (syncStatus != SpecifySyncStatus.STARTED) {
-            queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(syncStatus, specifySyncLogId, null));
+            queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(syncStatus, specifySyncLogId, null, asset_guid));
         }
     }
 

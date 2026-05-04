@@ -51,7 +51,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && ack.specifySyncLogId().equals(1001L)
-                        && "Asset is locked, but have parked files".equals(ack.additional_info())));
+                        && "Asset is locked, but have parked files".equals(ack.additionalInfo())));
         verify(fileProxyClient, never()).syncParkedFile(any(SyncParkingSpaceRequest.class));
     }
 
@@ -72,7 +72,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.SUCCEEDED
                         && ack.specifySyncLogId().equals(1002L)
-                        && ack.additional_info() == null));
+                        && ack.additionalInfo() == null));
         verify(fileProxyClient, never()).syncParkedFile(any(SyncParkingSpaceRequest.class));
     }
 
@@ -109,7 +109,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.SUCCEEDED
                         && ack.specifySyncLogId().equals(1004L)
-                        && ack.additional_info() == null));
+                        && ack.additionalInfo() == null));
         verify(fileProxyClient, never()).syncParkedFile(any(SyncParkingSpaceRequest.class));
     }
 

@@ -6,5 +6,6 @@ public enum SpecifySyncStatus {
     , SUCCEEDED
     , FAILED
     , STARTED
+    , UPDATED_GUID
 
 }

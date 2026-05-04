@@ -495,7 +495,7 @@ public class AssetService {
                     throw new IllegalArgumentException("Specimen id is required when attaching specimen to asset");
                 }
                 specimenRepository.attachSpecimen(asset.asset_guid, specimen.asset_preparation_type,
-                        specimen.specimen_id);
+                        specimen.specimen_id, specimen.specify_collection_object_attachment_id);
 
             }
             // Handle external publishers
@@ -826,7 +826,7 @@ public class AssetService {
                         throw new RuntimeException("Specimen not found for asset update");
                     }
                     specimenRepository.attachSpecimen(updatedAsset.asset_guid, s.asset_preparation_type,
-                            s.specimen_id);
+                            s.specimen_id, null);
                 } else {
                     AssetSpecimen existingAssetSpecimen = idExistingSpecimen.get(s.specimen_id);
                     if (!existingAssetSpecimen.asset_preparation_type.equals(s.asset_preparation_type)) {
@@ -956,6 +956,9 @@ public class AssetService {
     }
 
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest, User user) {
+        if(assetUpdateRequest == null){
+            throw new DasscoIllegalActionException("AssetUpdateRequest is null");
+        }
         try {
             Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
             if (optAsset.isEmpty()) {
@@ -979,7 +982,7 @@ public class AssetService {
 
             if (assetUpdateRequest.specifySyncLogId() != null) {
                 queueBroadcaster.sendSpecifyArsAcknowledge(
-                        new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, assetUpdateRequest.specifySyncLogId(), null));
+                        new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, assetUpdateRequest.specifySyncLogId(), null, assetUpdateRequest.asset_guid()));
             }
 
             // WP5a
@@ -993,10 +996,10 @@ public class AssetService {
             // }
             return true;
         } catch (RuntimeException e) {
-            if (assetUpdateRequest.specifySyncLogId() != null) {
+            if (assetUpdateRequest != null && assetUpdateRequest.specifySyncLogId() != null) {
                 try {
                     queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(
-                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(), e.getMessage()));
+                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(), e.getMessage(), assetUpdateRequest.asset_guid()));
                 } catch (RuntimeException acknowledgeException) {
                     logger.warn("Failed to send Specify sync acknowledge for failed completeAsset", acknowledgeException);
                 }
