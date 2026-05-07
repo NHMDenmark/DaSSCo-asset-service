@@ -30,6 +30,11 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.digitiser = rs.getString("digitiser");
         asset.collection = rs.getString("collection_name");
         asset.workstation = rs.getString("workstation_name");
+        Array mimeType = rs.getArray("mime_type");
+
+        if (mimeType != null) {
+            asset.mime_type = Arrays.asList((String[]) mimeType.getArray());
+        }
         if (rs.wasNull()) {
             asset.digitiser_id = null;
         }
