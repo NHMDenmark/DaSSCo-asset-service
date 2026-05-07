@@ -138,7 +138,7 @@
 
         <ng-container matColumnDef="created_date">
           <mat-header-cell *matHeaderCellDef mat-sort-header>Date Asset Taken</mat-header-cell>
-          <mat-cell *matCellDef="let element">{{ element.date_asset_taken | date : 'dd/MM-yyyy HH:mm' }}</mat-cell>
+          <mat-cell *matCellDef="let element">{{ element.date_asset_taken | date: 'dd/MM-yyyy HH:mm' }}</mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="events">
@@ -157,7 +157,7 @@
                   <div>
                     {{ event.event }}
                     <br />
-                    {{ event.user }}, {{ event.timeStamp | date : 'dd/MM-yyyy HH:mm' }}
+                    {{ event.user }}, {{ event.timeStamp | date: 'dd/MM-yyyy HH:mm' }}
                   </div>
                 </div>
               </mat-menu>
@@ -197,7 +197,7 @@
       Download Asset CSV
     </button>
     <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">
-      Download Asset ZIP
+      Download Complete Zip
     </button>
     <button mat-raised-button color="primary" (click)="bulkUpdate()" [disabled]="!areAssetsSelected()">
       Bulk Update Assets

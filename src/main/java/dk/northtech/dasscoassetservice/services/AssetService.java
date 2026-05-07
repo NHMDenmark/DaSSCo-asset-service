@@ -199,20 +199,32 @@ public class AssetService {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             var assets = h.createQuery("""
                             SELECT
-                                asset.*
-                                , collection.collection_name
-                                , collection.institution_name
-                                , dassco_user.username AS digitiser
-                                , workstation.workstation_name
-                                , copyright
-                                , license
-                                , credit
-                            FROM asset
-                            LEFT JOIN collection USING(collection_id)
-                            LEFT JOIN workstation USING(workstation_id)
-                            LEFT JOIN legality USING(legality_id)
-                            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-                            WHERE asset_guid in (<asset_guids>)
+                                  asset.*,
+                                  collection.collection_name,
+                                  collection.institution_name,
+                                  dassco_user.username AS digitiser,
+                                  workstation.workstation_name,
+                                  legality.copyright,
+                                  legality.license,
+                                  legality.credit,
+                                COALESCE(file_agg.mime_type, ARRAY[]::text[]) AS mime_type
+                                FROM asset
+                                LEFT JOIN (
+                                  SELECT
+                                    file.asset_guid,
+                                    ARRAY_AGG(file.mime_type) FILTER (
+                                      WHERE file.mime_type IS NOT NULL
+                                    ) AS mime_type
+                                  FROM file
+                                  GROUP BY file.asset_guid
+                                ) file_agg
+                                  ON file_agg.asset_guid = asset.asset_guid
+                                LEFT JOIN collection USING (collection_id)
+                                LEFT JOIN workstation USING (workstation_id)
+                                LEFT JOIN legality USING (legality_id)
+                                LEFT JOIN dassco_user
+                                  ON dassco_user.dassco_user_id = asset.digitiser_id
+                            WHERE asset.asset_guid in (<asset_guids>)
                             """)
                     .bindList("asset_guids", assetGuids)
                     .map(new AssetMapper())
