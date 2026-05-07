@@ -26,6 +26,7 @@ export interface QueryResultAsset {
   file_formats: FileFormat[] | undefined;
   created_date: string | undefined;
   date_asset_taken: string | undefined;
+  writeAccess: boolean | undefined;
   events: Event[] | undefined;
   asset_specimen: AssetSpecimen[] | undefined;
 }

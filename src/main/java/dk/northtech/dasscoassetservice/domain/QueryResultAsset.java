@@ -19,18 +19,19 @@ public record QueryResultAsset(
                 @Schema(description = "The format of the asset", example = "[\"JPEG\"]") List<String> file_formats,
                 @Schema(description = "Date and time the asset metadata was uploaded", example = "2023-05-24T00:00:00.000Z") Instant created_date,
                 @Schema(description = "Date and time the asset was taken", example = "2023-05-24T00:00:00.000Z") Instant date_asset_taken,
+                @Schema(description = "Whether the current user has write access to the asset") Boolean writeAccess,
                 @Schema(description = "List of the events associated with an asset") @Nullable List<Event> events,
                 @Schema(description = "A list of specimen objects with the following information: institution, collection, preparation_type, barcode and specimen_pid") @Nullable List<AssetSpecimen> asset_specimen) {
 
         public QueryResultAsset withEvents(List<Event> events) {
                 return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date,
-                                date_asset_taken, events,
+                                date_asset_taken, writeAccess, events,
                                 asset_specimen);
         }
 
         public QueryResultAsset withSpecimen(List<AssetSpecimen> asset_specimen) {
                 return new QueryResultAsset(asset_guid, institution, collection, file_formats, created_date,
-                                date_asset_taken, events,
+                                date_asset_taken, writeAccess, events,
                                 asset_specimen);
         }
 }

@@ -110,7 +110,7 @@ public class BulkUpdateService {
         User user = this.userService.from(securityContext);
         List<Asset> assets = this.assetService.getAssets(assetGuids);
         assets.forEach(asset ->
-                this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection)
+                this.rightsValidationService.requireWriteRights(user, asset)
         );
 
         List<Issue> issues = listIssuesByAssetGuids(assetGuids); // already ordered by timestamp desc
@@ -202,7 +202,7 @@ public class BulkUpdateService {
         User user = this.userService.from(securityContext);
         List<Asset> assets = this.assetService.getAssets(assetGuids);
         assets.forEach(asset -> {
-            this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+            this.rightsValidationService.requireWriteRights(user, asset);
         });
         List<DigitiserLink> links = jdbi.withHandle(h ->
                 h.attach(DigitiserListRepository.class)
@@ -239,7 +239,7 @@ public class BulkUpdateService {
         User user = this.userService.from(securityContext);
         List<Asset> assets = this.assetService.getAssets(assetGuids);
         assets.forEach(asset -> {
-            this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+            this.rightsValidationService.requireWriteRights(user, asset);
         });
 
         List<Map<String, Object>> restrictions = jdbi.withHandle(h ->
@@ -274,7 +274,7 @@ public class BulkUpdateService {
             throw new NotFoundException("No assets found");
         }
         assets.forEach(asset -> {
-            this.rightsValidationService.checkWriteRights(user, asset.institution, asset.collection);
+            this.rightsValidationService.requireWriteRights(user, asset);
         });
 
 

@@ -359,12 +359,14 @@ public class QueriesService {
                         collection_name as collection,
                         file_formats,
                         creation_event.timestamp as created_date,
-                        date_asset_taken
+                        date_asset_taken,
+                        #writeAccess# as writeAccess
                     from asset
                     #LeftJoins# #where# #collectionAccess# #limit#
                 """
                 .replace("#LeftJoins#", leftJoins.toString())
                 .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
+                .replace("#writeAccess#", Boolean.toString(fullAccess))
                 .replace("#collectionAccess#",
                         fullAccess ? ""
                                 : (whereFilters.isEmpty() ? "where"
