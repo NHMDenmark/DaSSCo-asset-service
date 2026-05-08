@@ -967,9 +967,10 @@ public class AssetService {
 
     }
 
-    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest, User user) {
+    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+        Long specifySyncLogId = assetUpdateRequest.specifySyncLogId();
         try {
-            Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
+            Optional<Asset> optAsset = getAsset(assetUpdateRequest.asset_guid());
             if (optAsset.isEmpty()) {
                 throw new IllegalArgumentException("Asset doesnt exist!");
             }
@@ -977,21 +978,19 @@ public class AssetService {
             asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
             asset.error_message = null;
             asset.error_timestamp = null;
-            Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(),
-                    asset.institution);
+
 
             jdbi.withHandle(h -> {
                 AssetRepository assetRepository = h.attach(AssetRepository.class);
-                EventRepository eventRepository = h.attach(EventRepository.class);
                 assetRepository.updateAssetStatus(asset);
                 this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
                         assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
                 return h;
             });
 
-            if (assetUpdateRequest.specifySyncLogId() != null) {
+            if (specifySyncLogId != null) {
                 queueBroadcaster.sendSpecifyArsAcknowledge(
-                        new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, assetUpdateRequest.specifySyncLogId(), null));
+                        new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifySyncLogId, null));
             }
 
             // WP5a
@@ -1005,10 +1004,10 @@ public class AssetService {
             // }
             return true;
         } catch (RuntimeException e) {
-            if (assetUpdateRequest.specifySyncLogId() != null) {
+            if (specifySyncLogId != null) {
                 try {
                     queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(
-                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(), e.getMessage()));
+                            SpecifySyncStatus.FAILED, specifySyncLogId, e.getMessage()));
                 } catch (RuntimeException acknowledgeException) {
                     logger.warn("Failed to send Specify sync acknowledge for failed completeAsset", acknowledgeException);
                 }

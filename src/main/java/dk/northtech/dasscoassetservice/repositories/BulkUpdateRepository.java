@@ -280,14 +280,11 @@ public interface BulkUpdateRepository extends SqlObject {
 
         if (updatedAsset.funding != null) {
             AGEQuery ageQuery = deleteList(assetList, "<-[funds_to_delete:FUNDS]-", "funds_to_delete", "Funding_entity");
-            System.out.println(ageQuery.sql());
             executeUpdate(ageQuery);
             if (!updatedAsset.funding.isEmpty()) {
                 AGEQuery ensureExistsQuery = ensureExistes(updatedAsset.funding, "Funding_entity");
-                System.out.println(ensureExistsQuery.sql());
                 executeUpdate(ensureExistsQuery);
                 AGEQuery funding = createList(assetList, updatedAsset.funding, "<-[:FUNDS]-", "Funding_entity");
-                System.out.println(funding.sql());
                 executeUpdate(funding);
             }
         }

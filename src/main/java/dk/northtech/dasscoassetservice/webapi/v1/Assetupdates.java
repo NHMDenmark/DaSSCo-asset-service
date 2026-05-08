@@ -245,13 +245,27 @@ public class Assetupdates {
     @Path("{assetGuid}/complete")
     @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n" +
             "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA.")
-    @Consumes(APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void completeAsset(@Context SecurityContext securityContext, AssetUpdateRequest assetUpdateRequest) {
-        this.assetService.completeAsset(assetUpdateRequest, userService.from(securityContext));
+    public void completeAsset(@Context SecurityContext securityContext,
+                              @PathParam("assetGuid") String assetGuid,
+                              AssetUpdateRequest assetUpdateRequest) {
+        if (assetUpdateRequest == null) {
+            throw new IllegalArgumentException("POST request requires a body");
+        }
+        if (assetUpdateRequest.asset_guid() == null || assetUpdateRequest.asset_guid().isBlank()) {
+            throw new IllegalArgumentException("asset_guid is required");
+        }
+        if (!Objects.equals(assetGuid, assetUpdateRequest.asset_guid())) {
+            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-message");
+        }
+        if (userService.from(securityContext) == null) {
+            throw new ForbiddenException("No user found");
+        }
+        this.assetService.completeAsset(assetUpdateRequest);
     }
 
 
