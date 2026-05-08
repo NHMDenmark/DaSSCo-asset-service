@@ -41,11 +41,36 @@ public class Specimens {
     }
 
 
+    @GET
+    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
+    @Operation(summary = "Get specimen", description = "Get a specimen by institution, collection and barcode")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Specimen getSpecimen(@PathParam("institution") String institution
+            , @PathParam("collection") String collection
+            , @PathParam("barcode") String barcode
+            , @Context SecurityContext securityContext){
+        System.out.println("API HIT");
+        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
+        return specimenService.findSpecimen(institution, collection, barcode, user)
+                .orElseThrow(() -> new NotFoundException("No specimen found with institution " + institution + ", collection " + collection + " and barcode " + barcode));
+    }
+
+    @GET
+    @Path("/specimens/preparationTypes")
+    @Operation(summary = "Get Preparation Type List")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<String> getPreparationTypes(){
+        return this.specimenService.listPreparationTypes();
+    }
+
 
     @PUT
     @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
 //    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -60,18 +85,6 @@ public class Specimens {
         return specimenService.putSpecimen(specimen, userService.from(securityContext));
     }
 
-    @GET
-    @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
-    @Operation(summary = "Get specimen", description = "Get a specimen by institution, collection and barcode")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Specimen getSpecimen(@PathParam("institution") String institution
-            , @PathParam("collection") String collection
-            , @PathParam("barcode") String barcode
-            , @Context SecurityContext securityContext){
-        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
-        return specimenService.findSpecimen(institution, collection, barcode, user)
-                .orElseThrow(() -> new NotFoundException("No specimen found with institution " + institution + ", collection " + collection + " and barcode " + barcode));
-    }
 
     @DELETE
     @Path("/institutions/{institution}/collections/{collection}/specimens/{barcode}")
@@ -84,15 +97,5 @@ public class Specimens {
             , @PathParam("barcode") String barcode
             , @Context SecurityContext securityContext){
         return specimenService.deleteSpecimen(institution, collection, barcode, userService.from(securityContext));
-    }
-
-    @GET
-    @Path("/specimens/preparationTypes")
-    @Operation(summary = "Get Preparation Type List")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class))))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<String> getPreparationTypes(){
-        return this.specimenService.listPreparationTypes();
     }
 }

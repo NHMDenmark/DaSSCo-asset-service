@@ -149,6 +149,43 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
 
     }
 
+    @Test
+    void updateSpecimenRemovesRoleRestrictionsMissingFromRequest() {
+        Asset asset = AssetServiceTest.getTestAsset("updateSpecimenRemovesRoleRestrictionsMissingFromRequest");
+        User user = new User("update-specimen-roles-user", Set.of("WRITE_updateSpecimenRemoveRoleKeep", "WRITE_updateSpecimenRemoveRoleDelete"));
+
+        Specimen specimen = new Specimen(asset.institution
+                , asset.collection
+                , "updateSpecimenRemovesRoleRestrictionsMissingFromRequest-1"
+                , "nhmd.plantz.updateSpecimenRemovesRoleRestrictionsMissingFromRequest-1"
+                , new HashSet<>(Set.of("pinning", "slide"))
+                , null
+                , collectionService.findCollectionInternal(asset.collection, asset.institution).get().collection_id()
+                , Arrays.asList(new Role("updateSpecimenRemoveRoleKeep"), new Role("updateSpecimenRemoveRoleDelete")));
+        Specimen persisted = specimenService.putSpecimen(specimen, user);
+
+        Specimen update = new Specimen(asset.institution
+                , asset.collection
+                , "updateSpecimenRemovesRoleRestrictionsMissingFromRequest-1"
+                , "nhmd.plantz.updateSpecimenRemovesRoleRestrictionsMissingFromRequest-1"
+                , new HashSet<>(Set.of("pinning", "slide"))
+                , persisted.specimen_id()
+                , persisted.collection_id()
+                , List.of(new Role("updateSpecimenRemoveRoleKeep")));
+
+        specimenService.putSpecimen(update, user);
+
+        List<String> persistedRoles = jdbi.withHandle(handle -> handle.createQuery("""
+                        SELECT role
+                        FROM specimen_role_restriction
+                        WHERE specimen_id = :specimenId
+                        """)
+                .bind("specimenId", persisted.specimen_id())
+                .mapTo(String.class)
+                .list());
+        assertThat(persistedRoles).containsExactly("updateSpecimenRemoveRoleKeep");
+    }
+
 //
 //    @Test
 //    void listPreparationTypes() {
