@@ -60,7 +60,6 @@ public class SpecimenService {
         if (specimenOpt.isPresent() && !rightsValidationService.checkRightsSpecimen(user, specimenOpt.get(), false)) {
             throw new DasscoIllegalActionException("FORBIDDEN");
         }
-        System.out.println("YO");
         return specimenOpt;
     }
 
