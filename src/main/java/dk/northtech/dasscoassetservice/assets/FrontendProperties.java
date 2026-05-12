@@ -9,14 +9,14 @@ public class FrontendProperties {
   public final String clientId;
   public final String fileProxyRootUrl;
   public final String wikiPageUrl;
-  public final String externalLink;
+  public final String dasscoHomepage;
 
-  public FrontendProperties(String authenticationUrl, String rootUrl, String clientId, String fileProxyRootUrl, String wikiPageUrl, String externalLink) {
+  public FrontendProperties(String authenticationUrl, String rootUrl, String clientId, String fileProxyRootUrl, String wikiPageUrl, String dasscoHomepage) {
     this.authenticationUrl = authenticationUrl;
     this.rootUrl = rootUrl;
     this.clientId = clientId;
     this.fileProxyRootUrl = fileProxyRootUrl;
     this.wikiPageUrl = wikiPageUrl;
-    this.externalLink = externalLink;
+    this.dasscoHomepage = dasscoHomepage;
   }
 }

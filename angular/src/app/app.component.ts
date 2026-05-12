@@ -3,7 +3,7 @@ import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {AuthService} from './services/auth.service';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
-import {ExternalLink} from './utility';
+import {DasscoHomepage} from './utility';
 
 @Component({
   selector: 'dassco-root',
@@ -15,7 +15,7 @@ export class AppComponent {
   private oidcSecurityService = inject(OidcSecurityService);
   authService = inject(AuthService);
   private router = inject(Router);
-  externalLink = inject(ExternalLink);
+  dasscoHomepage = inject(DasscoHomepage);
 
   constructor() {
     this.setActiveRoute();

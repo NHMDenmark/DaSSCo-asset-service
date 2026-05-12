@@ -18,8 +18,8 @@ export const WikiPageUrl = new InjectionToken<string>('Wiki Page Url', {
   factory: () =>
     checkNotUndefined((window as any).frontendProperties?.wikiPageUrl, 'missing wiki page url in frontendProperties')
 });
-export const ExternalLink = new InjectionToken<string>('External Link', {
+export const DasscoHomepage = new InjectionToken<string>('Dassco Homepage', {
   providedIn: 'root',
   factory: () =>
-    checkNotUndefined((window as any).frontendProperties?.externalLink, 'missing external link in frontendProperties')
+    checkNotUndefined((window as any).frontendProperties?.dasscoHomepage, 'missing dassco homepage in frontendProperties')
 });
