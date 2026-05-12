@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+    <changeSet id="3.13.0:ADD_ACTIVE_LARGE_UPLOADS" author="MG" context="default">
+        <createTable tableName="active_large_uploads">
+            <column name="upload_id" type="text">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="asset_guid" type="text">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="directory_id" type="bigint">
+                <constraints nullable="false"
+                             foreignKeyName="fk_active_large_uploads_directory"
+                             references="directories(directory_id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <column name="path" type="text">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="timestamp" defaultValue="now()">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="timestamp" defaultValue="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="active_large_uploads" indexName="idx_active_large_uploads_directory">
+            <column name="directory_id"/>
+        </createIndex>
+
+        <createIndex tableName="active_large_uploads" indexName="idx_active_large_uploads_asset_guid">
+            <column name="asset_guid"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
