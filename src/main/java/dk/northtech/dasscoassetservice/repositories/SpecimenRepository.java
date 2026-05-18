@@ -119,6 +119,13 @@ public interface SpecimenRepository extends SqlObject {
     @SqlQuery("SELECT * FROM preparation_type")
     List<String> listPreparationTypesInternal();
 
+    @SqlQuery("""
+            SELECT DISTINCT asset_guid
+            FROM asset_specimen
+            WHERE specify_collection_object_attachment_id = :specifyCollectionObjectAttachmentId
+            """)
+    List<String> findAssetGuidsBySpecifyCollectionObjectAttachmentId(Long specifyCollectionObjectAttachmentId);
+
     @SqlUpdate("""
     DELETE FROM asset_specimen 
     WHERE asset_guid = :assetGuid 

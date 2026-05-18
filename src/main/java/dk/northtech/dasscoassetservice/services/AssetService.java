@@ -616,6 +616,22 @@ public class AssetService {
         return optionalAsset;
     }
 
+    public Optional<Asset> findAssetBySpecifyCollectionObjectAttachmentId(Long specifyCollectionObjectAttachmentId) {
+        if (specifyCollectionObjectAttachmentId == null) {
+            throw new IllegalArgumentException("specifyCollectionObjectAttachmentId cannot be null");
+        }
+        List<String> assetGuids = jdbi.onDemand(SpecimenRepository.class)
+                .findAssetGuidsBySpecifyCollectionObjectAttachmentId(specifyCollectionObjectAttachmentId);
+        if (assetGuids.isEmpty()) {
+            return Optional.empty();
+        }
+        if (assetGuids.size() > 1) {
+            throw new IllegalStateException("Expected unique asset for specifyCollectionObjectAttachmentId "
+                    + specifyCollectionObjectAttachmentId + " but found " + assetGuids.size());
+        }
+        return getAsset(assetGuids.get(0));
+    }
+
     public void refreshCaches(Asset asset) {
         LocalDateTime cacheStart = LocalDateTime.now();
         if (asset.digitiser != null && !asset.digitiser.isEmpty()) {

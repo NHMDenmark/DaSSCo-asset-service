@@ -4,6 +4,7 @@ import dk.northtech.dasscoassetservice.domain.Collection;
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
 import dk.northtech.dasscoassetservice.repositories.AssetRepository;
+import dk.northtech.dasscoassetservice.repositories.SpecimenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,78 @@ class AssetServiceTest extends AbstractIntegrationTest {
         List<Event> events = assetService.getEvents("assetEvents", user);
         assertThat(events.size()).isAtLeast(1);
         assertThat(events.get(0).event).isEqualTo(DasscoEvent.CREATE_ASSET_METADATA);
+    }
+
+    @Test
+    void testFindAssetBySpecifyCollectionObjectAttachmentId() {
+        Asset asset = getTestAsset("findBySpecifyCollectionObjectAttachmentId");
+        addSpecimen(asset, "findBySpecifyCollectionObjectAttachmentId-sp-1", "findBySpecifyCollectionObjectAttachmentId-pid-1", "slide");
+        assetService.persistAsset(asset, user, 10);
+
+        Asset persisted = assetService.getAsset(asset.asset_guid).orElseThrow();
+        AssetSpecimen persistedSpecimen = persisted.asset_specimen.get(0);
+        Long specifyCollectionObjectAttachmentId = 11111L;
+        jdbi.onDemand(SpecimenRepository.class).updateAssetSpecimen(
+                persisted.asset_guid,
+                persistedSpecimen.specimen_id,
+                specifyCollectionObjectAttachmentId,
+                persistedSpecimen.asset_preparation_type
+        );
+
+        Optional<Asset> foundAsset = assetService.findAssetBySpecifyCollectionObjectAttachmentId(specifyCollectionObjectAttachmentId);
+        assertThat(foundAsset.isPresent()).isTrue();
+        assertThat(foundAsset.get().asset_guid).isEqualTo(asset.asset_guid);
+    }
+
+    @Test
+    void testFindAssetBySpecifyCollectionObjectAttachmentIdNotFound() {
+        Optional<Asset> foundAsset = assetService.findAssetBySpecifyCollectionObjectAttachmentId(999999999L);
+        assertThat(foundAsset.isEmpty()).isTrue();
+    }
+
+    @Test
+    void testFindAssetBySpecifyCollectionObjectAttachmentIdNullInput() {
+        IllegalArgumentException illegalArgumentException = assertThrows(
+                IllegalArgumentException.class,
+                () -> assetService.findAssetBySpecifyCollectionObjectAttachmentId(null)
+        );
+        assertThat(illegalArgumentException).hasMessageThat().isEqualTo("specifyCollectionObjectAttachmentId cannot be null");
+    }
+
+    @Test
+    void testFindAssetBySpecifyCollectionObjectAttachmentIdNonUniqueMatch() {
+        Asset asset1 = getTestAsset("findBySpecifyCollectionObjectAttachmentIdNonUnique-1");
+        addSpecimen(asset1, "findBySpecifyCollectionObjectAttachmentIdNonUnique-sp-1", "findBySpecifyCollectionObjectAttachmentIdNonUnique-pid-1", "slide");
+        assetService.persistAsset(asset1, user, 10);
+
+        Asset asset2 = getTestAsset("findBySpecifyCollectionObjectAttachmentIdNonUnique-2");
+        addSpecimen(asset2, "findBySpecifyCollectionObjectAttachmentIdNonUnique-sp-2", "findBySpecifyCollectionObjectAttachmentIdNonUnique-pid-2", "slide");
+        assetService.persistAsset(asset2, user, 10);
+
+        Long sharedSpecifyCollectionObjectAttachmentId = 22222L;
+        Asset persisted1 = assetService.getAsset(asset1.asset_guid).orElseThrow();
+        AssetSpecimen persistedSpecimen1 = persisted1.asset_specimen.get(0);
+        jdbi.onDemand(SpecimenRepository.class).updateAssetSpecimen(
+                persisted1.asset_guid,
+                persistedSpecimen1.specimen_id,
+                sharedSpecifyCollectionObjectAttachmentId,
+                persistedSpecimen1.asset_preparation_type
+        );
+        Asset persisted2 = assetService.getAsset(asset2.asset_guid).orElseThrow();
+        AssetSpecimen persistedSpecimen2 = persisted2.asset_specimen.get(0);
+        jdbi.onDemand(SpecimenRepository.class).updateAssetSpecimen(
+                persisted2.asset_guid,
+                persistedSpecimen2.specimen_id,
+                sharedSpecifyCollectionObjectAttachmentId,
+                persistedSpecimen2.asset_preparation_type
+        );
+
+        IllegalStateException illegalStateException = assertThrows(
+                IllegalStateException.class,
+                () -> assetService.findAssetBySpecifyCollectionObjectAttachmentId(sharedSpecifyCollectionObjectAttachmentId)
+        );
+        assertThat(illegalStateException).hasMessageThat()
+                .isEqualTo("Expected unique asset for specifyCollectionObjectAttachmentId 22222 but found 2");
     }
 
 

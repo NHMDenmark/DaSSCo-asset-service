@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class SpecifyArsSyncService {
@@ -57,7 +59,10 @@ public class SpecifyArsSyncService {
     public void handleSpecifyUpdate(SpecifyArsSyncMessage specifyArsSyncMessage) {
         try {
             Asset specifyAsset = specifyArsSyncMessage.asset;
-            Optional<Asset> existing = assetService.getAsset(specifyAsset.asset_guid);
+            Optional<Asset> existing = resolveExistingAssetForSpecifyUpdate(specifyAsset);
+            if (existing.isEmpty()) {
+                existing = assetService.getAsset(specifyAsset.asset_guid);
+            }
             User user = new User("dassco-asset-service");
             user = userService.ensureExists(user);
             specifyAsset.digitiser = user.username;
@@ -109,6 +114,33 @@ public class SpecifyArsSyncService {
 
             queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifyArsSyncMessage.specifySyncLogId, e1.getMessage(), specifyArsSyncMessage.asset != null ? specifyArsSyncMessage.asset.asset_guid : null));
         }
+    }
+
+    private Optional<Asset> resolveExistingAssetForSpecifyUpdate(Asset specifyAsset) {
+        if (specifyAsset == null || specifyAsset.asset_specimen == null || specifyAsset.asset_specimen.isEmpty()) {
+            return Optional.empty();
+        }
+        List<Long> collectionObjectAttachmentIds = specifyAsset.asset_specimen.stream()
+                .map(specimen -> specimen.specify_collection_object_attachment_id)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+        if (collectionObjectAttachmentIds.isEmpty()) {
+            return Optional.empty();
+        }
+        List<Asset> foundAssets = new ArrayList<>();
+        for (Long collectionObjectAttachmentId : collectionObjectAttachmentIds) {
+            Optional<Asset> found = assetService.findAssetBySpecifyCollectionObjectAttachmentId(collectionObjectAttachmentId);
+            found.ifPresent(foundAssets::add);
+        }
+        if (foundAssets.isEmpty()) {
+            return Optional.empty();
+        }
+        Set<String> foundAssetGuids = foundAssets.stream().map(asset -> asset.asset_guid).collect(Collectors.toSet());
+        if (foundAssetGuids.size() > 1) {
+            throw new IllegalStateException("Specify update references multiple existing assets via collection object attachment ids: " + foundAssetGuids);
+        }
+        return Optional.of(foundAssets.get(0));
     }
 
     private boolean checkParkingAndAcknowedge(SpecifyArsSyncMessage specifyArsSyncMessage, Asset specifyAsset, Asset existingAsset, boolean hasParkedFiles) {
