@@ -85,6 +85,15 @@ public class SpecifyArsSyncService {
                 checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, existingAsset, hasParkedFiles, existingAsset.asset_guid);
             } else {
                 String temporaryAssetGuid = specifyAsset.asset_guid;
+                boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, temporaryAssetGuid);
+                if (!hasParkedFiles) {
+                    queueBroadcaster.sendSpecifyArsAcknowledge(
+                            new SyncAcknowledge(SpecifySyncStatus.FAILED,
+                                    specifyArsSyncMessage.specifySyncLogId,
+                                    "No parked files found for asset from Specify; asset not created",
+                                    temporaryAssetGuid));
+                    return;
+                }
                 String newAssetGuid = ingestionClient.generateGuid(specifyAsset.institution);
                 specifyAsset.asset_guid = newAssetGuid;
                 specifyAsset.status = SPECIFY_DEFAULT_CREATION_STATUS;
@@ -111,8 +120,6 @@ public class SpecifyArsSyncService {
                     extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status);
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
-
-                boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, temporaryAssetGuid);
                 checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, specifyAsset, hasParkedFiles, temporaryAssetGuid);
             }
         } catch (Exception e1) {

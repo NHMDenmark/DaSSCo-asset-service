@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -120,10 +121,14 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         specifyArsSyncService.handleSpecifyUpdate(message);
 
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
-                ack.specifySyncStatus() == SpecifySyncStatus.SUCCEEDED
+                ack.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && ack.specifySyncLogId().equals(1004L)
-                        && ack.additionalInfo() == null));
+                        && "No parked files found for asset from Specify; asset not created".equals(ack.additionalInfo())
+                        && ack.assetGuid().equals(newAsset.asset_guid)));
         verify(fileProxyClient, never()).syncParkedFile(any(SyncParkingSpaceRequest.class));
+        verify(ingestionClient, never()).generateGuid(any());
+
+        assertThat(assetService.getAsset(newAsset.asset_guid).isPresent()).isFalse();
     }
 
     @Test
@@ -145,6 +150,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
                         && req.specifySyncLogId.equals(1005L)
                         && req.attachmentLocation.equals(temporaryAssetGuid)));
         verify(queueBroadcaster, never()).sendSpecifyArsAcknowledge(any(SyncAcknowledge.class));
+        verify(ingestionClient, times(1)).generateGuid(any());
     }
 
     @Test
