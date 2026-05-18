@@ -31,6 +31,7 @@ public class SpecifyArsSyncService {
     private final WorkstationService workstationService;
     private final ExtendableEnumService extendableEnumService;
     private final FileProxyClient fileProxyClient;
+    private final IngestionClient ingestionClient;
     private final Jdbi jdbi;
     public static final String SPECIFY_DEFAULT_CREATION_STATUS = "SPECIFY_CREATED";
 
@@ -43,6 +44,7 @@ public class SpecifyArsSyncService {
             , WorkstationService workstationService
             , ExtendableEnumService extendableEnumService
             , FileProxyClient fileProxyClient
+            , IngestionClient ingestionClient
             , Jdbi jdbi) {
         this.assetService = assetService;
         this.userService = userService;
@@ -52,6 +54,7 @@ public class SpecifyArsSyncService {
         this.workstationService = workstationService;
         this.extendableEnumService = extendableEnumService;
         this.fileProxyClient = fileProxyClient;
+        this.ingestionClient = ingestionClient;
         this.jdbi = jdbi;
     }
 
@@ -79,8 +82,11 @@ public class SpecifyArsSyncService {
                 mapAsset(specifyArsSyncMessage.asset, existingAsset, specifyArsSyncMessage);
                 assetService.updateAsset(existingAsset, user);
 
-                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, existingAsset, hasParkedFiles);
+                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, existingAsset, hasParkedFiles, existingAsset.asset_guid);
             } else {
+                String temporaryAssetGuid = specifyAsset.asset_guid;
+                String newAssetGuid = ingestionClient.generateGuid(specifyAsset.institution);
+                specifyAsset.asset_guid = newAssetGuid;
                 specifyAsset.status = SPECIFY_DEFAULT_CREATION_STATUS;
                 specifyAsset.pipeline = specifyAsset.pipeline == null ? "unknown" : specifyAsset.pipeline;
                 specifyAsset.workstation = specifyAsset.workstation == null ? "unknown" : specifyAsset.workstation;
@@ -106,8 +112,8 @@ public class SpecifyArsSyncService {
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
 
-                boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, specifyAsset.asset_guid);
-                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, specifyAsset, hasParkedFiles);
+                boolean hasParkedFiles = hasParkedFiles(specifyAsset.institution, specifyAsset.collection, temporaryAssetGuid);
+                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, specifyAsset, hasParkedFiles, temporaryAssetGuid);
             }
         } catch (Exception e1) {
             log.error(e1.getMessage(), e1);
@@ -143,7 +149,7 @@ public class SpecifyArsSyncService {
         return Optional.of(foundAssets.get(0));
     }
 
-    private boolean checkParkingAndAcknowedge(SpecifyArsSyncMessage specifyArsSyncMessage, Asset specifyAsset, Asset existingAsset, boolean hasParkedFiles) {
+    private boolean checkParkingAndAcknowedge(SpecifyArsSyncMessage specifyArsSyncMessage, Asset specifyAsset, Asset existingAsset, boolean hasParkedFiles, String attachmentLocation) {
         if (!hasParkedFiles) {
             queueBroadcaster.sendSpecifyArsAcknowledge(
                     new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, specifyArsSyncMessage.specifySyncLogId, null, existingAsset.asset_guid));
@@ -153,7 +159,8 @@ public class SpecifyArsSyncService {
         acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
                 new SyncParkingSpaceRequest(
                         new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
-                        specifyArsSyncMessage.specifySyncLogId)),
+                        specifyArsSyncMessage.specifySyncLogId,
+                        attachmentLocation)),
                 specifyArsSyncMessage.specifySyncLogId, specifyAsset.asset_guid);
         return false;
     }

@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,11 +37,15 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
     @MockitoBean
     FileProxyClient fileProxyClient;
 
+    @MockitoBean
+    IngestionClient ingestionClient;
+
     private User syncUser;
 
     @BeforeEach
     void setup() {
         syncUser = userService.ensureExists(new User("specify-sync-test-user"));
+        when(ingestionClient.generateGuid(any())).thenAnswer(invocation -> "generated-guid-" + UUID.randomUUID());
     }
 
     @Test
@@ -100,7 +105,8 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
                 req.asset.asset_guid().equals(existingAsset.asset_guid)
                         && req.asset.institution().equals(existingAsset.institution)
                         && req.asset.collection().equals(existingAsset.collection)
-                        && req.specifySyncLogId.equals(1003L)));
+                        && req.specifySyncLogId.equals(1003L)
+                        && req.attachmentLocation.equals(existingAsset.asset_guid)));
         verify(queueBroadcaster, never()).sendSpecifyArsAcknowledge(any(SyncAcknowledge.class));
     }
 
@@ -123,7 +129,8 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
     @Test
     void newAssetWithParkedFilesSyncsParkingSpace() {
         Asset newAsset = AssetServiceTest.getTestAsset("specify-sync-new-with-files");
-        insertParkedFile(newAsset.institution, newAsset.collection, newAsset.asset_guid, "image.jpg");
+        String temporaryAssetGuid = newAsset.asset_guid;
+        insertParkedFile(newAsset.institution, newAsset.collection, temporaryAssetGuid, "image.jpg");
         when(fileProxyClient.syncParkedFile(any(SyncParkingSpaceRequest.class))).thenReturn(SpecifySyncStatus.STARTED);
 
         clearInvocations(queueBroadcaster, fileProxyClient);
@@ -132,10 +139,11 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         specifyArsSyncService.handleSpecifyUpdate(message);
 
         verify(fileProxyClient).syncParkedFile(argThat(req ->
-                req.asset.asset_guid().equals(newAsset.asset_guid)
+                req.asset.asset_guid().startsWith("generated-guid-")
                         && req.asset.institution().equals(newAsset.institution)
                         && req.asset.collection().equals(newAsset.collection)
-                        && req.specifySyncLogId.equals(1005L)));
+                        && req.specifySyncLogId.equals(1005L)
+                        && req.attachmentLocation.equals(temporaryAssetGuid)));
         verify(queueBroadcaster, never()).sendSpecifyArsAcknowledge(any(SyncAcknowledge.class));
     }
 
