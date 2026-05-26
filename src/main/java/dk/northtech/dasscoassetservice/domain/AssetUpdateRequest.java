@@ -16,7 +16,7 @@ public record AssetUpdateRequest(
         @Nullable String asset_guid,
         @Schema(description = "The directory_id for the sync event", example = "1")
         @Nullable Long directory_id,
-        @Schema(description = "Specify sync log id used for acknowledge events", example = "123")
+        @Schema(description = "Id used to track assets that er undergoing synchronisation from Specify", example = "123")
         @Nullable Long specifySyncLogId
 ) {
 

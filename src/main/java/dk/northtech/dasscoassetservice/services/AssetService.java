@@ -1015,7 +1015,7 @@ public class AssetService {
             if (assetUpdateRequest != null && assetUpdateRequest.specifySyncLogId() != null) {
                 try {
                     queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(
-                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(), e.getMessage(), assetUpdateRequest.asset_guid()));
+                            SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(),"Failed to complete asset " + e.getMessage(), assetUpdateRequest.asset_guid()));
                 } catch (RuntimeException acknowledgeException) {
                     logger.warn("Failed to send Specify sync acknowledge for failed completeAsset", acknowledgeException);
                 }
@@ -1158,7 +1158,7 @@ public class AssetService {
     private static final Set<InternalStatus> errorStatuses = Set.of(InternalStatus.ERDA_FAILED,
             InternalStatus.SPECIFY_SYNC_FAILED);
 
-    public boolean setAssetStatus(String assetGuid, String status, String errorMessage) {
+    public boolean setAssetStatus(String assetGuid, String status, String errorMessage, Long specifySyncLogId) {
         InternalStatus assetStatus = null;
         try {
             assetStatus = InternalStatus.valueOf(status);
@@ -1180,7 +1180,12 @@ public class AssetService {
         }
         jdbi.onDemand(AssetRepository.class)
                 .updateAssetNoEvent(asset);
-
+        if(specifySyncLogId != null) {
+            if(assetStatus == InternalStatus.ERDA_FAILED) {
+                queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(SpecifySyncStatus.FAILED, specifySyncLogId, "Asset is imported but has failed to sync storage, please check if asset has open shares", assetGuid));
+            }
+            // Only ERDA failed should be sent specify as this is the only case where a retry next day will not set things right.
+        }
         statisticsDataServiceV2.refreshCachedData();
         return true;
     }

@@ -135,9 +135,11 @@ public class Assetupdates {
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void setErrorStatus(
-            @PathParam("assetGuid") String assetGuid, @QueryParam("newStatus") String newStatus,
-            @QueryParam("errorMessage") String errorMessage) {
-        assetService.setAssetStatus(assetGuid, newStatus, errorMessage);
+            @PathParam("assetGuid") String assetGuid
+            , @QueryParam("newStatus") String newStatus
+            , @QueryParam("specifySyncLogId") Long specifySyncLogId
+            , @QueryParam("errorMessage") String errorMessage) {
+        assetService.setAssetStatus(assetGuid, newStatus, errorMessage, specifySyncLogId);
     }
 
     @GET

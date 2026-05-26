@@ -13,11 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,6 +57,7 @@ public class SpecifyArsSyncService {
 
     public void handleSpecifyUpdate(SpecifyArsSyncMessage specifyArsSyncMessage) {
         try {
+            log.info("synchronizing asset {}", specifyArsSyncMessage.asset.asset_guid);
             Asset specifyAsset = specifyArsSyncMessage.asset;
             Optional<Asset> existing = resolveExistingAssetForSpecifyUpdate(specifyAsset);
             if (existing.isEmpty()) {
@@ -131,14 +128,16 @@ public class SpecifyArsSyncService {
 
     private Optional<Asset> resolveExistingAssetForSpecifyUpdate(Asset specifyAsset) {
         if (specifyAsset == null || specifyAsset.asset_specimen == null || specifyAsset.asset_specimen.isEmpty()) {
+            log.warn("SpecifyAsset or AssetSpecimen are null or empty!");
             return Optional.empty();
         }
         List<Long> collectionObjectAttachmentIds = specifyAsset.asset_specimen.stream()
                 .map(specimen -> specimen.specify_collection_object_attachment_id)
-                .filter(id -> id != null)
+                .filter(Objects::nonNull)
                 .distinct()
                 .toList();
         if (collectionObjectAttachmentIds.isEmpty()) {
+            log.info("Found no collectionObjectAttachmentId for Asset");
             return Optional.empty();
         }
         List<Asset> foundAssets = new ArrayList<>();
@@ -146,6 +145,7 @@ public class SpecifyArsSyncService {
             Optional<Asset> found = assetService.findAssetBySpecifyCollectionObjectAttachmentId(collectionObjectAttachmentId);
             found.ifPresent(foundAssets::add);
         }
+        log.info("Found {} assets", foundAssets.size());
         if (foundAssets.isEmpty()) {
             return Optional.empty();
         }
@@ -153,7 +153,7 @@ public class SpecifyArsSyncService {
         if (foundAssetGuids.size() > 1) {
             throw new IllegalStateException("Specify update references multiple existing assets via collection object attachment ids: " + foundAssetGuids);
         }
-        return Optional.of(foundAssets.get(0));
+        return Optional.of(foundAssets.getFirst());
     }
 
     private boolean checkParkingAndAcknowedge(SpecifyArsSyncMessage specifyArsSyncMessage, Asset specifyAsset, Asset existingAsset, boolean hasParkedFiles, String attachmentLocation) {
