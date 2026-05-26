@@ -6,6 +6,7 @@ import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifyArsSyncMessa
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SpecifySyncStatus;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncAcknowledge;
 import dk.northtech.dasscoassetservice.domain.specifyarssync.SyncParkingSpaceRequest;
+import dk.northtech.dasscoassetservice.repositories.AssetRepository;
 import dk.northtech.dasscoassetservice.repositories.ParkedFileRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -113,11 +114,12 @@ public class SpecifyArsSyncService {
                         extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.FILE_FORMAT, fileFormat);
                     }
                 }
-                if(!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status)) {
+                if (!extendableEnumService.checkExists(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status)) {
                     extendableEnumService.persistEnum(ExtendableEnumService.ExtendableEnum.STATUS, specifyAsset.status);
                 }
                 assetService.persistAsset(specifyAsset, user, 122, false);
-                checkParkingAndAcknowedge(specifyArsSyncMessage, specifyAsset, specifyAsset, hasParkedFiles, temporaryAssetGuid);
+                syncParkingForNewAssetOrRollback(specifyArsSyncMessage, specifyAsset, temporaryAssetGuid);
+
             }
         } catch (Exception e1) {
             log.error(e1.getMessage(), e1);
@@ -163,13 +165,52 @@ public class SpecifyArsSyncService {
             return true;
         }
 
-        acknowledgeIfParkedFileSyncFinished(fileProxyClient.syncParkedFile(
-                new SyncParkingSpaceRequest(
-                        new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
-                        specifyArsSyncMessage.specifySyncLogId,
-                        attachmentLocation)),
+        acknowledgeIfParkedFileSyncFinished(
+                fileProxyClient.syncParkedFile(
+                        new SyncParkingSpaceRequest(
+                                new MinimalAsset(existingAsset.asset_guid, null, existingAsset.institution, existingAsset.collection),
+                                specifyArsSyncMessage.specifySyncLogId,
+                                attachmentLocation)),
                 specifyArsSyncMessage.specifySyncLogId, specifyAsset.asset_guid);
         return false;
+    }
+
+    private void syncParkingForNewAssetOrRollback(SpecifyArsSyncMessage specifyArsSyncMessage, Asset createdAsset, String temporaryAssetGuid) {
+        try {
+            SpecifySyncStatus syncStatus = fileProxyClient.syncParkedFile(
+                    new SyncParkingSpaceRequest(
+                            new MinimalAsset(createdAsset.asset_guid, null, createdAsset.institution, createdAsset.collection),
+                            specifyArsSyncMessage.specifySyncLogId,
+                            temporaryAssetGuid));
+
+            if (syncStatus == SpecifySyncStatus.STARTED) {
+                return;
+            }
+
+            rollbackCreatedAssetAndAcknowledgeFailure(
+                    createdAsset.asset_guid,
+                    specifyArsSyncMessage.specifySyncLogId,
+                    "Failed to sync parked files for new asset; expected HTTP 202 from file-proxy"
+            );
+        } catch (Exception e) {
+            rollbackCreatedAssetAndAcknowledgeFailure(
+                    createdAsset.asset_guid,
+                    specifyArsSyncMessage.specifySyncLogId,
+                    "Failed to sync parked files for new asset: " + e.getMessage()
+            );
+        }
+    }
+
+    private void rollbackCreatedAssetAndAcknowledgeFailure(String createdAssetGuid, Long specifySyncLogId, String failureMessage) {
+        try {
+            jdbi.onDemand(AssetRepository.class).deleteAsset(createdAssetGuid);
+        } catch (Exception deleteException) {
+            log.error("Failed to rollback newly created asset {}", createdAssetGuid, deleteException);
+            failureMessage = failureMessage + ". Rollback failed: " + deleteException.getMessage();
+        }
+        queueBroadcaster.sendSpecifyArsAcknowledge(
+                new SyncAcknowledge(SpecifySyncStatus.FAILED, specifySyncLogId, failureMessage, createdAssetGuid)
+        );
     }
 
     private void acknowledgeIfParkedFileSyncFinished(SpecifySyncStatus syncStatus, Long specifySyncLogId, String asset_guid) {

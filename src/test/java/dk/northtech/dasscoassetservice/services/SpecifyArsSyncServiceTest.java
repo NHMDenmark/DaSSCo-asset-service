@@ -154,6 +154,50 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void newAssetWithParkedFilesAndNon202ResponseRollsBackAndSendsFailedAcknowledge() {
+        Asset newAsset = AssetServiceTest.getTestAsset("specify-sync-new-non-202");
+        String temporaryAssetGuid = newAsset.asset_guid;
+        insertParkedFile(newAsset.institution, newAsset.collection, temporaryAssetGuid, "image.jpg");
+        when(fileProxyClient.syncParkedFile(any(SyncParkingSpaceRequest.class))).thenReturn(SpecifySyncStatus.SUCCEEDED);
+
+        clearInvocations(queueBroadcaster, fileProxyClient);
+        SpecifyArsSyncMessage message = new SpecifyArsSyncMessage(newAsset, new HashSet<>(), 1008L);
+
+        specifyArsSyncService.handleSpecifyUpdate(message);
+
+        verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
+                ack.specifySyncStatus() == SpecifySyncStatus.FAILED
+                        && ack.specifySyncLogId().equals(1008L)
+                        && ack.assetGuid().startsWith("generated-guid-")
+                        && ack.additionalInfo() != null
+                        && ack.additionalInfo().contains("expected HTTP 202")));
+
+        assertThat(assetService.getAsset(message.asset.asset_guid).isPresent()).isFalse();
+    }
+
+    @Test
+    void newAssetWithParkedFilesAndSyncExceptionRollsBackAndSendsFailedAcknowledge() {
+        Asset newAsset = AssetServiceTest.getTestAsset("specify-sync-new-sync-exception");
+        String temporaryAssetGuid = newAsset.asset_guid;
+        insertParkedFile(newAsset.institution, newAsset.collection, temporaryAssetGuid, "image.jpg");
+        when(fileProxyClient.syncParkedFile(any(SyncParkingSpaceRequest.class))).thenThrow(new RuntimeException("boom"));
+
+        clearInvocations(queueBroadcaster, fileProxyClient);
+        SpecifyArsSyncMessage message = new SpecifyArsSyncMessage(newAsset, new HashSet<>(), 1009L);
+
+        specifyArsSyncService.handleSpecifyUpdate(message);
+
+        verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
+                ack.specifySyncStatus() == SpecifySyncStatus.FAILED
+                        && ack.specifySyncLogId().equals(1009L)
+                        && ack.assetGuid().startsWith("generated-guid-")
+                        && ack.additionalInfo() != null
+                        && ack.additionalInfo().contains("Failed to sync parked files for new asset")));
+
+        assertThat(assetService.getAsset(message.asset.asset_guid).isPresent()).isFalse();
+    }
+
+    @Test
     void updatesExistingAssetFoundByCollectionObjectAttachmentIdWhenGuidDoesNotExist() {
         Asset existingAsset = AssetServiceTest.getTestAsset("specify-sync-find-by-coa-existing");
         AssetSpecimen existingSpecimen = new AssetSpecimen(existingAsset.asset_guid,
