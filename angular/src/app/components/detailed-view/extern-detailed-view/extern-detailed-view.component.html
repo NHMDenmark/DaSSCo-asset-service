@@ -118,21 +118,21 @@
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Deleted Date:&nbsp;</span>
-            {{ asset?.date_asset_deleted_ars | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset?.date_asset_deleted_ars | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Asset Taken Date:&nbsp;</span>
-            {{ asset?.date_asset_taken | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset?.date_asset_taken | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Audited Date:&nbsp;</span>
-            {{ asset?.date_audited | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset?.date_audited | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -218,10 +218,7 @@
         <div class="list-item-container">
           <mat-list-item>
             <div style="width: 100%">
-              <span class="bold-text">Mime Types:&nbsp;</span>
-              <div *ngIf="asset.mime_type?.length" class="scrollable-list-row scrollable-list-header">
-                <span style="grid-column: span 3">Type</span>
-              </div>
+              <span class="bold-text">Mime Type:&nbsp;</span>
               <div *ngIf="asset.mime_type?.length" class="scrollable-list-container">
                 <ng-container *ngFor="let mime_type of asset.mime_type; let last = last; trackBy: trackBy">
                   <div class="scrollable-list-row">

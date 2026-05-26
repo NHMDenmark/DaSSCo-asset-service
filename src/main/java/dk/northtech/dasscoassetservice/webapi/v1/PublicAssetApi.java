@@ -95,33 +95,59 @@ public class PublicAssetApi {
                     BufferedWriter writer =
                             new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))
             ) {
-                writer.write("Field,Value\n");
+                writeCsvRow(writer,
+                        "asset_guid",
+                        "asset_pid",
+                        "asset_subject",
+                        "audited",
+                        "barcode",
+                        "camera_setting_control",
+                        "collection",
+                        "date_asset_deleted_ars",
+                        "date_asset_taken",
+                        "date_audited",
+                        "file_formats",
+                        "funding",
+                        "institution",
+                        "legality",
+                        "metadata_version",
+                        "mime_type",
+                        "mos_id",
+                        "multi_specimen",
+                        "parent_guids",
+                        "payload_type",
+                        "pipeline_name",
+                        "preparation_type",
+                        "specify_attachment_title",
+                        "specimen_pid"
+                );
 
-                // Convert each field to a CSV-safe line
-                writeLine(writer, "asset_guid", asset.asset_guid());
-                writeLine(writer, "asset_pid", asset.asset_pid());
-                writeLine(writer, "asset_subject", asset.asset_subject());
-                writeLine(writer, "audited", String.valueOf(asset.audited()));
-                writeLine(writer, "barcode", join(asset.barcode()));
-                writeLine(writer, "camera_setting_control", asset.camera_setting_control());
-                writeLine(writer, "collection", asset.collection());
-                writeLine(writer, "date_asset_deleted_ars", asset.date_asset_deleted_ars());
-                writeLine(writer, "date_asset_taken", asset.date_asset_taken());
-                writeLine(writer, "date_audited", asset.date_audited());
-                writeLine(writer, "file_formats", join(asset.file_formats()));
-                writeLine(writer, "funding", join(asset.funding()));
-                writeLine(writer, "institution", asset.institution());
-                writeLine(writer, "legality", asset.legality().map(Object::toString).orElse(""));
-                writeLine(writer, "metadata_version", asset.metadata_version());
-                writeLine(writer, "mime_type", join(asset.mime_type()));
-                writeLine(writer, "mos_id", asset.mos_id());
-                writeLine(writer, "multi_specimen", String.valueOf(asset.multi_specimen()));
-                writeLine(writer, "parent_guids", join(asset.parent_guids()));
-                writeLine(writer, "payload_type", asset.payload_type());
-                writeLine(writer, "pipeline_name", asset.pipeline_name());
-                writeLine(writer, "preparation_type", join(asset.preparation_type()));
-                writeLine(writer, "specify_attachment_title", asset.specify_attachment_title());
-                writeLine(writer, "specimen_pid", join(asset.specimen_pid()));
+                writeCsvRow(writer,
+                        asset.asset_guid(),
+                        asset.asset_pid(),
+                        asset.asset_subject(),
+                        String.valueOf(asset.audited()),
+                        join(asset.barcode()),
+                        asset.camera_setting_control(),
+                        asset.collection(),
+                        asset.date_asset_deleted_ars(),
+                        asset.date_asset_taken(),
+                        asset.date_audited(),
+                        join(asset.file_formats()),
+                        join(asset.funding()),
+                        asset.institution(),
+                        asset.legality().map(Object::toString).orElse(""),
+                        asset.metadata_version(),
+                        join(asset.mime_type()),
+                        asset.mos_id(),
+                        String.valueOf(asset.multi_specimen()),
+                        join(asset.parent_guids()),
+                        asset.payload_type(),
+                        asset.pipeline_name(),
+                        join(asset.preparation_type()),
+                        asset.specify_attachment_title(),
+                        join(asset.specimen_pid())
+                );
             }
         };
 
@@ -133,10 +159,12 @@ public class PublicAssetApi {
                 .build();
     }
 
-    private void writeLine(Writer writer, String field, String value) throws IOException {
-        writer.write(escapeCsv(field));
-        writer.write(",");
-        writer.write(escapeCsv(value));
+    private void writeCsvRow(Writer writer, String... values) throws IOException {
+        writer.write(
+                java.util.Arrays.stream(values)
+                        .map(this::escapeCsv)
+                        .collect(Collectors.joining(","))
+        );
         writer.write("\n");
     }
 
@@ -144,7 +172,7 @@ public class PublicAssetApi {
     private String join(List<String> list) {
         return (list == null || list.isEmpty())
                 ? ""
-                : list.stream().map(this::escapeCsv).collect(Collectors.joining("; "));
+                : String.join("; ", list);
     }
 
     // Escape potential commas, quotes, or newlines in CSV

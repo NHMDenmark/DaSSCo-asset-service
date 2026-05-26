@@ -159,11 +159,12 @@ public class SpecimenService {
     public Specimen updateSpecimen(Specimen specimen, Specimen existing, User user) {
         return jdbi.inTransaction(h -> {
             SpecimenRepository specimenRepository = h.attach(SpecimenRepository.class);
+            RoleRepository roleRepository = h.attach(RoleRepository.class);
 
             rightsValidationService.requireWriteRights(user, specimen.institution(), specimen.collection());
             List<String> assetsWithRemovedPreparationType = specimenRepository.getGuidsByPreparationTypeAndSpecimenId(specimen.preparation_types(), existing.specimen_id());
-            if (specimen.role_restrictions() != null && !existing.role_restrictions().equals(specimen.role_restrictions())) {
-                RoleRepository roleRepository = h.attach(RoleRepository.class);
+            List<Role> existingRoleRestrictions = roleRepository.findRoleRestrictions(RestrictedObjectType.SPECIMEN, existing.specimen_id());
+            if (specimen.role_restrictions() != null && !new HashSet<>(existingRoleRestrictions).equals(new HashSet<>(specimen.role_restrictions()))) {
                 List<String> roles = roleRepository.listRoles();
                 for(Role role: specimen.role_restrictions()) {
                     if(!roles.contains(role.name())) {
@@ -176,6 +177,7 @@ public class SpecimenService {
                 String errorMessage = "Preparation_type cannot be removed as it is used by the following assets: " + assetsWithRemovedPreparationType;
                 throw new IllegalArgumentException(errorMessage);
             }
+            List<Role> updatedRoleRestrictions = specimen.role_restrictions() == null ? existingRoleRestrictions : specimen.role_restrictions();
             Specimen updated = new Specimen(existing.institution()
                     , existing.collection()
                     , specimen.barcode()
@@ -183,7 +185,7 @@ public class SpecimenService {
                     , specimen.preparation_types()
                     , existing.specimen_id()
                     , existing.collection_id()
-                    , specimen.role_restrictions());
+                    , updatedRoleRestrictions);
             specimenRepository
                     .updateSpecimen(updated);
 

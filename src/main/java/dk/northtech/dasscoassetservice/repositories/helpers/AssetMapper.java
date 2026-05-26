@@ -10,6 +10,7 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -30,6 +31,13 @@ public class AssetMapper implements RowMapper<Asset> {
         asset.digitiser = rs.getString("digitiser");
         asset.collection = rs.getString("collection_name");
         asset.workstation = rs.getString("workstation_name");
+        Array mimeType = rs.getArray("mime_type");
+
+        if (mimeType != null) {
+            asset.mime_type = Arrays.asList((String[]) mimeType.getArray());
+        } else {
+            asset.mime_type = new ArrayList<>();
+        }
         if (rs.wasNull()) {
             asset.digitiser_id = null;
         }

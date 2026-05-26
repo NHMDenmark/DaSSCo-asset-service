@@ -199,20 +199,32 @@ public class AssetService {
             RoleRepository roleRepository = h.attach(RoleRepository.class);
             var assets = h.createQuery("""
                             SELECT
-                                asset.*
-                                , collection.collection_name
-                                , collection.institution_name
-                                , dassco_user.username AS digitiser
-                                , workstation.workstation_name
-                                , copyright
-                                , license
-                                , credit
-                            FROM asset
-                            LEFT JOIN collection USING(collection_id)
-                            LEFT JOIN workstation USING(workstation_id)
-                            LEFT JOIN legality USING(legality_id)
-                            LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-                            WHERE asset_guid in (<asset_guids>)
+                                  asset.*,
+                                  collection.collection_name,
+                                  collection.institution_name,
+                                  dassco_user.username AS digitiser,
+                                  workstation.workstation_name,
+                                  legality.copyright,
+                                  legality.license,
+                                  legality.credit,
+                                COALESCE(file_agg.mime_type, ARRAY[]::text[]) AS mime_type
+                                FROM asset
+                                LEFT JOIN (
+                                  SELECT
+                                    file.asset_guid,
+                                    ARRAY_AGG(file.mime_type) FILTER (
+                                      WHERE file.mime_type IS NOT NULL
+                                    ) AS mime_type
+                                  FROM file
+                                  GROUP BY file.asset_guid
+                                ) file_agg
+                                  ON file_agg.asset_guid = asset.asset_guid
+                                LEFT JOIN collection USING (collection_id)
+                                LEFT JOIN workstation USING (workstation_id)
+                                LEFT JOIN legality USING (legality_id)
+                                LEFT JOIN dassco_user
+                                  ON dassco_user.dassco_user_id = asset.digitiser_id
+                            WHERE asset.asset_guid in (<asset_guids>)
                             """)
                     .bindList("asset_guids", assetGuids)
                     .map(new AssetMapper())
@@ -971,12 +983,13 @@ public class AssetService {
 
     }
 
-    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest, User user) {
-        if(assetUpdateRequest == null){
-            throw new DasscoIllegalActionException("AssetUpdateRequest is null");
-        }
+    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+        Long specifySyncLogId = assetUpdateRequest.specifySyncLogId();
+        String assetGuid = assetUpdateRequest.asset_guid() != null
+                ? assetUpdateRequest.asset_guid()
+                : assetUpdateRequest.minimalAsset() != null ? assetUpdateRequest.minimalAsset().asset_guid() : null;
         try {
-            Optional<Asset> optAsset = getAsset(assetUpdateRequest.minimalAsset().asset_guid());
+            Optional<Asset> optAsset = getAsset(assetGuid);
             if (optAsset.isEmpty()) {
                 throw new IllegalArgumentException("Asset doesnt exist!");
             }
@@ -984,19 +997,17 @@ public class AssetService {
             asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
             asset.error_message = null;
             asset.error_timestamp = null;
-            Optional<Pipeline> optPipl = pipelineService.findPipelineByInstitutionAndName(assetUpdateRequest.pipeline(),
-                    asset.institution);
+
 
             jdbi.withHandle(h -> {
                 AssetRepository assetRepository = h.attach(AssetRepository.class);
-                EventRepository eventRepository = h.attach(EventRepository.class);
                 assetRepository.updateAssetStatus(asset);
                 this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
-                        assetUpdateRequest.directory_id(), assetUpdateRequest.asset_guid(), h);
+                        assetUpdateRequest.directory_id(), assetGuid, h);
                 return h;
             });
 
-            if (assetUpdateRequest.specifySyncLogId() != null) {
+            if (specifySyncLogId != null) {
                 queueBroadcaster.sendSpecifyArsAcknowledge(
                         new SyncAcknowledge(SpecifySyncStatus.SUCCEEDED, assetUpdateRequest.specifySyncLogId(), null, assetUpdateRequest.asset_guid()));
             }
@@ -1012,7 +1023,7 @@ public class AssetService {
             // }
             return true;
         } catch (RuntimeException e) {
-            if (assetUpdateRequest != null && assetUpdateRequest.specifySyncLogId() != null) {
+            if (specifySyncLogId != null) {
                 try {
                     queueBroadcaster.sendSpecifyArsAcknowledge(new SyncAcknowledge(
                             SpecifySyncStatus.FAILED, assetUpdateRequest.specifySyncLogId(),"Failed to complete asset " + e.getMessage(), assetUpdateRequest.asset_guid()));

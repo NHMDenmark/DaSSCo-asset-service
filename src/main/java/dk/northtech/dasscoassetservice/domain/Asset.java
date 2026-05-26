@@ -124,6 +124,11 @@ public class Asset {
     public Legality legality;
     public String metadata_created_by;
     public List<Role> role_restrictions = new ArrayList<>();
+    @Schema(
+            description = "MIME types of the asset files",
+            example = "[\"application/json\", \"image/jpeg\", \"image/png\"]"
+    )
+    public List<String> mime_type;
 //    public List<String> file_formats;
     // Internal ids for database operations
     public transient Integer workstation_id;

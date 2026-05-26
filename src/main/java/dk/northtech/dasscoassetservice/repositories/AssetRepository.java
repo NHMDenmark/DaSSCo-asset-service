@@ -2,9 +2,7 @@ package dk.northtech.dasscoassetservice.repositories;
 
 import com.google.gson.Gson;
 import dk.northtech.dasscoassetservice.domain.Asset;
-import dk.northtech.dasscoassetservice.domain.DasscoEvent;
 import dk.northtech.dasscoassetservice.domain.Event;
-import dk.northtech.dasscoassetservice.domain.Legality;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.repositories.helpers.EventMapper;
 import org.apache.age.jdbc.base.Agtype;
@@ -22,13 +20,10 @@ import java.sql.Timestamp;
 import java.util.*;
 
 
-//@Repository
 public interface AssetRepository extends SqlObject {
-    //    private Jdbi jdbi;
-//    private DataSource dataSource;
-    static final Logger logger = LoggerFactory.getLogger(AssetRepository.class);
+ Logger logger = LoggerFactory.getLogger(AssetRepository.class);
 
-    static String INSERT_BASE_ASSET =
+    String INSERT_BASE_ASSET =
             """
                             INSERT INTO public.asset(
                                      asset_guid
@@ -135,23 +130,6 @@ public interface AssetRepository extends SqlObject {
             """)
     Set<String> getParents(String child_id);
 
-
-    String READ_ASSET = """
-        SELECT asset.*
-            , collection.collection_name
-            , collection.institution_name
-            , dassco_user.username AS digitiser
-            , workstation.workstation_name 
-            , copyright
-            , license
-            , credit
-        FROM asset
-        LEFT JOIN collection USING(collection_id)
-        LEFT JOIN workstation USING(workstation_id)  
-        LEFT JOIN legality USING(legality_id)
-        LEFT JOIN dassco_user ON dassco_user.dassco_user_id = asset.digitiser_id
-        """;
-
     @Transaction
     default Optional<Asset> readAsset(String assetId) {
 
@@ -196,7 +174,35 @@ public interface AssetRepository extends SqlObject {
     }
 
     default Optional<Asset> readAssetInternalNew(String assetGuid) {
-        String sql = READ_ASSET + " WHERE asset_guid = :asset_guid";
+        String sql = """
+                                SELECT
+                                  asset.*,
+                                  collection.collection_name,
+                                  collection.institution_name,
+                                  dassco_user.username AS digitiser,
+                                  workstation.workstation_name,
+                                  legality.copyright,
+                                  legality.license,
+                                  legality.credit,
+                                COALESCE(file_agg.mime_type, ARRAY[]::text[]) AS mime_type
+                                FROM asset
+                                LEFT JOIN (
+                                  SELECT
+                                    file.asset_guid,
+                                    ARRAY_AGG(file.mime_type) FILTER (
+                                      WHERE file.mime_type IS NOT NULL
+                                    ) AS mime_type
+                                  FROM file
+                                  GROUP BY file.asset_guid
+                                ) file_agg
+                                  ON file_agg.asset_guid = asset.asset_guid
+                                LEFT JOIN collection USING (collection_id)
+                                LEFT JOIN workstation USING (workstation_id)
+                                LEFT JOIN legality USING (legality_id)
+                                LEFT JOIN dassco_user
+                                  ON dassco_user.dassco_user_id = asset.digitiser_id
+                                WHERE asset.asset_guid = :asset_guid
+                """;
         return withHandle(handle -> {
             return handle.createQuery(sql)
                     .bind("asset_guid", assetGuid)
@@ -204,7 +210,6 @@ public interface AssetRepository extends SqlObject {
                     .findOne();
         });
     }
-
 
 
     default List<Event> readEvents_internal(String guid) {
@@ -274,8 +279,6 @@ public interface AssetRepository extends SqlObject {
     }
 
 
-
-
     String UPDATE_ASSET_SQL = """
             UPDATE asset SET 
                 status = :status
@@ -340,10 +343,10 @@ public interface AssetRepository extends SqlObject {
         // The query then removes orphaned Specimens and Events (Specimens and Events not connected to any Asset).
         String delete_asset_role_restriction = "DELETE FROM asset_role_restriction where asset_guid = :assetGuid";
         String delete_asset_specimen = """
-            DELETE FROM asset_specimen 
-            WHERE asset_guid = :assetGuid 
-            RETURNING specimen_id;
-        """;
+                    DELETE FROM asset_specimen 
+                    WHERE asset_guid = :assetGuid 
+                    RETURNING specimen_id;
+                """;
         String delete_specimen = """
                     DELETE FROM specimen
                     WHERE specimen_id IN (<ids>)
@@ -376,7 +379,7 @@ public interface AssetRepository extends SqlObject {
             List<Integer> specimen_ids = h.createQuery(delete_asset_specimen)
                     .bind("assetGuid", assetGuid).mapTo(Integer.class).list();
 
-            if(!specimen_ids.isEmpty()) {
+            if (!specimen_ids.isEmpty()) {
                 h.createUpdate(delete_specimen).bindList("ids", specimen_ids).execute();
             }
             h.createUpdate(delete_digitisers).bind("assetGuid", assetGuid).execute();

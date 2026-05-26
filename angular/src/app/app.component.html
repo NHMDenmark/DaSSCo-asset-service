@@ -26,8 +26,8 @@
         </button>
       </div>
 
-      <a style="margin-left: auto" [href]="externalLink" target="_blank" mat-button>
-        {{ externalLink | linkTrim | titlecase }}
+      <a style="margin-left: auto" [href]="dasscoHomepage" target="_blank" mat-button>
+        {{ dasscoHomepage | linkTrim | titlecase }}
       </a>
       <button
         *ngIf="authService.isAuthenticated$ | async"

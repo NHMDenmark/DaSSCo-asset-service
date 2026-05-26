@@ -486,50 +486,33 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   downloadZip() {
-    const assetGuids = this.selection.selected.map((asset) => asset.asset_guid!);
-    this.detailedViewService.postCsv(assetGuids).subscribe({
-      next: (response) => {
-        if (response.status == 200) {
-          let guid: string = response.body;
-          this.detailedViewService.postZip(guid, assetGuids).subscribe({
-            next: (response) => {
-              if (response.status == 200) {
-                this.detailedViewService.getFile(guid, 'assets.zip').subscribe({
-                  next: (data) => {
-                    const url = window.URL.createObjectURL(data);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'assets.zip';
+    const assetGuids = this.selection.selected.map((asset) => asset.asset_guid).filter(isNotUndefined);
+    this.detailedViewService.postAssetBundle(assetGuids).subscribe({
+      next: (data) => {
+        const url = window.URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.getAssetBundleFilename();
 
-                    document.body.appendChild(link);
-                    link.click();
+        document.body.appendChild(link);
+        link.click();
 
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-
-                    this.detailedViewService.deleteFile(guid).subscribe({
-                      next: () => {},
-                      error: () => {
-                        this.openSnackBar('There has been an error deleting the files', 'Close');
-                      }
-                    });
-                  },
-                  error: () => {
-                    this.openSnackBar('There has been an error downloading the ZIP file.', 'Close');
-                  }
-                });
-              }
-            },
-            error: () => {
-              this.openSnackBar('There has been an error saving the files to the Temp Folder', 'Close');
-            }
-          });
-        }
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
       },
       error: () => {
-        this.openSnackBar('There has been an error saving the CSV File', 'Close');
+        this.openSnackBar('There has been an error downloading the ZIP file.', 'Close');
       }
     });
+  }
+
+  private getAssetBundleFilename() {
+    const now = new Date();
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(
+      now.getHours()
+    )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    return `asset-bundle-${timestamp}.zip`;
   }
 
   bulkUpdate() {

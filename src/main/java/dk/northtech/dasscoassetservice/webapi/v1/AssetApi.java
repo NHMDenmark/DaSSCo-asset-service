@@ -166,6 +166,44 @@ public class AssetApi {
 
 
     @POST
+    @Path("/list")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @Operation(summary = "Get multiple assets", description = "Returns full asset metadata for the requested asset GUIDs. The request is rejected with 403 Forbidden if the user lacks read access to any requested asset.")
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Asset.class))))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<Asset> getAssets(List<String> assetGuids, @Context SecurityContext securityContext) {
+        if (assetGuids == null) {
+            throw new IllegalArgumentException("Asset GUIDs cannot be null");
+        }
+        if (assetGuids.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> uniqueAssetGuids = new LinkedHashSet<>(assetGuids);
+        List<Asset> assets = assetService.getAssets(uniqueAssetGuids.stream().toList());
+        if (assets.size() != uniqueAssetGuids.size()) {
+            throw new IllegalArgumentException("One or more assets were not found");
+        }
+
+        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
+        Set<String> forbiddenAssetGuids = assets.stream()
+                .filter(asset -> !rightsValidationService.checkRightsAsset(user, asset, false))
+                .map(Asset::getAsset_guid)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (!forbiddenAssetGuids.isEmpty()) {
+            throw new DasscoIllegalActionException(
+                    "FORBIDDEN. User does not have read access to all assets.",
+                    forbiddenAssetGuids.toString()
+            );
+        }
+
+        return assets;
+    }
+
+    @POST
     @Path("/readaccess")
     @Hidden
     @Produces(MediaType.APPLICATION_JSON)

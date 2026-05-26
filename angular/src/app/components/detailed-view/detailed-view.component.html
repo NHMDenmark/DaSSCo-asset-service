@@ -38,7 +38,7 @@
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Date Metadata Ingested:&nbsp;</span>
-            {{ asset.date_metadata_ingested | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset.date_metadata_ingested | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -170,6 +170,24 @@
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
+        <mat-list-item>
+          <div style="width: 100%">
+            <span class="bold-text">Mime Type:&nbsp;</span>
+            <div *ngIf="asset.mime_type?.length" class="scrollable-list-container">
+              <ng-container *ngFor="let mime_type of asset.mime_type; let last = last; trackBy: trackBy">
+                <div class="scrollable-list-row">
+                  <span style="grid-column: span 3">
+                    {{ mime_type }}
+                  </span>
+                </div>
+                <div *ngIf="!last">
+                  <hr />
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </mat-list-item>
+        <mat-divider></mat-divider>
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Asset Locked:&nbsp;</span>
@@ -208,7 +226,7 @@
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Date Audited:&nbsp;</span>
-            {{ asset.date_audited | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset.date_audited | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -229,7 +247,7 @@
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Date Metadata Updated:&nbsp;</span>
-            {{ asset.date_metadata_updated | date : 'dd/MM-yyyy HH:mm' }}
+            {{ asset.date_metadata_updated | date: 'dd/MM-yyyy HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -349,7 +367,7 @@
         <div class="list-item-container">
           <mat-list-item>
             <span class="bold-text">Date Pushed To Specify:&nbsp;</span>
-            {{ asset.date_pushed_to_specify | date : 'dd/MM-YYYY HH:mm' }}
+            {{ asset.date_pushed_to_specify | date: 'dd/MM-YYYY HH:mm' }}
           </mat-list-item>
         </div>
         <mat-divider></mat-divider>
@@ -407,7 +425,7 @@
 
                     <span style="text-align: center">{{ event?.user }}</span>
 
-                    <span style="text-align: end">{{ event.timestamp | date : 'dd/MM-yyyy HH:mm' }}</span>
+                    <span style="text-align: end">{{ event.timestamp | date: 'dd/MM-yyyy HH:mm' }}</span>
                   </div>
                   <div *ngIf="event.event === 'UPDATE_ASSET'">
                     <span
@@ -529,7 +547,7 @@
           <mat-list-item>
             <span class="bold-text">Error timestamp:&nbsp;</span>
             <span style="color: crimson; font-size: 0.875rem">
-              {{ asset.error_timestamp | date : 'dd/MM-yyyy HH:mm' }}
+              {{ asset.error_timestamp | date: 'dd/MM-yyyy HH:mm' }}
             </span>
           </mat-list-item>
         </div>
@@ -547,7 +565,7 @@
       </button>
       <button (click)="downloadCsv()" color="primary" mat-stroked-button>Download CSV File</button>
       <button (click)="downloadZip()" color="accent" mat-stroked-button>Download Complete Asset</button>
-<!--      <button type="button" (click)="getTicketAndDownloadLargeFile()" mat-stroked-button>Download Large File</button>-->
+      <!--      <button type="button" (click)="getTicketAndDownloadLargeFile()" mat-stroked-button>Download Large File</button>-->
       <button
         *ngIf="nextAsset$ | async as nextAsset"
         [disabled]="!nextAsset"

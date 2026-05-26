@@ -2,11 +2,13 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 import dk.northtech.dasscoassetservice.domain.Digitiser;
 import dk.northtech.dasscoassetservice.domain.Funding;
+import dk.northtech.dasscoassetservice.domain.SecurityRoles;
 import dk.northtech.dasscoassetservice.domain.bulkupdatepayload.BulkUpdatePayload;
 import dk.northtech.dasscoassetservice.services.BulkUpdateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @Path("/v1/assets/bulkupdate")
 @Tag(name = "Bulk Update Assets", description = "Endpoints related to bulk updating assets.")
 @SecurityRequirement(name = "dassco-idp")
+@RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
 public class BulkUpdateAssetApi {
     private final Logger log = LoggerFactory.getLogger(BulkUpdateAssetApi.class);
     private final BulkUpdateService bulkUpdateService;

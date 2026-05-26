@@ -26,6 +26,7 @@ export interface QueryResultAsset {
   file_formats: FileFormat[] | undefined;
   created_date: string | undefined;
   date_asset_taken: string | undefined;
+  writeAccess: boolean | undefined;
   events: Event[] | undefined;
   asset_specimen: AssetSpecimen[] | undefined;
 }
@@ -73,6 +74,7 @@ export interface Asset {
   camera_setting_control: string | undefined;
   metadata_version: string | undefined;
   metadata_source: string | undefined;
+  mime_type?: string[] | undefined;
   metadata_created_by: string | undefined;
   make_public: boolean | undefined;
   push_to_specify: boolean | undefined;

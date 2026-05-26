@@ -48,41 +48,26 @@ public class Assetupdates {
         this.userService = userService;
     }
 
-    @POST
-    @Path("{assetGuid}/audit")
-    @Operation(summary = "Audit Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (AUDIT_ASSET).\n\n"
-            +
-            "Changes \"audited\" to true.\n\n" +
-            "The asset should be completed before auditing.\n\n" +
-            "The asset cannot be audited by the same person that digitized it.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
-    @ApiResponse(responseCode = "204", description = "No Content")
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void auditAsset(@PathParam("assetGuid") String assetGuid, Audit audit,
-            @Context SecurityContext securityContext) {
-        assetService.auditAsset(userService.from(securityContext), audit, assetGuid);
-    }
 
-    @POST
-    @Path("bulk/audit")
-    @Operation(summary = "Bulk Audit Assets", description = "Audits multiple assets at once.\n\n" +
-            "Takes a list of asset GUIDs and creates AUDIT_ASSET events for each valid asset.\n\n" +
-            "Returns a map of asset GUIDs to their audit status (Success or error message).\n\n" +
-            "Assets must be complete before auditing and cannot be audited by the same person who digitized them.")
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.USER })
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Map.class)))
+    @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER })
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "204", description = "No Content. AssetGuid does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Map<String, String> bulkAuditAssets(
-            BulkAuditRequest request,
-            @Context SecurityContext securityContext) {
-        return assetService.bulkAuditAssets(
-                userService.from(securityContext),
-                new Audit(request.user()),
-                request.assetGuids());
+    @Path("/{assetGuid}")
+    public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
+        return this.assetService.getAsset(assetGuid, userService.from(securityContext)).orElse(null);
+    }
+    @GET
+    @Path("{assetGuid}/events")
+    @Operation(summary = "Get Asset Events", description = "Shows the events associated with an asset.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Event.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public List<Event> getEvents(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
+        return this.assetService.getEvents(assetGuid, userService.from(securityContext));
     }
 
     @PUT
@@ -94,35 +79,6 @@ public class Assetupdates {
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void unlockAsset(@PathParam("assetGuid") String assetGuid) {
         assetService.unlockAsset(assetGuid);
-    }
-
-    @POST
-    @Path("{assetGuid}/assetreceived")
-    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED. \n\n"
-            +
-            "Required information is: shareName and a MinimalAsset with asset_guid.")
-    @Consumes(APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Hidden
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
-    @ApiResponse(responseCode = "204", description = "No Content")
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void assetReceived(@Context SecurityContext securityContext, AssetUpdateRequest assetSmbRequest) {
-        User user = userService.from(securityContext);
-        assetService.completeUpload(assetSmbRequest, user);
-    }
-
-    @POST
-    @Path("{assetGuid}/complete")
-    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n" +
-            "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA.")
-    @Consumes(APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
-    @ApiResponse(responseCode = "204", description = "No Content")
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void completeAsset(@Context SecurityContext securityContext, AssetUpdateRequest assetUpdateRequest) {
-        this.assetService.completeAsset(assetUpdateRequest, userService.from(securityContext));
     }
 
     @PUT
@@ -140,50 +96,6 @@ public class Assetupdates {
             , @QueryParam("specifySyncLogId") Long specifySyncLogId
             , @QueryParam("errorMessage") String errorMessage) {
         assetService.setAssetStatus(assetGuid, newStatus, errorMessage, specifySyncLogId);
-    }
-
-    @GET
-    @Path("{assetGuid}/events")
-    @Operation(summary = "Get Asset Events", description = "Shows the events associated with an asset.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Event.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public List<Event> getEvents(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.assetService.getEvents(assetGuid, userService.from(securityContext));
-    }// check Rights
-
-    @POST
-    @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n"
-            +
-            "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n"
-            +
-            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status, institution, collection, and digitiser. The Workstation has to be IN_SERVICE.")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE })
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
-    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Response createAsset(
-            Asset asset, @Context SecurityContext securityContext, @QueryParam("allocation_mb") int allocation) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime startTime = LocalDateTime.now();
-        logger.info("#1: POST call to assetmetadata for asset {} with parent {} at {}", asset.asset_guid,
-                asset.parent_guids, startTime.format(formatter));
-
-        // Added so if the example is empty "", in the Docs the example will appear as
-        // the type "string". This converts it to null.
-        // if (asset.parent_guid != null && asset.parent_guid.equals("string")){
-        // logger.warn("Received asset with reserved parent GUID, setting it to null");
-        // asset.parent_guid = null;
-        // }
-        Asset createdAsset = this.assetService.persistAsset(asset, userService.from(securityContext), allocation);
-
-        int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
-
-        LocalDateTime endTime = LocalDateTime.now();
-        logger.info("API call completed at: {}. Total time: {} ms", endTime.format(formatter),
-                java.time.Duration.between(startTime, endTime).toMillis());
-        return Response.status(httpCode).entity(createdAsset).build();
     }
 
     @PUT
@@ -276,16 +188,124 @@ public class Assetupdates {
         return this.assetService.updateAsset(asset, userService.from(securityContext));
     }
 
-    @GET
+    @POST
+    @Path("{assetGuid}/audit")
+    @Operation(summary = "Audit Asset", description = "Creates a new event for the asset, with user, timestamp, pipeline, workstation and description of the event (AUDIT_ASSET).\n\n"
+            +
+            "Changes \"audited\" to true.\n\n" +
+            "The asset should be completed before auditing.\n\n" +
+            "The asset cannot be audited by the same person that digitized it.")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get Asset", description = "Get the metadata on an assset")
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER })
-    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
-    @ApiResponse(responseCode = "204", description = "No Content. AssetGuid does not exist.")
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
+    @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    @Path("/{assetGuid}")
-    public Asset getAsset(@PathParam("assetGuid") String assetGuid, @Context SecurityContext securityContext) {
-        return this.assetService.getAsset(assetGuid, userService.from(securityContext)).orElse(null);
+    public void auditAsset(@PathParam("assetGuid") String assetGuid, Audit audit,
+            @Context SecurityContext securityContext) {
+        assetService.auditAsset(userService.from(securityContext), audit, assetGuid);
+    }
+
+    @POST
+    @Path("bulk/audit")
+    @Operation(summary = "Bulk Audit Assets", description = "Audits multiple assets at once.\n\n" +
+            "Takes a list of asset GUIDs and creates AUDIT_ASSET events for each valid asset.\n\n" +
+            "Returns a map of asset GUIDs to their audit status (Success or error message).\n\n" +
+            "Assets must be complete before auditing and cannot be audited by the same person who digitized them.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.USER })
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Map.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Map<String, String> bulkAuditAssets(
+            BulkAuditRequest request,
+            @Context SecurityContext securityContext) {
+        return assetService.bulkAuditAssets(
+                userService.from(securityContext),
+                new Audit(request.user()),
+                request.assetGuids());
+    }
+
+
+
+    @POST
+    @Path("{assetGuid}/assetreceived")
+    @Operation(summary = "Receive Asset", description = "Changes the internal status of an asset to ASSET_RECEIVED. \n\n"
+            +
+            "Required information is: shareName and a MinimalAsset with asset_guid.")
+    @Consumes(APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Hidden
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void assetReceived(@Context SecurityContext securityContext, AssetUpdateRequest assetSmbRequest) {
+        User user = userService.from(securityContext);
+        assetService.completeUpload(assetSmbRequest, user);
+    }
+
+    @POST
+    @Path("{assetGuid}/complete")
+    @Operation(summary = "Complete Asset", description = "Mark asset as completed.\n" +
+            "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
+    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public void completeAsset(@Context SecurityContext securityContext,
+                              @PathParam("assetGuid") String assetGuid,
+                              AssetUpdateRequest assetUpdateRequest) {
+        if (assetUpdateRequest == null) {
+            throw new IllegalArgumentException("POST request requires a body");
+        }
+        if (assetUpdateRequest.asset_guid() == null || assetUpdateRequest.asset_guid().isBlank()) {
+            throw new IllegalArgumentException("asset_guid is required");
+        }
+        if (!Objects.equals(assetGuid, assetUpdateRequest.asset_guid())) {
+            throw new IllegalArgumentException("asset_guid in URL must match asset_guid in POST-message");
+        }
+        if (userService.from(securityContext) == null) {
+            throw new ForbiddenException("No user found");
+        }
+        this.assetService.completeAsset(assetUpdateRequest);
+    }
+
+
+
+
+
+    @POST
+    @Operation(summary = "Create Asset", description = "Creates asset metadata with information such as asset pid, guid, parent guid, list of specimens, funding, format of the file, workstation, pipeline, etc.\n\n"
+            +
+            "If the asset does not have a parent, the field \"parent_guid\" should be left as it is (\"string\"). If it does have a parent, the \"parent_guid\" field should have the correct information.\n\n"
+            +
+            "For the asset creation with a parent_guid to succeed, the parent has to have a file uploaded. For the creation to be successful, the minimum information to be present has to be: asset_pid, asset_guid, status, institution, collection, and digitiser. The Workstation has to be IN_SERVICE.")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(APPLICATION_JSON)
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE })
+    @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
+    @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
+    public Response createAsset(
+            Asset asset, @Context SecurityContext securityContext, @QueryParam("allocation_mb") int allocation) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime startTime = LocalDateTime.now();
+        logger.info("#1: POST call to assetmetadata for asset {} with parent {} at {}", asset.asset_guid,
+                asset.parent_guids, startTime.format(formatter));
+
+        // Added so if the example is empty "", in the Docs the example will appear as
+        // the type "string". This converts it to null.
+        // if (asset.parent_guid != null && asset.parent_guid.equals("string")){
+        // logger.warn("Received asset with reserved parent GUID, setting it to null");
+        // asset.parent_guid = null;
+        // }
+        Asset createdAsset = this.assetService.persistAsset(asset, userService.from(securityContext), allocation);
+
+        int httpCode = createdAsset.httpInfo != null ? createdAsset.httpInfo.http_allocation_status().httpCode : 500;
+
+        LocalDateTime endTime = LocalDateTime.now();
+        logger.info("API call completed at: {}. Total time: {} ms", endTime.format(formatter),
+                java.time.Duration.between(startTime, endTime).toMillis());
+        return Response.status(httpCode).entity(createdAsset).build();
     }
 
     @DELETE
