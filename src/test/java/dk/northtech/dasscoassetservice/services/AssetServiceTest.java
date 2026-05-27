@@ -906,7 +906,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(syncAcknowledge ->
                 syncAcknowledge.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && syncAcknowledge.specifySyncLogId().equals(456L)
-                        && "Asset doesnt exist!".equals(syncAcknowledge.additionalInfo())));
+                        && "Failed to complete asset Asset doesnt exist!".equals(syncAcknowledge.additionalInfo())));
     }
 
     @Test
