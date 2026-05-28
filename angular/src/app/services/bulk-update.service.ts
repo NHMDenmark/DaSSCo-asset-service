@@ -91,35 +91,81 @@ export class BulkUpdateService {
   private oidcService = inject(OidcSecurityService);
 
   getDigitiserList() {
-    return this.http
-      .get<Digitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers`)
-      .pipe(catchError(this.handleError<Digitiser[]>('getDigitiserList')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<Digitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers`, {
+            headers: {'Authorization': `Bearer ${token}`}
+          })
+          .pipe(catchError(this.handleError<Digitiser[]>('getDigitiserList')))
+      )
+    );
   }
 
   getFundingList() {
-    return this.http
-      .get<Funding[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/funding`)
-      .pipe(catchError(this.handleError<Funding[]>('getFundingList')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<Funding[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/funding`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .pipe(catchError(this.handleError<Funding[]>('getFundingList')))
+      )
+    );
   }
   getSubjects() {
-    return this.http
-      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/subjects`)
-      .pipe(catchError(this.handleError<string[]>('getSubjects')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/subjects`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .pipe(catchError(this.handleError<string[]>('getSubjects')))
+      )
+    );
   }
   getRoles() {
-    return this.http
-      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/roles`)
-      .pipe(catchError(this.handleError<string[]>('getRoles')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/roles`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .pipe(catchError(this.handleError<string[]>('getRoles')))
+      )
+    );
   }
   getIssueCategories() {
-    return this.http
-      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issue-categories`)
-      .pipe(catchError(this.handleError<string[]>('getIssueCategories')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issue-categories`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .pipe(catchError(this.handleError<string[]>('getIssueCategories')))
+      )
+    );
   }
   getStatuses() {
-    return this.http
-      .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/statuses`)
-      .pipe(catchError(this.handleError<string[]>('getStatuses')));
+    return this.oidcService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/statuses`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .pipe(catchError(this.handleError<string[]>('getStatuses')))
+      )
+    );
   }
 
   getGroupedIssues(assetGuids: string[]) {
@@ -147,17 +193,17 @@ export class BulkUpdateService {
   }
 
   getGroupedRoleRestrictions(assetGuids: string[]) {
-    return this.oidcService.getAccessToken().pipe(
-      switchMap((token: string) =>
-        this.http
-          .post<GroupedRoleRestriction[]>(
-            `${this.apiUrl}/api/v1/assets/bulkupdate/role-restrictions/grouped`,
-            assetGuids,
-            {headers: {'Authorization': 'Bearer ' + token}}
-          )
-          .pipe(catchError(this.handleError<GroupedRoleRestriction[]>('getGroupedRoleRestrictions')))
-      )
-    );
+    return this.oidcService
+      .getAccessToken()
+      .pipe(
+        switchMap((token: string) =>
+          this.http
+            .post<
+              GroupedRoleRestriction[]
+            >(`${this.apiUrl}/api/v1/assets/bulkupdate/role-restrictions/grouped`, assetGuids, {headers: {'Authorization': 'Bearer ' + token}})
+            .pipe(catchError(this.handleError<GroupedRoleRestriction[]>('getGroupedRoleRestrictions')))
+        )
+      );
   }
   bulkUpdate(payload: BulkUpdatePayload) {
     return this.oidcService.getAccessToken().pipe(
