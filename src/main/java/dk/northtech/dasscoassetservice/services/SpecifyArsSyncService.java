@@ -186,7 +186,7 @@ public class SpecifyArsSyncService {
             if (syncStatus == SpecifySyncStatus.STARTED) {
                 return;
             }
-
+            log.warn("Rolling back failed asset {}", createdAsset.asset_guid);
             rollbackCreatedAssetAndAcknowledgeFailure(
                     createdAsset.asset_guid,
                     specifyArsSyncMessage.specifySyncLogId,
@@ -209,7 +209,8 @@ public class SpecifyArsSyncService {
             failureMessage = failureMessage + ". Rollback failed: " + deleteException.getMessage();
         }
         queueBroadcaster.sendSpecifyArsAcknowledge(
-                new SyncAcknowledge(SpecifySyncStatus.FAILED, specifySyncLogId, failureMessage, createdAssetGuid)
+                //We do not want to include guid in this message as bridge should not update specify
+                new SyncAcknowledge(SpecifySyncStatus.FAILED, specifySyncLogId, failureMessage, null)
         );
     }
 
@@ -347,6 +348,9 @@ public class SpecifyArsSyncService {
 
                 case "${payload_type}":
                     existing.payload_type = fromSpecify.payload_type;
+                    break;
+                case "${digitiser}":
+                    existing.digitiser = fromSpecify.digitiser;
                     break;
 
                 default:
