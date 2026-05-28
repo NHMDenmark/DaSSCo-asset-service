@@ -18,9 +18,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -128,7 +130,7 @@ public class KeycloakService {
     public List<UserRepresentation> getUsers(String search) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI(this.keycloakUserConfig.keycloakUrl() + "admin/realms/" + this.keycloakUserConfig.realm() + "/users" + (!search.isEmpty() ? "?search=" + search : "")))
+                    .uri(buildUsersUri(search))
                     .header("Authorization", "Bearer " + this.getUserServiceToken())
                     .GET()
                     .build();
@@ -152,6 +154,15 @@ public class KeycloakService {
         } catch (URISyntaxException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    URI buildUsersUri(String search) throws URISyntaxException {
+        String trimmedSearch = search == null ? "" : search.trim();
+        String searchQuery = trimmedSearch.isEmpty()
+                ? ""
+                : "?search=" + URLEncoder.encode("*" + trimmedSearch + "*", StandardCharsets.UTF_8);
+
+        return new URI(this.keycloakUserConfig.keycloakUrl() + "admin/realms/" + this.keycloakUserConfig.realm() + "/users" + searchQuery);
     }
 
     public List<KeycloakUser> getKeycloakUsers(String search) {

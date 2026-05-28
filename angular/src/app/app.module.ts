@@ -60,6 +60,7 @@ import {RoleRestrictionPipe} from './pipes/role-restriction.pipe';
 import {LinkTrimPipe} from './pipes/link-trim.pipe';
 import {MatBadgeModule} from '@angular/material/badge';
 import {EventHistoryComponent} from './components/event-history/event-history.component';
+import {OverlayModule} from '@angular/cdk/overlay';
 @NgModule({
   declarations: [
     AppComponent,
@@ -128,6 +129,7 @@ import {EventHistoryComponent} from './components/event-history/event-history.co
     MatMenuModule,
     MatSortModule,
     MatRippleModule,
+    OverlayModule,
     NgOptimizedImage,
     RoleRestrictionPipe,
     LinkTrimPipe

@@ -204,26 +204,90 @@
                   </mat-selection-list>
 
                   <!-- Add digitisers form -->
-                  <div *ngIf="editing" >
+                  <div *ngIf="editing">
                     <div class="add-digitiser-form">
-                    <p style="font-weight: 600; font-size: 18px; margin-bottom: 4px;">Give user access.</p>
+                      <p style="font-weight: 600; font-size: 18px; margin-bottom: 4px;">Give user access.</p>
                       <p style="font-size: 14px; color: #333333; margin-top: 0">
-                        Dropdown shows max 100 entries. Use search to find a specific user.
+                        Dropdown shows max 100 entries. Search to find a specific user.
                       </p>
-                    <mat-form-field appearance="outline" style="max-width: 256px" class="digitiser-search">
-                      <mat-label>Search</mat-label>
-                      <input matInput  type="text" [formControl]="search" />
-                    </mat-form-field>
-                    <mat-form-field appearance="outline" class="digitiser-select">
-                      <mat-label>Users</mat-label>
-                      <mat-select [multiple]="true" [formControl]="digitiserFormControl">
-                        <ng-container *ngFor="let keycloakUser of keycloakUsers$ | async">
-                          <mat-option *ngIf="!element.hasAccess.includes(keycloakUser.username)" [value]="keycloakUser">
-                            {{ keycloakUser.username }}
-                          </mat-option>
+                      <ng-container *ngIf="keycloakUsers$ | async as keycloakUsers">
+                        <ng-container *ngIf="availableDigitisers(keycloakUsers, element) as availableKeycloakUsers">
+                        <mat-form-field
+                          appearance="outline"
+                          class="digitiser-combobox"
+                          cdkOverlayOrigin
+                          #digitiserOrigin="cdkOverlayOrigin">
+                          <mat-label>Users</mat-label>
+                          <input
+                            matInput
+                            type="text"
+                            role="combobox"
+                            autocomplete="off"
+                            aria-label="Search users"
+                            [attr.aria-expanded]="digitiserOverlayOpen"
+                            [attr.aria-controls]="'digitiser-options-' + element.group_name"
+                            [formControl]="search"
+                            (focus)="openDigitiserOverlay()"
+                            (click)="openDigitiserOverlay()"
+                            (keydown)="onDigitiserComboboxKeydown($event, availableKeycloakUsers)" />
+                          <button
+                            *ngIf="search.value"
+                            mat-icon-button
+                            matSuffix
+                            type="button"
+                            aria-label="Clear user search"
+                            (click)="clearDigitiserSearch(); $event.stopPropagation()">
+                            <mat-icon>close</mat-icon>
+                          </button>
+                          <button
+                            mat-icon-button
+                            matSuffix
+                            type="button"
+                            aria-label="Show users"
+                            (click)="openDigitiserOverlay(); $event.stopPropagation()">
+                            <mat-icon>{{ digitiserOverlayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                          </button>
+                        </mat-form-field>
+
+                        <ng-template
+                          cdkConnectedOverlay
+                          [cdkConnectedOverlayOrigin]="digitiserOrigin"
+                          [cdkConnectedOverlayOpen]="digitiserOverlayOpen"
+                          [cdkConnectedOverlayPositions]="digitiserOverlayPositions"
+                          [cdkConnectedOverlayWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
+                          [cdkConnectedOverlayMinWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
+                          [cdkConnectedOverlayHasBackdrop]="true"
+                          cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+                          (backdropClick)="closeDigitiserOverlay()"
+                          (detach)="closeDigitiserOverlay()">
+                          <div
+                            class="digitiser-overlay"
+                            role="listbox"
+                            [id]="'digitiser-options-' + element.group_name"
+                            aria-label="Users"
+                            [attr.aria-multiselectable]="true">
+                            <button
+                              *ngFor="let keycloakUser of availableKeycloakUsers; let userIndex = index"
+                              type="button"
+                              role="option"
+                              class="digitiser-option"
+                              [class.active]="activeDigitiserIndex === userIndex"
+                              [attr.aria-selected]="isDigitiserSelected(keycloakUser)"
+                              (mouseenter)="setActiveDigitiserIndex(userIndex)"
+                              (click)="toggleDigitiser(keycloakUser)">
+                              <mat-checkbox
+                                [checked]="isDigitiserSelected(keycloakUser)"
+                                (click)="$event.preventDefault()">
+                              </mat-checkbox>
+                              <span class="digitiser-option-text">
+                                <span class="digitiser-username">{{ keycloakUser.username }}</span>
+                              </span>
+                            </button>
+                            <div *ngIf="availableKeycloakUsers.length === 0" class="digitiser-empty">No available users found</div>
+                          </div>
+                        </ng-template>
                         </ng-container>
-                      </mat-select>
-                    </mat-form-field>
+                      </ng-container>
                     </div>
                   </div>
 

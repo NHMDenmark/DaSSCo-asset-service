@@ -8,6 +8,7 @@ import {animate, state, style, transition, trigger} from '@angular/animations';
 import {SelectionModel} from '@angular/cdk/collections';
 import {MatListOption} from '@angular/material/list';
 import {FormControl} from '@angular/forms';
+import {ConnectedPosition} from '@angular/cdk/overlay';
 import {AuthService} from '../../services/auth.service';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
@@ -49,6 +50,24 @@ export class AssetGroupsComponent {
   downloadingCompleteAssets = false;
   auditing = false;
   digitiserFormControl = new FormControl<KeycloakUserFrontend[] | null>(null);
+  digitiserOverlayOpen = false;
+  activeDigitiserIndex = -1;
+  digitiserOverlayPositions: ConnectedPosition[] = [
+    {
+      originX: 'start',
+      originY: 'bottom',
+      overlayX: 'start',
+      overlayY: 'top',
+      offsetY: -1
+    },
+    {
+      originX: 'start',
+      originY: 'top',
+      overlayX: 'start',
+      overlayY: 'bottom',
+      offsetY: 1
+    }
+  ];
 
   username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
   search = new FormControl<string>('', {
@@ -107,6 +126,7 @@ export class AssetGroupsComponent {
 
   editGroup() {
     this.editing = !this.editing;
+    if (!this.editing) this.closeDigitiserOverlay();
   }
 
   downloadCompleteAssets() {
@@ -294,6 +314,83 @@ export class AssetGroupsComponent {
         }
       });
     }
+  }
+
+  openDigitiserOverlay() {
+    this.digitiserOverlayOpen = true;
+  }
+
+  closeDigitiserOverlay() {
+    this.digitiserOverlayOpen = false;
+    this.activeDigitiserIndex = -1;
+  }
+
+  clearDigitiserSearch() {
+    this.search.setValue('');
+    this.openDigitiserOverlay();
+  }
+
+  isDigitiserSelected(user: KeycloakUserFrontend) {
+    return !!this.digitiserFormControl.value?.some((selectedUser) => selectedUser.username === user.username);
+  }
+
+  toggleDigitiser(user: KeycloakUserFrontend) {
+    const selectedUsers = this.digitiserFormControl.value ?? [];
+    if (this.isDigitiserSelected(user)) {
+      this.digitiserFormControl.setValue(selectedUsers.filter((selectedUser) => selectedUser.username !== user.username));
+      return;
+    }
+
+    this.digitiserFormControl.setValue([...selectedUsers, user]);
+  }
+
+  userHasAccess(user: KeycloakUserFrontend, group: AssetGroup) {
+    return group.hasAccess?.includes(user.username) ?? false;
+  }
+
+  availableDigitisers(users: KeycloakUserFrontend[], group: AssetGroup) {
+    return users.filter((user) => !this.userHasAccess(user, group));
+  }
+
+  onDigitiserComboboxKeydown(event: KeyboardEvent, users: KeycloakUserFrontend[]) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.openDigitiserOverlay();
+      this.activeDigitiserIndex = this.getNextSelectableDigitiserIndex(users, 1);
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.openDigitiserOverlay();
+      this.activeDigitiserIndex = this.getNextSelectableDigitiserIndex(users, -1);
+    }
+
+    if (event.key === 'Enter' && this.digitiserOverlayOpen) {
+      event.preventDefault();
+      const user = users[this.activeDigitiserIndex];
+      if (user) this.toggleDigitiser(user);
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeDigitiserOverlay();
+    }
+  }
+
+  setActiveDigitiserIndex(index: number) {
+    this.activeDigitiserIndex = index;
+  }
+
+  private getNextSelectableDigitiserIndex(users: KeycloakUserFrontend[], direction: 1 | -1) {
+    if (users.length === 0) return 0;
+
+    let nextIndex = this.activeDigitiserIndex < 0 ? (direction === 1 ? -1 : 0) : this.activeDigitiserIndex;
+    for (let i = 0; i < users.length; i++) {
+      nextIndex = (nextIndex + direction + users.length) % users.length;
+      return nextIndex;
+    }
+
+    return this.activeDigitiserIndex;
   }
 
   updateDataSourceGroup(prevGroup: AssetGroup, newGroup: AssetGroup | null, remove: boolean) {
