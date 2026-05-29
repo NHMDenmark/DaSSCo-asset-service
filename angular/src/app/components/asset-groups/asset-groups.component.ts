@@ -1,7 +1,7 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnDestroy} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {debounceTime, filter, map, startWith, switchMap, take} from 'rxjs';
+import {debounceTime, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -20,6 +20,7 @@ import {
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
+import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -33,7 +34,7 @@ import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
     ])
   ]
 })
-export class AssetGroupsComponent {
+export class AssetGroupsComponent implements OnDestroy {
   private readonly queryToOtherPagesService = inject(QueryToOtherPages);
   private readonly assetGroupService = inject(AssetGroupService);
   private readonly router = inject(Router);
@@ -41,6 +42,8 @@ export class AssetGroupsComponent {
   private _snackBar = inject(MatSnackBar);
   private readonly authService = inject(AuthService);
   private readonly detailedViewService = inject(DetailedViewService);
+  private readonly assetBundleDownloadService = inject(AssetBundleDownloadService);
+  private readonly destroy = new Subject<void>();
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
@@ -230,50 +233,20 @@ export class AssetGroupsComponent {
 
   downloadZip(assets: MatListOption[]) {
     const selectedAssets: string[] = assets.map((option) => option.value);
-    this.detailedViewService.postCsv(selectedAssets).subscribe({
-      next: (response) => {
-        if (response.status == 200) {
-          const guid: string = response.body;
-          this.detailedViewService.postZip(guid, selectedAssets).subscribe({
-            next: (response) => {
-              if (response.status == 200) {
-                this.detailedViewService.getFile(guid, 'assets.zip').subscribe({
-                  next: (data) => {
-                    const url = window.URL.createObjectURL(data);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'assets.zip';
-
-                    document.body.appendChild(link);
-                    link.click();
-
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-
-                    this.detailedViewService.deleteFile(guid).subscribe({
-                      next: () => {
-                      },
-                      error: () => {
-                        this.openSnackBar('There has been an error deleting the files', 'Close');
-                      }
-                    });
-                  },
-                  error: () => {
-                    this.openSnackBar('There has been an error downloading the ZIP file.', 'Close');
-                  }
-                });
-              }
-            },
-            error: () => {
-              this.openSnackBar('There has been an error saving the files to the Temp Folder', 'Close');
-            }
-          });
-        }
-      },
-      error: () => {
-        this.openSnackBar('There has been an error saving the CSV File', 'Close');
-      }
+    this.assetBundleDownloadService.startBundleDownload(selectedAssets, {
+      access: 'internal',
+      cancel$: this.destroy
     });
+  }
+
+  isZipDownloadPreparing(assets: MatListOption[]) {
+    const selectedAssets: string[] = assets.map((option) => option.value);
+    return this.assetBundleDownloadService.isBundleInProgress(selectedAssets, 'internal');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   revokeAccess(users: MatListOption[], group: AssetGroup) {

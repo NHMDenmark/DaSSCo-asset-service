@@ -351,12 +351,12 @@
       </div>
     </button>
     <button
-      (click)="downloadBundle(asset.institution, asset.collection, asset.asset_guid)"
+      (click)="downloadBundle(asset.asset_guid)"
       color="accent"
-      mat-stroked-button>
+      mat-stroked-button
+      [disabled]="isBundleDownloadPreparing(asset.asset_guid)">
       <div style="align-items: center; display: flex; gap: 0.5rem">
         Download Complete Asset
-        <mat-spinner [diameter]="18" *ngIf="downloading$ | async"></mat-spinner>
       </div>
     </button>
   </div>

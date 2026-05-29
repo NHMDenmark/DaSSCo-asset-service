@@ -196,7 +196,11 @@
     <button mat-raised-button color="primary" (click)="downloadCsv()" [disabled]="!areAssetsSelected()">
       Download Asset CSV
     </button>
-    <button mat-raised-button color="primary" (click)="downloadZip()" [disabled]="!areAssetsSelected()">
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="downloadZip()"
+      [disabled]="!areAssetsSelected() || isSelectedZipDownloadPreparing()">
       Download Complete Zip
     </button>
     <button mat-raised-button color="primary" (click)="bulkUpdate()" [disabled]="!areAssetsSelected()">

@@ -61,6 +61,9 @@ import {LinkTrimPipe} from './pipes/link-trim.pipe';
 import {MatBadgeModule} from '@angular/material/badge';
 import {EventHistoryComponent} from './components/event-history/event-history.component';
 import {OverlayModule} from '@angular/cdk/overlay';
+import {
+  AssetBundleDownloadStatusComponent
+} from './components/asset-bundle-download-status/asset-bundle-download-status.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -90,7 +93,8 @@ import {OverlayModule} from '@angular/cdk/overlay';
     ExternDetailedViewComponent,
     SafeUrlPipe,
     IssueViewerComponent,
-    SortInternalStatusPipe
+    SortInternalStatusPipe,
+    AssetBundleDownloadStatusComponent
   ],
   imports: [
     BrowserModule,

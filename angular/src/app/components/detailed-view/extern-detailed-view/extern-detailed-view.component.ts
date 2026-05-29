@@ -1,11 +1,12 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnDestroy} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {BehaviorSubject, filter, finalize, map, switchMap, take, tap} from 'rxjs';
+import {BehaviorSubject, filter, finalize, map, Subject, switchMap, take, tap} from 'rxjs';
 import {ExternDetailedViewService} from '../../../services/extern-detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {WikiPageUrl} from '../../../utility';
 import {Dialog} from '@angular/cdk/dialog';
 import {AssetThumbnailModalComponent} from '../asset-thumbnail-modal/asset-thumbnail-modal.component';
+import {AssetBundleDownloadService} from '../../../services/asset-bundle-download.service';
 
 @Component({
   selector: 'dassco-extern-detailed-view',
@@ -13,10 +14,12 @@ import {AssetThumbnailModalComponent} from '../asset-thumbnail-modal/asset-thumb
   templateUrl: './extern-detailed-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExternDetailedViewComponent {
+export class ExternDetailedViewComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
   private cdkDialog = inject(Dialog);
+  private assetBundleDownloadService = inject(AssetBundleDownloadService);
+  private readonly destroy = new Subject<void>();
   wikiPageUrl = inject(WikiPageUrl);
   baseUrl = window.location.origin;
   externDetailedViewService = inject(ExternDetailedViewService);
@@ -86,28 +89,25 @@ export class ExternDetailedViewComponent {
       });
   }
 
-  downloadBundle(institution: string | undefined, collection: string | undefined, assetGuid: string | undefined): void {
-    if (!institution || !collection || !assetGuid) return;
-    this.downloading.next(true);
+  downloadBundle(assetGuid: string | undefined): void {
+    if (!assetGuid) return;
 
-    this.externDetailedViewService
-      .downloadAssetBundle(institution, collection, assetGuid)
-      .pipe(
-        take(1),
-        finalize(() => {
-          this.downloading.next(false);
-        })
-      )
-      .subscribe({
-        next: (blob) => {
-          const filename = `${assetGuid}_bundle.zip`;
-          this.externDetailedViewService.triggerDownload(blob, filename);
-        },
-        error: (err) => {
-          console.error('Download failed', err);
-        }
-      });
+    this.assetBundleDownloadService.startBundleDownload([assetGuid], {
+      access: 'external',
+      cancel$: this.destroy
+    });
   }
+
+  isBundleDownloadPreparing(assetGuid: string | undefined): boolean {
+    if (!assetGuid) return false;
+    return this.assetBundleDownloadService.isBundleInProgress([assetGuid], 'external');
+  }
+
+  ngOnDestroy(): void {
+    this.destroy.next();
+    this.destroy.complete();
+  }
+
   openAssetThumbnailModal(thumbnailUrl: SafeUrl) {
     if (!thumbnailUrl) {
       return;

@@ -120,7 +120,7 @@
                     <button
                       mat-flat-button
                       color="primary"
-                      [disabled]="assets.selectedOptions.isEmpty()"
+                      [disabled]="assets.selectedOptions.isEmpty() || isZipDownloadPreparing(assets.selectedOptions.selected)"
                       (click)="downloadZip(assets.selectedOptions.selected)">
                       <mat-icon>folder_zip</mat-icon>
                       Download ZIP

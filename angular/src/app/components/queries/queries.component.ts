@@ -23,6 +23,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {QueryItem} from '../../types/queryItem';
 import {BulkUpdateComponent} from '../bulk-update/bulk-update.component';
 import {Dialog} from '@angular/cdk/dialog';
+import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
 
 @Component({
   selector: 'dassco-queries',
@@ -47,6 +48,7 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private detailedViewService = inject(DetailedViewService);
+  private assetBundleDownloadService = inject(AssetBundleDownloadService);
   private destroy = new Subject();
 
   displayedColumns: string[] = [
@@ -487,32 +489,12 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   downloadZip() {
     const assetGuids = this.selection.selected.map((asset) => asset.asset_guid).filter(isNotUndefined);
-    this.detailedViewService.postAssetBundle(assetGuids).subscribe({
-      next: (data) => {
-        const url = window.URL.createObjectURL(data);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = this.getAssetBundleFilename();
-
-        document.body.appendChild(link);
-        link.click();
-
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      },
-      error: () => {
-        this.openSnackBar('There has been an error downloading the ZIP file.', 'Close');
-      }
-    });
+    this.assetBundleDownloadService.startBundleDownload(assetGuids);
   }
 
-  private getAssetBundleFilename() {
-    const now = new Date();
-    const pad = (value: number) => value.toString().padStart(2, '0');
-    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(
-      now.getHours()
-    )}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-    return `asset-bundle-${timestamp}.zip`;
+  isSelectedZipDownloadPreparing(): boolean {
+    const assetGuids = this.selection.selected.map((asset) => asset.asset_guid).filter(isNotUndefined);
+    return this.assetBundleDownloadService.isBundleInProgress(assetGuids);
   }
 
   bulkUpdate() {

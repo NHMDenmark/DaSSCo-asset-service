@@ -61,16 +61,6 @@ export class ExternDetailedViewService {
       responseType: 'blob'
     });
   }
-  downloadAssetBundle(institution: string, collection: string, assetGuid: string): Observable<Blob> {
-    const url = `${this.proxyUrl}/file_proxy/api/files/assets/extern/${institution}/${collection}/${assetGuid}/zip`;
-    const headers = new HttpHeaders({Accept: 'application/zip'});
-
-    return this.http.get(url, {
-      headers,
-      responseType: 'blob'
-    });
-  }
-
   triggerDownload(blob: Blob, filename: string): void {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

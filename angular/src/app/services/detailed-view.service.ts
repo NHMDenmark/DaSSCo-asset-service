@@ -15,8 +15,6 @@ export class DetailedViewService {
   private readonly proxyUrl = inject(FileProxy);
   private getMetadataUrl = 'api/v1/assetmetadata/';
   private createCsvFile = this.proxyUrl + '/file_proxy/api/assetfiles/createCsvFile';
-  private createZipFile = this.proxyUrl + '/file_proxy/api/assetfiles/createZipFile';
-  private assetBundles = this.proxyUrl + '/file_proxy/api/assetfiles/asset-bundles';
   private assetFiles = this.proxyUrl + '/file_proxy/api/assetfiles/listfiles/';
   private thumbnail = this.proxyUrl + '/file_proxy/api/files/assets/';
   private tempFiles = this.proxyUrl + '/file_proxy/api/assetfiles/getTempFile';
@@ -48,38 +46,11 @@ export class DetailedViewService {
     );
   }
 
-  postZip(guid: string, assets: string[]): Observable<any> {
-    return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) =>
-        this.http
-          .post<string>(`${this.createZipFile}/${guid}`, assets, {
-            headers: {'Authorization': 'Bearer ' + token},
-            responseType: 'text' as 'json',
-            observe: 'response'
-          })
-          .pipe(catchError((error: Error) => throwError(() => error)))
-      )
-    );
-  }
-
   getFile(guid: string, file: string): Observable<Blob> {
     return this.oidcSecurityService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get(`${this.tempFiles}/${guid}/${file}`, {
-            headers: {'Authorization': 'Bearer ' + token},
-            responseType: 'blob'
-          })
-          .pipe(catchError((error: Error) => throwError(() => error)))
-      )
-    );
-  }
-
-  postAssetBundle(assets: string[]): Observable<Blob> {
-    return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) =>
-        this.http
-          .post(`${this.assetBundles}`, assets, {
             headers: {'Authorization': 'Bearer ' + token},
             responseType: 'blob'
           })
