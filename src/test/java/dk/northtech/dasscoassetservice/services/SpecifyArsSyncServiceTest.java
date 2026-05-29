@@ -168,7 +168,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && ack.specifySyncLogId().equals(1008L)
-                        && ack.assetGuid().startsWith("generated-guid-")
+                        && ack.assetGuid() == null
                         && ack.additionalInfo() != null
                         && ack.additionalInfo().contains("expected HTTP 202")));
 
@@ -190,7 +190,7 @@ class SpecifyArsSyncServiceTest extends AbstractIntegrationTest {
         verify(queueBroadcaster).sendSpecifyArsAcknowledge(argThat(ack ->
                 ack.specifySyncStatus() == SpecifySyncStatus.FAILED
                         && ack.specifySyncLogId().equals(1009L)
-                        && ack.assetGuid().startsWith("generated-guid-")
+                        && ack.assetGuid() == null
                         && ack.additionalInfo() != null
                         && ack.additionalInfo().contains("Failed to sync parked files for new asset")));
 
