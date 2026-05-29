@@ -324,12 +324,18 @@ public class Assetupdates {
 
     @DELETE
     @Path("/{assetGuid}/deleteMetadata")
+    @RolesAllowed({SecurityRoles.ADMIN})
     @Operation(summary = "Delete Asset Metadata", description = "Deletes an Assets metadata. It also removes Specimens connected only to this asset and its events.")
     @Produces(APPLICATION_JSON)
-    @ApiResponse(responseCode = "204", description = "No Content")
+    @ApiResponse(responseCode = "200", description = "Asset metadata deleted", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Map.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public void deleteAssetMetadata(@PathParam("assetGuid") String assetGuid,
+    public Response deleteAssetMetadata(@PathParam("assetGuid") String assetGuid,
             @Context SecurityContext securityContext) {
         this.assetService.deleteAssetMetadata(assetGuid, userService.from(securityContext));
+        return Response.ok(Map.of(
+                "asset_guid", assetGuid,
+                "status", "deleted",
+                "message", "Asset metadata was deleted successfully"
+        )).build();
     }
 }
