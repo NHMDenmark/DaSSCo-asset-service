@@ -1210,7 +1210,7 @@ public class AssetService {
 
         // Close the share if open:
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(fileProxyConfiguration.url() + "/shares/assets/" + assetGuid + "/deleteShare"))
+                .uri(URI.create(fileProxyConfiguration.url() + "/file_proxy/api/shares/assets/" + assetGuid + "/deleteShare"))
                 .header("Authorization", "Bearer " + user.token)
                 .DELETE()
                 .build();
