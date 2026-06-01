@@ -47,7 +47,7 @@ public class FileProxyClient {
             httpShareRequest.users.add(user.username);
             String json = gson.toJson(httpShareRequest);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/shares/assets/" + httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
+                    .header("Authorization", "Bearer " + user.token).uri(new URI(fileProxyConfiguration.url() + "/file_proxy/api/shares/assets/" + httpShareRequest.assets.get(0).asset_guid() + "/createShareInternal"))
                     .header("Content-Type", MediaType.APPLICATION_JSON)
                     .POST(HttpRequest.BodyPublishers.ofString(json));
             HttpRequest request = requestBuilder.build();
@@ -104,7 +104,7 @@ public class FileProxyClient {
         Gson gson = new Gson();
         try {
             String json = gson.toJson(syncParkingSpaceRequest);
-            URI uri = new URI(fileProxyConfiguration.url() + "/assetfiles/syncparkedfiles/");
+            URI uri = new URI(fileProxyConfiguration.url() + "/file_proxy/api/assetfiles/syncparkedfiles/");
             logger.info("Calling fileproxy on url: {}", uri);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .header("Authorization", "Bearer " + keycloakService.getUserServiceToken())
