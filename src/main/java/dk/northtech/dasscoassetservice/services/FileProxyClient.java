@@ -104,10 +104,12 @@ public class FileProxyClient {
         Gson gson = new Gson();
         try {
             String json = gson.toJson(syncParkingSpaceRequest);
+            URI uri = new URI(fileProxyConfiguration.url() + "/assetfiles/syncparkedfiles/");
+            logger.info("Calling fileproxy on url: {}", uri);
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .header("Authorization", "Bearer " + keycloakService.getUserServiceToken())
                     .header("Content-Type", MediaType.APPLICATION_JSON)
-                    .uri(new URI(fileProxyConfiguration.url() + "/assetfiles/syncparkedfiles/"))
+                    .uri(uri)
                     .POST(HttpRequest.BodyPublishers.ofString(json));
             HttpRequest request = requestBuilder.build();
             try (HttpClient httpClient = HttpClient.newBuilder()
