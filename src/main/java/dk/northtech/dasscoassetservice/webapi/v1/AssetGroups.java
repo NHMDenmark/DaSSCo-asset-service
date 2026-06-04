@@ -46,8 +46,8 @@ public class AssetGroups {
     @GET
     @Path("keycloak/users")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<KeycloakUser> getUsers(@QueryParam("search") @DefaultValue("") String search) {
-        return this.keycloakService.getKeycloakUsers(search);
+    public List<KeycloakUser> getUsers(@QueryParam("group") @DefaultValue("digitiser") String group) {
+        return this.keycloakService.getKeycloakUsers(group);
     }
 
 

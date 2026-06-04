@@ -210,7 +210,7 @@
                       <p style="font-size: 14px; color: #333333; margin-top: 0">
                         Dropdown shows max 100 entries. Search to find a specific user.
                       </p>
-                      <ng-container *ngIf="keycloakUsers$ | async as keycloakUsers">
+                      <ng-container *ngIf="filteredKeycloakUsers$ | async as keycloakUsers">
                         <ng-container *ngIf="availableDigitisers(keycloakUsers, element) as availableKeycloakUsers">
                         <mat-form-field
                           appearance="outline"

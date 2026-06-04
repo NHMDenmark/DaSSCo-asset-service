@@ -1,61 +1,83 @@
-import {Component, OnInit} from '@angular/core';
-import {MatDialogRef} from "@angular/material/dialog";
-import {AssetGroupService} from "../../../services/asset-group.service";
-import {CacheService} from "../../../services/cache.service";
-import {AssetGroup, Digitiser} from "../../../types/types";
-import {FormControl} from "@angular/forms";
-import {filter, map, take} from "rxjs";
-import {isNotUndefined} from "@northtech/ginnungagap";
-import {AuthService} from "../../../services/auth.service";
-import {combineLatest} from "rxjs";
+import {Component, inject} from '@angular/core';
+import {FormControl} from '@angular/forms';
+import {MatDialogRef} from '@angular/material/dialog';
+import {isNotUndefined} from '@northtech/ginnungagap';
+import {combineLatest, debounceTime, filter, map, startWith, take} from 'rxjs';
+import {AssetGroupService} from '../../../services/asset-group.service';
+import {AuthService} from '../../../services/auth.service';
+import {KeycloakUserService} from '../../../services/keycloak-user.service';
+import {AssetGroup} from '../../../types/types';
+
+interface AssetGroupDialogResult {
+  group: AssetGroup;
+  new: boolean;
+}
 
 @Component({
   selector: 'dassco-asset-group-dialog',
   templateUrl: './asset-group-dialog.component.html',
   styleUrls: ['./asset-group-dialog.component.scss']
 })
-export class AssetGroupDialogComponent implements OnInit {
+export class AssetGroupDialogComponent {
+  private readonly authService = inject(AuthService);
+  private readonly keycloakUserService = inject(KeycloakUserService);
+  private readonly assetGroupService = inject(AssetGroupService);
+  private readonly dialogRef = inject(MatDialogRef<AssetGroupDialogComponent>);
+
   groupName: string | undefined;
-  new: boolean = false;
+  new = false;
   nameSaved = true;
-  digitiserFormControl = new FormControl<string[] | null>(null);
 
-  ownAssetGroups$ = this.assetGroupService.ownAssetGroups$;
+  readonly digitiserFormControl = new FormControl<string[] | null>(null);
+  readonly digitiserSearch = new FormControl<string>('', {nonNullable: true});
 
-  cachedDigitisers$
-    = combineLatest([
-      this.authService.username$.pipe(filter(isNotUndefined), take(1)),
-      this.cacheService.cachedDigitisers$.pipe(filter(isNotUndefined))
-  ])
-    .pipe(
-      map(([username, digitisers]) => {
-        const digitiserMap= new Map<string, Digitiser[]>(Object.entries(digitisers));
-        if (digitiserMap.has(username)) {
-          digitiserMap.delete(username); // so the user can't choose themselves
-        }
-        return digitiserMap;
-      })
+  readonly ownAssetGroups$ = this.assetGroupService.ownAssetGroups$;
+  readonly filteredKeycloakUsers$ = combineLatest([
+    this.authService.username$.pipe(filter(isNotUndefined), take(1)),
+    this.keycloakUserService.getFilteredKeycloakUsers(
+      this.digitiserSearch.valueChanges.pipe(debounceTime(150), startWith(''))
     )
+  ]).pipe(map(([username, users]) => users.filter((user) => user.username !== username)));
 
-  constructor(
-    public dialogRef: MatDialogRef<AssetGroupDialogComponent>
-    , private cacheService: CacheService
-    , private authService: AuthService
-    , private assetGroupService: AssetGroupService) { }
-
-  ngOnInit(): void {
-  }
-
-  cancel() {
+  cancel(): void {
     this.dialogRef.close();
   }
 
-  save() {
-    let group: {group: AssetGroup, new: boolean} = {group: {group_name: this.groupName, assets: undefined, hasAccess: [], groupCreator: undefined, isCreator: undefined}, new: this.new};
-    if (this.new) {
-      const hasAccess = this.digitiserFormControl.value;
-      if (hasAccess) group.group.hasAccess = hasAccess;
-    }
-    this.dialogRef.close(group);
+  save(): void {
+    this.dialogRef.close(this.buildDialogResult());
+  }
+
+  selectExistingGroup(): void {
+    this.new = false;
+  }
+
+  openNewGroupPanel(): void {
+    this.groupName = undefined;
+    this.new = true;
+  }
+
+  markNameUnsaved(): void {
+    this.nameSaved = false;
+  }
+
+  private buildDialogResult(): AssetGroupDialogResult {
+    const group: AssetGroup = {
+      group_name: this.groupName,
+      assets: undefined,
+      hasAccess: this.getSelectedDigitisers(),
+      groupCreator: undefined,
+      isCreator: undefined
+    };
+
+    return {
+      group,
+      new: this.new
+    };
+  }
+
+  private getSelectedDigitisers(): string[] {
+    if (!this.new) return [];
+
+    return this.digitiserFormControl.value ?? [];
   }
 }

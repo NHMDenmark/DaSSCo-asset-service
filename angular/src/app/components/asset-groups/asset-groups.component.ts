@@ -19,6 +19,7 @@ import {DetailedViewService} from '../../services/detailed-view.service';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
+import {KeycloakUserService} from '../../services/keycloak-user.service';
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -41,6 +42,7 @@ export class AssetGroupsComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly detailedViewService = inject(DetailedViewService);
   private readonly assetBundleDownloadService = inject(AssetBundleDownloadService);
+  private readonly keycloakUserService = inject(KeycloakUserService);
   private readonly destroy = new Subject<void>();
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
@@ -79,9 +81,9 @@ export class AssetGroupsComponent implements OnDestroy {
 
   keycloakUsers$ = this.search.valueChanges.pipe(
     debounceTime(150),
-    startWith(''),
-    switchMap((search) => this.assetGroupService.getKeyCloakUsers(search))
+    startWith('')
   );
+  filteredKeycloakUsers$ = this.keycloakUserService.getFilteredKeycloakUsers(this.keycloakUsers$);
 
   assetGroups$ = combineLatest([
     this.assetGroupService.assetGroups$.pipe(startWith([]), filter(isNotUndefined)),

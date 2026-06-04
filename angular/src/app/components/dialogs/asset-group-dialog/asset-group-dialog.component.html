@@ -15,7 +15,7 @@
         <div>
           <mat-form-field appearance="fill">
             <mat-label>Groups</mat-label>
-            <mat-select [(ngModel)]="groupName" (selectionChange)="new = false">
+            <mat-select [(ngModel)]="groupName" (selectionChange)="selectExistingGroup()">
               <mat-option *ngFor="let group of (ownAssetGroups$ | async)"
                           class="group-name" [value]="group.group_name">{{group.group_name}}</mat-option>
             </mat-select>
@@ -23,7 +23,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel (opened)="this.groupName = undefined; this.new = true">
+      <mat-expansion-panel (opened)="openNewGroupPanel()">
         <mat-expansion-panel-header>
           <mat-panel-title>
             New Group
@@ -37,14 +37,19 @@
         <div class="new-group">
           <mat-form-field appearance="outline">
             <mat-label>Group Name</mat-label>
-            <input (change)="nameSaved = false" matInput placeholder="Butterflies" [(ngModel)]="groupName">
+            <input (change)="markNameUnsaved()" matInput placeholder="Butterflies" [(ngModel)]="groupName">
           </mat-form-field>
 
-          <div *ngIf="(cachedDigitisers$ | async) as digitisers">
+          <div *ngIf="(filteredKeycloakUsers$ | async) as users">
+            <mat-form-field appearance="outline">
+              <mat-label>Search users</mat-label>
+              <input matInput type="text" [formControl]="digitiserSearch" autocomplete="off">
+            </mat-form-field>
+
             <mat-form-field appearance="fill">
               <mat-label>Digitisers</mat-label>
               <mat-select [multiple]="true" [formControl]="digitiserFormControl">
-                <mat-option *ngFor="let digitiser of digitisers | keyvalue" [value]="digitiser.key">{{digitiser.key}}</mat-option>
+                <mat-option *ngFor="let user of users" [value]="user.username">{{user.username}}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>

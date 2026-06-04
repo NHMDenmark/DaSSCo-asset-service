@@ -12,7 +12,8 @@ import {
   DigitiserPatchBlock,
   RoleRestrictionPatchBlock
 } from 'src/app/services/bulk-update.service';
-import {BehaviorSubject, catchError, combineLatest, filter, map, of, startWith, take} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, debounceTime, filter, map, of, startWith, take} from 'rxjs';
+import {KeycloakUserService} from '../../services/keycloak-user.service';
 
 interface IssueFormValue {
   category: string | null;
@@ -73,9 +74,25 @@ interface UpdateResult {
 })
 export class BulkUpdateComponent {
   bulkUpdateService = inject(BulkUpdateService);
+  keycloakUserService = inject(KeycloakUserService);
   dialogRef = inject(DialogRef);
   data: {assets: Asset[]} = inject(DIALOG_DATA);
   digitiserList$ = this.bulkUpdateService.getDigitiserList();
+  digitiserSearchControl = new FormControl<string>('', {nonNullable: true});
+  keycloakDigitiserOptions$ = combineLatest([
+    this.keycloakUserService.getFilteredKeycloakUsers(this.digitiserSearchControl.valueChanges.pipe(
+      debounceTime(150),
+      startWith('')
+    )),
+    this.digitiserList$
+  ]).pipe(
+    map(([keycloakUsers, digitisers]) => {
+      const digitisersByUsername = new Map(digitisers.map((digitiser) => [digitiser.username, digitiser]));
+      return keycloakUsers
+        .map((user) => digitisersByUsername.get(user.username))
+        .filter((digitiser): digitiser is Digitiser => digitiser !== undefined);
+    })
+  );
   fundingList$ = this.bulkUpdateService.getFundingList();
   subjectsList$ = this.bulkUpdateService.getSubjects();
   rolesList$ = this.bulkUpdateService.getRoles();
