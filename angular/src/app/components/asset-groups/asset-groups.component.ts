@@ -1,7 +1,7 @@
 import {Component, inject, OnDestroy} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {debounceTime, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
+import {BehaviorSubject, debounceTime, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -14,9 +14,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
 import {combineLatest} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {
-  IllegalAssetGroupDialogComponent
-} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
+import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
@@ -53,8 +51,10 @@ export class AssetGroupsComponent implements OnDestroy {
   downloadingCompleteAssets = false;
   auditing = false;
   digitiserFormControl = new FormControl<KeycloakUserFrontend[] | null>(null);
-  digitiserOverlayOpen = false;
-  activeDigitiserIndex = -1;
+  private readonly digitiserOverlayOpenSubject = new BehaviorSubject(false);
+  readonly digitiserOverlayOpen$ = this.digitiserOverlayOpenSubject.asObservable();
+  private readonly activeDigitiserIndexSubject = new BehaviorSubject(-1);
+  readonly activeDigitiserIndex$ = this.activeDigitiserIndexSubject.asObservable();
   digitiserOverlayPositions: ConnectedPosition[] = [
     {
       originX: 'start',
@@ -76,7 +76,6 @@ export class AssetGroupsComponent implements OnDestroy {
   search = new FormControl<string>('', {
     nonNullable: true
   });
-
 
   keycloakUsers$ = this.search.valueChanges.pipe(
     debounceTime(150),
@@ -117,6 +116,7 @@ export class AssetGroupsComponent implements OnDestroy {
       this.editing = false;
       this.downloadingCompleteAssets = false;
       this.auditing = false;
+      this.closeDigitiserOverlay();
     }
   }
 
@@ -125,6 +125,7 @@ export class AssetGroupsComponent implements OnDestroy {
     this.editing = false;
     this.downloadingCompleteAssets = false;
     this.auditing = false;
+    this.closeDigitiserOverlay();
   }
 
   editGroup() {
@@ -144,33 +145,34 @@ export class AssetGroupsComponent implements OnDestroy {
     const selectedAssets: string[] = assets.map((option) => option.value);
     if (selectedAssets.length === 0) return;
 
-    this.username$.pipe(
-      switchMap((username) => this.assetGroupService.bulkAuditAssets(selectedAssets, username))).subscribe({
-      next: (results) => {
-        if (results) {
-          const successCount = Object.values(results).filter((v) => v === 'Success').length;
-          const failCount = selectedAssets.length - successCount;
-          if (failCount > 0) {
-            const errors = Object.entries(results)
-              .filter(([_, v]) => v !== 'Success')
-              .map(([k, v]) => `${k}: ${v}`);
-            console.warn('Some assets failed to audit: \n', errors.join('\n'));
-            this.openSnackBar(
-              results,
-              `${successCount} asset${
-                successCount > 1 ? 's' : ''
-              } audited, ${failCount} failed. \n \n Check the console for more details`
-            );
-          } else {
-            this.openSnackBar(results, `${successCount} asset(s) audited successfully`);
+    this.username$
+      .pipe(switchMap((username) => this.assetGroupService.bulkAuditAssets(selectedAssets, username)))
+      .subscribe({
+        next: (results) => {
+          if (results) {
+            const successCount = Object.values(results).filter((v) => v === 'Success').length;
+            const failCount = selectedAssets.length - successCount;
+            if (failCount > 0) {
+              const errors = Object.entries(results)
+                .filter(([_, v]) => v !== 'Success')
+                .map(([k, v]) => `${k}: ${v}`);
+              console.warn('Some assets failed to audit: \n', errors.join('\n'));
+              this.openSnackBar(
+                results,
+                `${successCount} asset${
+                  successCount > 1 ? 's' : ''
+                } audited, ${failCount} failed. \n \n Check the console for more details`
+              );
+            } else {
+              this.openSnackBar(results, `${successCount} asset(s) audited successfully`);
+            }
           }
+        },
+        error: (error) => {
+          this.openSnackBar(undefined, 'Error auditing assets');
+          console.error('Bulk audit error:', error);
         }
-      },
-      error: (error) => {
-        this.openSnackBar(undefined, 'Error auditing assets');
-        console.error('Bulk audit error:', error);
-      }
-    });
+      });
   }
 
   removeMatListOptionAssets(assets: MatListOption[], group: AssetGroup) {
@@ -206,8 +208,7 @@ export class AssetGroupsComponent implements OnDestroy {
               window.URL.revokeObjectURL(url);
 
               this.detailedViewService.deleteFile(guid).subscribe({
-                next: () => {
-                },
+                next: () => {},
                 error: () => {
                   this.openSnackBar(
                     "There's been an error deleting the CSV file",
@@ -251,6 +252,7 @@ export class AssetGroupsComponent implements OnDestroy {
 
   revokeAccess(users: MatListOption[], group: AssetGroup) {
     const selectedUsers: string[] = users.map((option) => option.value);
+    console.log(selectedUsers);
     this.assetGroupService.revokeAccess(group.group_name, selectedUsers).subscribe((updatedGroup) => {
       if (updatedGroup) {
         this.updateDataSourceGroup(group, updatedGroup, false);
@@ -262,7 +264,6 @@ export class AssetGroupsComponent implements OnDestroy {
     const selectedUsers = this.digitiserFormControl.value;
     if (selectedUsers) {
       this.assetGroupService.grantAccess(group.group_name, selectedUsers).subscribe((response) => {
-
         this.digitiserFormControl.reset(null);
         if ((response as DasscoError).errorCode) {
           const error = response as DasscoError;
@@ -290,12 +291,12 @@ export class AssetGroupsComponent implements OnDestroy {
   }
 
   openDigitiserOverlay() {
-    this.digitiserOverlayOpen = true;
+    this.digitiserOverlayOpenSubject.next(true);
   }
 
   closeDigitiserOverlay() {
-    this.digitiserOverlayOpen = false;
-    this.activeDigitiserIndex = -1;
+    this.digitiserOverlayOpenSubject.next(false);
+    this.activeDigitiserIndexSubject.next(-1);
   }
 
   clearDigitiserSearch() {
@@ -310,7 +311,9 @@ export class AssetGroupsComponent implements OnDestroy {
   toggleDigitiser(user: KeycloakUserFrontend) {
     const selectedUsers = this.digitiserFormControl.value ?? [];
     if (this.isDigitiserSelected(user)) {
-      this.digitiserFormControl.setValue(selectedUsers.filter((selectedUser) => selectedUser.username !== user.username));
+      this.digitiserFormControl.setValue(
+        selectedUsers.filter((selectedUser) => selectedUser.username !== user.username)
+      );
       return;
     }
 
@@ -329,18 +332,18 @@ export class AssetGroupsComponent implements OnDestroy {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       this.openDigitiserOverlay();
-      this.activeDigitiserIndex = this.getNextSelectableDigitiserIndex(users, 1);
+      this.activeDigitiserIndexSubject.next(this.getNextSelectableDigitiserIndex(users, 1));
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       this.openDigitiserOverlay();
-      this.activeDigitiserIndex = this.getNextSelectableDigitiserIndex(users, -1);
+      this.activeDigitiserIndexSubject.next(this.getNextSelectableDigitiserIndex(users, -1));
     }
 
-    if (event.key === 'Enter' && this.digitiserOverlayOpen) {
+    if (event.key === 'Enter' && this.digitiserOverlayOpenSubject.value) {
       event.preventDefault();
-      const user = users[this.activeDigitiserIndex];
+      const user = users[this.activeDigitiserIndexSubject.value];
       if (user) this.toggleDigitiser(user);
     }
 
@@ -351,19 +354,20 @@ export class AssetGroupsComponent implements OnDestroy {
   }
 
   setActiveDigitiserIndex(index: number) {
-    this.activeDigitiserIndex = index;
+    this.activeDigitiserIndexSubject.next(index);
   }
 
   private getNextSelectableDigitiserIndex(users: KeycloakUserFrontend[], direction: 1 | -1) {
     if (users.length === 0) return 0;
 
-    let nextIndex = this.activeDigitiserIndex < 0 ? (direction === 1 ? -1 : 0) : this.activeDigitiserIndex;
+    let nextIndex =
+      this.activeDigitiserIndexSubject.value < 0 ? (direction === 1 ? -1 : 0) : this.activeDigitiserIndexSubject.value;
     for (let i = 0; i < users.length; i++) {
       nextIndex = (nextIndex + direction + users.length) % users.length;
       return nextIndex;
     }
 
-    return this.activeDigitiserIndex;
+    return this.activeDigitiserIndexSubject.value;
   }
 
   updateDataSourceGroup(prevGroup: AssetGroup, newGroup: AssetGroup | null, remove: boolean) {
@@ -372,9 +376,9 @@ export class AssetGroupsComponent implements OnDestroy {
       this.dataSource.data.splice(i, 1);
       this.dataSource._updateChangeSubscription();
     } else if (newGroup) {
-        this.dataSource.data[i].assets = newGroup.assets;
-        this.dataSource.data[i].hasAccess = newGroup.hasAccess;
-      }
+      this.dataSource.data[i].assets = newGroup.assets;
+      this.dataSource.data[i].hasAccess = newGroup.hasAccess;
+    }
   }
 
   goToAsset(assetGuid: string) {
@@ -410,5 +414,4 @@ export class AssetGroupsComponent implements OnDestroy {
       this._snackBar.open('An error occurred. Try again.', 'OK', {duration: 5000});
     }
   }
-
 }

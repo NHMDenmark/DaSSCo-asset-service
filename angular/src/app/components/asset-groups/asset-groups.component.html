@@ -204,7 +204,7 @@
                   </mat-selection-list>
 
                   <!-- Add digitisers form -->
-                  <div *ngIf="editing">
+                  <div *ngIf="editing && expandedElement === element">
                     <div class="add-digitiser-form">
                       <p style="font-weight: 600; font-size: 18px; margin-bottom: 4px;">Give user access.</p>
                       <p style="font-size: 14px; color: #333333; margin-top: 0">
@@ -224,7 +224,7 @@
                             role="combobox"
                             autocomplete="off"
                             aria-label="Search users"
-                            [attr.aria-expanded]="digitiserOverlayOpen"
+                            [attr.aria-expanded]="(digitiserOverlayOpen$ | async) === true"
                             [attr.aria-controls]="'digitiser-options-' + element.group_name"
                             [formControl]="search"
                             (focus)="openDigitiserOverlay()"
@@ -245,14 +245,14 @@
                             type="button"
                             aria-label="Show users"
                             (click)="openDigitiserOverlay(); $event.stopPropagation()">
-                            <mat-icon>{{ digitiserOverlayOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+                            <mat-icon>{{ (digitiserOverlayOpen$ | async) === true ? 'expand_less' : 'expand_more' }}</mat-icon>
                           </button>
                         </mat-form-field>
 
                         <ng-template
                           cdkConnectedOverlay
                           [cdkConnectedOverlayOrigin]="digitiserOrigin"
-                          [cdkConnectedOverlayOpen]="digitiserOverlayOpen"
+                          [cdkConnectedOverlayOpen]="(digitiserOverlayOpen$ | async) === true"
                           [cdkConnectedOverlayPositions]="digitiserOverlayPositions"
                           [cdkConnectedOverlayWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
                           [cdkConnectedOverlayMinWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
@@ -271,7 +271,7 @@
                               type="button"
                               role="option"
                               class="digitiser-option"
-                              [class.active]="activeDigitiserIndex === userIndex"
+                              [class.active]="(activeDigitiserIndex$ | async) === userIndex"
                               [attr.aria-selected]="isDigitiserSelected(keycloakUser)"
                               (mouseenter)="setActiveDigitiserIndex(userIndex)"
                               (click)="toggleDigitiser(keycloakUser)">
