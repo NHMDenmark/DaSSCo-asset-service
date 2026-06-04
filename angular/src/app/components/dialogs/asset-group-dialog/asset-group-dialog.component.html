@@ -40,18 +40,14 @@
             <input (change)="markNameUnsaved()" matInput placeholder="Butterflies" [(ngModel)]="groupName">
           </mat-form-field>
 
-          <div *ngIf="(filteredKeycloakUsers$ | async) as users">
-            <mat-form-field appearance="outline">
-              <mat-label>Search users</mat-label>
-              <input matInput type="text" [formControl]="digitiserSearch" autocomplete="off">
-            </mat-form-field>
-
-            <mat-form-field appearance="fill">
-              <mat-label>Digitisers</mat-label>
-              <mat-select [multiple]="true" [formControl]="digitiserFormControl">
-                <mat-option *ngFor="let user of users" [value]="user.username">{{user.username}}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <div *ngIf="(username$ | async) as username">
+            <dassco-digitiser-list
+              label="Digitisers"
+              ariaLabel="Search digitisers"
+              optionsId="asset-group-dialog-digitiser-options"
+              [selectedUsersControl]="digitiserFormControl"
+              [excludedUsernames]="[username]">
+            </dassco-digitiser-list>
           </div>
         </div>
       </mat-expansion-panel>

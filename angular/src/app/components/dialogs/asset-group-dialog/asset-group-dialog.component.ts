@@ -2,10 +2,10 @@ import {Component, inject} from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {MatDialogRef} from '@angular/material/dialog';
 import {isNotUndefined} from '@northtech/ginnungagap';
-import {combineLatest, debounceTime, filter, map, startWith, take} from 'rxjs';
+import {filter, take} from 'rxjs';
 import {AssetGroupService} from '../../../services/asset-group.service';
 import {AuthService} from '../../../services/auth.service';
-import {KeycloakUserService} from '../../../services/keycloak-user.service';
+import {KeycloakUserFrontend} from '../../../types/keycloak-user-frontend';
 import {AssetGroup} from '../../../types/types';
 
 interface AssetGroupDialogResult {
@@ -20,7 +20,6 @@ interface AssetGroupDialogResult {
 })
 export class AssetGroupDialogComponent {
   private readonly authService = inject(AuthService);
-  private readonly keycloakUserService = inject(KeycloakUserService);
   private readonly assetGroupService = inject(AssetGroupService);
   private readonly dialogRef = inject(MatDialogRef<AssetGroupDialogComponent>);
 
@@ -28,16 +27,10 @@ export class AssetGroupDialogComponent {
   new = false;
   nameSaved = true;
 
-  readonly digitiserFormControl = new FormControl<string[] | null>(null);
-  readonly digitiserSearch = new FormControl<string>('', {nonNullable: true});
+  readonly digitiserFormControl = new FormControl<KeycloakUserFrontend[] | null>(null);
 
   readonly ownAssetGroups$ = this.assetGroupService.ownAssetGroups$;
-  readonly filteredKeycloakUsers$ = combineLatest([
-    this.authService.username$.pipe(filter(isNotUndefined), take(1)),
-    this.keycloakUserService.getFilteredKeycloakUsers(
-      this.digitiserSearch.valueChanges.pipe(debounceTime(150), startWith(''))
-    )
-  ]).pipe(map(([username, users]) => users.filter((user) => user.username !== username)));
+  readonly username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1));
 
   cancel(): void {
     this.dialogRef.close();
@@ -78,6 +71,6 @@ export class AssetGroupDialogComponent {
   private getSelectedDigitisers(): string[] {
     if (!this.new) return [];
 
-    return this.digitiserFormControl.value ?? [];
+    return this.digitiserFormControl.value?.map((digitiser) => digitiser.username) ?? [];
   }
 }

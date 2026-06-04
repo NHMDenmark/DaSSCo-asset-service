@@ -1,25 +1,22 @@
 import {Component, inject, OnDestroy} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {BehaviorSubject, debounceTime, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
+import {combineLatest, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {SelectionModel} from '@angular/cdk/collections';
 import {MatListOption} from '@angular/material/list';
 import {FormControl} from '@angular/forms';
-import {ConnectedPosition} from '@angular/cdk/overlay';
 import {AuthService} from '../../services/auth.service';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
-import {combineLatest} from 'rxjs';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {IllegalAssetGroupDialogComponent} from '../dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {DetailedViewService} from '../../services/detailed-view.service';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
-import {KeycloakUserService} from '../../services/keycloak-user.service';
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -42,7 +39,6 @@ export class AssetGroupsComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly detailedViewService = inject(DetailedViewService);
   private readonly assetBundleDownloadService = inject(AssetBundleDownloadService);
-  private readonly keycloakUserService = inject(KeycloakUserService);
   private readonly destroy = new Subject<void>();
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
@@ -53,37 +49,7 @@ export class AssetGroupsComponent implements OnDestroy {
   downloadingCompleteAssets = false;
   auditing = false;
   digitiserFormControl = new FormControl<KeycloakUserFrontend[] | null>(null);
-  private readonly digitiserOverlayOpenSubject = new BehaviorSubject(false);
-  readonly digitiserOverlayOpen$ = this.digitiserOverlayOpenSubject.asObservable();
-  private readonly activeDigitiserIndexSubject = new BehaviorSubject(-1);
-  readonly activeDigitiserIndex$ = this.activeDigitiserIndexSubject.asObservable();
-  digitiserOverlayPositions: ConnectedPosition[] = [
-    {
-      originX: 'start',
-      originY: 'bottom',
-      overlayX: 'start',
-      overlayY: 'top',
-      offsetY: -1
-    },
-    {
-      originX: 'start',
-      originY: 'top',
-      overlayX: 'start',
-      overlayY: 'bottom',
-      offsetY: 1
-    }
-  ];
-
   username$ = this.authService.username$.pipe(filter(isNotUndefined), take(1)); // to check if user is creator
-  search = new FormControl<string>('', {
-    nonNullable: true
-  });
-
-  keycloakUsers$ = this.search.valueChanges.pipe(
-    debounceTime(150),
-    startWith('')
-  );
-  filteredKeycloakUsers$ = this.keycloakUserService.getFilteredKeycloakUsers(this.keycloakUsers$);
 
   assetGroups$ = combineLatest([
     this.assetGroupService.assetGroups$.pipe(startWith([]), filter(isNotUndefined)),
@@ -118,7 +84,6 @@ export class AssetGroupsComponent implements OnDestroy {
       this.editing = false;
       this.downloadingCompleteAssets = false;
       this.auditing = false;
-      this.closeDigitiserOverlay();
     }
   }
 
@@ -127,12 +92,10 @@ export class AssetGroupsComponent implements OnDestroy {
     this.editing = false;
     this.downloadingCompleteAssets = false;
     this.auditing = false;
-    this.closeDigitiserOverlay();
   }
 
   editGroup() {
     this.editing = !this.editing;
-    if (!this.editing) this.closeDigitiserOverlay();
   }
 
   downloadCompleteAssets() {
@@ -290,86 +253,6 @@ export class AssetGroupsComponent implements OnDestroy {
         }
       });
     }
-  }
-
-  openDigitiserOverlay() {
-    this.digitiserOverlayOpenSubject.next(true);
-  }
-
-  closeDigitiserOverlay() {
-    this.digitiserOverlayOpenSubject.next(false);
-    this.activeDigitiserIndexSubject.next(-1);
-  }
-
-  clearDigitiserSearch() {
-    this.search.setValue('');
-    this.openDigitiserOverlay();
-  }
-
-  isDigitiserSelected(user: KeycloakUserFrontend) {
-    return !!this.digitiserFormControl.value?.some((selectedUser) => selectedUser.username === user.username);
-  }
-
-  toggleDigitiser(user: KeycloakUserFrontend) {
-    const selectedUsers = this.digitiserFormControl.value ?? [];
-    if (this.isDigitiserSelected(user)) {
-      this.digitiserFormControl.setValue(
-        selectedUsers.filter((selectedUser) => selectedUser.username !== user.username)
-      );
-      return;
-    }
-
-    this.digitiserFormControl.setValue([...selectedUsers, user]);
-  }
-
-  userHasAccess(user: KeycloakUserFrontend, group: AssetGroup) {
-    return group.hasAccess?.includes(user.username) ?? false;
-  }
-
-  availableDigitisers(users: KeycloakUserFrontend[], group: AssetGroup) {
-    return users.filter((user) => !this.userHasAccess(user, group));
-  }
-
-  onDigitiserComboboxKeydown(event: KeyboardEvent, users: KeycloakUserFrontend[]) {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      this.openDigitiserOverlay();
-      this.activeDigitiserIndexSubject.next(this.getNextSelectableDigitiserIndex(users, 1));
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      this.openDigitiserOverlay();
-      this.activeDigitiserIndexSubject.next(this.getNextSelectableDigitiserIndex(users, -1));
-    }
-
-    if (event.key === 'Enter' && this.digitiserOverlayOpenSubject.value) {
-      event.preventDefault();
-      const user = users[this.activeDigitiserIndexSubject.value];
-      if (user) this.toggleDigitiser(user);
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeDigitiserOverlay();
-    }
-  }
-
-  setActiveDigitiserIndex(index: number) {
-    this.activeDigitiserIndexSubject.next(index);
-  }
-
-  private getNextSelectableDigitiserIndex(users: KeycloakUserFrontend[], direction: 1 | -1) {
-    if (users.length === 0) return 0;
-
-    let nextIndex =
-      this.activeDigitiserIndexSubject.value < 0 ? (direction === 1 ? -1 : 0) : this.activeDigitiserIndexSubject.value;
-    for (let i = 0; i < users.length; i++) {
-      nextIndex = (nextIndex + direction + users.length) % users.length;
-      return nextIndex;
-    }
-
-    return this.activeDigitiserIndexSubject.value;
   }
 
   updateDataSourceGroup(prevGroup: AssetGroup, newGroup: AssetGroup | null, remove: boolean) {

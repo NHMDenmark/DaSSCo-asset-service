@@ -64,6 +64,7 @@ import {OverlayModule} from '@angular/cdk/overlay';
 import {
   AssetBundleDownloadStatusComponent
 } from './components/asset-bundle-download-status/asset-bundle-download-status.component';
+import {DigitiserListComponent} from './components/digitiser-list/digitiser-list.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -94,7 +95,8 @@ import {
     SafeUrlPipe,
     IssueViewerComponent,
     SortInternalStatusPipe,
-    AssetBundleDownloadStatusComponent
+    AssetBundleDownloadStatusComponent,
+    DigitiserListComponent
   ],
   imports: [
     BrowserModule,
