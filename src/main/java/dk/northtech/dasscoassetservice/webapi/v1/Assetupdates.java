@@ -103,6 +103,7 @@ public class Assetupdates {
     @Operation(summary = "Update Asset", description = "Updates asset metadata. For an Update to be successfull it needs at least: Institution, Workstation, Pipeline, Collection, Status and updateUser. It is not possible to unlock assets via this endpoint.")
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Asset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Asset updateAsset(
@@ -197,7 +198,7 @@ public class Assetupdates {
             "The asset cannot be audited by the same person that digitized it.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void auditAsset(@PathParam("assetGuid") String assetGuid, Audit audit,
@@ -213,7 +214,7 @@ public class Assetupdates {
             "Assets must be complete before auditing and cannot be audited by the same person who digitized them.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.USER })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Map.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Map<String, String> bulkAuditAssets(
@@ -235,7 +236,7 @@ public class Assetupdates {
     @Consumes(APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Hidden
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void assetReceived(@Context SecurityContext securityContext, AssetUpdateRequest assetSmbRequest) {
@@ -249,7 +250,7 @@ public class Assetupdates {
             "The only case where this endpoint should be used is when all files belonging to an asset have been uploaded but the metadata does not have the completed status. The status should be set automatically when closing a share and syncing ERDA.")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.USER, SecurityRoles.SERVICE })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void completeAsset(@Context SecurityContext securityContext,
@@ -314,7 +315,7 @@ public class Assetupdates {
             Assets marked as deleted are not included in statistics but metadata and assets files are not deleted.
             """)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE })
+    @RolesAllowed({ SecurityRoles.ADMIN })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     @Path("/{assetGuid}")

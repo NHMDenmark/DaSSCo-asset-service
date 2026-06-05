@@ -62,12 +62,12 @@ public class Collections {
     @POST
     @Operation(summary = "Create Collection", description = """
         Creates a new collection under an institution.
-        Collections can have a list of Roles, that restricts access to the collection. 
+        Collections can have a list of Roles, that restricts access to the collection.
         If a collection have the role restriction PLANTS users with the role PLANTS_WRITE has read/write access and users with the role PLANTS_READ only have read access.
     """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Collection createInstitution(
@@ -82,7 +82,7 @@ public class Collections {
     @Path("/{collectionName}")
     @Operation(summary = "Update role restrictions on collection", description = "Updates the role restrictions on the collection")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Collection.class)))
     @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -95,7 +95,7 @@ public class Collections {
     @Hidden
     @DELETE
     @Operation(summary = "Delete Collection", description = "Deletes a collection from an institution.")
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     //@ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Collection.class))))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void deleteCollection() {

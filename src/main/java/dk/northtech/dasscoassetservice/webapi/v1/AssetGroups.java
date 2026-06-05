@@ -46,6 +46,7 @@ public class AssetGroups {
     @GET
     @Path("keycloak/users")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
     public List<KeycloakUser> getUsers(@QueryParam("group") @DefaultValue("digitiser") String group) {
         return this.keycloakService.getKeycloakUsers(group);
     }

@@ -47,7 +47,7 @@ public class Workstations {
                                                                 "Workstation names must be unique.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Workstation.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Workstation createWorkstation(@PathParam("institutionName") String institutionName, Workstation in) {
@@ -60,7 +60,7 @@ public class Workstations {
     @Path("/{workstationName}")
     @Produces(APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "204", description = "No Content. The Update was successfull")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void updateWorkstation(@PathParam("institutionName") String institutionName, Workstation in) {
