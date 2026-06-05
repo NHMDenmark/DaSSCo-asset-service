@@ -3,6 +3,7 @@
     <button
       type="button"
       class="digitiser-trigger"
+      [class.expanded]="(overlayOpen$ | async) === true"
       cdkOverlayOrigin
       #digitiserOrigin="cdkOverlayOrigin"
       [disabled]="vm.loading"
