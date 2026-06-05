@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient, HttpResponse} from '@angular/common/http';
 import {BehaviorSubject, catchError, Observable, of, switchMap, timer} from "rxjs";
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class SpecimenGraphService {
 
 
   constructor(
-    public oidcSecurityService: OidcSecurityService
+    private authService: AuthService
     , private http: HttpClient
   ) { }
 
@@ -26,7 +26,7 @@ export class SpecimenGraphService {
     = timer(0, this.fiveMinutes)
     .pipe(
       switchMap(() =>
-      this.oidcSecurityService.getAccessToken()
+      this.authService.getAccessToken()
         .pipe(
           switchMap((token) => {
             return this.http.get(`${this.baseUrl}/WEEK`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -42,7 +42,7 @@ export class SpecimenGraphService {
     = timer(0, this.fiveMinutes)
     .pipe(
       switchMap(() =>
-        this.oidcSecurityService.getAccessToken()
+        this.authService.getAccessToken()
           .pipe(
             switchMap((token) => {
               return this.http.get(`${this.baseUrl}/MONTH`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -58,7 +58,7 @@ export class SpecimenGraphService {
     = timer(0, this.fiveMinutes)
     .pipe(
       switchMap(() =>
-      this.oidcSecurityService.getAccessToken()
+      this.authService.getAccessToken()
         .pipe(
           switchMap((token) => {
             return this.http.get(`${this.baseUrl}/YEAR`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -71,7 +71,7 @@ export class SpecimenGraphService {
     );
 
   getSpecimenDataCustom(view: string, start: number, end: number): Observable<HttpResponse<any> | undefined> {
-    return this.oidcSecurityService.getAccessToken()
+    return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.get(`${this.baseUrl}/custom?view=${view}&start=${start}&end=${end}`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -83,7 +83,7 @@ export class SpecimenGraphService {
   }
 
   refreshGraph(): Observable<HttpResponse<any> | undefined> {
-    return this.oidcSecurityService.getAccessToken()
+    return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => {
           return this.http.get(`${this.baseUrl}/refreshcache`, {headers: {'Authorization': 'Bearer ' + token}, responseType: 'text', observe: 'response'})

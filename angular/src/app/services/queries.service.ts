@@ -1,10 +1,10 @@
 import {Injectable} from '@angular/core';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient} from '@angular/common/http';
 import {catchError, Observable, of, switchMap} from 'rxjs';
 import {QueryResponse, SavedQuery} from '../types/query-types';
 import {Asset} from '../types/types';
 import {QueryItem} from '../types/queryItem';
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,9 +12,9 @@ import {QueryItem} from '../types/queryItem';
 export class QueriesService {
   baseUrl = 'api/v1/queries';
 
-  constructor(public oidcSecurityService: OidcSecurityService, private http: HttpClient) {}
+  constructor(private authService: AuthService, private http: HttpClient) {}
 
-  nodeProperties$ = this.oidcSecurityService
+  nodeProperties$ = this.authService
     .getAccessToken()
     .pipe(
       switchMap((token) =>
@@ -24,7 +24,7 @@ export class QueriesService {
       )
     );
 
-  queryItems$ = this.oidcSecurityService
+  queryItems$ = this.authService
     .getAccessToken()
     .pipe(
       switchMap((token) =>
@@ -34,7 +34,7 @@ export class QueriesService {
       )
     );
 
-  savedQueries$ = this.oidcSecurityService
+  savedQueries$ = this.authService
     .getAccessToken()
     .pipe(
       switchMap((token) =>
@@ -45,7 +45,7 @@ export class QueriesService {
     );
 
   saveSearch(savedQuery: SavedQuery): Observable<SavedQuery | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<SavedQuery>(`${this.baseUrl}/save`, JSON.stringify(savedQuery), {
@@ -57,7 +57,7 @@ export class QueriesService {
   }
 
   updateSavedSearch(savedQuery: SavedQuery, title: string): Observable<SavedQuery | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<SavedQuery>(`${this.baseUrl}/saved/update/${title.trim()}`, JSON.stringify(savedQuery), {
@@ -69,7 +69,7 @@ export class QueriesService {
   }
 
   getAssetsFromQuery(queries: QueryResponse[], limit: number): Observable<Asset[] | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<Asset[]>(`${this.baseUrl}/${limit}`, JSON.stringify(queries), {
@@ -81,7 +81,7 @@ export class QueriesService {
   }
 
   getAssetCountFromQuery(queries: QueryResponse[], limit: number): Observable<number | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<number>(`${this.baseUrl}/assetcount/${0}`, JSON.stringify(queries), {
@@ -93,7 +93,7 @@ export class QueriesService {
   }
 
   deleteSavedSearch(title: string): Observable<string | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .delete(`${this.baseUrl}/saved/${title}`, {

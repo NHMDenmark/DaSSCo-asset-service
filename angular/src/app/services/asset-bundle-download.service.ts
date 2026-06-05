@@ -1,6 +1,5 @@
 import {HttpClient, HttpErrorResponse, HttpResponse} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {
   BehaviorSubject,
   catchError,
@@ -16,6 +15,7 @@ import {
   throwError
 } from 'rxjs';
 import {FileProxy} from '../utility';
+import {AuthService} from './auth.service';
 
 export type AssetBundleJobStatus = 'PREPARING' | 'READY' | 'FAILED';
 export type AssetBundleDownloadStatus = AssetBundleJobStatus | 'CANCELLED';
@@ -53,7 +53,7 @@ export interface AssetBundleDownloadOptions {
   providedIn: 'root'
 })
 export class AssetBundleDownloadService {
-  private readonly oidcSecurityService = inject(OidcSecurityService);
+  private readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
   private readonly fileProxyRoot = this.trimTrailingSlash(inject(FileProxy));
   private readonly internalJobsUrl = this.joinFileProxyPath('/file_proxy/api/assetfiles/asset-bundles/jobs');
@@ -252,7 +252,7 @@ export class AssetBundleDownloadService {
   }
 
   private withAccessToken(): Observable<string> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => {
         if (!token) return throwError(() => new Error('Missing access token'));
         return of(token);

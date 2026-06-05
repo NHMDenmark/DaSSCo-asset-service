@@ -3,7 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {BehaviorSubject, catchError, combineLatest, distinctUntilChanged, of, switchMap, tap} from 'rxjs';
 import {AssetService} from 'src/app/utility';
 import {PaginatedEventsResponse} from './event-history.model';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
+import {AuthService} from '../../services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +11,7 @@ import {OidcSecurityService} from 'angular-auth-oidc-client';
 export class EventHistoryService {
   private readonly http = inject(HttpClient);
   private readonly assetServiceUrl = inject(AssetService);
-  private readonly oidcService = inject(OidcSecurityService);
+  private readonly authService = inject(AuthService);
 
   private readonly page = new BehaviorSubject<number>(1);
   private readonly limit = new BehaviorSubject<number>(100);
@@ -75,7 +75,7 @@ export class EventHistoryService {
     if (endDate) {
       params = params.append('endDate', endDate.toISOString());
     }
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http.get<PaginatedEventsResponse>(`${this.assetServiceUrl}/api/v1/events`, {
           headers: {
@@ -112,7 +112,7 @@ export class EventHistoryService {
   }
 
   getEventTypes() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<string[]>(`${this.assetServiceUrl}/api/v1/events/types`, {

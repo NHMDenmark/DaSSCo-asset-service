@@ -1,5 +1,4 @@
 import {Component, inject} from '@angular/core';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {AuthService} from './services/auth.service';
 import {Router} from '@angular/router';
 import {ReplaySubject} from 'rxjs';
@@ -12,31 +11,12 @@ import {DasscoHomepage} from './utility';
 })
 export class AppComponent {
   activeMenu: ReplaySubject<string | undefined> = new ReplaySubject<string | undefined>(1);
-  private oidcSecurityService = inject(OidcSecurityService);
   authService = inject(AuthService);
   private router = inject(Router);
   dasscoHomepage = inject(DasscoHomepage);
 
   constructor() {
     this.setActiveRoute();
-  }
-
-  ngOnInit(): void {
-    this.oidcSecurityService.checkAuth().subscribe({
-      next: (loginResponse) => {
-        const redirect = sessionStorage.getItem('postLoginUrl');
-        sessionStorage.removeItem('postLoginUrl');
-        this.authService.loginInitialized.next(redirect == null ? true : undefined);
-        this.authService.setCheckAuthComplete();
-
-        if (redirect && loginResponse.isAuthenticated) {
-          document.location = '/ars' + redirect;
-        }
-      },
-      error: (err) => {
-        console.log(err);
-      }
-    });
   }
 
   setActiveRoute(): void {

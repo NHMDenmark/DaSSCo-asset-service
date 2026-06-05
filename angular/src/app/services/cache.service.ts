@@ -1,20 +1,21 @@
 import {Injectable} from '@angular/core';
 import {QueryView} from '../types/query-types';
 import {catchError, Observable, of, switchMap} from 'rxjs';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient} from '@angular/common/http';
 import {Digitiser} from '../types/types';
 import {QueryItem} from '../types/queryItem';
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CacheService {
   baseUrl = 'api/v1/caches';
+  private readonly cacheKeys = ['setupTime', 'node-properties', 'query-items', 'queries', 'enum-values'];
 
-  constructor(public oidcSecurityService: OidcSecurityService, private http: HttpClient) {}
+  constructor(private authService: AuthService, private http: HttpClient) {}
 
-  cachedDropdownValues$: Observable<Map<string, object[]> | undefined> = this.oidcSecurityService
+  cachedDropdownValues$: Observable<Map<string, object[]> | undefined> = this.authService
     .getAccessToken()
     .pipe(
       switchMap((token) =>
@@ -24,7 +25,7 @@ export class CacheService {
       )
     );
 
-  cachedDigitisers$: Observable<Map<string, Digitiser[]> | undefined> = this.oidcSecurityService
+  cachedDigitisers$: Observable<Map<string, Digitiser[]> | undefined> = this.authService
     .getAccessToken()
     .pipe(
       switchMap((token) =>
@@ -48,7 +49,7 @@ export class CacheService {
       const cachedTime: number = JSON.parse(setupTime);
       if (now - cachedTime > 1 * 60 * 60 * 1000) {
         // 1 hr
-        sessionStorage.clear();
+        this.clearCachedSessionState();
         sessionStorage.setItem('setupTime', JSON.stringify(now));
       }
     }
@@ -65,8 +66,8 @@ export class CacheService {
   }
 
   getQueryItems(): QueryItem[] | undefined {
-    const queryItems = sessionStorage.getItem('query-items');
     this.checkSetupTime();
+    const queryItems = sessionStorage.getItem('query-items');
     if (queryItems) {
       return JSON.parse(queryItems);
     }
@@ -74,8 +75,8 @@ export class CacheService {
   }
 
   getNodeProperties(): Map<string, string[]> | undefined {
-    const properties = sessionStorage.getItem('node-properties');
     this.checkSetupTime();
+    const properties = sessionStorage.getItem('node-properties');
     if (properties) {
       return JSON.parse(properties);
     }
@@ -113,14 +114,18 @@ export class CacheService {
   }
 
   getEnumValues(): string[] | undefined {
-    const items = sessionStorage.getItem('enum-values');
     this.checkSetupTime();
+    const items = sessionStorage.getItem('enum-values');
     if (items) return JSON.parse(items);
     return undefined;
   }
 
   clearQueryCache() {
     sessionStorage.removeItem('queries');
+  }
+
+  private clearCachedSessionState() {
+    this.cacheKeys.forEach((key) => sessionStorage.removeItem(key));
   }
 
   private handleError<T>(operation = 'operation', result?: T) {

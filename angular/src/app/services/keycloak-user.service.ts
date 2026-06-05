@@ -1,6 +1,5 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {
   BehaviorSubject,
   catchError,
@@ -14,13 +13,14 @@ import {
   take
 } from 'rxjs';
 import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class KeycloakUserService {
   private readonly http = inject(HttpClient);
-  private readonly oidcService = inject(OidcSecurityService);
+  private readonly authService = inject(AuthService);
   private readonly users = new BehaviorSubject<KeycloakUserFrontend[]>([]);
   users$ = this.users.asObservable();
   private readonly loading = new BehaviorSubject(true);
@@ -44,7 +44,7 @@ export class KeycloakUserService {
   }
 
   private fetchKeycloakUsersForGroup(group: string) {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http.get<KeycloakUserFrontend[]>('api/v1/assetgroups/keycloak/users', {
           params: {group},

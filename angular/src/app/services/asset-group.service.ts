@@ -1,9 +1,9 @@
 import {Injectable} from '@angular/core';
 import {catchError, Observable, of, switchMap} from 'rxjs';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import {AssetGroup, DasscoError} from '../types/types';
 import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,22 +11,22 @@ import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 export class AssetGroupService {
   baseUrl = 'api/v1/assetgroups';
 
-  constructor(public oidcSecurityService: OidcSecurityService, private http: HttpClient) {}
+  constructor(private authService: AuthService, private http: HttpClient) {}
 
-  ownAssetGroups$: Observable<AssetGroup[] | undefined> = this.oidcSecurityService.getAccessToken().pipe(
+  ownAssetGroups$: Observable<AssetGroup[] | undefined> = this.authService.getAccessToken().pipe(
     switchMap((token) => this.http
         .get<AssetGroup[]>(`${this.baseUrl}/owned`, {headers: {'Authorization': 'Bearer ' + token}})
         .pipe(catchError(this.handleError(`get ${this.baseUrl}/owned`, undefined))))
   );
 
-  assetGroups$: Observable<AssetGroup[] | undefined> = this.oidcSecurityService.getAccessToken().pipe(
+  assetGroups$: Observable<AssetGroup[] | undefined> = this.authService.getAccessToken().pipe(
     switchMap((token) => this.http
         .get<AssetGroup[]>(`${this.baseUrl}/`, {headers: {'Authorization': 'Bearer ' + token}})
         .pipe(catchError(this.handleError(`get ${this.baseUrl}/`, undefined))))
   );
 
   newGroup(group: AssetGroup): Observable<AssetGroup | DasscoError | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .post<AssetGroup>(`${this.baseUrl}/createassetgroup/`, group, {headers: {'Authorization': 'Bearer ' + token}})
           .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError))))
@@ -37,7 +37,7 @@ export class AssetGroupService {
     groupName: string | undefined,
     assets: string[]
   ): Observable<AssetGroup | DasscoError | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/addAssets`, assets, {
             headers: {'Authorization': 'Bearer ' + token}
@@ -47,7 +47,7 @@ export class AssetGroupService {
   }
 
   getKeyCloakUsers(search: string | undefined = '') {
-    return this.oidcSecurityService.getAccessToken()
+    return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => this.http.get<KeycloakUserFrontend[]>(this.baseUrl + '/keycloak/users', {
           params: {
@@ -61,7 +61,7 @@ export class AssetGroupService {
   }
 
   updateGroupRemoveAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/removeAssets`, assets, {
             headers: {'Authorization': 'Bearer ' + token}
@@ -71,7 +71,7 @@ export class AssetGroupService {
   }
 
   grantAccess(groupName: string | undefined, users: KeycloakUserFrontend[]): Observable<AssetGroup | DasscoError | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .put<AssetGroup>(`${this.baseUrl}/keycloak/grantAccess/${groupName}`, users, {
             headers: {'Authorization': 'Bearer ' + token}
@@ -81,7 +81,7 @@ export class AssetGroupService {
   }
 
   revokeAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .put<AssetGroup>(`${this.baseUrl}/revokeAccess/${groupName}`, users, {
             headers: {'Authorization': 'Bearer ' + token}
@@ -91,7 +91,7 @@ export class AssetGroupService {
   }
 
   deleteGroup(groupName: string | undefined): Observable<any | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
           .delete(`${this.baseUrl}/deletegroup/${groupName}`, {headers: {'Authorization': 'Bearer ' + token}})
           .pipe(catchError(this.handleError(`get ${this.baseUrl}/deletegroup/${groupName}`, undefined))))
@@ -99,7 +99,7 @@ export class AssetGroupService {
   }
 
   deleteGroups(groupNames: string[]) {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .delete(`${this.baseUrl}/deletegroups`, {
@@ -112,7 +112,7 @@ export class AssetGroupService {
   }
 
   bulkAuditAssets(assetGuids: string[], user: string): Observable<{[key: string]: string} | undefined> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<{[key: string]: string}>(

@@ -1,7 +1,7 @@
 import {Component, inject, OnDestroy, OnInit} from '@angular/core';
-import {OidcSecurityService} from "angular-auth-oidc-client";
 import {Subject, takeUntil} from "rxjs";
 import {FileProxy} from "../../utility";
+import {AuthService} from '../../services/auth.service';
 
 @Component({
   selector: 'dassco-docs',
@@ -17,7 +17,7 @@ export class DocsComponent implements OnInit, OnDestroy {
     { label: "dassco-asset-service", value: "api/openapi.json" },
     { label: "dassco-file-proxy", value: this.proxyUrl + "/file_proxy/api/openapi.json"}
   ]
-  constructor(private oidcSecurityService: OidcSecurityService) {
+  constructor(private authService: AuthService) {
     this.selectedDoc = this.urls[0].value;
   }
 
@@ -28,7 +28,7 @@ export class DocsComponent implements OnInit, OnDestroy {
 
   loadData(url : string){
     let docEl = document.getElementById("rapidocs");
-    this.oidcSecurityService.getAccessToken()
+    this.authService.getAccessToken()
       .pipe(takeUntil(this.#componentDestroyed))
       .subscribe(token => {
         const headers = new Headers({
@@ -47,7 +47,7 @@ export class DocsComponent implements OnInit, OnDestroy {
           });
       });
 
-    this.oidcSecurityService.getAccessToken()
+    this.authService.getAccessToken()
       .pipe(takeUntil(this.#componentDestroyed))
       .subscribe(token => {
         (docEl as any).addEventListener('spec-loaded', (_e: any) => {
