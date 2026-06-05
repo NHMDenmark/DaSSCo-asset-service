@@ -78,7 +78,7 @@
               <mat-select [formControl]="digitiserIdControl">
                 <mat-option [value]="null">None</mat-option>
                 <mat-option
-                  *ngFor="let digitiser of keycloakDigitiserOptions$ | async; trackBy: trackByDasscoUserId"
+                  *ngFor="let digitiser of digitiserOptions$ | async; trackBy: trackByDasscoUserId"
                   [value]="digitiser.dasscoUserId">
                   {{ digitiser.username }}
                 </mat-option>
@@ -211,21 +211,13 @@
                 </div>
               </ng-container>
               <div class="header-actions header-actions-start">
-                <mat-form-field appearance="outline" class="select-field">
-                  <mat-label>Search digitisers</mat-label>
-                  <input matInput type="text" [formControl]="digitiserSearchControl" autocomplete="off" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="select-field">
-                  <mat-label>Add Digitiser</mat-label>
-                  <mat-select (selectionChange)="addDigitiser($event.value)" [value]="null">
-                    <mat-option
-                      *ngFor="let digitiser of keycloakDigitiserOptions$ | async; trackBy: trackByDasscoUserId"
-                      [value]="digitiser"
-                      [disabled]="digitiser.dasscoUserId !== undefined && isDigitiserAdded(digitiser.dasscoUserId)">
-                      {{ digitiser.username }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <dassco-digitiser-list
+                  label="Add Digitiser"
+                  ariaLabel="Search digitisers"
+                  optionsId="bulk-update-digitiser-options"
+                  emptyText="No available digitisers found"
+                  [selectedUsersControl]="selectedKeycloakDigitisersControl"
+                  [excludedUsernames]="addedDigitiserUsernames"></dassco-digitiser-list>
               </div>
             </mat-expansion-panel>
           </ng-container>

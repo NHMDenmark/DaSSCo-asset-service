@@ -1,7 +1,7 @@
 import {ConnectedPosition} from '@angular/cdk/overlay';
 import {Component, Input} from '@angular/core';
 import {FormControl} from '@angular/forms';
-import {BehaviorSubject, combineLatest, debounceTime, map, startWith, switchMap} from 'rxjs';
+import {BehaviorSubject, startWith} from 'rxjs';
 import {KeycloakUserService} from '../../services/keycloak-user.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 
@@ -27,13 +27,8 @@ export class DigitiserListComponent {
   readonly activeDigitiserIndex$ = this.activeDigitiserIndexSubject.asObservable();
   private readonly userGroupSubject = new BehaviorSubject('digitiser');
   readonly search = new FormControl<string>('', {nonNullable: true});
-  readonly keycloakUsers$ = this.search.valueChanges.pipe(debounceTime(150), startWith(''));
-  readonly filteredKeycloakUsers$ = combineLatest([
-    this.userGroupSubject.pipe(switchMap((group) => this.keycloakUserService.getKeycloakUsersForGroup(group))),
-    this.keycloakUsers$
-  ]).pipe(
-    map(([users, search]) => this.filterUsers(users, search))
-  );
+  readonly keycloakUsers$ = this.search.valueChanges.pipe(startWith(''));
+  readonly filteredKeycloakUsers$ = this.keycloakUserService.getFilteredKeycloakUsers(this.keycloakUsers$);
   readonly overlayPositions: ConnectedPosition[] = [
     {
       originX: 'start',
@@ -129,16 +124,5 @@ export class DigitiserListComponent {
     }
 
     return this.activeDigitiserIndexSubject.value;
-  }
-
-  private filterUsers(users: KeycloakUserFrontend[], search: string | null | undefined) {
-    const normalizedSearch = search?.trim().toLowerCase();
-    if (!normalizedSearch) return users;
-
-    return users.filter((user) =>
-      [user.username, user.firstName, user.lastName]
-        .filter((value): value is string => !!value)
-        .some((value) => value.toLowerCase().includes(normalizedSearch))
-    );
   }
 }

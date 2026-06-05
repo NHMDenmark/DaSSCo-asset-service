@@ -7,11 +7,14 @@ import {AssetGroupService} from '../../../services/asset-group.service';
 import {AuthService} from '../../../services/auth.service';
 import {KeycloakUserFrontend} from '../../../types/keycloak-user-frontend';
 import {AssetGroup} from '../../../types/types';
+import {KeycloakUserService} from '../../../services/keycloak-user.service';
 
 interface AssetGroupDialogResult {
   group: AssetGroup;
   new: boolean;
 }
+
+type AssetGroupDialogMode = 'existing' | 'new';
 
 @Component({
   selector: 'dassco-asset-group-dialog',
@@ -20,10 +23,13 @@ interface AssetGroupDialogResult {
 })
 export class AssetGroupDialogComponent {
   private readonly authService = inject(AuthService);
+  // Keep injected to load users early.
+  _keycloakUserService = inject(KeycloakUserService);
   private readonly assetGroupService = inject(AssetGroupService);
   private readonly dialogRef = inject(MatDialogRef<AssetGroupDialogComponent>);
 
   groupName: string | undefined;
+  mode: AssetGroupDialogMode = 'existing';
   new = false;
   nameSaved = true;
 
@@ -41,16 +47,23 @@ export class AssetGroupDialogComponent {
   }
 
   selectExistingGroup(): void {
+    this.mode = 'existing';
     this.new = false;
   }
 
-  openNewGroupPanel(): void {
+  selectMode(mode: AssetGroupDialogMode): void {
+    this.mode = mode;
+    this.new = mode === 'new';
     this.groupName = undefined;
-    this.new = true;
+    this.digitiserFormControl.reset(null);
   }
 
   markNameUnsaved(): void {
     this.nameSaved = false;
+  }
+
+  canSave(): boolean {
+    return !!this.groupName?.trim();
   }
 
   private buildDialogResult(): AssetGroupDialogResult {
@@ -58,6 +71,7 @@ export class AssetGroupDialogComponent {
       group_name: this.groupName,
       assets: undefined,
       hasAccess: this.getSelectedDigitisers(),
+      keycloakUsers: this.getSelectedKeycloakUsers(),
       groupCreator: undefined,
       isCreator: undefined
     };
@@ -72,5 +86,11 @@ export class AssetGroupDialogComponent {
     if (!this.new) return [];
 
     return this.digitiserFormControl.value?.map((digitiser) => digitiser.username) ?? [];
+  }
+
+  private getSelectedKeycloakUsers(): KeycloakUserFrontend[] {
+    if (!this.new) return [];
+
+    return this.digitiserFormControl.value ?? [];
   }
 }

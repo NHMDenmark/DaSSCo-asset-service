@@ -92,7 +92,9 @@ public class UserService {
 
 
     public List<User> persistKeycloakUsers(List<KeycloakUser> keycloakUsers) {
-        return this.jdbi.onDemand(UserRepository.class).insertKeycloakUsers(keycloakUsers);
+        List<User> users = this.jdbi.onDemand(UserRepository.class).insertKeycloakUsers(keycloakUsers);
+        users.forEach(user -> this.usernameUserMap.put(user.username, user));
+        return users;
     }
     public User persistUser(User user) {
         if(Strings.isNullOrEmpty(user.username)) {

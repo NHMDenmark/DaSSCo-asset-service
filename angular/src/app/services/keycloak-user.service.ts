@@ -1,7 +1,7 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
-import {combineLatest, map, Observable, shareReplay, startWith, switchMap} from 'rxjs';
+import {BehaviorSubject, catchError, combineLatest, map, Observable, of, shareReplay, switchMap, take} from 'rxjs';
 import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 
 @Injectable({
@@ -10,24 +10,23 @@ import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 export class KeycloakUserService {
   private readonly http = inject(HttpClient);
   private readonly oidcService = inject(OidcSecurityService);
-  private readonly usersByGroup = new Map<string, Observable<KeycloakUserFrontend[]>>();
-  users$ = this.getKeycloakUsersForGroup('digitiser');
+  private readonly users = new BehaviorSubject<KeycloakUserFrontend[]>([]);
+  users$ = this.users.asObservable();
 
-  getKeycloakUsersForGroup(group = 'digitiser') {
-    if (!this.usersByGroup.has(group)) {
-      this.usersByGroup.set(group, this.fetchKeycloakUsersForGroup(group));
-    }
-
-    return this.usersByGroup.get(group)!;
+  constructor() {
+    this.fetchKeycloakUsersForGroup('digitiser')
+      .pipe(
+        take(1),
+        catchError((e: Error) => {
+          console.error('Error loading keycloak users', e);
+          return of([] as KeycloakUserFrontend[]);
+        })
+      )
+      .subscribe((users) => this.users.next(users));
   }
 
-  getFilteredKeycloakUsers(search$: Observable<string>, group = 'digitiser') {
-    return combineLatest([
-      this.getKeycloakUsersForGroup(group),
-      search$.pipe(startWith(''))
-    ]).pipe(
-      map(([users, search]) => this.filterUsers(users, search))
-    );
+  getFilteredKeycloakUsers(search$: Observable<string>) {
+    return combineLatest([this.users$, search$]).pipe(map(([users, search]) => this.filterUsers(users, search)));
   }
 
   private fetchKeycloakUsersForGroup(group: string) {

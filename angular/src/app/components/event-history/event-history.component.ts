@@ -108,7 +108,7 @@ export class EventHistoryComponent implements OnInit, OnDestroy {
       }
       if (range.start === null || range.end === null) {
         this.snackBar.open('Please select both start and end dates', 'OK', {
-          duration: 5000,
+          duration: 3000,
           verticalPosition: 'top'
         });
         return;

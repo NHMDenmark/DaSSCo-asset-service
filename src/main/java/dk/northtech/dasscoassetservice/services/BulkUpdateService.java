@@ -412,8 +412,9 @@ public class BulkUpdateService {
                     bulkUpdateUuid, digitiserPatchBlock.add().size());
 
             for (DigitiserAddition addition : digitiserPatchBlock.add()) {
-                if (addition.dasscoUserId() == null) {
-                    logger.warn("Skipping digitiser addition with null user ID: {}", addition);
+                Integer dasscoUserId = resolveDigitiserUserId(addition);
+                if (dasscoUserId == null) {
+                    logger.warn("Skipping digitiser addition without an internal or Keycloak user: {}", addition);
                     continue;
                 }
 
@@ -423,7 +424,7 @@ public class BulkUpdateService {
                         : assetGuids;
 
                 for (String assetGuid : targets) {
-                    digiRepo.insertLink(addition.dasscoUserId(), assetGuid);
+                    digiRepo.insertLink(dasscoUserId, assetGuid);
                 }
             }
         }
@@ -439,6 +440,17 @@ public class BulkUpdateService {
         }
 
         logger.info("Finished digitiser operations for bulk update {}", bulkUpdateUuid);
+    }
+
+    private Integer resolveDigitiserUserId(DigitiserAddition addition) {
+        if (addition.dasscoUserId() != null) {
+            return addition.dasscoUserId();
+        }
+        if (addition.keycloakUser() == null) {
+            return null;
+        }
+        List<User> users = this.userService.persistKeycloakUsers(List.of(addition.keycloakUser()));
+        return users.isEmpty() ? null : users.getFirst().dassco_user_id;
     }
 
     private void handleFundingAssignments(Handle handle,

@@ -408,7 +408,9 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
                 }
               });
             } else if ((response as AssetGroup).group_name) {
-              this._snackBar.open('The group "' + group.group.group_name + '" has been created.', 'OK');
+              this._snackBar.open('The group "' + group.group.group_name + '" has been created.', 'OK', {
+                duration: 3000
+              });
             }
           });
         } else {
@@ -436,10 +438,12 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
   openSnackBar(object: any | undefined, success: string) {
     if (object) {
       this._snackBar.open(success, 'OK', {
-        duration: 5000
+        duration: 3000
       });
     } else {
-      this._snackBar.open('An error occurred. Try again.', 'OK');
+      this._snackBar.open('An error occurred. Try again.', 'OK', {
+        duration: 3000
+      });
     }
   }
 

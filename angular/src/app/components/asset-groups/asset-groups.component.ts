@@ -294,9 +294,9 @@ export class AssetGroupsComponent implements OnDestroy {
 
   openSnackBar(object: any | undefined, success: string) {
     if (object) {
-      this._snackBar.open(success, 'OK', {duration: 5000});
+      this._snackBar.open(success, 'OK', {duration: 3000});
     } else {
-      this._snackBar.open('An error occurred. Try again.', 'OK', {duration: 5000});
+      this._snackBar.open('An error occurred. Try again.', 'OK', {duration: 3000});
     }
   }
 }

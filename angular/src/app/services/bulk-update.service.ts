@@ -4,6 +4,7 @@ import {catchError, Observable, switchMap, throwError} from 'rxjs';
 import {AssetService} from '../utility';
 import {Digitiser, Funding, Legality} from '../types/types';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
+import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 
 export interface GroupedDigitiser {
   dasscoUserId: number;
@@ -67,7 +68,7 @@ export interface IssuePatchBlock {
 }
 
 export interface DigitiserPatchBlock {
-  add?: Array<{dasscoUserId: number; assetGuids: string[]}>;
+  add?: Array<{dasscoUserId?: number; keycloakUser?: KeycloakUserFrontend; assetGuids: string[]}>;
   delete?: number[];
 }
 
