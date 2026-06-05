@@ -61,7 +61,7 @@
           </mat-form-field>
         </div>
 
-        <div class="digitiser-options" role="listbox" [id]="optionsId" [attr.aria-multiselectable]="true">
+        <div class="digitiser-options" role="listbox" [id]="optionsId" [attr.aria-multiselectable]="multiple">
           <button
             *ngFor="let keycloakUser of availableKeycloakUsers; let userIndex = index"
             type="button"
@@ -72,6 +72,7 @@
             (mouseenter)="setActiveDigitiserIndex(userIndex)"
             (click)="toggleDigitiser(keycloakUser)">
             <mat-checkbox
+              *ngIf="multiple"
               [checked]="isDigitiserSelected(keycloakUser)"
               (click)="$event.preventDefault()"></mat-checkbox>
             <span class="digitiser-option-text">

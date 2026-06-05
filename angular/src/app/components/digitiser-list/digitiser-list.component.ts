@@ -13,6 +13,8 @@ import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 export class DigitiserListComponent {
   @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
   @Input() selectedUsersControl = new FormControl<KeycloakUserFrontend[] | null>(null);
+  @Input() label = 'Select digitisers';
+  @Input() multiple = true;
   @Input() excludedUsernames: string[] = [];
   @Input() optionsId = 'digitiser-options';
   @Input() emptyText = 'No available digitisers found';
@@ -59,7 +61,7 @@ export class DigitiserListComponent {
   selectedValueText() {
     const selectedUsers = this.selectedUsersControl.value ?? [];
 
-    if (selectedUsers.length === 0) return 'Select digitisers';
+    if (selectedUsers.length === 0) return this.label;
     if (selectedUsers.length === 1) return selectedUsers[0].username;
 
     return `${selectedUsers.length} digitisers selected`;
@@ -89,8 +91,9 @@ export class DigitiserListComponent {
       return;
     }
 
-    this.selectedUsersControl.setValue([...selectedUsers, user]);
+    this.selectedUsersControl.setValue(this.multiple ? [...selectedUsers, user] : [user]);
     this.selectedUsersControl.markAsDirty();
+    if (!this.multiple) this.closeOverlay();
   }
 
   availableDigitisers(users: KeycloakUserFrontend[]) {

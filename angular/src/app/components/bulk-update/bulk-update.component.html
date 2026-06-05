@@ -69,21 +69,14 @@
         <div class="form-section">
           <h2 class="section-title">Basic Information</h2>
           <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Search digitisers</mat-label>
-              <input matInput type="text" [formControl]="digitiserSearchControl" autocomplete="off" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Digitiser</mat-label>
-              <mat-select [formControl]="digitiserIdControl">
-                <mat-option [value]="null">None</mat-option>
-                <mat-option
-                  *ngFor="let digitiser of digitiserOptions$ | async; trackBy: trackByDasscoUserId"
-                  [value]="digitiser.dasscoUserId">
-                  {{ digitiser.username }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="digitiser-field">
+              <dassco-digitiser-list
+                label="Digitiser"
+                optionsId="bulk-update-asset-digitiser-options"
+                emptyText="No available digitisers found"
+                [multiple]="false"
+                [selectedUsersControl]="selectedAssetDigitiserControl"></dassco-digitiser-list>
+            </div>
             <mat-form-field appearance="outline">
               <mat-label>Status</mat-label>
               <mat-select [formControl]="statusControl">

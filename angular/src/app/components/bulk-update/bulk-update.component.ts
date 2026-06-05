@@ -1,5 +1,5 @@
 import {Component, inject, OnDestroy} from '@angular/core';
-import {Asset, Digitiser, Funding} from '../../types/types';
+import {Asset, Funding} from '../../types/types';
 import {FormArray, FormControl, FormGroup} from '@angular/forms';
 import {DIALOG_DATA, DialogRef} from '@angular/cdk/dialog';
 import {
@@ -16,7 +16,6 @@ import {
   BehaviorSubject,
   catchError,
   combineLatest,
-  debounceTime,
   filter,
   map,
   of,
@@ -40,7 +39,6 @@ interface IssueFormValue {
 }
 
 interface DigitiserFormValue {
-  dasscoUserId: number | null;
   username: string | null;
   keycloakUser: KeycloakUserFrontend | null;
   digitiserListIds: number[] | null;
@@ -68,8 +66,7 @@ interface IssueUpdateAction {
 }
 
 interface DigitiserAddAction {
-  dasscoUserId?: number;
-  keycloakUser?: KeycloakUserFrontend;
+  keycloakUsers: KeycloakUserFrontend[];
   assetGuids: string[];
 }
 
@@ -91,14 +88,7 @@ export class BulkUpdateComponent implements OnDestroy {
   dialogRef = inject(DialogRef);
   data: {assets: Asset[]} = inject(DIALOG_DATA);
   private readonly destroy = new Subject<void>();
-  digitiserList$ = this.bulkUpdateService.getDigitiserList();
-  digitiserSearchControl = new FormControl<string>('', {nonNullable: true});
-  digitiserOptions$ = combineLatest([
-    this.digitiserList$,
-    this.digitiserSearchControl.valueChanges.pipe(debounceTime(150), startWith(''))
-  ]).pipe(
-    map(([digitisers, search]) => this.filterDigitisers(digitisers, search))
-  );
+  selectedAssetDigitiserControl = new FormControl<KeycloakUserFrontend[] | null>(null);
   selectedKeycloakDigitisersControl = new FormControl<KeycloakUserFrontend[] | null>(null);
   fundingList$ = this.bulkUpdateService.getFundingList();
   subjectsList$ = this.bulkUpdateService.getSubjects();
@@ -166,6 +156,12 @@ export class BulkUpdateComponent implements OnDestroy {
       .subscribe((restrictions) => {
         this.originalRoles = restrictions.map((r) => r.role);
       });
+
+    this.selectedAssetDigitiserControl.valueChanges.pipe(takeUntil(this.destroy)).subscribe((users) => {
+      const selectedUser = users && users.length > 0 ? users[users.length - 1] : null;
+      this.fields.controls['keycloakUser'].setValue(selectedUser);
+      this.fields.controls['keycloakUser'].markAsDirty();
+    });
 
     this.selectedKeycloakDigitisersControl.valueChanges.pipe(takeUntil(this.destroy)).subscribe((users) => {
       users?.forEach((user) => this.addDigitiser(user));
@@ -337,9 +333,7 @@ export class BulkUpdateComponent implements OnDestroy {
   }
 
   private hasNewDigitisers(): boolean {
-    return (this.digitisers.value as DigitiserFormValue[]).some(
-      (d) => d.isNew === true && (d.dasscoUserId != null || d.keycloakUser != null)
-    );
+    return (this.digitisers.value as DigitiserFormValue[]).some((d) => d.isNew === true && d.keycloakUser != null);
   }
 
   get canSave(): boolean {
@@ -359,14 +353,13 @@ export class BulkUpdateComponent implements OnDestroy {
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
     // Only include newly added digitisers (those marked as new)
     const add = (this.digitisers.value as DigitiserFormValue[])
-      .filter((d) => d.isNew && (d.dasscoUserId != null || d.keycloakUser != null))
+      .filter((d) => d.isNew && d.keycloakUser != null)
       .map((d) => {
-        if (d.dasscoUserId == null && d.keycloakUser == null) {
+        if (d.keycloakUser == null) {
           return null;
         }
         return {
-          ...(d.dasscoUserId != null && {dasscoUserId: d.dasscoUserId}),
-          ...(d.keycloakUser != null && {keycloakUser: d.keycloakUser}),
+          keycloakUsers: [d.keycloakUser],
           assetGuids: d.assetGuids ?? this.data.assets.map((asset) => asset.asset_guid as string)
         };
       })
@@ -435,10 +428,6 @@ export class BulkUpdateComponent implements OnDestroy {
     return this.fields.controls['subject'] as FormControl<string | null>;
   }
 
-  get digitiserIdControl() {
-    return this.fields.controls['digitiser_id'] as FormControl<number | null>;
-  }
-
   get issues() {
     return this.bulkUpdateForm.controls.issues as FormArray;
   }
@@ -457,7 +446,7 @@ export class BulkUpdateComponent implements OnDestroy {
       audited: new FormControl<boolean | null>(null),
       subject: new FormControl<string | null>(null),
       status: new FormControl<string | null>(null),
-      digitiser_id: new FormControl<number | null>(null),
+      keycloakUser: new FormControl<KeycloakUserFrontend | null>(null),
       camera_setting_control: new FormControl<string | null>(null),
       metadata_source: new FormControl<string | null>(null),
       push_to_specify: new FormControl<boolean | null>(null),
@@ -479,7 +468,6 @@ export class BulkUpdateComponent implements OnDestroy {
     >([]),
     digitisers: new FormArray<
       FormGroup<{
-        dasscoUserId: FormControl<number | null>;
         username: FormControl<string | null>;
         keycloakUser: FormControl<KeycloakUserFrontend | null>;
         digitiserListIds: FormControl<number[] | null>;
@@ -543,7 +531,6 @@ export class BulkUpdateComponent implements OnDestroy {
   patchDigitiser(digitiser: Partial<GroupedDigitiser>) {
     this.digitisers.push(
       new FormGroup({
-        dasscoUserId: new FormControl<number | null>(digitiser.dasscoUserId ?? null),
         username: new FormControl<string | null>(digitiser.username ?? null),
         keycloakUser: new FormControl<KeycloakUserFrontend | null>(null),
         digitiserListIds: new FormControl<number[] | null>(digitiser.digitiserListIds ?? null),
@@ -554,17 +541,15 @@ export class BulkUpdateComponent implements OnDestroy {
     );
   }
 
-  addDigitiser(digitiser: Digitiser | KeycloakUserFrontend) {
+  addDigitiser(digitiser: KeycloakUserFrontend) {
     // Check if digitiser already exists
     const exists = this.digitisers.controls.some((control) => control.get('username')?.value === digitiser.username);
 
     if (!exists) {
-      const keycloakUser = this.isKeycloakUser(digitiser) ? digitiser : null;
       this.digitisers.push(
         new FormGroup({
-          dasscoUserId: new FormControl<number | null>(this.isDigitiser(digitiser) ? digitiser.dasscoUserId ?? null : null),
           username: new FormControl<string | null>(digitiser.username ?? null),
-          keycloakUser: new FormControl<KeycloakUserFrontend | null>(keycloakUser),
+          keycloakUser: new FormControl<KeycloakUserFrontend | null>(digitiser),
           digitiserListIds: new FormControl<number[] | null>(null),
           assetGuids: new FormControl<string[] | null>(this.data.assets.map((asset) => asset.asset_guid as string)),
           count: new FormControl<number | null>(0),
@@ -574,10 +559,6 @@ export class BulkUpdateComponent implements OnDestroy {
       // Mark the FormArray as dirty when adding a new digitiser
       this.digitisers.markAsDirty();
     }
-  }
-
-  isDigitiserAdded(digitiserId: number): boolean {
-    return this.digitisers.controls.some((control) => control.get('dasscoUserId')?.value === digitiserId);
   }
 
   get addedDigitiserUsernames(): string[] {
@@ -607,28 +588,10 @@ export class BulkUpdateComponent implements OnDestroy {
     }
   }
 
-  trackByDasscoUserId(_index: number, digitiser: Digitiser) {
-    return digitiser.dasscoUserId;
-  }
   trackBy(_index: number, status: string) {
     return status;
   }
   trackByFundingId(_index: number, funding: Funding) {
     return funding.funding_id;
-  }
-
-  private filterDigitisers(digitisers: Digitiser[], search: string | null | undefined) {
-    const normalizedSearch = search?.trim().toLowerCase();
-    if (!normalizedSearch) return digitisers;
-
-    return digitisers.filter((digitiser) => digitiser.username?.toLowerCase().includes(normalizedSearch));
-  }
-
-  private isDigitiser(digitiser: Digitiser | KeycloakUserFrontend): digitiser is Digitiser {
-    return 'dasscoUserId' in digitiser;
-  }
-
-  private isKeycloakUser(digitiser: Digitiser | KeycloakUserFrontend): digitiser is KeycloakUserFrontend {
-    return 'id' in digitiser;
   }
 }

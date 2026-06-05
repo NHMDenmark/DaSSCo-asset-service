@@ -54,7 +54,7 @@ export interface AssetPatchFields {
   audited: boolean;
   subject: string;
   status: string;
-  digitiser_id: number;
+  keycloakUser: KeycloakUserFrontend;
   camera_setting_control: string;
   metadata_source: string;
   push_to_specify: boolean;
@@ -68,7 +68,7 @@ export interface IssuePatchBlock {
 }
 
 export interface DigitiserPatchBlock {
-  add?: Array<{dasscoUserId?: number; keycloakUser?: KeycloakUserFrontend; assetGuids: string[]}>;
+  add?: Array<{keycloakUsers: KeycloakUserFrontend[]; assetGuids: string[]}>;
   delete?: number[];
 }
 

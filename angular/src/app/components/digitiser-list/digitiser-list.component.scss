@@ -1,14 +1,15 @@
 :host {
   display: block;
+  margin-top: 4px;
 }
 
 .digitiser-trigger {
   width: 100%;
-  min-height: 63px;
+  min-height: 59px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  font-family: 'graphik-regular';
+  font-family: 'graphik-regular', serif;
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem 0.45rem 0.75rem;
