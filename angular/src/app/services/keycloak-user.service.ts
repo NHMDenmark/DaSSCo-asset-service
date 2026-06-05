@@ -1,7 +1,18 @@
 import {HttpClient} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {OidcSecurityService} from 'angular-auth-oidc-client';
-import {BehaviorSubject, catchError, combineLatest, map, Observable, of, shareReplay, switchMap, take} from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  combineLatest,
+  finalize,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  switchMap,
+  take
+} from 'rxjs';
 import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 
 @Injectable({
@@ -12,6 +23,8 @@ export class KeycloakUserService {
   private readonly oidcService = inject(OidcSecurityService);
   private readonly users = new BehaviorSubject<KeycloakUserFrontend[]>([]);
   users$ = this.users.asObservable();
+  private readonly loading = new BehaviorSubject(true);
+  loading$ = this.loading.asObservable();
 
   constructor() {
     this.fetchKeycloakUsersForGroup('digitiser')
@@ -20,7 +33,8 @@ export class KeycloakUserService {
         catchError((e: Error) => {
           console.error('Error loading keycloak users', e);
           return of([] as KeycloakUserFrontend[]);
-        })
+        }),
+        finalize(() => this.loading.next(false))
       )
       .subscribe((users) => this.users.next(users));
   }

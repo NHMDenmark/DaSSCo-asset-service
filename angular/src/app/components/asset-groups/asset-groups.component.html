@@ -120,7 +120,9 @@
                     <button
                       mat-flat-button
                       color="primary"
-                      [disabled]="assets.selectedOptions.isEmpty() || isZipDownloadPreparing(assets.selectedOptions.selected)"
+                      [disabled]="
+                        assets.selectedOptions.isEmpty() || isZipDownloadPreparing(assets.selectedOptions.selected)
+                      "
                       (click)="downloadZip(assets.selectedOptions.selected)">
                       <mat-icon>folder_zip</mat-icon>
                       Download ZIP
@@ -206,15 +208,10 @@
                   <!-- Add digitisers form -->
                   <div *ngIf="editing && expandedElement === element">
                     <div class="add-digitiser-form">
-                      <p style="font-weight: 600; font-size: 18px; margin-bottom: 4px;">Give user access.</p>
-                      <p style="font-size: 14px; color: #333333; margin-top: 0">
-                        Dropdown shows max 100 entries. Search to find a specific user.
-                      </p>
                       <dassco-digitiser-list
                         [selectedUsersControl]="digitiserFormControl"
                         [excludedUsernames]="element.hasAccess"
-                        [optionsId]="'digitiser-options-' + element.group_name">
-                      </dassco-digitiser-list>
+                        [optionsId]="'digitiser-options-' + element.group_name"></dassco-digitiser-list>
                     </div>
                   </div>
 

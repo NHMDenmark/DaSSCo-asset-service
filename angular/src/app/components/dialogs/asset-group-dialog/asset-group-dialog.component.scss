@@ -57,10 +57,9 @@
     }
   }
 
-  .form-panel {
+  section {
     padding: 1rem;
-  }
-  .section-heading {
+
     h2 {
       margin: 0;
       font-size: 1rem;
@@ -76,25 +75,8 @@
     }
   }
 
-  .full-width {
+  mat-form-field {
     width: 100%;
-  }
-
-  .field-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-    color: #37474f;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .selected-count {
-    color: #00695c;
-    font-size: 0.8rem;
-    font-weight: 500;
   }
 
   .dialog-actions {
@@ -109,11 +91,7 @@
   .asset-group-dialog {
     width: 100%;
 
-    .dialog-content {
-      min-width: 0;
-      padding-inline: 1rem;
-    }
-
+    .dialog-content,
     .dialog-header,
     .dialog-actions {
       padding-inline: 1rem;

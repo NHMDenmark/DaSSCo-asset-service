@@ -1,5 +1,5 @@
 import {ConnectedPosition} from '@angular/cdk/overlay';
-import {Component, Input} from '@angular/core';
+import {Component, ElementRef, Input, ViewChild} from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {BehaviorSubject, startWith} from 'rxjs';
 import {KeycloakUserService} from '../../services/keycloak-user.service';
@@ -11,12 +11,11 @@ import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
   styleUrls: ['./digitiser-list.component.scss']
 })
 export class DigitiserListComponent {
+  @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
   @Input() selectedUsersControl = new FormControl<KeycloakUserFrontend[] | null>(null);
   @Input() excludedUsernames: string[] = [];
-  @Input() label = 'Users';
-  @Input() ariaLabel = 'Search users';
   @Input() optionsId = 'digitiser-options';
-  @Input() emptyText = 'No available users found';
+  @Input() emptyText = 'No available digitisers found';
   @Input() set userGroup(group: string) {
     this.userGroupSubject.next(group);
   }
@@ -29,6 +28,7 @@ export class DigitiserListComponent {
   readonly search = new FormControl<string>('', {nonNullable: true});
   readonly keycloakUsers$ = this.search.valueChanges.pipe(startWith(''));
   readonly filteredKeycloakUsers$ = this.keycloakUserService.getFilteredKeycloakUsers(this.keycloakUsers$);
+  readonly loading$ = this.keycloakUserService.loading$;
   readonly overlayPositions: ConnectedPosition[] = [
     {
       originX: 'start',
@@ -50,6 +50,19 @@ export class DigitiserListComponent {
 
   openOverlay() {
     this.overlayOpenSubject.next(true);
+  }
+
+  focusSearchInput() {
+    setTimeout(() => this.searchInput?.nativeElement.focus());
+  }
+
+  selectedValueText() {
+    const selectedUsers = this.selectedUsersControl.value ?? [];
+
+    if (selectedUsers.length === 0) return 'Select digitisers';
+    if (selectedUsers.length === 1) return selectedUsers[0].username;
+
+    return `${selectedUsers.length} digitisers selected`;
   }
 
   closeOverlay() {

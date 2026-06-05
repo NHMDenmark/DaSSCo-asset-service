@@ -22,12 +22,10 @@
       </mat-button-toggle>
     </mat-button-toggle-group>
 
-    <section *ngIf="mode === 'existing'" class="form-panel">
-      <div class="section-heading">
-        <h2>Use an existing group</h2>
-      </div>
+    <section *ngIf="mode === 'existing'">
+      <h2>Use an existing group</h2>
 
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field appearance="outline">
         <mat-label>Groups</mat-label>
         <mat-select [(ngModel)]="groupName" (selectionChange)="selectExistingGroup()">
           <mat-option *ngFor="let group of ownAssetGroups$ | async" [value]="group.group_name">
@@ -37,22 +35,16 @@
       </mat-form-field>
     </section>
 
-    <section *ngIf="mode === 'new'" class="form-panel">
-      <div class="section-heading">
-        <h2>Create a new group</h2>
-        <p>Name the group and optionally grant access to other digitisers.</p>
-      </div>
+    <section *ngIf="mode === 'new'">
+      <h2>Create a new group</h2>
+      <p>Name the group and optionally grant access to other digitisers.</p>
 
-      <mat-form-field appearance="outline" class="full-width">
+      <mat-form-field style="margin-bottom: 0" appearance="outline">
         <mat-label>Group name</mat-label>
         <input (change)="markNameUnsaved()" matInput placeholder="Butterflies" [(ngModel)]="groupName" />
       </mat-form-field>
 
-      <div class="digitiser-field" *ngIf="username$ | async as username">
-        <span *ngIf="digitiserFormControl.value?.length" class="selected-count">
-          {{ digitiserFormControl.value?.length }} selected
-        </span>
-
+      <div *ngIf="username$ | async as username">
         <dassco-digitiser-list
           label="Search digitisers"
           ariaLabel="Search digitisers"
