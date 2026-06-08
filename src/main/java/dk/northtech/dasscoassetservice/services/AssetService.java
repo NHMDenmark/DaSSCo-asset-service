@@ -998,7 +998,7 @@ public class AssetService {
                 throw new IllegalArgumentException("Asset doesnt exist!");
             }
             Asset asset = optAsset.get();
-            asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
+            asset.internal_status = InternalStatus.COMPLETED;
             asset.error_message = null;
             asset.error_timestamp = null;
 
