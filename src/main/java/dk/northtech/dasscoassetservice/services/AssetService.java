@@ -1050,7 +1050,7 @@ public class AssetService {
         Asset asset = optAsset.get();
         rightsValidationService.checkReadRightsThrowing(user, asset);
         // Asset cannot have work in progress when auditing
-        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status)
+        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.COMPLETED.equals(asset.internal_status)
                 || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
