@@ -282,8 +282,9 @@ public class BulkUpdateService {
             patchAssetFields(handle, payload.assetGuids(), payload.fields(), payload.legality(), bulkUpdateUuid);
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
-            if (payload.fundingIds() != null && !payload.fundingIds().isEmpty()) {
-                handleFundingAssignments(handle, payload.assetGuids(), payload.fundingIds(), bulkUpdateUuid);
+            if (payload.funding() != null && !payload.funding().isEmpty()) {
+                System.out.println("YOOO");
+                handleFundingAssignments(handle, payload.assetGuids(), payload.funding(), bulkUpdateUuid);
             }
             if (payload.roleRestrictions() != null) {
                 handleRoleRestrictions(handle, payload.assetGuids(), payload.roleRestrictions(), bulkUpdateUuid);
@@ -513,8 +514,8 @@ public class BulkUpdateService {
                                     addition.category(),
                                     addition.name(),
                                     Instant.now(),
-                                    addition.description(),
                                     addition.status(),
+                                    addition.description(),
                                     addition.notes(),
                                     addition.solved()
                             )
