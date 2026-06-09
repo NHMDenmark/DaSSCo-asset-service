@@ -1095,7 +1095,7 @@ public class AssetService {
                     continue;
                 }
 
-                if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+                if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.COMPLETED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
                     results.put(assetGuid, "Asset must be complete before auditing");
                     continue;
                 }
