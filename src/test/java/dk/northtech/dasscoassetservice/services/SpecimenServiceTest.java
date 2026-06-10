@@ -51,7 +51,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
         Specimen specimen1 = resultSpecimen.get();
         assertThat(specimen1.role_restrictions()).contains(new Role("NHMD"));
 
-        Specimen update = new Specimen(updateSpecimen.institution
+        Specimen illegalPrepTypeRemoval = new Specimen(updateSpecimen.institution
                 , updateSpecimen.collection
                 , "updateSpecimenDoNotRemovePrepTypeInUse-1"
                 , "nhmd.plantz.updateSpecimenDoNotRemovePrepTypeInUse-1"
@@ -61,7 +61,7 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 ,Arrays.asList(new Role("NHMD")));
 
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> {
-            specimenService.putSpecimen(update, user);
+            specimenService.putSpecimen(illegalPrepTypeRemoval, nhmd);
         });
         assertThat(illegalArgumentException.getMessage()).isEqualTo("Preparation_type cannot be removed as it is used by the following assets: [updateSpecimenDoNotRemovePrepTypeInUse]");
     }
@@ -184,6 +184,69 @@ class SpecimenServiceTest extends AbstractIntegrationTest {
                 .mapTo(String.class)
                 .list());
         assertThat(persistedRoles).containsExactly("updateSpecimenRemoveRoleKeep");
+    }
+
+    @Test
+    void findSpecimenRequiresReadAccessToRoleRestrictions() {
+        Asset asset = AssetServiceTest.getTestAsset("findSpecimenRequiresReadAccessToRoleRestrictions");
+        User writer = userService.ensureExists(new User("find-specimen-role-writer", Set.of("WRITE_findSpecimenRestrictedRole")));
+        User reader = userService.ensureExists(new User("find-specimen-role-reader", Set.of("READ_findSpecimenRestrictedRole")));
+        User noAccessUser = userService.ensureExists(new User("find-specimen-role-no-access", Set.of()));
+
+        Specimen specimen = new Specimen(asset.institution,
+                asset.collection,
+                "findSpecimenRequiresReadAccessToRoleRestrictions-1",
+                "nhmd.plantz.findSpecimenRequiresReadAccessToRoleRestrictions-1",
+                new HashSet<>(Set.of("pinning")),
+                null,
+                collectionService.findCollectionInternal(asset.collection, asset.institution).get().collection_id(),
+                List.of(new Role("findSpecimenRestrictedRole")));
+
+        specimenService.putSpecimen(specimen, writer);
+
+        assertThrows(DasscoIllegalActionException.class, () ->
+                specimenService.findSpecimen(asset.institution, asset.collection, "findSpecimenRequiresReadAccessToRoleRestrictions-1", noAccessUser));
+
+        Optional<Specimen> foundByReader = specimenService.findSpecimen(asset.institution, asset.collection, "findSpecimenRequiresReadAccessToRoleRestrictions-1", reader);
+        assertThat(foundByReader.isPresent()).isTrue();
+        assertThat(foundByReader.get().role_restrictions()).containsExactly(new Role("findSpecimenRestrictedRole"));
+
+        Optional<Specimen> foundByWriter = specimenService.findSpecimen(asset.institution, asset.collection, "findSpecimenRequiresReadAccessToRoleRestrictions-1", writer);
+        assertThat(foundByWriter.isPresent()).isTrue();
+        assertThat(foundByWriter.get().role_restrictions()).containsExactly(new Role("findSpecimenRestrictedRole"));
+    }
+
+    @Test
+    void updateSpecimenRequiresWriteAccessToRoleRestrictions() {
+        Asset asset = AssetServiceTest.getTestAsset("updateSpecimenRequiresWriteAccessToRoleRestrictions");
+        User writer = userService.ensureExists(new User("update-specimen-role-writer", Set.of("WRITE_updateSpecimenRestrictedRole")));
+        User noAccessUser = userService.ensureExists(new User("update-specimen-role-no-access", Set.of()));
+
+        Specimen specimen = new Specimen(asset.institution,
+                asset.collection,
+                "updateSpecimenRequiresWriteAccessToRoleRestrictions-1",
+                "nhmd.plantz.updateSpecimenRequiresWriteAccessToRoleRestrictions-1",
+                new HashSet<>(Set.of("pinning")),
+                null,
+                collectionService.findCollectionInternal(asset.collection, asset.institution).get().collection_id(),
+                List.of(new Role("updateSpecimenRestrictedRole")));
+
+        Specimen persisted = specimenService.putSpecimen(specimen, writer);
+
+        Specimen update = new Specimen(asset.institution,
+                asset.collection,
+                "updateSpecimenRequiresWriteAccessToRoleRestrictions-1",
+                "nhmd.plantz.updateSpecimenRequiresWriteAccessToRoleRestrictions-1",
+                new HashSet<>(Set.of("pinning", "slide")),
+                persisted.specimen_id(),
+                persisted.collection_id(),
+                List.of(new Role("updateSpecimenRestrictedRole")));
+
+        assertThrows(DasscoIllegalActionException.class, () -> specimenService.putSpecimen(update, noAccessUser));
+
+        Specimen updated = specimenService.putSpecimen(update, writer);
+        assertThat(updated.preparation_types()).containsExactly("pinning", "slide");
+        assertThat(updated.role_restrictions()).containsExactly(new Role("updateSpecimenRestrictedRole"));
     }
 
 //

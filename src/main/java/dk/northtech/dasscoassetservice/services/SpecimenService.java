@@ -148,10 +148,13 @@ public class SpecimenService {
                 }
                 return new Specimen(specimenWithCollectionId, specimen_id, specimenWithCollectionId.collection_id());
             } else {
-                if(!rightsValidationService.checkRightsSpecimen(user, existingSpecimen.get(), true)){
+                Specimen existing = existingSpecimen.get();
+                // Check that user has access to the specimen and prevent user from assigning roles in such a way that they lose access the specimen they are updating.
+                if(!rightsValidationService.checkRightsSpecimen(user, existing, true) ||
+                        !rightsValidationService.checkRightsSpecimen(user, new Specimen(existing.institution(), existing.collection(),specimen.barcode(), specimen.specimen_pid(), specimen.preparation_types(), specimen.specimen_id(), existing.collection_id(), specimen.role_restrictions()), true)) {
                     throw new DasscoIllegalActionException("FORBIDDEN");
                 }
-                return updateSpecimen(specimen, existingSpecimen.get(), user);
+                return updateSpecimen(specimen, existing, user);
             }
         });
     }
