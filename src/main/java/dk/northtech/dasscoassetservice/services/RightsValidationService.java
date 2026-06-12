@@ -104,8 +104,13 @@ public class RightsValidationService {
     }
 
     public boolean checkRightsSpecimen(User user, Specimen specimen, boolean write) {
+        if(checkAdminRoles(user)) {
+            return true;
+        }
         Set<String> allUserRoles = getUserRoles(user.roles);
         if(!checkObjectRoles(allUserRoles, specimen.role_restrictions(), write)){
+            System.out.println(allUserRoles);
+            System.out.println("hell oh" + specimen.role_restrictions());
             return false;
         };
         if(!write) {

@@ -1,0 +1,87 @@
+<ng-container *ngIf="{users: filteredKeycloakUsers$ | async, loading: loading$ | async} as vm">
+  <ng-container *ngIf="availableDigitisers(vm.users ?? []) as availableKeycloakUsers">
+    <button
+      type="button"
+      class="digitiser-trigger"
+      [class.expanded]="(overlayOpen$ | async) === true"
+      cdkOverlayOrigin
+      #digitiserOrigin="cdkOverlayOrigin"
+      [disabled]="vm.loading"
+      [attr.aria-busy]="vm.loading"
+      [attr.aria-expanded]="(overlayOpen$ | async) === true"
+      [attr.aria-controls]="optionsId"
+      (click)="openOverlay()"
+      (keydown)="onComboboxKeydown($event, availableKeycloakUsers)">
+      <span class="trigger-content">
+        <span class="trigger-value">{{ selectedValueText() }}</span>
+      </span>
+      <span class="trigger-indicator">
+        <mat-spinner *ngIf="vm.loading; else toggleIcon" [diameter]="20" [strokeWidth]="3"></mat-spinner>
+        <ng-template #toggleIcon>
+          <mat-icon>{{ (overlayOpen$ | async) === true ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </ng-template>
+      </span>
+    </button>
+
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="digitiserOrigin"
+      [cdkConnectedOverlayOpen]="(overlayOpen$ | async) === true"
+      [cdkConnectedOverlayPositions]="overlayPositions"
+      [cdkConnectedOverlayWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
+      [cdkConnectedOverlayMinWidth]="digitiserOrigin.elementRef.nativeElement.offsetWidth"
+      [cdkConnectedOverlayHasBackdrop]="true"
+      cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+      (attach)="focusSearchInput()"
+      (backdropClick)="closeOverlay()"
+      (detach)="closeOverlay()">
+      <div class="digitiser-overlay">
+        <div class="digitiser-search">
+          <mat-form-field appearance="outline">
+            <mat-label>Search</mat-label>
+            <input
+              #searchInput
+              matInput
+              type="text"
+              role="combobox"
+              autocomplete="off"
+              [attr.aria-expanded]="(overlayOpen$ | async) === true"
+              [attr.aria-controls]="optionsId"
+              [formControl]="search"
+              (keydown)="onComboboxKeydown($event, availableKeycloakUsers)" />
+            <button
+              *ngIf="search.value"
+              mat-icon-button
+              matSuffix
+              type="button"
+              aria-label="Clear user search"
+              (click)="clearSearch(); $event.stopPropagation()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-form-field>
+        </div>
+
+        <div class="digitiser-options" role="listbox" [id]="optionsId" [attr.aria-multiselectable]="multiple">
+          <button
+            *ngFor="let keycloakUser of availableKeycloakUsers; let userIndex = index"
+            type="button"
+            role="option"
+            class="digitiser-option"
+            [class.active]="(activeDigitiserIndex$ | async) === userIndex"
+            [attr.aria-selected]="isDigitiserSelected(keycloakUser)"
+            (mouseenter)="setActiveDigitiserIndex(userIndex)"
+            (click)="toggleDigitiser(keycloakUser)">
+            <mat-checkbox
+              *ngIf="multiple"
+              [checked]="isDigitiserSelected(keycloakUser)"
+              (click)="$event.preventDefault()"></mat-checkbox>
+            <span class="digitiser-option-text">
+              <span class="digitiser-username">{{ keycloakUser.username }}</span>
+            </span>
+          </button>
+          <div *ngIf="availableKeycloakUsers.length === 0" class="digitiser-empty">{{ emptyText }}</div>
+        </div>
+      </div>
+    </ng-template>
+  </ng-container>
+</ng-container>

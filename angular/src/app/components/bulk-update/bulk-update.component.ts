@@ -1,5 +1,5 @@
-import {Component, inject} from '@angular/core';
-import {Asset, Digitiser, Funding} from '../../types/types';
+import {Component, inject, OnDestroy} from '@angular/core';
+import {Asset, Funding} from '../../types/types';
 import {FormArray, FormControl, FormGroup} from '@angular/forms';
 import {DIALOG_DATA, DialogRef} from '@angular/cdk/dialog';
 import {
@@ -12,7 +12,19 @@ import {
   DigitiserPatchBlock,
   RoleRestrictionPatchBlock
 } from 'src/app/services/bulk-update.service';
-import {BehaviorSubject, catchError, combineLatest, filter, map, of, startWith, take} from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  combineLatest,
+  filter,
+  map,
+  of,
+  startWith,
+  Subject,
+  take,
+  takeUntil
+} from 'rxjs';
+import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 
 interface IssueFormValue {
   category: string | null;
@@ -27,8 +39,8 @@ interface IssueFormValue {
 }
 
 interface DigitiserFormValue {
-  dasscoUserId: number | null;
   username: string | null;
+  keycloakUser: KeycloakUserFrontend | null;
   digitiserListIds: number[] | null;
   assetGuids: string[] | null;
   count: number | null;
@@ -54,7 +66,7 @@ interface IssueUpdateAction {
 }
 
 interface DigitiserAddAction {
-  dasscoUserId: number;
+  keycloakUsers: KeycloakUserFrontend[];
   assetGuids: string[];
 }
 
@@ -71,11 +83,13 @@ interface UpdateResult {
   templateUrl: './bulk-update.component.html',
   styleUrls: ['./bulk-update.component.scss']
 })
-export class BulkUpdateComponent {
+export class BulkUpdateComponent implements OnDestroy {
   bulkUpdateService = inject(BulkUpdateService);
   dialogRef = inject(DialogRef);
   data: {assets: Asset[]} = inject(DIALOG_DATA);
-  digitiserList$ = this.bulkUpdateService.getDigitiserList();
+  private readonly destroy = new Subject<void>();
+  selectedAssetDigitiserControl = new FormControl<KeycloakUserFrontend[] | null>(null);
+  selectedKeycloakDigitisersControl = new FormControl<KeycloakUserFrontend[] | null>(null);
   fundingList$ = this.bulkUpdateService.getFundingList();
   subjectsList$ = this.bulkUpdateService.getSubjects();
   rolesList$ = this.bulkUpdateService.getRoles();
@@ -142,6 +156,21 @@ export class BulkUpdateComponent {
       .subscribe((restrictions) => {
         this.originalRoles = restrictions.map((r) => r.role);
       });
+
+    this.selectedAssetDigitiserControl.valueChanges.pipe(takeUntil(this.destroy)).subscribe((users) => {
+      const selectedUser = users && users.length > 0 ? users[users.length - 1] : null;
+      this.fields.controls['keycloakUser'].setValue(selectedUser);
+      this.fields.controls['keycloakUser'].markAsDirty();
+    });
+
+    this.selectedKeycloakDigitisersControl.valueChanges.pipe(takeUntil(this.destroy)).subscribe((users) => {
+      users?.forEach((user) => this.addDigitiser(user));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   cancel() {
@@ -304,9 +333,7 @@ export class BulkUpdateComponent {
   }
 
   private hasNewDigitisers(): boolean {
-    return (this.digitisers.value as DigitiserFormValue[]).some(
-      (d) => d.isNew === true && d.dasscoUserId !== null && d.dasscoUserId !== undefined
-    );
+    return (this.digitisers.value as DigitiserFormValue[]).some((d) => d.isNew === true && d.keycloakUser != null);
   }
 
   get canSave(): boolean {
@@ -326,14 +353,13 @@ export class BulkUpdateComponent {
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
     // Only include newly added digitisers (those marked as new)
     const add = (this.digitisers.value as DigitiserFormValue[])
-      .filter((d) => d.isNew && d.dasscoUserId !== null && d.dasscoUserId !== undefined)
+      .filter((d) => d.isNew && d.keycloakUser != null)
       .map((d) => {
-        const dasscoUserId = d.dasscoUserId;
-        if (dasscoUserId === null || dasscoUserId === undefined) {
+        if (d.keycloakUser == null) {
           return null;
         }
         return {
-          dasscoUserId,
+          keycloakUsers: [d.keycloakUser],
           assetGuids: d.assetGuids ?? this.data.assets.map((asset) => asset.asset_guid as string)
         };
       })
@@ -402,10 +428,6 @@ export class BulkUpdateComponent {
     return this.fields.controls['subject'] as FormControl<string | null>;
   }
 
-  get digitiserIdControl() {
-    return this.fields.controls['digitiser_id'] as FormControl<number | null>;
-  }
-
   get issues() {
     return this.bulkUpdateForm.controls.issues as FormArray;
   }
@@ -424,7 +446,7 @@ export class BulkUpdateComponent {
       audited: new FormControl<boolean | null>(null),
       subject: new FormControl<string | null>(null),
       status: new FormControl<string | null>(null),
-      digitiser_id: new FormControl<number | null>(null),
+      keycloakUser: new FormControl<KeycloakUserFrontend | null>(null),
       camera_setting_control: new FormControl<string | null>(null),
       metadata_source: new FormControl<string | null>(null),
       push_to_specify: new FormControl<boolean | null>(null),
@@ -446,8 +468,8 @@ export class BulkUpdateComponent {
     >([]),
     digitisers: new FormArray<
       FormGroup<{
-        dasscoUserId: FormControl<number | null>;
         username: FormControl<string | null>;
+        keycloakUser: FormControl<KeycloakUserFrontend | null>;
         digitiserListIds: FormControl<number[] | null>;
         assetGuids: FormControl<string[] | null>;
         count: FormControl<number | null>;
@@ -509,8 +531,8 @@ export class BulkUpdateComponent {
   patchDigitiser(digitiser: Partial<GroupedDigitiser>) {
     this.digitisers.push(
       new FormGroup({
-        dasscoUserId: new FormControl<number | null>(digitiser.dasscoUserId ?? null),
         username: new FormControl<string | null>(digitiser.username ?? null),
+        keycloakUser: new FormControl<KeycloakUserFrontend | null>(null),
         digitiserListIds: new FormControl<number[] | null>(digitiser.digitiserListIds ?? null),
         assetGuids: new FormControl<string[] | null>(digitiser.assetGuids ?? null),
         count: new FormControl<number | null>(digitiser.count ?? null),
@@ -519,17 +541,15 @@ export class BulkUpdateComponent {
     );
   }
 
-  addDigitiser(digitiser: Digitiser) {
+  addDigitiser(digitiser: KeycloakUserFrontend) {
     // Check if digitiser already exists
-    const exists = this.digitisers.controls.some(
-      (control) => control.get('dasscoUserId')?.value === digitiser.dasscoUserId
-    );
+    const exists = this.digitisers.controls.some((control) => control.get('username')?.value === digitiser.username);
 
     if (!exists) {
       this.digitisers.push(
         new FormGroup({
-          dasscoUserId: new FormControl<number | null>(digitiser.dasscoUserId ?? null),
           username: new FormControl<string | null>(digitiser.username ?? null),
+          keycloakUser: new FormControl<KeycloakUserFrontend | null>(digitiser),
           digitiserListIds: new FormControl<number[] | null>(null),
           assetGuids: new FormControl<string[] | null>(this.data.assets.map((asset) => asset.asset_guid as string)),
           count: new FormControl<number | null>(0),
@@ -541,14 +561,17 @@ export class BulkUpdateComponent {
     }
   }
 
-  isDigitiserAdded(digitiserId: number): boolean {
-    return this.digitisers.controls.some((control) => control.get('dasscoUserId')?.value === digitiserId);
+  get addedDigitiserUsernames(): string[] {
+    return this.digitisers.controls
+      .map((control) => control.get('username')?.value)
+      .filter((username): username is string => !!username);
   }
 
   deleteDigitiser(index: number) {
     const digitiserGroup = this.digitisers.at(index);
     const digitiserListIds = digitiserGroup.get('digitiserListIds')?.value;
     const isNew = digitiserGroup.get('isNew')?.value;
+    const username = digitiserGroup.get('username')?.value;
 
     // If this digitiser has existing IDs (not new), add them to the deleted list
     if (!isNew && digitiserListIds && digitiserListIds.length > 0) {
@@ -557,11 +580,14 @@ export class BulkUpdateComponent {
 
     // Remove the digitiser from the form array
     this.digitisers.removeAt(index);
+    if (isNew && username) {
+      this.selectedKeycloakDigitisersControl.setValue(
+        this.selectedKeycloakDigitisersControl.value?.filter((user) => user.username !== username) ?? null,
+        {emitEvent: false}
+      );
+    }
   }
 
-  trackByDasscoUserId(_index: number, digitiser: Digitiser) {
-    return digitiser.dasscoUserId;
-  }
   trackBy(_index: number, status: string) {
     return status;
   }

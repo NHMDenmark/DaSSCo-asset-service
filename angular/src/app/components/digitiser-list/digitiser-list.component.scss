@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  margin-top: 4px;
+}
+
+.digitiser-trigger {
+  width: 100%;
+  min-height: 59px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  font-family: 'graphik-regular', serif;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 0.45rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.87);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.87);
+  }
+
+  &:focus-visible {
+    border-color: #26a69a;
+    outline: 1px solid #26a69a;
+    outline-offset: -1px;
+  }
+
+  &:disabled {
+    color: rgba(0, 0, 0, 0.38);
+    cursor: default;
+    opacity: 1;
+  }
+
+  &.expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+.trigger-indicator {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  mat-icon {
+    color: rgba(0, 0, 0, 0.54);
+  }
+}
+
+.trigger-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.trigger-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.54);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.digitiser-overlay {
+  width: 100%;
+  max-height: min(320px, 45vh);
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #26a69a;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+.digitiser-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.5rem;
+  background: #fff;
+  border-bottom: 1px solid #eceff1;
+
+  mat-form-field {
+    width: 100%;
+
+    ::ng-deep .mat-form-field-wrapper {
+      padding-bottom: 0;
+    }
+
+    ::ng-deep .mat-form-field-subscript-wrapper {
+      display: none;
+    }
+  }
+}
+
+.digitiser-options {
+  padding: 0.25rem 0;
+}
+
+.digitiser-option {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.35rem 0.75rem;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &.active {
+    background: #f1f6fb;
+  }
+
+  mat-checkbox {
+    flex: 0 0 auto;
+    pointer-events: none;
+  }
+}
+
+.digitiser-option-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.digitiser-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.digitiser-empty {
+  padding: 0.75rem 1rem;
+  color: #757575;
+  font-style: italic;
+}

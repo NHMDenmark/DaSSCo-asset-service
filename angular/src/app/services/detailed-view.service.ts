@@ -1,29 +1,27 @@
 import {inject, Injectable} from '@angular/core';
 import {catchError, Observable, of, switchMap, throwError} from 'rxjs';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
 import {HttpClient} from '@angular/common/http';
 import {FileProxy} from '../utility';
 import {Asset} from '../types/types';
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DetailedViewService {
-  private oidcSecurityService = inject(OidcSecurityService);
+  private authService = inject(AuthService);
   private http = inject(HttpClient);
 
   private readonly proxyUrl = inject(FileProxy);
   private getMetadataUrl = 'api/v1/assetmetadata/';
   private createCsvFile = this.proxyUrl + '/file_proxy/api/assetfiles/createCsvFile';
-  private createZipFile = this.proxyUrl + '/file_proxy/api/assetfiles/createZipFile';
-  private assetBundles = this.proxyUrl + '/file_proxy/api/assetfiles/asset-bundles';
   private assetFiles = this.proxyUrl + '/file_proxy/api/assetfiles/listfiles/';
   private thumbnail = this.proxyUrl + '/file_proxy/api/files/assets/';
   private tempFiles = this.proxyUrl + '/file_proxy/api/assetfiles/getTempFile';
   private deleteTempFolder = this.proxyUrl + '/file_proxy/api/assetfiles/deleteTempFolder';
 
   getAssetMetadata(assetGuid: string): Observable<Asset | undefined> {
-    return this.oidcSecurityService
+    return this.authService
       .getAccessToken()
       .pipe(
         switchMap((token) =>
@@ -35,7 +33,7 @@ export class DetailedViewService {
   }
 
   postCsv(assets: string[]): Observable<any> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .post<any>(`${this.createCsvFile}`, assets, {
@@ -48,22 +46,8 @@ export class DetailedViewService {
     );
   }
 
-  postZip(guid: string, assets: string[]): Observable<any> {
-    return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) =>
-        this.http
-          .post<string>(`${this.createZipFile}/${guid}`, assets, {
-            headers: {'Authorization': 'Bearer ' + token},
-            responseType: 'text' as 'json',
-            observe: 'response'
-          })
-          .pipe(catchError((error: Error) => throwError(() => error)))
-      )
-    );
-  }
-
   getFile(guid: string, file: string): Observable<Blob> {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get(`${this.tempFiles}/${guid}/${file}`, {
@@ -75,21 +59,8 @@ export class DetailedViewService {
     );
   }
 
-  postAssetBundle(assets: string[]): Observable<Blob> {
-    return this.oidcSecurityService.getAccessToken().pipe(
-      switchMap((token) =>
-        this.http
-          .post(`${this.assetBundles}`, assets, {
-            headers: {'Authorization': 'Bearer ' + token},
-            responseType: 'blob'
-          })
-          .pipe(catchError((error: Error) => throwError(() => error)))
-      )
-    );
-  }
-
   deleteFile(guid: string) {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .delete(`${this.deleteTempFolder}/${guid}`, {
@@ -102,7 +73,7 @@ export class DetailedViewService {
   }
 
   getThumbnail(institution: string, collection: string, assetGuid: string) {
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get(`${this.thumbnail}${institution}/${collection}/${assetGuid}/thumbnail`, {
@@ -119,7 +90,7 @@ export class DetailedViewService {
   }
 
   getFileList(assetGuid: string) {
-    return this.oidcSecurityService
+    return this.authService
       .getAccessToken()
       .pipe(
         switchMap((token) =>
@@ -131,7 +102,7 @@ export class DetailedViewService {
   }
 
   getFileTicket(asset: Asset) {
-    return this.oidcSecurityService.getAccessToken()
+    return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => this.http.get(`${this.thumbnail}${asset.asset_guid}/ticket`, {
           headers: {'Authorization': 'Bearer ' + token},

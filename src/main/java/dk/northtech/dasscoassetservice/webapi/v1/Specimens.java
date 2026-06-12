@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -55,7 +56,7 @@ public class Specimens {
     @Operation(summary = "Update Specimen", description = "Update a specimen")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-//    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Specimen.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Specimen updateSpacemen(@PathParam("institution") String institution
@@ -71,6 +72,7 @@ public class Specimens {
 
     @DELETE
     @Operation(summary = "Delete specimen", description = "Delete a specimen by institution, collection and barcode")
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = "403", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))
     @ApiResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(implementation = String.class)))

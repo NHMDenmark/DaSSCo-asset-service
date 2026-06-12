@@ -13,6 +13,7 @@ import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {Dialog} from '@angular/cdk/dialog';
 import {AssetThumbnailModalComponent} from './asset-thumbnail-modal/asset-thumbnail-modal.component';
+import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
 
 @Component({
   selector: 'dassco-detailed-view',
@@ -29,6 +30,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   private cdkDialog = inject(Dialog);
   private router = inject(Router);
   private queryToDetailedViewService = inject(QueryToOtherPages);
+  private assetBundleDownloadService = inject(AssetBundleDownloadService);
   private readonly destroy = new Subject<void>();
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
 
@@ -249,49 +251,16 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   downloadZip() {
     const asset = this.assetSubject.getValue();
     if (!asset?.asset_guid) return;
-    const currentAsset: string[] = [asset.asset_guid];
-    this.detailedViewService.postCsv(currentAsset).subscribe({
-      next: (response) => {
-        const guid: string = response.body;
-        if (response.status === 200) {
-          this.detailedViewService.postZip(guid, currentAsset).subscribe({
-            next: (response) => {
-              if (response.status === 200) {
-                this.detailedViewService.getFile(guid, 'assets.zip').subscribe({
-                  next: (data) => {
-                    const url = window.URL.createObjectURL(data);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'assets.zip';
-
-                    document.body.appendChild(link);
-                    link.click();
-
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-
-                    this.detailedViewService.deleteFile(guid).subscribe({
-                      error: () => {
-                        this.openSnackBar('There has been an error deleting the ZIP file', 'Close');
-                      }
-                    });
-                  },
-                  error: () => {
-                    this.openSnackBar('There was an error retrieving the file', 'Close');
-                  }
-                });
-              }
-            },
-            error: (error) => {
-              this.openSnackBar(error.error, 'Close');
-            }
-          });
-        }
-      },
-      error: (error) => {
-        this.openSnackBar(error.error, 'Close');
-      }
+    this.assetBundleDownloadService.startBundleDownload([asset.asset_guid], {
+      access: 'internal',
+      cancel$: this.destroy
     });
+  }
+
+  isZipDownloadPreparing(): boolean {
+    const asset = this.assetSubject.getValue();
+    if (!asset?.asset_guid) return false;
+    return this.assetBundleDownloadService.isBundleInProgress([asset.asset_guid], 'internal');
   }
 
   openIssueDialog(issue: Issue) {
@@ -302,7 +271,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   }
 
   openSnackBar(message: string, action: string) {
-    this._snackBar.open(message, action);
+    this._snackBar.open(message, action, {duration: 3000});
   }
 
   openAssetThumbnailModal() {

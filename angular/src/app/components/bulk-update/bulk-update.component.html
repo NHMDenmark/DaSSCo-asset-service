@@ -69,17 +69,14 @@
         <div class="form-section">
           <h2 class="section-title">Basic Information</h2>
           <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Digitiser</mat-label>
-              <mat-select [formControl]="digitiserIdControl">
-                <mat-option [value]="null">None</mat-option>
-                <mat-option
-                  *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
-                  [value]="digitiser.dasscoUserId">
-                  {{ digitiser.username }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="digitiser-field">
+              <dassco-digitiser-list
+                label="Digitiser"
+                optionsId="bulk-update-asset-digitiser-options"
+                emptyText="No available digitisers found"
+                [multiple]="false"
+                [selectedUsersControl]="selectedAssetDigitiserControl"></dassco-digitiser-list>
+            </div>
             <mat-form-field appearance="outline">
               <mat-label>Status</mat-label>
               <mat-select [formControl]="statusControl">
@@ -207,17 +204,13 @@
                 </div>
               </ng-container>
               <div class="header-actions header-actions-start">
-                <mat-form-field appearance="outline" class="select-field">
-                  <mat-label>Add Digitiser</mat-label>
-                  <mat-select (selectionChange)="addDigitiser($event.value)" [value]="null">
-                    <mat-option
-                      *ngFor="let digitiser of digitiserList$ | async; trackBy: trackByDasscoUserId"
-                      [value]="digitiser"
-                      [disabled]="digitiser.dasscoUserId !== undefined && isDigitiserAdded(digitiser.dasscoUserId)">
-                      {{ digitiser.username }}
-                    </mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <dassco-digitiser-list
+                  label="Add Digitiser"
+                  ariaLabel="Search digitisers"
+                  optionsId="bulk-update-digitiser-options"
+                  emptyText="No available digitisers found"
+                  [selectedUsersControl]="selectedKeycloakDigitisersControl"
+                  [excludedUsernames]="addedDigitiserUsernames"></dassco-digitiser-list>
               </div>
             </mat-expansion-panel>
           </ng-container>

@@ -112,8 +112,9 @@ public class QueryInner {
                 sqlClause = "%s = :%s".formatted(column, preparedParam);
             } else {
                 paramValue = escapeLike(value);
-                // Using ILIKE with ESCAPE for exact case-insensitive match
-                sqlClause = "%s ILIKE :%s ESCAPE '\\'".formatted(column, preparedParam);
+                // Using ILIKE with an explicit escape character for exact case-insensitive match.
+                // We avoid backslash here because it can confuse Jdbi's SQL parser in quoted ESCAPE clauses.
+                sqlClause = "%s ILIKE :%s ESCAPE '!'".formatted(column, preparedParam);
             }
 
             String sql = eventFilter.replace("#BASE#", sqlClause);
@@ -128,7 +129,7 @@ public class QueryInner {
 
             String sql = eventFilter.replace(
                     "#BASE#",
-                    "%s %s :%s ESCAPE '\\'".formatted(column, operator, preparedParam));
+                    "%s %s :%s ESCAPE '!'".formatted(column, operator, preparedParam));
 
             return Map.of(sql, Map.of(preparedParam, escaped + "%"));
         }
@@ -141,7 +142,7 @@ public class QueryInner {
 
             String sql = eventFilter.replace(
                     "#BASE#",
-                    "%s %s :%s ESCAPE '\\'".formatted(column, operator, preparedParam));
+                    "%s %s :%s ESCAPE '!'".formatted(column, operator, preparedParam));
 
             return Map.of(sql, Map.of(preparedParam, "%" + escaped));
         }
@@ -154,7 +155,7 @@ public class QueryInner {
 
             String sql = eventFilter.replace(
                     "#BASE#",
-                    "%s %s :%s ESCAPE '\\'".formatted(column, operator, preparedParam));
+                    "%s %s :%s ESCAPE '!'".formatted(column, operator, preparedParam));
 
             return Map.of(sql, Map.of(preparedParam, "%" + escaped + "%"));
         }
@@ -248,9 +249,9 @@ public class QueryInner {
 
     String escapeLike(String v) {
         return v
-                .replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_");
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
     }
 
     public String toBasicQueryString(String match, String property, QueryDataType dataType) {

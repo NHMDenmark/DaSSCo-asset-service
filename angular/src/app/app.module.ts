@@ -1,4 +1,4 @@
-import {CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
+import {APP_INITIALIZER, CUSTOM_ELEMENTS_SCHEMA, NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
@@ -61,6 +61,16 @@ import {LinkTrimPipe} from './pipes/link-trim.pipe';
 import {MatBadgeModule} from '@angular/material/badge';
 import {EventHistoryComponent} from './components/event-history/event-history.component';
 import {OverlayModule} from '@angular/cdk/overlay';
+import {
+  AssetBundleDownloadStatusComponent
+} from './components/asset-bundle-download-status/asset-bundle-download-status.component';
+import {DigitiserListComponent} from './components/digitiser-list/digitiser-list.component';
+import {AuthService} from './services/auth.service';
+
+function initializeAuthentication(authService: AuthService) {
+  return () => authService.initializeAuthentication();
+}
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -90,7 +100,9 @@ import {OverlayModule} from '@angular/cdk/overlay';
     ExternDetailedViewComponent,
     SafeUrlPipe,
     IssueViewerComponent,
-    SortInternalStatusPipe
+    SortInternalStatusPipe,
+    AssetBundleDownloadStatusComponent,
+    DigitiserListComponent
   ],
   imports: [
     BrowserModule,
@@ -135,7 +147,16 @@ import {OverlayModule} from '@angular/cdk/overlay';
     LinkTrimPipe
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  providers: [MatDatepickerModule, ChartComponent],
+  providers: [
+    MatDatepickerModule,
+    ChartComponent,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAuthentication,
+      deps: [AuthService],
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

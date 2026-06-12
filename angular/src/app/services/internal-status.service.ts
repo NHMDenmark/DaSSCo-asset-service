@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
-import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient, HttpResponse} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,12 +11,12 @@ export class InternalStatusService {
   fiveMinutes = 5 * 60 * 1000;
 
   constructor(
-    public oidcSecurityService: OidcSecurityService
+    private authService: AuthService
     , private http: HttpClient
   ) { }
 
   dailyInternalStatuses$: Observable<HttpResponse<any> | undefined>
-    = this.oidcSecurityService.getAccessToken()
+    = this.authService.getAccessToken()
     .pipe(
       switchMap((token) => {
         return this.http.get(`${this.baseUrl}/internalstatus/daily`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -27,7 +27,7 @@ export class InternalStatusService {
     );
 
   totalInternalStatuses$: Observable<HttpResponse<any> | undefined>
-    = this.oidcSecurityService.getAccessToken()
+    = this.authService.getAccessToken()
     .pipe(
       switchMap((token) => {
         return this.http.get(`${this.baseUrl}/internalstatus/total`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
@@ -46,7 +46,7 @@ export class InternalStatusService {
     const [endDay, endMonth, endYear] = endDate.split('-').map(Number);
     const end = new Date(endYear, (endMonth-1), endDay);
 
-    return this.oidcSecurityService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap(token => {
         return this.http.get(`${this.baseUrl}/internalstatus/custom?start=${start.getTime()}&end=${end.getTime()}`, {headers: {'Authorization': 'Bearer ' + token}, observe: 'response'})
           .pipe(

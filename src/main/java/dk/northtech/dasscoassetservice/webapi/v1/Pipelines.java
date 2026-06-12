@@ -37,7 +37,7 @@ public class Pipelines {
     @GET
     @Operation(summary = "List Pipelines", description = "List all pipelines belonging to an institution.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public List<Pipeline> getPipelines(@PathParam("institutionName") String institutionName) {
@@ -48,7 +48,7 @@ public class Pipelines {
     @Operation(summary = "Create Pipeline", description = "Register a pipeline to an institution.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Pipeline.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Pipeline createPipeline(Pipeline in, @PathParam("institutionName") String institutionName) {

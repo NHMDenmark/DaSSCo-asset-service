@@ -65,7 +65,7 @@ public class Institutions {
     @Path("/{institutionName}")
     @Operation(summary = "Update role restrictions on Institution", description = "Updates the role restrictions of the institution.")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "204", description = "No Content. Institution does not exist.")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
@@ -83,7 +83,7 @@ public class Institutions {
     """)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
+    @RolesAllowed({SecurityRoles.ADMIN})
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Institution.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Institution createInstitution(Institution in, @Context SecurityContext securityContext) {

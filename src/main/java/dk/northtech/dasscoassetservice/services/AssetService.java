@@ -17,7 +17,11 @@ import dk.northtech.dasscoassetservice.repositories.*;
 import dk.northtech.dasscoassetservice.repositories.helpers.AssetMapper;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpAllocationStatus;
 import dk.northtech.dasscoassetservice.webapi.domain.HttpInfo;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -994,7 +998,7 @@ public class AssetService {
                 throw new IllegalArgumentException("Asset doesnt exist!");
             }
             Asset asset = optAsset.get();
-            asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
+            asset.internal_status = InternalStatus.COMPLETED;
             asset.error_message = null;
             asset.error_timestamp = null;
 
@@ -1046,7 +1050,7 @@ public class AssetService {
         Asset asset = optAsset.get();
         rightsValidationService.checkReadRightsThrowing(user, asset);
         // Asset cannot have work in progress when auditing
-        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status)
+        if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.COMPLETED.equals(asset.internal_status)
                 || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
             throw new DasscoIllegalActionException("Asset must be complete before auditing");
         }
@@ -1091,7 +1095,7 @@ public class AssetService {
                     continue;
                 }
 
-                if (!InternalStatus.COMPLETED.equals(asset.internal_status)) {
+                if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.COMPLETED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
                     results.put(assetGuid, "Asset must be complete before auditing");
                     continue;
                 }
@@ -1217,17 +1221,32 @@ public class AssetService {
 
         try (HttpClient httpClient = createHttpClient();) {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200 || response.statusCode() == 404) {
-                Asset asset = optAsset.get();
-                rightsValidationService.requireWriteRights(user, asset.institution, asset.collection);
-                jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
-                // Make sure deleted funding is removed from cache
-                fundingService.forceRefreshCache();
-                // Refresh cache:
-                reloadAssetCache();
+            if (response.statusCode() != 200 && response.statusCode() != 404) {
+                throw new WebApplicationException(Response.status(Response.Status.BAD_GATEWAY)
+                        .entity(new DaSSCoError("1.0", DaSSCoErrorCode.UPSTREAM_ERROR,
+                                "Could not delete asset metadata because file proxy failed to delete the asset share. Status: " + response.statusCode(),
+                                response.body()))
+                        .build());
             }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+
+            Asset asset = optAsset.get();
+            rightsValidationService.requireWriteRights(user, asset.institution, asset.collection);
+            jdbi.onDemand(AssetRepository.class).deleteAsset(assetGuid);
+            // Make sure deleted funding is removed from cache
+            fundingService.forceRefreshCache();
+            // Refresh cache:
+            reloadAssetCache();
+        } catch (IOException e) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_GATEWAY)
+                    .entity(new DaSSCoError("1.0", DaSSCoErrorCode.UPSTREAM_ERROR,
+                            "Could not delete asset metadata because file proxy could not be reached", e.getMessage()))
+                    .build());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new WebApplicationException(Response.status(Response.Status.BAD_GATEWAY)
+                    .entity(new DaSSCoError("1.0", DaSSCoErrorCode.UPSTREAM_ERROR,
+                            "Could not delete asset metadata because file proxy request was interrupted", e.getMessage()))
+                    .build());
         }
     }
 

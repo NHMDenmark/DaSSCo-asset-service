@@ -129,6 +129,7 @@ export interface AssetGroup {
   group_name: string | undefined;
   assets: string[] | undefined;
   hasAccess: string[] | undefined;
+  keycloakUsers?: import('./keycloak-user-frontend').KeycloakUserFrontend[];
   groupCreator: string | undefined;
   isCreator: boolean | undefined;
 }

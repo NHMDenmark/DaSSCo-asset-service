@@ -12,6 +12,8 @@ public class AssetGroup {
     public List<String> assets;
     @Schema (description = "Users with access to the Asset Group")
     public List<String> hasAccess;
+    @Schema (description = "Keycloak users with access to the Asset Group")
+    public List<KeycloakUser> keycloakUsers;
     @Schema (description = "User who created the Asset Group originially")
     public String groupCreator;
 }

@@ -27,7 +27,7 @@ import java.util.UUID;
 @Path("/v1/assets/bulkupdate")
 @Tag(name = "Bulk Update Assets", description = "Endpoints related to bulk updating assets.")
 @SecurityRequirement(name = "dassco-idp")
-@RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE, SecurityRoles.USER})
+@RolesAllowed({SecurityRoles.ADMIN, SecurityRoles.DEVELOPER, SecurityRoles.SERVICE})
 public class BulkUpdateAssetApi {
     private final Logger log = LoggerFactory.getLogger(BulkUpdateAssetApi.class);
     private final BulkUpdateService bulkUpdateService;

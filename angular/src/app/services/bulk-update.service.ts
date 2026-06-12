@@ -3,7 +3,8 @@ import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {catchError, Observable, switchMap, throwError} from 'rxjs';
 import {AssetService} from '../utility';
 import {Digitiser, Funding, Legality} from '../types/types';
-import {OidcSecurityService} from 'angular-auth-oidc-client';
+import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
+import {AuthService} from './auth.service';
 
 export interface GroupedDigitiser {
   dasscoUserId: number;
@@ -53,7 +54,7 @@ export interface AssetPatchFields {
   audited: boolean;
   subject: string;
   status: string;
-  digitiser_id: number;
+  keycloakUser: KeycloakUserFrontend;
   camera_setting_control: string;
   metadata_source: string;
   push_to_specify: boolean;
@@ -67,7 +68,7 @@ export interface IssuePatchBlock {
 }
 
 export interface DigitiserPatchBlock {
-  add?: Array<{dasscoUserId: number; assetGuids: string[]}>;
+  add?: Array<{keycloakUsers: KeycloakUserFrontend[]; assetGuids: string[]}>;
   delete?: number[];
 }
 
@@ -88,10 +89,10 @@ export interface GroupedRoleRestriction {
 export class BulkUpdateService {
   private readonly http = inject(HttpClient);
   private apiUrl = inject(AssetService);
-  private oidcService = inject(OidcSecurityService);
+  private authService = inject(AuthService);
 
   getDigitiserList() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<Digitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers`, {
@@ -103,7 +104,7 @@ export class BulkUpdateService {
   }
 
   getFundingList() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<Funding[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/funding`, {
@@ -116,7 +117,7 @@ export class BulkUpdateService {
     );
   }
   getSubjects() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/subjects`, {
@@ -129,7 +130,7 @@ export class BulkUpdateService {
     );
   }
   getRoles() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/roles`, {
@@ -142,7 +143,7 @@ export class BulkUpdateService {
     );
   }
   getIssueCategories() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issue-categories`, {
@@ -155,7 +156,7 @@ export class BulkUpdateService {
     );
   }
   getStatuses() {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
           .get<string[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/statuses`, {
@@ -169,7 +170,7 @@ export class BulkUpdateService {
   }
 
   getGroupedIssues(assetGuids: string[]) {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
           .post<GroupedIssue[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/issues/grouped`, assetGuids, {
@@ -181,7 +182,7 @@ export class BulkUpdateService {
   }
 
   getGroupedDigitisers(assetGuids: string[]) {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
           .post<GroupedDigitiser[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/digitisers/grouped`, assetGuids, {
@@ -193,7 +194,7 @@ export class BulkUpdateService {
   }
 
   getGroupedRoleRestrictions(assetGuids: string[]) {
-    return this.oidcService
+    return this.authService
       .getAccessToken()
       .pipe(
         switchMap((token: string) =>
@@ -206,7 +207,7 @@ export class BulkUpdateService {
       );
   }
   bulkUpdate(payload: BulkUpdatePayload) {
-    return this.oidcService.getAccessToken().pipe(
+    return this.authService.getAccessToken().pipe(
       switchMap((token: string) =>
         this.http
           .patch<Record<'bulkUpdateUuid', string>>(`${this.apiUrl}/api/v1/assets/bulkupdate`, payload, {

@@ -1,0 +1,34 @@
+<div class="download-status-container" *ngIf="downloadService.downloads$ | async as downloads">
+  <section
+    class="download-status"
+    *ngFor="let download of downloads"
+    [class.failed]="download.status === 'FAILED'"
+    [class.cancelled]="download.status === 'CANCELLED'">
+    <button
+      class="dismiss-button"
+      mat-icon-button
+      type="button"
+      [disabled]="download.cancelling"
+      [attr.aria-label]="download.status === 'PREPARING' ? 'Cancel download preparation' : 'Dismiss download status'"
+      (click)="cancelOrDismiss(download)">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <div class="status-header">
+      <mat-spinner
+        *ngIf="download.status === 'PREPARING'"
+        [diameter]="24"
+        [strokeWidth]="3"
+        [matTooltip]="download.cancelling ? 'Cancelling download preparation' : ''"></mat-spinner>
+      <mat-icon *ngIf="download.status === 'READY'" color="primary">download_done</mat-icon>
+      <mat-icon *ngIf="download.status === 'FAILED'" color="warn">error</mat-icon>
+      <mat-icon *ngIf="download.status === 'CANCELLED'">info</mat-icon>
+
+      <div>
+        <h2>{{ download.status }}</h2>
+        <p *ngIf="download.status === 'FAILED' || download.status === 'CANCELLED'">{{ download.message }}</p>
+      </div>
+    </div>
+
+  </section>
+</div>

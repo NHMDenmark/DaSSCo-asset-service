@@ -282,8 +282,9 @@ public class BulkUpdateService {
             patchAssetFields(handle, payload.assetGuids(), payload.fields(), payload.legality(), bulkUpdateUuid);
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
-            if (payload.fundingIds() != null && !payload.fundingIds().isEmpty()) {
-                handleFundingAssignments(handle, payload.assetGuids(), payload.fundingIds(), bulkUpdateUuid);
+            if (payload.funding() != null && !payload.funding().isEmpty()) {
+                System.out.println("YOOO");
+                handleFundingAssignments(handle, payload.assetGuids(), payload.funding(), bulkUpdateUuid);
             }
             if (payload.roleRestrictions() != null) {
                 handleRoleRestrictions(handle, payload.assetGuids(), payload.roleRestrictions(), bulkUpdateUuid);
@@ -412,8 +413,9 @@ public class BulkUpdateService {
                     bulkUpdateUuid, digitiserPatchBlock.add().size());
 
             for (DigitiserAddition addition : digitiserPatchBlock.add()) {
-                if (addition.dasscoUserId() == null) {
-                    logger.warn("Skipping digitiser addition with null user ID: {}", addition);
+                List<Integer> dasscoUserIds = resolveDigitiserUserIds(addition);
+                if (dasscoUserIds.isEmpty()) {
+                    logger.warn("Skipping digitiser addition without Keycloak users: {}", addition);
                     continue;
                 }
 
@@ -422,8 +424,10 @@ public class BulkUpdateService {
                         ? addition.assetGuids()
                         : assetGuids;
 
-                for (String assetGuid : targets) {
-                    digiRepo.insertLink(addition.dasscoUserId(), assetGuid);
+                for (Integer dasscoUserId : dasscoUserIds) {
+                    for (String assetGuid : targets) {
+                        digiRepo.insertLink(dasscoUserId, assetGuid);
+                    }
                 }
             }
         }
@@ -439,6 +443,16 @@ public class BulkUpdateService {
         }
 
         logger.info("Finished digitiser operations for bulk update {}", bulkUpdateUuid);
+    }
+
+    private List<Integer> resolveDigitiserUserIds(DigitiserAddition addition) {
+        if (addition.keycloakUsers() == null || addition.keycloakUsers().isEmpty()) {
+            return List.of();
+        }
+        return this.userService.persistKeycloakUsers(addition.keycloakUsers()).stream()
+                .map(user -> user.dassco_user_id)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private void handleFundingAssignments(Handle handle,
@@ -500,8 +514,8 @@ public class BulkUpdateService {
                                     addition.category(),
                                     addition.name(),
                                     Instant.now(),
-                                    addition.description(),
                                     addition.status(),
+                                    addition.description(),
                                     addition.notes(),
                                     addition.solved()
                             )
@@ -565,6 +579,14 @@ public class BulkUpdateService {
         Map<String, Object> sqlFields = new LinkedHashMap<>();
         if (fields != null) {
             sqlFields.putAll(fields);
+        }
+
+        Object keycloakUserValue = sqlFields.remove("keycloakUser");
+        if (keycloakUserValue != null) {
+            Integer digitiserId = resolveKeycloakUserId(keycloakUserValue);
+            if (digitiserId != null) {
+                sqlFields.put("digitiser_id", digitiserId);
+            }
         }
 
         // Remove non-column or special keys
@@ -633,6 +655,27 @@ public class BulkUpdateService {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Integer resolveKeycloakUserId(Object keycloakUserValue) {
+        KeycloakUser keycloakUser;
+        if (keycloakUserValue instanceof KeycloakUser typedKeycloakUser) {
+            keycloakUser = typedKeycloakUser;
+        } else if (keycloakUserValue instanceof Map<?, ?> map) {
+            keycloakUser = new KeycloakUser(
+                    Objects.toString(map.get("id"), null),
+                    Objects.toString(map.get("username"), null),
+                    Objects.toString(map.get("firstName"), null),
+                    Objects.toString(map.get("lastName"), null)
+            );
+        } else {
+            logger.warn("Ignoring unsupported keycloakUser payload value: {}", keycloakUserValue);
+            return null;
+        }
+
+        List<User> users = this.userService.persistKeycloakUsers(List.of(keycloakUser));
+        return users.isEmpty() ? null : users.getFirst().dassco_user_id;
+    }
+
     private void auditAssets(User user,
                              Audit audit,
                              List<Asset> assets,
@@ -647,8 +690,7 @@ public class BulkUpdateService {
         var batch = handle.prepareBatch(sql);
 
         for (Asset asset : assets) {
-            if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status)
-                    || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
+            if (!(InternalStatus.ERDA_SYNCHRONISED.equals(asset.internal_status) || InternalStatus.COMPLETED.equals(asset.internal_status) || InternalStatus.SPECIFY_SYNCHRONISED.equals(asset.internal_status))) {
                 throw new DasscoIllegalActionException(
                         "Asset must be complete before auditing: " + asset.asset_guid);
             }

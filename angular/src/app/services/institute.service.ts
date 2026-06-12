@@ -1,8 +1,8 @@
 import {Injectable} from '@angular/core';
-import {OidcSecurityService} from "angular-auth-oidc-client";
 import {HttpClient} from "@angular/common/http";
 import {catchError, Observable, of, switchMap} from "rxjs";
 import {Institute} from "../types/graph-types";
+import {AuthService} from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,12 +11,12 @@ export class InstituteService {
   baseUrl = 'api/v1/institutes';
 
   constructor(
-    public oidcSecurityService: OidcSecurityService
+    private authService: AuthService
     , private http: HttpClient
   ) { }
 
   institutes$: Observable<Institute[] | undefined>
-    = this.oidcSecurityService.getAccessToken()
+    = this.authService.getAccessToken()
     .pipe(
       switchMap((token) => {
         return this.http.get<Institute[]>(`${this.baseUrl}`, {headers: {'Authorization': 'Bearer ' + token}})

@@ -78,6 +78,17 @@ form {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.digitiser-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.digitiser-field-label {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.75rem;
+}
+
 .checkbox-field {
   display: flex;
   align-items: center;
