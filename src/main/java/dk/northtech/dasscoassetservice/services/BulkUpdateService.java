@@ -283,7 +283,6 @@ public class BulkUpdateService {
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
             if (payload.funding() != null && !payload.funding().isEmpty()) {
-                System.out.println("YOOO");
                 handleFundingAssignments(handle, payload.assetGuids(), payload.funding(), bulkUpdateUuid);
             }
             if (payload.roleRestrictions() != null) {
