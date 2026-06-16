@@ -46,13 +46,10 @@ export class AssetGroupService {
     );
   }
 
-  getKeyCloakUsers(search: string | undefined = '') {
+  getKeyCloakUsers() {
     return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => this.http.get<KeycloakUserFrontend[]>(this.baseUrl + '/keycloak/users', {
-          params: {
-            search
-          },
           headers: {
             'Authorization': `Bearer ${token}`
           }
