@@ -50,7 +50,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(assetGroupList.get(index).assets.contains("asset-5")).isTrue();
 
         // Deletion:
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(assetGroup.group_id, user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
@@ -100,7 +100,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(assetGroupList.get(index).assets.contains("asset-5")).isTrue();
 
         // Deletion:
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
@@ -146,7 +146,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(assetGroupList.get(index).assets.contains("asset-5")).isTrue();
 
         // Deletion:
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, user));
@@ -196,7 +196,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assertThat(assetGroupList.get(index).assets.contains("asset-5")).isTrue();
 
         // Deletion:
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
         /*
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
@@ -338,7 +338,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.createAssetGroup(assetGroup, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group already exists!");
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
 
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
@@ -374,7 +374,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         List<Asset> found = assetGroupService.readAssetGroup("test-1", user);
         assertThat(found.size()).isEqualTo(1);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
     }
@@ -411,11 +411,90 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.clear();
     }
 
-    // Delete Asset Group is used extensively in these unit tests. Won't test it explicitly.
+    @Test
+    void testDeleteAssetGroupByIdAndOwnershipChecks()
+    {
+        User owner = new User("testDeleteAssetGroupById");
+        owner.roles.add("service-user");
+
+        AssetGroup ownerGroup = new AssetGroup();
+        ownerGroup.group_name = "owned-group";
+        ownerGroup.assets = new ArrayList<>();
+        ownerGroup.assets.add("asset-1");
+        ownerGroup.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(ownerGroup, owner);
+
+        Integer ownerGroupId = resolveGroupIdByName("owned-group", owner);
+
+        User otherUser = new User("testDeleteAssetGroupByIdOtherUser");
+        otherUser.roles.add("service-user");
+
+        IllegalArgumentException notOwnerException = assertThrows(
+                IllegalArgumentException.class,
+                () -> assetGroupService.deleteAssetGroup(ownerGroupId, otherUser)
+        );
+        assertThat(notOwnerException).hasMessageThat().contains("not the creator of this asset group");
+
+        List<AssetGroup> remainingGroups = assetGroupService.readListAssetGroup(owner);
+        assertThat(remainingGroups).hasSize(1);
+        assertThat(remainingGroups.get(0).group_name).isEqualTo("owned-group");
+
+        assetGroupService.deleteAssetGroup(ownerGroupId, owner);
+    }
+
+    @Test
+    void testDeleteAssetGroupsRejectsMixedOwnershipAndMissingIds() {
+        User owner = new User("testDeleteAssetGroupsMixedOwnership");
+        owner.roles.add("service-user");
+
+        User secondOwner = new User("testDeleteAssetGroupsSecondOwner");
+        secondOwner.roles.add("service-user");
+
+        AssetGroup groupByOwner = new AssetGroup();
+        groupByOwner.group_name = "mixed-owner-group-1";
+        groupByOwner.assets = new ArrayList<>();
+        groupByOwner.assets.add("asset-1");
+        groupByOwner.hasAccess = new ArrayList<>();
+
+        AssetGroup groupBySecondOwner = new AssetGroup();
+        groupBySecondOwner.group_name = "mixed-owner-group-2";
+        groupBySecondOwner.assets = new ArrayList<>();
+        groupBySecondOwner.assets.add("asset-2");
+        groupBySecondOwner.hasAccess = new ArrayList<>();
+
+        assetGroupService.createAssetGroup(groupByOwner, owner);
+        assetGroupService.createAssetGroup(groupBySecondOwner, secondOwner);
+
+        Integer ownerGroupId = resolveGroupIdByName("mixed-owner-group-1", owner);
+        Integer secondGroupId = resolveGroupIdByName("mixed-owner-group-2", secondOwner);
+
+        IllegalArgumentException unauthorized = assertThrows(
+                IllegalArgumentException.class,
+                () -> assetGroupService.deleteAssetGroups(List.of(ownerGroupId, secondGroupId), owner)
+        );
+
+        assertThat(unauthorized).hasMessageThat().contains("User is not the creator of");
+        assertThat(unauthorized).hasMessageThat().contains(secondGroupId.toString());
+
+        // No deletions due to failed all-or-nothing validation
+        assertThat(resolveGroupIdByName("mixed-owner-group-1", owner)).isNotNull();
+        assertThat(resolveGroupIdByName("mixed-owner-group-2", secondOwner)).isNotNull();
+
+        IllegalArgumentException missingId = assertThrows(
+                IllegalArgumentException.class,
+                () -> assetGroupService.deleteAssetGroups(List.of(ownerGroupId, 999999999), owner)
+        );
+        assertThat(missingId).hasMessageThat().contains("not found");
+        assertThat(resolveGroupIdByName("mixed-owner-group-1", owner)).isNotNull();
+
+        assetGroupService.deleteAssetGroup(ownerGroupId, owner);
+        assetGroupService.deleteAssetGroup(secondGroupId, secondOwner);
+    }
 
     @Test
     void failTestDeleteAssetGroupGroupDoesNotExist(){
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.deleteAssetGroup("failing", user));
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.deleteAssetGroup(999999999, user));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
     }
 
@@ -447,7 +526,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
         assertThat(assets.size()).isEqualTo(2);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
 
         assetGroupList = assetGroupService.readListAssetGroup(user);
         assertThat(assetGroupList.size()).isEqualTo(0);
@@ -476,7 +555,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
         assertThat(assets.size()).isEqualTo(2);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -497,7 +576,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         user.roles.add("READ_role-2");
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.addAssetsToAssetGroup(assetGroup.group_name, assets, user));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -550,7 +629,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
         assertThat(assets.size()).isEqualTo(1);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -577,7 +656,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, user);
         assertThat(assets.size()).isEqualTo(1);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -660,7 +739,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, newUser);
         assertThat(assets.size()).isEqualTo(1);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -691,7 +770,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         assets = assetGroupService.readAssetGroup(assetGroup.group_name, newUser);
         assertThat(assets.size()).isEqualTo(1);
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -715,7 +794,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, user));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -741,7 +820,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.grantAccessToAssetGroup(assetGroup.group_name, userList, newUser));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -793,7 +872,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         // Now the second user has no more access =(
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, newUser));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -823,7 +902,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         // Now the second user has no more access =(
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.readAssetGroup(assetGroup.group_name, newUser));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -851,7 +930,7 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
 
         assertThrows(DasscoIllegalActionException.class, () -> assetGroupService.revokeAccessToAssetGroup(assetGroup.group_name, userList, newUser));
 
-        assetGroupService.deleteAssetGroup(assetGroup.group_name, user);
+        assetGroupService.deleteAssetGroup(resolveGroupIdByName(assetGroup.group_name, user), user);
     }
 
     @Test
@@ -874,6 +953,14 @@ public class AssetGroupServiceTest extends AbstractIntegrationTest{
         users.add("role-1-user");
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetGroupService.grantAccessToAssetGroup("non-existent-group", users, null));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset group does not exist!");
+    }
+
+    private Integer resolveGroupIdByName(String groupName, User user) {
+        return assetGroupService.readListAssetGroup(user).stream()
+                .filter(group -> groupName.equals(group.group_name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Could not resolve group id for name: " + groupName))
+                .group_id;
     }
 
     public Asset getTestAsset(String guid) {

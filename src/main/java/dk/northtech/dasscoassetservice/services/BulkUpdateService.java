@@ -264,6 +264,36 @@ public class BulkUpdateService {
         return restrictions;
     }
 
+    public List<Map<String, Object>> getGroupedFunding(List<String> assetGuids, SecurityContext securityContext) {
+        User user = this.userService.from(securityContext);
+        List<Asset> assets = this.assetService.getAssets(assetGuids);
+        assets.forEach(asset -> {
+            this.rightsValidationService.requireWriteRights(user, asset);
+        });
+
+        return jdbi.withHandle(h ->
+                h.createQuery("""
+                        SELECT f.funding_id,
+                               f.funding,
+                               COUNT(DISTINCT af.asset_guid) as asset_count,
+                               ARRAY_AGG(DISTINCT af.asset_guid) as asset_guids
+                          FROM asset_funding af
+                          JOIN funding f USING (funding_id)
+                         WHERE af.asset_guid IN (<assetGuids>)
+                         GROUP BY f.funding_id, f.funding
+                         ORDER BY f.funding
+                        """)
+                        .bindList("assetGuids", assetGuids)
+                        .map((rs, ctx) -> Map.<String, Object>of(
+                                "fundingId", rs.getInt("funding_id"),
+                                "funding", rs.getString("funding"),
+                                "assetGuids", Arrays.asList((String[]) rs.getArray("asset_guids").getArray()),
+                                "count", rs.getInt("asset_count")
+                        ))
+                        .list()
+        );
+    }
+
     public UUID processBulkUpdate(BulkUpdatePayload payload, SecurityContext securityContext) {
         UUID bulkUpdateUuid = UUID.randomUUID();
         User user = userService.from(securityContext);
@@ -282,8 +312,8 @@ public class BulkUpdateService {
             patchAssetFields(handle, payload.assetGuids(), payload.fields(), payload.legality(), bulkUpdateUuid);
             handleIssueActions(handle, payload.assetGuids(), payload.issues(), bulkUpdateUuid);
             handleDigitiserActions(handle, payload.assetGuids(), payload.digitisers(), bulkUpdateUuid);
-            if (payload.funding() != null && !payload.funding().isEmpty()) {
-                handleFundingAssignments(handle, payload.assetGuids(), payload.funding(), bulkUpdateUuid);
+            if (payload.funding() != null) {
+                handleFundingActions(handle, payload.assetGuids(), payload.funding(), bulkUpdateUuid);
             }
             if (payload.roleRestrictions() != null) {
                 handleRoleRestrictions(handle, payload.assetGuids(), payload.roleRestrictions(), bulkUpdateUuid);
@@ -454,36 +484,52 @@ public class BulkUpdateService {
                 .toList();
     }
 
-    private void handleFundingAssignments(Handle handle,
-                                          List<String> assetGuids,
-                                          List<Integer> fundingIds,
-                                          UUID bulkUpdateUuid) {
-        if (fundingIds == null || fundingIds.isEmpty()) {
-            logger.debug("No funding IDs provided for bulk update {}", bulkUpdateUuid);
+    private void handleFundingActions(Handle handle,
+                                      List<String> assetGuids,
+                                      FundingPatchBlock fundingPatchBlock,
+                                      UUID bulkUpdateUuid) {
+        if (fundingPatchBlock == null) {
+            logger.debug("No funding actions provided for bulk update {}", bulkUpdateUuid);
             return;
         }
 
-        String sql = """
-                INSERT INTO asset_funding (asset_guid, funding_id)
-                SELECT :assetGuid, :fundingId
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM asset_funding
-                     WHERE asset_guid = :assetGuid
-                       AND funding_id = :fundingId
-                )
-                """;
+        if (fundingPatchBlock.delete() != null && !fundingPatchBlock.delete().isEmpty()) {
+            logger.info("Bulk update {}: deleting {} funding assignments from {} assets",
+                    bulkUpdateUuid, fundingPatchBlock.delete().size(), assetGuids.size());
 
-        var batch = handle.prepareBatch(sql);
-        for (String assetGuid : assetGuids) {
-            for (Integer fundingId : fundingIds) {
-                batch.bind("assetGuid", assetGuid)
-                        .bind("fundingId", fundingId)
-                        .add();
-            }
+            handle.createUpdate("""
+                    DELETE FROM asset_funding
+                    WHERE asset_guid IN (<assetGuids>)
+                      AND funding_id IN (<fundingIds>)
+                    """)
+                    .bindList("assetGuids", assetGuids)
+                    .bindList("fundingIds", fundingPatchBlock.delete())
+                    .execute();
         }
-        batch.execute();
 
-        logger.info("Bulk update {}: funding assignments inserted safely", bulkUpdateUuid);
+        if (fundingPatchBlock.add() != null && !fundingPatchBlock.add().isEmpty()) {
+            String sql = """
+                    INSERT INTO asset_funding (asset_guid, funding_id)
+                    SELECT :assetGuid, :fundingId
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM asset_funding
+                         WHERE asset_guid = :assetGuid
+                           AND funding_id = :fundingId
+                    )
+                    """;
+
+            var batch = handle.prepareBatch(sql);
+            for (String assetGuid : assetGuids) {
+                for (Integer fundingId : fundingPatchBlock.add()) {
+                    batch.bind("assetGuid", assetGuid)
+                            .bind("fundingId", fundingId)
+                            .add();
+                }
+            }
+            batch.execute();
+
+            logger.info("Bulk update {}: funding assignments inserted safely", bulkUpdateUuid);
+        }
     }
 
     private void handleIssueActions(Handle handle,
@@ -538,15 +584,24 @@ public class BulkUpdateService {
                     continue;
                 }
 
-                // build a dynamic SET clause from provided keys
-                String setClause = values.keySet().stream()
+                Map<String, Object> updateValues = new LinkedHashMap<>();
+                values.forEach((key, value) -> {
+                    if (!"timestamp".equalsIgnoreCase(key)) {
+                        updateValues.put(key, value);
+                    }
+                });
+                if (updateValues.isEmpty()) {
+                    continue;
+                }
+
+                // build a dynamic SET clause from provided keys, preserving the original creation timestamp
+                String setClause = updateValues.keySet().stream()
                         .map(k -> k + " = :" + k)
                         .collect(Collectors.joining(", "));
-                setClause = setClause + (setClause.isEmpty() ? "" : ", ") + "timestamp = NOW()";
                 String sql = "UPDATE issue SET " + setClause + " WHERE issue_id IN (<ids>)";
 
                 var q = handle.createUpdate(sql).bindList("ids", update.issueIds());
-                values.forEach(q::bind);
+                updateValues.forEach(q::bind);
                 q.execute();
             }
         }

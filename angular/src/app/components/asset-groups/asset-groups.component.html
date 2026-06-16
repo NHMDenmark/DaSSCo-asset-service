@@ -1,6 +1,7 @@
 <div class="container">
   <div *ngIf="assetGroups$ | async; else noGroups">
     <div class="actions">
+      <button color="primary" mat-flat-button (click)="createGroup()">Create Group</button>
       <button [disabled]="groupSelection.isEmpty()" color="warn" mat-flat-button (click)="deleteGroups()">
         Delete Groups
       </button>

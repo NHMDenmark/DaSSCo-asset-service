@@ -69,6 +69,7 @@ public interface AssetGroupRepository extends SqlObject {
     default List<AssetGroup> readOwnedListAssetGroup(User user) {
         return withHandle(handle -> handle.createQuery("""
                         SELECT ag.group_name,
+                               ag.asset_group_id,
                                cu.username AS creator_username,
                                COALESCE(
                                    ARRAY_AGG(DISTINCT a.asset_guid)
@@ -87,11 +88,12 @@ public interface AssetGroupRepository extends SqlObject {
                                  LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
                                  LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
                         WHERE cu.username = :username
-                        GROUP BY ag.group_name, cu.username
+                        GROUP BY ag.group_name, cu.username, ag.asset_group_id
                         """)
                 .bind("username", user.username)
                 .map((rs, ctx) -> {
                     AssetGroup group = new AssetGroup();
+                    group.group_id = rs.getInt("asset_group_id");
                     group.group_name = rs.getString("group_name");
                     group.groupCreator = rs.getString("creator_username");
                     group.assets =
@@ -107,6 +109,7 @@ public interface AssetGroupRepository extends SqlObject {
     default Optional<AssetGroup> readAssetGroup(String groupName) {
         return withHandle(handle -> handle.createQuery("""
                         SELECT ag.group_name,
+                               ag.asset_group_id,
                                cu.username       AS creator_username,
                                COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
                                         FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
@@ -119,11 +122,12 @@ public interface AssetGroupRepository extends SqlObject {
                                  LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
                                  LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
                         WHERE ag.group_name = :group_name
-                        GROUP BY ag.group_name, cu.username
+                        GROUP BY ag.group_name, cu.username, ag.asset_group_id
                         """)
                 .bind("group_name", groupName)
                 .map((rs, ctx) -> {
                     AssetGroup g = new AssetGroup();
+                    g.group_id = rs.getInt("asset_group_id");
                     g.group_name = rs.getString("group_name");
                     g.groupCreator = rs.getString("creator_username");
 
@@ -138,13 +142,10 @@ public interface AssetGroupRepository extends SqlObject {
                 .findOne());
     }
 
-    default List<AssetGroup> readAssetGroupFromGroupNames(List<String> groupNames, User user) {
-        if (groupNames == null || groupNames.isEmpty()) {
-            return List.of();
-        }
-
+    default Optional<AssetGroup> readAssetGroupById(Integer groupId) {
         return withHandle(handle -> handle.createQuery("""
                         SELECT ag.group_name,
+                               ag.asset_group_id,
                                cu.username       AS creator_username,
                                COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
                                         FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
@@ -156,13 +157,57 @@ public interface AssetGroupRepository extends SqlObject {
                                  LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
                                  LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
                                  LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
-                        WHERE ag.group_name IN (<groupNames>) AND cu.dassco_user_id = :userId
-                        GROUP BY ag.group_name, cu.username
+                        WHERE ag.asset_group_id = :groupId
+                        GROUP BY ag.group_name, cu.username, ag.asset_group_id
                         """)
-                .bindList("groupNames", groupNames)
-                .bind("userId", user.dassco_user_id)
+                .bind("groupId", groupId)
                 .map((rs, ctx) -> {
                     AssetGroup g = new AssetGroup();
+                    g.group_id = rs.getInt("asset_group_id");
+                    g.group_name = rs.getString("group_name");
+                    g.groupCreator = rs.getString("creator_username");
+
+                    Array assetArray = rs.getArray("assets");
+                    g.assets = assetArray != null
+                            ? List.of((String[]) assetArray.getArray())
+                            : List.of();
+
+                    Array usersArray = rs.getArray("has_access");
+                    g.hasAccess = usersArray != null
+                            ? List.of((String[]) usersArray.getArray())
+                            : List.of();
+
+                    return g;
+                })
+                .findOne());
+    }
+
+    default List<AssetGroup> readAssetGroupFromGroupIds(List<Integer> groupIds) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return List.of();
+        }
+
+        return withHandle(handle -> handle.createQuery("""
+                        SELECT ag.group_name,
+                               ag.asset_group_id,
+                               cu.username       AS creator_username,
+                               COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
+                                        FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
+                               COALESCE(ARRAY_AGG(DISTINCT u.username)
+                                        FILTER (WHERE u.username IS NOT NULL), '{}') AS has_access
+                        FROM asset_group ag
+                                 JOIN dassco_user cu ON cu.dassco_user_id = ag.creator_user_id
+                                 LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
+                                 LEFT JOIN asset_group_access acc ON acc.asset_group_id = ag.asset_group_id
+                                 LEFT JOIN dassco_user u ON u.dassco_user_id = acc.dassco_user_id
+                        WHERE ag.asset_group_id IN (<groupIds>)
+                        GROUP BY ag.group_name, cu.username, ag.asset_group_id
+                        """)
+                .bindList("groupIds", groupIds)
+                .map((rs, ctx) -> {
+                    AssetGroup g = new AssetGroup();
+                    g.group_id = rs.getInt("asset_group_id");
                     g.group_name = rs.getString("group_name");
                     g.groupCreator = rs.getString("creator_username");
 
@@ -185,6 +230,7 @@ public interface AssetGroupRepository extends SqlObject {
     default List<AssetGroup> readListAssetGroup(User user) {
         return withHandle(handle -> handle.createQuery("""
                         SELECT ag.group_name,
+                               ag.asset_group_id,
                                cu.username AS creator_username,
                                COALESCE(ARRAY_AGG(DISTINCT a.asset_guid)
                                         FILTER (WHERE a.asset_guid IS NOT NULL), '{}') AS assets,
@@ -199,11 +245,12 @@ public interface AssetGroupRepository extends SqlObject {
                                  LEFT JOIN asset_group_asset aga ON aga.asset_group_id = ag.asset_group_id
                                  LEFT JOIN asset a ON a.asset_guid = aga.asset_guid
                         WHERE viewer.username = :username
-                        GROUP BY ag.group_name, cu.username
+                        GROUP BY ag.group_name, cu.username, ag.asset_group_id
                         """)
                 .bind("username", user.username)
                 .map((rs, ctx) -> {
                     AssetGroup g = new AssetGroup();
+                    g.group_id = rs.getInt("asset_group_id");
                     g.group_name = rs.getString("group_name");
                     g.groupCreator = rs.getString("creator_username");
                     g.assets = List.of((String[]) rs.getArray("assets").getArray());
@@ -228,11 +275,11 @@ public interface AssetGroupRepository extends SqlObject {
 
     // DELETE ASSET GROUPS
     @Transaction
-    default boolean deleteAssetGroups(List<String> groupNames, User user) {
+    default boolean deleteAssetGroups(List<Integer> groupIds, User user) {
         return withHandle(handle -> handle.createUpdate("""
-                        DELETE FROM asset_group WHERE group_name in (<groupNames>) AND creator_user_id = :userId
+                        DELETE FROM asset_group WHERE asset_group_id in (<groupIds>) AND creator_user_id = :userId
                         """)
-                .bindList("groupNames", groupNames)
+                .bindList("groupIds", groupIds)
                 .bind("userId", user.dassco_user_id)
                 .execute() > 0);
     }

@@ -1059,7 +1059,6 @@ public class AssetService {
         if (Objects.equals(asset.digitiser, audit.user())) {
             throw new DasscoIllegalActionException("Audit cannot be performed by the user who digitized the asset");
         }
-        Event event = new Event(audit.user(), Instant.now(), DasscoEvent.AUDIT_ASSET, null);
         jdbi.onDemand(EventRepository.class).insertEvent(asset.asset_guid, DasscoEvent.AUDIT_ASSET, user.dassco_user_id,
                 null);
 

@@ -35,6 +35,7 @@
     <div class="table-properties">
       <div class="group-btns">
         <button mat-raised-button [disabled]="selection.isEmpty()" (click)="addToGroup()">Add To Group</button>
+        <button mat-raised-button (click)="createGroup()">Create Group</button>
         <button mat-raised-button [routerLink]="'/asset-groups'">My Groups</button>
         <button mat-raised-button (click)="toggleListViewMode()">
           <mat-icon>{{ listView === 'GRID' ? 'grid_view' : 'list_view' }}</mat-icon>
