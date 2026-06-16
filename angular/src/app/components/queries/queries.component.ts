@@ -388,9 +388,21 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selection.select(...this.dataSource._pageData(this.dataSource.data));
   }
 
+  assetGroupAction() {
+    if (this.selection.isEmpty()) {
+      this.createGroup();
+      return;
+    }
+
+    this.addToGroup();
+  }
+
   addToGroup() {
     const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
-      width: '500px'
+      width: '500px',
+      data: {
+        action: 'add-assets'
+      }
     });
 
     dialogRef.afterClosed().subscribe((group: {group: AssetGroup; new: boolean}) => {
@@ -431,6 +443,29 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
               }
             });
         }
+      }
+    });
+  }
+
+  createGroup() {
+    const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
+      width: '500px',
+      data: {
+        action: 'create-group'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((group: {group: AssetGroup; new: boolean}) => {
+      if (group) {
+        this.assetGroupService.newGroup(group.group).subscribe((response) => {
+          if ((response as AssetGroup).group_name) {
+            this._snackBar.open('The group "' + group.group.group_name + '" has been created.', 'OK', {
+              duration: 3000
+            });
+          } else {
+            this.openSnackBar(undefined, '');
+          }
+        });
       }
     });
   }

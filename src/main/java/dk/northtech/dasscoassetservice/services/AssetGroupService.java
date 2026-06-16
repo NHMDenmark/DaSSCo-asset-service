@@ -42,14 +42,16 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset group needs a name!");
         }
 
-        if (assetGroup.assets == null || assetGroup.assets.isEmpty()) {
-            throw new IllegalArgumentException("Asset group needs assets!");
+        if (assetGroup.assets == null) {
+            assetGroup.assets = new ArrayList<>();
         }
 
         // Lowercase the asset group name for case-insensitivity:
         assetGroup.group_name = assetGroup.group_name.toLowerCase();
 
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
+        List<Asset> assets = assetGroup.assets.isEmpty()
+                ? List.of()
+                : jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
         if (assets.size() != assetGroup.assets.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -136,6 +138,22 @@ public class AssetGroupService {
         }
     }
 
+    public List<Asset> readAssetGroup(Integer groupId, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        rightsValidationService.checkReadRightsThrowing(user, assetGroup);
+        return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
+    }
+
+    private AssetGroup readAssetGroupById(Integer groupId) {
+        if (groupId == null) {
+            throw new IllegalArgumentException("Asset group id is required!");
+        }
+
+        return jdbi.onDemand(AssetGroupRepository.class)
+                .readAssetGroupById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Asset group does not exist!"));
+    }
+
     public List<AssetGroup> readListAssetGroup(User user) {
         return jdbi.onDemand(AssetGroupRepository.class).readListAssetGroup(user);
     }
@@ -162,22 +180,69 @@ public class AssetGroupService {
         jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroup(groupName.toLowerCase());
     }
 
-    public boolean deleteAssetGroups(List<String> groupNames, User user) {
+    public void deleteAssetGroup(Integer groupId, User user) {
 
-        // Only the creator of the asset group can delete it:
-        List<AssetGroup> assetGroups = jdbi.onDemand(AssetGroupRepository.class).readAssetGroupFromGroupNames(groupNames, user);
+        List<AssetGroup> foundGroups = jdbi.onDemand(AssetGroupRepository.class).readAssetGroupFromGroupIds(List.of(groupId));
+        if (foundGroups.isEmpty()) {
+            throw new IllegalArgumentException("Asset group does not exist!");
+        }
+
+        AssetGroup foundGroup = foundGroups.get(0);
+        if (!isCreatorOrAdmin(foundGroup, user)) {
+            throw new IllegalArgumentException("Cannot delete asset group. User is not the creator of this asset group: " +
+                    "id " + groupId + ", name " + foundGroup.group_name + ".");
+        }
+
+        jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroups(List.of(groupId), user);
+    }
+
+    public boolean deleteAssetGroups(List<Integer> groupIds, User user) {
+
+        if (groupIds == null || groupIds.isEmpty()) {
+            throw new IllegalArgumentException("No asset group ids were provided.");
+        }
+
+        // De-dupe ids to avoid redundant processing and clearer validation
+        List<Integer> uniqueGroupIds = groupIds.stream().distinct().toList();
+
+        List<AssetGroup> assetGroups = jdbi.onDemand(AssetGroupRepository.class).readAssetGroupFromGroupIds(uniqueGroupIds);
         if (assetGroups.isEmpty()) {
-            throw new IllegalArgumentException("Asset groups does not exist!");
-        }
-        if (assetGroups.size() != groupNames.size()) {
-            throw new IllegalArgumentException("Asset groups does not have the same number of asset groups");
+            throw new IllegalArgumentException("Asset groups do not exist!");
         }
 
-        for (AssetGroup assetGroup : assetGroups) {
-            rightsValidationService.checkAssetGroupOwnershipThrowing(user, assetGroup);
+        java.util.Map<Integer, AssetGroup> groupsById = assetGroups.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        g -> g.group_id,
+                        g -> g,
+                        (a, b) -> a
+                ));
+
+        List<Integer> missingIds = uniqueGroupIds.stream()
+                .filter(id -> !groupsById.containsKey(id))
+                .toList();
+        if (!missingIds.isEmpty()) {
+            throw new IllegalArgumentException("Cannot delete asset groups. The following asset group ids were not found: " + missingIds);
         }
 
-        return jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroups(assetGroups.stream().map((ag) -> ag.group_name).toList(), user);
+        List<Integer> unauthorized = uniqueGroupIds.stream()
+                .filter(id -> !isCreatorOrAdmin(groupsById.get(id), user))
+                .toList();
+        if (!unauthorized.isEmpty()) {
+            String unauthorizedNames = unauthorized.stream()
+                    .map(id -> {
+                        AssetGroup group = groupsById.get(id);
+                        return group.group_name + " (id=" + id + ")";
+                    })
+                    .toList()
+                    .toString();
+            throw new IllegalArgumentException("Cannot delete asset groups. User is not the creator of: " + unauthorizedNames + ".");
+        }
+
+        return jdbi.onDemand(AssetGroupRepository.class).deleteAssetGroups(uniqueGroupIds, user);
+    }
+
+    private boolean isCreatorOrAdmin(AssetGroup assetGroup, User user) {
+        return rightsValidationService.checkAdminRoles(user) || user.username.equals(assetGroup.groupCreator);
     }
 
 
@@ -238,6 +303,11 @@ public class AssetGroupService {
         }
     }
 
+    public AssetGroup addAssetsToAssetGroup(Integer groupId, List<String> assetList, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        return addAssetsToAssetGroup(assetGroup.group_name, assetList, user);
+    }
+
     public AssetGroup removeAssetsFromAssetGroup(String groupName, List<String> assetList, User user) {
         if (assetList == null) {
             throw new IllegalArgumentException("Empty body!");
@@ -277,6 +347,11 @@ public class AssetGroupService {
         } else {
             throw new IllegalArgumentException("Something went wrong.");
         }
+    }
+
+    public AssetGroup removeAssetsFromAssetGroup(Integer groupId, List<String> assetList, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        return removeAssetsFromAssetGroup(assetGroup.group_name, assetList, user);
     }
 
     public AssetGroup grantKeycloakUserAccessToAssetGroup(String groupName, List<KeycloakUser> keycloakUsers, User user) {
@@ -323,6 +398,11 @@ public class AssetGroupService {
         return optAssetGroup.get();
     }
 
+    public AssetGroup grantKeycloakUserAccessToAssetGroup(Integer groupId, List<KeycloakUser> keycloakUsers, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        return grantKeycloakUserAccessToAssetGroup(assetGroup.group_name, keycloakUsers, user);
+    }
+
     public AssetGroup grantAccessToAssetGroup(String groupName, List<String> users, User user) {
         if (users == null || users.isEmpty()) {
             throw new IllegalArgumentException("There needs to be a list of Users");
@@ -360,6 +440,11 @@ public class AssetGroupService {
         return optAssetGroup.get();
     }
 
+    public AssetGroup grantAccessToAssetGroup(Integer groupId, List<String> users, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        return grantAccessToAssetGroup(assetGroup.group_name, users, user);
+    }
+
     public AssetGroup revokeAccessToAssetGroup(String groupName, List<String> users, User user) {
 
         Optional<AssetGroup> assetGroupOptional = jdbi.onDemand(AssetGroupRepository.class).readAssetGroup(groupName.toLowerCase());
@@ -385,5 +470,10 @@ public class AssetGroupService {
         }
 
         return optAssetGroup.get();
+    }
+
+    public AssetGroup revokeAccessToAssetGroup(Integer groupId, List<String> users, User user) {
+        AssetGroup assetGroup = readAssetGroupById(groupId);
+        return revokeAccessToAssetGroup(assetGroup.group_name, users, user);
     }
 }

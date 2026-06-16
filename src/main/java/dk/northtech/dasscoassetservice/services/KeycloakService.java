@@ -1,7 +1,7 @@
 package dk.northtech.dasscoassetservice.services;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import dk.northtech.dasscoassetservice.assets.KeycloakUserConfig;
@@ -15,15 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -129,37 +126,11 @@ public class KeycloakService {
     }
 
 
-    public List<UserRepresentation> getUsers(String group) {
+    public List<UserRepresentation> getUsers() {
         try {
-            String digitiserGroupId = getGroupId(group);
-            return getGroupMembers(digitiserGroupId);
+            return getGroupMembers(keycloakUserConfig.digitiserGroupId());
         } catch (URISyntaxException | IOException | InterruptedException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    String getGroupId(String groupName) throws URISyntaxException, IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(buildGroupsUri(groupName))
-                .header("Authorization", "Bearer " + this.getUserServiceToken())
-                .GET()
-                .build();
-
-        try(HttpClient httpClient = HttpClient.newBuilder().build()) {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            String json = response.body();
-            LOGGER.debug("KeycloakService getGroupId response status: {}, body: {}", response.statusCode(), json);
-
-            if (response.statusCode() != 200) {
-                throw new RuntimeException("Failed to get groups from Keycloak. Status: " + response.statusCode() + ", Response: " + json);
-            }
-
-            List<KeycloakGroupRepresentation> groups = objectMapper.readValue(json, new TypeReference<List<KeycloakGroupRepresentation>>() {});
-            return groups.stream()
-                    .filter(group -> groupName.equals(group.name()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Keycloak group not found: " + groupName))
-                    .id();
         }
     }
 
@@ -197,12 +168,6 @@ public class KeycloakService {
         }
     }
 
-    URI buildGroupsUri(String groupName) throws URISyntaxException {
-        return new URI(this.keycloakUserConfig.keycloakUrl()
-                + "admin/realms/" + this.keycloakUserConfig.realm()
-                + "/groups?search=" + URLEncoder.encode(groupName, StandardCharsets.UTF_8));
-    }
-
     URI buildGroupMembersUri(String groupId, int first, int max) throws URISyntaxException {
         return new URI(this.keycloakUserConfig.keycloakUrl()
                 + "admin/realms/" + this.keycloakUserConfig.realm()
@@ -211,13 +176,9 @@ public class KeycloakService {
                 + "&max=" + max);
     }
 
-    public List<KeycloakUser> getKeycloakUsers(String group) {
-        return getUsers(group).stream()
+    public List<KeycloakUser> getKeycloakUsers() {
+        return getUsers().stream()
                 .map(KeycloakUser::fromUserRepresentation)
                 .toList();
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    record KeycloakGroupRepresentation(String id, String name) {
     }
 }

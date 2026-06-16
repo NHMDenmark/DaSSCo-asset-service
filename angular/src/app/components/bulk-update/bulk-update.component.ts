@@ -7,10 +7,12 @@ import {
   GroupedIssue,
   GroupedDigitiser,
   GroupedRoleRestriction,
+  GroupedFunding,
   BulkUpdatePayload,
   IssuePatchBlock,
   DigitiserPatchBlock,
-  RoleRestrictionPatchBlock
+  RoleRestrictionPatchBlock,
+  FundingPatchBlock
 } from 'src/app/services/bulk-update.service';
 import {
   BehaviorSubject,
@@ -112,13 +114,26 @@ export class BulkUpdateComponent implements OnDestroy {
     startWith(null),
     catchError(() => of(null))
   );
+  groupedFunding$ = this.bulkUpdateService.getGroupedFunding(this.assetGuids).pipe(
+    startWith(null),
+    catchError(() => of(null))
+  );
 
-  isLoadingGroupedData$ = combineLatest([this.groupedIssues$, this.groupedDigitisers$, this.groupedRoleRestrictions$]).pipe(
-    map(([issues, digitisers, roleRestrictions]) => issues === null || digitisers === null || roleRestrictions === null)
+  isLoadingGroupedData$ = combineLatest([
+    this.groupedIssues$,
+    this.groupedDigitisers$,
+    this.groupedRoleRestrictions$,
+    this.groupedFunding$
+  ]).pipe(
+    map(
+      ([issues, digitisers, roleRestrictions, funding]) =>
+        issues === null || digitisers === null || roleRestrictions === null || funding === null
+    )
   );
 
   deletedIssueIds: number[] = [];
   deletedDigitiserIds: number[] = [];
+  deletedFundingIds: number[] = [];
   deletedRoles: string[] = [];
   addedRoles: string[] = [];
   originalRoles: string[] = [];
@@ -178,14 +193,10 @@ export class BulkUpdateComponent implements OnDestroy {
   }
 
   save() {
-    const fundingValue = this.bulkUpdateForm.controls.funding.value;
     const payload: BulkUpdatePayload = {
       assetGuids: this.data.assets.map((a) => a.asset_guid as string),
       fields: this.fields.dirty ? this.filterNullValues(this.fields.value) : undefined,
-      funding:
-        fundingValue && fundingValue.length > 0 && this.bulkUpdateForm.controls.funding.dirty
-          ? fundingValue
-          : undefined,
+      funding: this.buildFundingBlock(),
       roleRestrictions: this.buildRoleRestrictionsBlock(),
       issues: this.issues.dirty || this.deletedIssueIds.length > 0 ? this.buildIssuesBlock() : undefined,
       digitisers:
@@ -341,13 +352,38 @@ export class BulkUpdateComponent implements OnDestroy {
     const hasFormChanges = this.bulkUpdateForm.dirty;
     const hasDeletedIssues = this.deletedIssueIds.length > 0;
     const hasDeletedDigitisers = this.deletedDigitiserIds.length > 0;
+    const hasFundingChanges = this.bulkUpdateForm.controls.funding.dirty || this.deletedFundingIds.length > 0;
     const hasNewDigitisers = this.hasNewDigitisers();
     const hasNewIssues =
       this.issues.length > 0 &&
       (this.issues.value as IssueFormValue[]).some((issue) => !issue.issueIds || issue.issueIds.length === 0);
     const hasRoleChanges = this.addedRoles.length > 0 || this.deletedRoles.length > 0;
 
-    return hasFormChanges || hasDeletedIssues || hasDeletedDigitisers || hasNewDigitisers || hasNewIssues || hasRoleChanges;
+    return (
+      hasFormChanges ||
+      hasDeletedIssues ||
+      hasDeletedDigitisers ||
+      hasFundingChanges ||
+      hasNewDigitisers ||
+      hasNewIssues ||
+      hasRoleChanges
+    );
+  }
+
+  private buildFundingBlock(): FundingPatchBlock | undefined {
+    const addIds = this.bulkUpdateForm.controls.funding.dirty
+      ? this.bulkUpdateForm.controls.funding.value?.filter((id): id is number => id !== null && id !== undefined) ?? []
+      : [];
+    const deleteIds = this.deletedFundingIds.filter((id) => !addIds.includes(id));
+
+    if (addIds.length === 0 && deleteIds.length === 0) {
+      return undefined;
+    }
+
+    return {
+      ...(addIds.length > 0 && {add: addIds}),
+      ...(deleteIds.length > 0 && {delete: deleteIds})
+    };
   }
 
   private buildDigitisersBlock(): DigitiserPatchBlock | undefined {
@@ -389,6 +425,20 @@ export class BulkUpdateComponent implements OnDestroy {
       ...(add && {add}),
       ...(deleteRoles && {delete: deleteRoles})
     };
+  }
+
+  deleteFunding(fundingId: number) {
+    if (!this.deletedFundingIds.includes(fundingId)) {
+      this.deletedFundingIds = [...this.deletedFundingIds, fundingId];
+    }
+  }
+
+  isFundingDeleted(fundingId: number): boolean {
+    return this.deletedFundingIds.includes(fundingId);
+  }
+
+  undoDeleteFunding(fundingId: number) {
+    this.deletedFundingIds = this.deletedFundingIds.filter((id) => id !== fundingId);
   }
 
   addRole(role: string) {
@@ -593,5 +643,9 @@ export class BulkUpdateComponent implements OnDestroy {
   }
   trackByFundingId(_index: number, funding: Funding) {
     return funding.funding_id;
+  }
+
+  trackByGroupedFundingId(_index: number, funding: GroupedFunding) {
+    return funding.fundingId;
   }
 }

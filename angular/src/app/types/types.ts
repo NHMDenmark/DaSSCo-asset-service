@@ -126,6 +126,7 @@ export interface Event {
 }
 
 export interface AssetGroup {
+  group_id: number | undefined;
   group_name: string | undefined;
   assets: string[] | undefined;
   hasAccess: string[] | undefined;

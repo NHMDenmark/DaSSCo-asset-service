@@ -1,6 +1,7 @@
 <div class="container">
   <div *ngIf="assetGroups$ | async; else noGroups">
     <div class="actions">
+      <button color="primary" mat-flat-button (click)="createGroup()">Create Group</button>
       <button [disabled]="groupSelection.isEmpty()" color="warn" mat-flat-button (click)="deleteGroups()">
         Delete Groups
       </button>
@@ -112,6 +113,14 @@
                     <button
                       mat-flat-button
                       color="primary"
+                      [disabled]="element.assets.length === 0 || isGroupZipDownloadPreparing(element)"
+                      (click)="downloadGroupZip(element)">
+                      <mat-icon>folder_zip</mat-icon>
+                      Download All ZIP
+                    </button>
+                    <button
+                      mat-flat-button
+                      color="primary"
                       [disabled]="assets.selectedOptions.isEmpty()"
                       (click)="downloadCSV(assets.selectedOptions.selected)">
                       <mat-icon>table_chart</mat-icon>
@@ -125,7 +134,7 @@
                       "
                       (click)="downloadZip(assets.selectedOptions.selected)">
                       <mat-icon>folder_zip</mat-icon>
-                      Download ZIP
+                      Download Selected ZIP
                     </button>
                   </ng-container>
 

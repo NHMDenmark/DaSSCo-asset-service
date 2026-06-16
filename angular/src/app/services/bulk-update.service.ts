@@ -14,6 +14,13 @@ export interface GroupedDigitiser {
   count: number;
 }
 
+export interface GroupedFunding {
+  fundingId: number;
+  funding: string;
+  assetGuids: string[];
+  count: number;
+}
+
 export interface GroupedIssue {
   category: string;
   name: string;
@@ -42,7 +49,7 @@ export interface BulkIssueActionResult {
 export interface BulkUpdatePayload {
   assetGuids: string[];
   fields?: Partial<AssetPatchFields>;
-  funding?: number[];
+  funding?: FundingPatchBlock;
   issues?: IssuePatchBlock;
   legality?: Partial<Legality>;
   roleRestrictions?: RoleRestrictionPatchBlock;
@@ -75,6 +82,11 @@ export interface DigitiserPatchBlock {
 export interface RoleRestrictionPatchBlock {
   add?: string[];
   delete?: string[];
+}
+
+export interface FundingPatchBlock {
+  add?: number[];
+  delete?: number[];
 }
 
 export interface GroupedRoleRestriction {
@@ -206,6 +218,19 @@ export class BulkUpdateService {
         )
       );
   }
+
+  getGroupedFunding(assetGuids: string[]) {
+    return this.authService.getAccessToken().pipe(
+      switchMap((token: string) =>
+        this.http
+          .post<GroupedFunding[]>(`${this.apiUrl}/api/v1/assets/bulkupdate/funding/grouped`, assetGuids, {
+            headers: {'Authorization': 'Bearer ' + token}
+          })
+          .pipe(catchError(this.handleError<GroupedFunding[]>('getGroupedFunding')))
+      )
+    );
+  }
+
   bulkUpdate(payload: BulkUpdatePayload) {
     return this.authService.getAccessToken().pipe(
       switchMap((token: string) =>

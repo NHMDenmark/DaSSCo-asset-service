@@ -1,13 +1,14 @@
 <div class="asset-group-dialog">
   <div class="dialog-header">
     <div>
-      <h1 mat-dialog-title>Add assets to group</h1>
-      <p>Choose a saved group or create a new one for the selected assets.</p>
+      <h1 mat-dialog-title>{{ dialogTitle() }}</h1>
+      <p>{{ dialogDescription() }}</p>
     </div>
   </div>
 
   <div mat-dialog-content class="dialog-content">
     <mat-button-toggle-group
+      *ngIf="!isCreateGroupAction()"
       class="mode-toggle"
       [value]="mode"
       aria-label="Choose asset group action"
@@ -22,9 +23,7 @@
       </mat-button-toggle>
     </mat-button-toggle-group>
 
-    <section *ngIf="mode === 'existing'">
-      <h2>Use an existing group</h2>
-
+    <section *ngIf="!isCreateGroupAction() && mode === 'existing'" class="field-stack">
       <mat-form-field appearance="outline">
         <mat-label>Groups</mat-label>
         <mat-select [(ngModel)]="groupName" (selectionChange)="selectExistingGroup()">
@@ -35,19 +34,16 @@
       </mat-form-field>
     </section>
 
-    <section *ngIf="mode === 'new'">
-      <h2>Create a new group</h2>
-      <p>Name the group and optionally grant access to other digitisers.</p>
-
-      <mat-form-field style="margin-bottom: 0" appearance="outline">
+    <section *ngIf="mode === 'new'" class="field-stack">
+      <mat-form-field appearance="outline">
         <mat-label>Group name</mat-label>
-        <input (change)="markNameUnsaved()" matInput placeholder="Butterflies" [(ngModel)]="groupName" />
+        <input matInput placeholder="Butterflies" [(ngModel)]="groupName" />
       </mat-form-field>
 
       <div *ngIf="username$ | async as username">
         <dassco-digitiser-list
-          label="Search digitisers"
-          ariaLabel="Search digitisers"
+          label="Share with digitisers"
+          ariaLabel="Share with digitisers"
           optionsId="asset-group-dialog-digitiser-options"
           [selectedUsersControl]="digitiserFormControl"
           [excludedUsernames]="[username]"></dassco-digitiser-list>

@@ -165,6 +165,57 @@
           <p>Loading grouped data...</p>
         </div>
 
+        <!-- Funding Section -->
+        <ng-container *ngIf="groupedFunding$ | async as groupedFunding">
+          <ng-container *ngIf="groupedFunding">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <span>Existing Funding</span>
+                  &nbsp;
+                  <span>({{ groupedFunding.length - deletedFundingIds.length }})</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <ng-container *ngIf="groupedFunding.length > 0">
+                <div class="items-container">
+                  <div
+                    *ngFor="let funding of groupedFunding; trackBy: trackByGroupedFundingId"
+                    class="card"
+                    [class.deleted]="isFundingDeleted(funding.fundingId)">
+                    <div class="card-header">
+                      <div class="card-info">
+                        <h3>{{ funding.funding }}</h3>
+                        <span class="badge" *ngIf="funding.count">{{ funding.count }} assets</span>
+                        <span class="badge-deleted" *ngIf="isFundingDeleted(funding.fundingId)">Marked for deletion</span>
+                      </div>
+                      <button
+                        *ngIf="!isFundingDeleted(funding.fundingId)"
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        (click)="deleteFunding(funding.fundingId)"
+                        matTooltip="Remove funding">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                      <button
+                        *ngIf="isFundingDeleted(funding.fundingId)"
+                        mat-icon-button
+                        type="button"
+                        color="primary"
+                        (click)="undoDeleteFunding(funding.fundingId)"
+                        matTooltip="Undo deletion">
+                        <mat-icon>undo</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <p *ngIf="groupedFunding.length === 0" class="warning-text">No funding is currently assigned to the selected assets.</p>
+            </mat-expansion-panel>
+          </ng-container>
+        </ng-container>
+
         <!-- Digitisers Section -->
         <ng-container *ngIf="groupedDigitisers$ | async as groupedDigitisers">
           <ng-container *ngIf="groupedDigitisers">
