@@ -1,7 +1,7 @@
-import {Component, inject, OnDestroy} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {combineLatest, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
+import {combineLatest, filter, map, startWith, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -31,7 +31,7 @@ import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-gro
     ])
   ]
 })
-export class AssetGroupsComponent implements OnDestroy {
+export class AssetGroupsComponent {
   private readonly queryToOtherPagesService = inject(QueryToOtherPages);
   private readonly assetGroupService = inject(AssetGroupService);
   private readonly router = inject(Router);
@@ -40,7 +40,6 @@ export class AssetGroupsComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly detailedViewService = inject(DetailedViewService);
   private readonly assetBundleDownloadService = inject(AssetBundleDownloadService);
-  private readonly destroy = new Subject<void>();
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
@@ -205,10 +204,11 @@ export class AssetGroupsComponent implements OnDestroy {
 
   downloadZip(assets: MatListOption[]) {
     const selectedAssets: string[] = assets.map((option) => option.value);
-    this.assetBundleDownloadService.startBundleDownload(selectedAssets, {
-      access: 'internal',
-      cancel$: this.destroy
-    });
+    this.startZipDownload(selectedAssets);
+  }
+
+  downloadGroupZip(group: AssetGroup) {
+    this.startZipDownload(group.assets ?? []);
   }
 
   isZipDownloadPreparing(assets: MatListOption[]) {
@@ -216,9 +216,12 @@ export class AssetGroupsComponent implements OnDestroy {
     return this.assetBundleDownloadService.isBundleInProgress(selectedAssets, 'internal');
   }
 
-  ngOnDestroy(): void {
-    this.destroy.next();
-    this.destroy.complete();
+  isGroupZipDownloadPreparing(group: AssetGroup) {
+    return this.assetBundleDownloadService.isBundleInProgress(group.assets ?? [], 'internal');
+  }
+
+  private startZipDownload(assetGuids: string[]) {
+    this.assetBundleDownloadService.startBundleDownload(assetGuids, {access: 'internal'});
   }
 
   revokeAccess(users: MatListOption[], group: AssetGroup) {

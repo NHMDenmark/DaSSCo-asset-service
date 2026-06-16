@@ -388,6 +388,15 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selection.select(...this.dataSource._pageData(this.dataSource.data));
   }
 
+  assetGroupAction() {
+    if (this.selection.isEmpty()) {
+      this.createGroup();
+      return;
+    }
+
+    this.addToGroup();
+  }
+
   addToGroup() {
     const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
       width: '500px',
