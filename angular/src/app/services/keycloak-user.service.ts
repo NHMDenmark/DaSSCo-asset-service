@@ -27,7 +27,7 @@ export class KeycloakUserService {
   loading$ = this.loading.asObservable();
 
   constructor() {
-    this.fetchKeycloakUsersForGroup('digitiser')
+    this.fetchKeycloakUsers()
       .pipe(
         take(1),
         catchError((e: Error) => {
@@ -43,11 +43,10 @@ export class KeycloakUserService {
     return combineLatest([this.users$, search$]).pipe(map(([users, search]) => this.filterUsers(users, search)));
   }
 
-  private fetchKeycloakUsersForGroup(group: string) {
+  private fetchKeycloakUsers() {
     return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http.get<KeycloakUserFrontend[]>('api/v1/assetgroups/keycloak/users', {
-          params: {group},
           headers: {
             'Authorization': `Bearer ${token}`
           }
