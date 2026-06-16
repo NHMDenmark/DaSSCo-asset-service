@@ -868,7 +868,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null))).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
-        assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("COMPLETED");
+        assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("ERDA_SYNCHRONISED");
     }
 
     @Test

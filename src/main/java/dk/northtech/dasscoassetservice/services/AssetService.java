@@ -989,16 +989,18 @@ public class AssetService {
 
     public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
         Long specifySyncLogId = assetUpdateRequest.specifySyncLogId();
-        String assetGuid = assetUpdateRequest.asset_guid() != null
-                ? assetUpdateRequest.asset_guid()
-                : assetUpdateRequest.minimalAsset() != null ? assetUpdateRequest.minimalAsset().asset_guid() : null;
+        String assetGuid = assetUpdateRequest.asset_guid();
+        if (assetGuid == null && assetUpdateRequest.minimalAsset() != null) {
+            assetGuid = assetUpdateRequest.minimalAsset().asset_guid();
+        }
+        final String resolvedAssetGuid = assetGuid;
         try {
-            Optional<Asset> optAsset = getAsset(assetGuid);
+            Optional<Asset> optAsset = getAsset(resolvedAssetGuid);
             if (optAsset.isEmpty()) {
                 throw new IllegalArgumentException("Asset doesnt exist!");
             }
             Asset asset = optAsset.get();
-            asset.internal_status = InternalStatus.COMPLETED;
+            asset.internal_status = InternalStatus.ERDA_SYNCHRONISED;
             asset.error_message = null;
             asset.error_timestamp = null;
 
@@ -1007,7 +1009,7 @@ public class AssetService {
                 AssetRepository assetRepository = h.attach(AssetRepository.class);
                 assetRepository.updateAssetStatus(asset);
                 this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
-                        assetUpdateRequest.directory_id(), assetGuid, h);
+                        assetUpdateRequest.directory_id(), resolvedAssetGuid, h);
                 return h;
             });
 
