@@ -116,6 +116,17 @@ public class BulkUpdateAssetApi {
         return Response.ok(grouped).build();
     }
 
+    @POST
+    @Path("/funding/grouped")
+    @Operation(summary = "Get grouped funding for selected assets",
+            description = "Returns funding assignments aggregated across multiple assets.")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getGroupedFunding(List<String> assetGuids, @Context SecurityContext securityContext) {
+        List<Map<String, Object>> grouped = bulkUpdateService.getGroupedFunding(assetGuids, securityContext);
+        return Response.ok(grouped).build();
+    }
+
 
     @PATCH
     @Path("/")

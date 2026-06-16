@@ -18,15 +18,11 @@ export class DigitiserListComponent {
   @Input() excludedUsernames: string[] = [];
   @Input() optionsId = 'digitiser-options';
   @Input() emptyText = 'No available digitisers found';
-  @Input() set userGroup(group: string) {
-    this.userGroupSubject.next(group);
-  }
 
   private readonly overlayOpenSubject = new BehaviorSubject(false);
   readonly overlayOpen$ = this.overlayOpenSubject.asObservable();
   private readonly activeDigitiserIndexSubject = new BehaviorSubject(-1);
   readonly activeDigitiserIndex$ = this.activeDigitiserIndexSubject.asObservable();
-  private readonly userGroupSubject = new BehaviorSubject('digitiser');
   readonly search = new FormControl<string>('', {nonNullable: true});
   readonly keycloakUsers$ = this.search.valueChanges.pipe(startWith(''));
   readonly filteredKeycloakUsers$ = this.keycloakUserService.getFilteredKeycloakUsers(this.keycloakUsers$);

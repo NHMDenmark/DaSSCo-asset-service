@@ -6,6 +6,9 @@ import java.util.List;
 
 public class AssetGroup {
 
+    @Schema(description = "Asset Group ID", example = "42")
+    public Integer group_id;
+
     @Schema(description = "Asset Group Name", example = "Butterflies")
     public String group_name;
     @Schema (description = "List of assets in the group", example = "[\"Asset_1\", \"Asset_2\"]")

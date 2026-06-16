@@ -2,7 +2,7 @@
   width: min(560px, 100%);
 
   .dialog-header {
-    padding: 1.5rem 1.5rem 0.75rem;
+    padding: 1.5rem 1.5rem 1rem;
     border-bottom: 1px solid #eceff1;
 
     h1 {
@@ -25,7 +25,7 @@
   .dialog-content {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
     max-height: none;
     padding: 1.25rem 1.5rem 0.5rem;
     overflow: visible;
@@ -57,22 +57,10 @@
     }
   }
 
-  section {
-    padding: 1rem;
-
-    h2 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #263238;
-    }
-
-    p {
-      margin: 0.25rem 0 0;
-      color: #607d8b;
-      font-size: 0.875rem;
-      line-height: 1.4;
-    }
+  .field-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   mat-form-field {

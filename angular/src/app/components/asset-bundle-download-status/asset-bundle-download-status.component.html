@@ -26,7 +26,10 @@
 
       <div>
         <h2>{{ download.status }}</h2>
-        <p *ngIf="download.status === 'FAILED' || download.status === 'CANCELLED'">{{ download.message }}</p>
+        <p>{{ download.message }}</p>
+        <p *ngIf="download.status === 'PREPARING' && download.totalAssets > 0">
+          {{ download.processedAssets }} / {{ download.totalAssets }} assets processed
+        </p>
       </div>
     </div>
 

@@ -1,7 +1,7 @@
-import {Component, inject, OnDestroy} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {AssetGroupService} from '../../services/asset-group.service';
 import {AssetGroup, DasscoError} from '../../types/types';
-import {combineLatest, filter, map, startWith, Subject, switchMap, take} from 'rxjs';
+import {combineLatest, filter, map, startWith, switchMap, take} from 'rxjs';
 import {MatTableDataSource} from '@angular/material/table';
 import {isNotUndefined} from '@northtech/ginnungagap';
 import {animate, state, style, transition, trigger} from '@angular/animations';
@@ -17,6 +17,7 @@ import {DetailedViewService} from '../../services/detailed-view.service';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {KeycloakUserFrontend} from '../../types/keycloak-user-frontend';
 import {AssetBundleDownloadService} from '../../services/asset-bundle-download.service';
+import {AssetGroupDialogComponent} from '../dialogs/asset-group-dialog/asset-group-dialog.component';
 
 @Component({
   selector: 'dassco-asset-groups',
@@ -30,7 +31,7 @@ import {AssetBundleDownloadService} from '../../services/asset-bundle-download.s
     ])
   ]
 })
-export class AssetGroupsComponent implements OnDestroy {
+export class AssetGroupsComponent {
   private readonly queryToOtherPagesService = inject(QueryToOtherPages);
   private readonly assetGroupService = inject(AssetGroupService);
   private readonly router = inject(Router);
@@ -39,7 +40,6 @@ export class AssetGroupsComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly detailedViewService = inject(DetailedViewService);
   private readonly assetBundleDownloadService = inject(AssetBundleDownloadService);
-  private readonly destroy = new Subject<void>();
   expandedElement: AssetGroup | undefined;
   dataSource = new MatTableDataSource<AssetGroup>();
   displayedColumns = ['select', 'group_name', 'assets_count'];
@@ -114,6 +114,11 @@ export class AssetGroupsComponent implements OnDestroy {
       .pipe(switchMap((username) => this.assetGroupService.bulkAuditAssets(selectedAssets, username)))
       .subscribe({
         next: (results) => {
+          if (this.getSnackBarErrorMessage(results)) {
+            this.openSnackBar(results, 'Error auditing assets');
+            return;
+          }
+
           if (results) {
             const successCount = Object.values(results).filter((v) => v === 'Success').length;
             const failCount = selectedAssets.length - successCount;
@@ -199,10 +204,11 @@ export class AssetGroupsComponent implements OnDestroy {
 
   downloadZip(assets: MatListOption[]) {
     const selectedAssets: string[] = assets.map((option) => option.value);
-    this.assetBundleDownloadService.startBundleDownload(selectedAssets, {
-      access: 'internal',
-      cancel$: this.destroy
-    });
+    this.startZipDownload(selectedAssets);
+  }
+
+  downloadGroupZip(group: AssetGroup) {
+    this.startZipDownload(group.assets ?? []);
   }
 
   isZipDownloadPreparing(assets: MatListOption[]) {
@@ -210,9 +216,12 @@ export class AssetGroupsComponent implements OnDestroy {
     return this.assetBundleDownloadService.isBundleInProgress(selectedAssets, 'internal');
   }
 
-  ngOnDestroy(): void {
-    this.destroy.next();
-    this.destroy.complete();
+  isGroupZipDownloadPreparing(group: AssetGroup) {
+    return this.assetBundleDownloadService.isBundleInProgress(group.assets ?? [], 'internal');
+  }
+
+  private startZipDownload(assetGuids: string[]) {
+    this.assetBundleDownloadService.startBundleDownload(assetGuids, {access: 'internal'});
   }
 
   revokeAccess(users: MatListOption[], group: AssetGroup) {
@@ -274,26 +283,102 @@ export class AssetGroupsComponent implements OnDestroy {
     this.router.navigate(['/detailed-view/' + assetGuid]);
   }
 
+  createGroup() {
+    const dialogRef = this.dialog.open(AssetGroupDialogComponent, {
+      width: '500px',
+      data: {
+        action: 'create-group'
+      }
+    });
+
+    dialogRef
+      .afterClosed()
+      .pipe(
+        filter(isNotUndefined),
+        switchMap((group: {group: AssetGroup; new: boolean}) => this.assetGroupService.newGroup(group.group)),
+        take(1)
+      )
+      .subscribe({
+        next: (response) => {
+          if ((response as AssetGroup | undefined)?.group_name) {
+            const createdGroup = response as AssetGroup;
+            createdGroup.isCreator = true;
+            this.dataSource.data = [...this.dataSource.data, createdGroup];
+            this.openSnackBar(response, `The group "${createdGroup.group_name}" has been created.`);
+            return;
+          }
+
+          this.openSnackBar(response, "Couldn't create group");
+        },
+        error: (error) => this.openSnackBar(error, "Couldn't create group")
+      });
+  }
+
   deleteGroups() {
     if (this.groupSelection.selected) {
-      const groupNames = this.groupSelection.selected.map((gs) => gs.group_name).filter((g) => isNotUndefined(g));
-      if (groupNames.length === 0) return;
+      const groupsToDelete = this.groupSelection.selected
+        .map((gs) => gs.group_id)
+        .filter((id): id is number => id !== undefined);
+      if (groupsToDelete.length === 0) return;
+
+      const deletedGroupNames = this.groupSelection.selected
+        .map((gs) => gs.group_name)
+        .filter(isNotUndefined);
+
       this.assetGroupService
-        .deleteGroups(groupNames as string[])
+        .deleteGroups(groupsToDelete)
         .pipe(take(1))
         .subscribe({
-          next: (success) => {
+          next: (response) => {
+            if (this.getSnackBarErrorMessage(response)) {
+              this.openSnackBar(response, "Couldn't delete groups");
+              return;
+            }
+
             this.groupSelection.clear();
-            this.dataSource.data = [...this.dataSource.data.filter((ag) => !groupNames.includes(ag.group_name ?? ''))];
-            this.openSnackBar(success, `${groupNames.length} group(s) deleted`);
+            this.dataSource.data = [
+              ...this.dataSource.data.filter((ag) => !groupsToDelete.includes(ag.group_id as number))
+            ];
+            this.openSnackBar(response, `${deletedGroupNames.length} group(s) deleted`);
           },
-          error: () => this.openSnackBar(undefined, "Couldn't delete groups")
+          error: (error) => this.openSnackBar(error, "Couldn't delete groups")
         });
     }
   }
 
+  private getSnackBarErrorMessage(error: unknown): string | undefined {
+    if (!error) return undefined;
+    if (typeof error === 'string') return error;
+
+    const candidate = error as {
+      errorMessage?: string;
+      body?: string;
+      message?: string;
+      error?: any;
+    };
+
+    if (candidate.errorMessage) return candidate.errorMessage;
+    if (candidate.body) return candidate.body;
+    if (candidate.message) return candidate.message;
+
+    if (candidate.error) {
+      if (typeof candidate.error === 'string') return candidate.error;
+
+      const nested = candidate.error as {errorMessage?: string; body?: string; message?: string};
+      if (nested.errorMessage) return nested.errorMessage;
+      if (nested.body) return nested.body;
+      if (nested.message) return nested.message;
+    }
+
+    return undefined;
+  }
+
   openSnackBar(object: any | undefined, success: string) {
-    if (object) {
+    const errorMessage = this.getSnackBarErrorMessage(object);
+
+    if (errorMessage) {
+      this._snackBar.open(errorMessage, 'OK', {duration: 3000});
+    } else if (object) {
       this._snackBar.open(success, 'OK', {duration: 3000});
     } else {
       this._snackBar.open('An error occurred. Try again.', 'OK', {duration: 3000});

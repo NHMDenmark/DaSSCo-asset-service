@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {catchError, Observable, of, switchMap} from 'rxjs';
-import {HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {AssetGroup, DasscoError} from '../types/types';
 import {KeycloakUserFrontend} from '../types/keycloak-user-frontend';
 import {AuthService} from './auth.service';
@@ -46,13 +46,10 @@ export class AssetGroupService {
     );
   }
 
-  getKeyCloakUsers(search: string | undefined = '') {
+  getKeyCloakUsers() {
     return this.authService.getAccessToken()
       .pipe(
         switchMap((token) => this.http.get<KeycloakUserFrontend[]>(this.baseUrl + '/keycloak/users', {
-          params: {
-            search
-          },
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -90,28 +87,29 @@ export class AssetGroupService {
     );
   }
 
-  deleteGroup(groupName: string | undefined): Observable<any | undefined> {
-    return this.authService.getAccessToken().pipe(
-      switchMap((token) => this.http
-          .delete(`${this.baseUrl}/deletegroup/${groupName}`, {headers: {'Authorization': 'Bearer ' + token}})
-          .pipe(catchError(this.handleError(`get ${this.baseUrl}/deletegroup/${groupName}`, undefined))))
-    );
-  }
-
-  deleteGroups(groupNames: string[]) {
+  deleteGroup(groupId: number | undefined): Observable<boolean | DasscoError | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
-          .delete(`${this.baseUrl}/deletegroups`, {
-            headers: {'Authorization': 'Bearer ' + token},
-            params: new HttpParams().set('groups', groupNames.join(''))
-          })
-          .pipe(catchError(this.handleError(`get ${this.baseUrl}/deletegroup/${groupNames.join(',')}`, undefined)))
+          .delete<boolean>(`${this.baseUrl}/${groupId}`, {headers: {'Authorization': 'Bearer ' + token}})
+          .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError)))
       )
     );
   }
 
-  bulkAuditAssets(assetGuids: string[], user: string): Observable<{[key: string]: string} | undefined> {
+  deleteGroups(groupIds: number[]): Observable<boolean | DasscoError | undefined> {
+    return this.authService.getAccessToken().pipe(
+      switchMap((token) =>
+        this.http
+          .post<boolean>(`${this.baseUrl}/bulk-delete`, groupIds, {
+            headers: {'Authorization': 'Bearer ' + token}
+          })
+          .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError)))
+      )
+    );
+  }
+
+  bulkAuditAssets(assetGuids: string[], user: string): Observable<{[key: string]: string} | DasscoError | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) =>
         this.http
@@ -122,7 +120,7 @@ export class AssetGroupService {
               headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
             }
           )
-          .pipe(catchError(this.handleError('bulk audit assets', undefined)))
+          .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError)))
       )
     );
   }

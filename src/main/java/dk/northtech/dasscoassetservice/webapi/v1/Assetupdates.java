@@ -198,7 +198,7 @@ public class Assetupdates {
             "The asset cannot be audited by the same person that digitized it.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER, SecurityRoles.USER })
     @ApiResponse(responseCode = "204", description = "No Content")
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public void auditAsset(@PathParam("assetGuid") String assetGuid, Audit audit,
@@ -214,7 +214,7 @@ public class Assetupdates {
             "Assets must be complete before auditing and cannot be audited by the same person who digitized them.")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(APPLICATION_JSON)
-    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER })
+    @RolesAllowed({ SecurityRoles.ADMIN, SecurityRoles.SERVICE, SecurityRoles.DEVELOPER, SecurityRoles.USER })
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = Map.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
     public Map<String, String> bulkAuditAssets(

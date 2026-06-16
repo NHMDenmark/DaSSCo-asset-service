@@ -47,7 +47,6 @@ import {MatMenuModule} from '@angular/material/menu';
 import {MatSortModule} from '@angular/material/sort';
 import {AssetGroupDialogComponent} from './components/dialogs/asset-group-dialog/asset-group-dialog.component';
 import {AssetGroupsComponent} from './components/asset-groups/asset-groups.component';
-import {NewGroupDialogComponent} from './components/dialogs/new-group-dialog/new-group-dialog.component';
 import {IllegalAssetGroupDialogComponent} from './components/dialogs/illegal-asset-group-dialog/illegal-asset-group-dialog.component';
 import {NgOptimizedImage} from '@angular/common';
 import {MatGridListModule} from '@angular/material/grid-list';
@@ -61,9 +60,7 @@ import {LinkTrimPipe} from './pipes/link-trim.pipe';
 import {MatBadgeModule} from '@angular/material/badge';
 import {EventHistoryComponent} from './components/event-history/event-history.component';
 import {OverlayModule} from '@angular/cdk/overlay';
-import {
-  AssetBundleDownloadStatusComponent
-} from './components/asset-bundle-download-status/asset-bundle-download-status.component';
+import {AssetBundleDownloadStatusComponent} from './components/asset-bundle-download-status/asset-bundle-download-status.component';
 import {DigitiserListComponent} from './components/digitiser-list/digitiser-list.component';
 import {AuthService} from './services/auth.service';
 
@@ -93,7 +90,6 @@ function initializeAuthentication(authService: AuthService) {
     DetailedViewComponent,
     AssetGroupDialogComponent,
     AssetGroupsComponent,
-    NewGroupDialogComponent,
     IllegalAssetGroupDialogComponent,
     EventHistoryComponent,
     SafeUrlPipe,
