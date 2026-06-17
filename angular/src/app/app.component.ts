@@ -1,8 +1,8 @@
 import {Component, inject} from '@angular/core';
 import {AuthService} from './services/auth.service';
-import {Router} from '@angular/router';
-import {ReplaySubject} from 'rxjs';
-import {DasscoHomepage} from './utility';
+import {NavigationEnd, Router} from '@angular/router';
+import {filter, ReplaySubject} from 'rxjs';
+import {DasscoHomepage, WikiPageUrl} from './utility';
 
 @Component({
   selector: 'dassco-root',
@@ -14,13 +14,17 @@ export class AppComponent {
   authService = inject(AuthService);
   private router = inject(Router);
   dasscoHomepage = inject(DasscoHomepage);
+  wikiPageUrl = inject(WikiPageUrl);
 
   constructor() {
-    this.setActiveRoute();
+    this.setActiveRoute(document.location.pathname);
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.setActiveRoute(event.urlAfterRedirects));
   }
 
-  setActiveRoute(): void {
-    const path: string | undefined = document.location.pathname.split('/')[2];
+  setActiveRoute(urlOrPath: string = document.location.pathname): void {
+    const path = this.getRouteSegments(urlOrPath)[0];
     switch (path) {
       case 'assets':
       case 'graphs':
@@ -35,6 +39,14 @@ export class AppComponent {
     }
   }
 
+  login(): void {
+    const assetGuid = this.getExternalDetailedViewAssetGuid(document.location.pathname);
+    if (assetGuid) {
+      sessionStorage.setItem('postLoginUrl', `/detailed-view/${assetGuid}`);
+    }
+    this.authService.login();
+  }
+
   navigateToSite(location: string): void {
     this.router.navigate([location]).then((r) => {
       if (r) {
@@ -42,5 +54,22 @@ export class AppComponent {
         history.replaceState({}, '', location);
       }
     });
+  }
+
+  private getExternalDetailedViewAssetGuid(urlOrPath: string): string | undefined {
+    const segments = this.getRouteSegments(urlOrPath);
+    if (segments[0] !== 'extern' || segments[1] !== 'detailed-view') {
+      return undefined;
+    }
+    return segments[2];
+  }
+
+  private getRouteSegments(urlOrPath: string): string[] {
+    const pathname = urlOrPath.split(/[?#]/)[0];
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments[0] === 'ars') {
+      return segments.slice(1);
+    }
+    return segments;
   }
 }

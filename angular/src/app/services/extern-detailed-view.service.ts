@@ -1,8 +1,12 @@
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
 import {inject, Injectable} from '@angular/core';
 import {catchError, map, Observable, of} from 'rxjs';
 import {PublicAssetMetadata} from 'src/app/types/types';
 import {AssetService, FileProxy} from 'src/app/utility';
+
+export type ExternalAssetMetadataState =
+  | {status: 'visible'; asset: PublicAssetMetadata}
+  | {status: 'not-found' | 'forbidden' | 'error'; asset?: undefined};
 
 @Injectable({
   providedIn: 'root'
@@ -12,10 +16,13 @@ export class ExternDetailedViewService {
   private url = inject(AssetService);
   private proxyUrl = inject(FileProxy);
 
-  getAssetMetaData(assetGuid: string) {
+  getAssetMetaData(assetGuid: string): Observable<ExternalAssetMetadataState> {
     return this.http
       .get<PublicAssetMetadata>(`${this.url}/api/extern/metadata/${assetGuid}`)
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        map((asset) => ({status: 'visible', asset}) as ExternalAssetMetadataState),
+        catchError((error: HttpErrorResponse) => of(this.toAssetMetadataState(error)))
+      );
   }
 
   getAssetFileList(assetGuid?: string) {
@@ -53,7 +60,7 @@ export class ExternDetailedViewService {
   }
 
   downloadMetadataCsv(assetGuid: string): Observable<Blob> {
-    const url = `${this.url}api/extern/metadata/${assetGuid}/csv`;
+    const url = `${this.url}/api/extern/metadata/${assetGuid}/csv`;
     const headers = new HttpHeaders({Accept: 'text/csv'});
 
     return this.http.get(url, {
@@ -94,5 +101,15 @@ export class ExternDetailedViewService {
       console.error(operation + ' - ' + JSON.stringify(error));
       return of(result as T);
     };
+  }
+
+  private toAssetMetadataState(error: HttpErrorResponse): ExternalAssetMetadataState {
+    if (error.status === 404) {
+      return {status: 'not-found'};
+    }
+    if (error.status === 403) {
+      return {status: 'forbidden'};
+    }
+    return {status: 'error'};
   }
 }
