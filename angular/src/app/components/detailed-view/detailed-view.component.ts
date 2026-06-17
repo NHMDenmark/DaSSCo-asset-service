@@ -1,12 +1,12 @@
 import {Component, ElementRef, inject, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {DetailedViewService} from '../../services/detailed-view.service';
+import {AssetMetadataState, DetailedViewService} from '../../services/detailed-view.service';
 import {DomSanitizer, SafeUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Params, Router} from '@angular/router';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {Asset, ExternalPublisher, Issue} from '../../types/types';
 import {QueryToOtherPages} from '../../services/query-to-other-pages.service';
 import {BehaviorSubject, combineLatest, EMPTY, filter, map, Subject, switchMap, take, takeUntil} from 'rxjs';
-import {DatePipe} from '@angular/common';
+import {DatePipe, Location} from '@angular/common';
 import {WikiPageUrl} from '../../utility';
 import {MatDialog} from '@angular/material/dialog';
 import {IssueViewerComponent} from '../issue-viewer/issue-viewer.component';
@@ -29,12 +29,14 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
   private dialog = inject(MatDialog);
   private cdkDialog = inject(Dialog);
   private router = inject(Router);
+  private location = inject(Location);
   private queryToDetailedViewService = inject(QueryToOtherPages);
   private assetBundleDownloadService = inject(AssetBundleDownloadService);
   private readonly destroy = new Subject<void>();
   @ViewChild('assetMetadata') metadataContainer?: ElementRef<HTMLDivElement>;
 
   dataLoaded = false;
+  assetLoadStatus: AssetMetadataState['status'] = 'not-found';
   datePipe = inject(DatePipe);
   wikiPageUrl = inject(WikiPageUrl);
 
@@ -90,25 +92,33 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
         filter((assetGuid) => assetGuid.length > 0),
         switchMap((assetGuid) => this.detailedViewService.getAssetMetadata(assetGuid))
       )
-      .subscribe((assetResponse) => {
-        if (assetResponse) {
-          this.assetSubject.next(assetResponse);
-          this.dataLoaded = true;
-          const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
-          this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
-          this.fileFormats = assetResponse?.file_formats?.map((file_format) => file_format).join(', ');
-          this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
-          this.tags = Object.entries(assetResponse?.tags ?? {})
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(', ');
-          this.events = assetResponse.events?.map(
-            (event) =>
-              `Event: ${event.event}, Timestamp: ${this.datePipe.transform(
-                event?.timestamp?.toString(),
-                'dd/MM-yyyy HH:mm'
-              )}`
-          );
+      .subscribe((assetState) => {
+        this.dataLoaded = true;
+        this.assetLoadStatus = assetState.status;
+
+        if (assetState.status !== 'visible') {
+          this.assetSubject.next(undefined);
+          this.assetFiles.next([]);
+          this.thumbnailUrl = undefined;
+          return;
         }
+
+        const assetResponse = assetState.asset;
+        this.assetSubject.next(assetResponse);
+        const specimen = (assetResponse?.asset_specimen ?? []).flatMap((a) => a?.specimen ?? []);
+        this.specimenBarcodes = specimen.map((s) => s.barcode).join(', ');
+        this.fileFormats = assetResponse?.file_formats?.map((fileFormat) => fileFormat).join(', ');
+        this.restrictedAccess = assetResponse?.restricted_access?.map((type) => type).join(', ');
+        this.tags = Object.entries(assetResponse?.tags ?? {})
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ');
+        this.events = assetResponse.events?.map(
+          (event) =>
+            `Event: ${event.event}, Timestamp: ${this.datePipe.transform(
+              event?.timestamp?.toString(),
+              'dd/MM-yyyy HH:mm'
+            )}`
+        );
       });
 
     this.asset$
@@ -187,6 +197,14 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
     });
     this.assetList.next(this.queryToDetailedViewService.getAssets());
     this.router.navigate(['/detailed-view', assetGuid]);
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  goToQueries(): void {
+    this.router.navigate(['/queries']);
   }
 
   downloadCsv() {

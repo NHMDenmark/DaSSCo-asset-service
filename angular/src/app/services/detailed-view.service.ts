@@ -1,9 +1,13 @@
 import {inject, Injectable} from '@angular/core';
-import {catchError, Observable, of, switchMap, throwError} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
+import {catchError, map, Observable, of, switchMap, throwError} from 'rxjs';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {FileProxy} from '../utility';
 import {Asset} from '../types/types';
 import {AuthService} from './auth.service';
+
+export type AssetMetadataState =
+  | {status: 'visible', asset: Asset}
+  | {status: 'not-found' | 'forbidden' | 'error', asset?: undefined};
 
 @Injectable({
   providedIn: 'root'
@@ -20,14 +24,19 @@ export class DetailedViewService {
   private tempFiles = this.proxyUrl + '/file_proxy/api/assetfiles/getTempFile';
   private deleteTempFolder = this.proxyUrl + '/file_proxy/api/assetfiles/deleteTempFolder';
 
-  getAssetMetadata(assetGuid: string): Observable<Asset | undefined> {
+  getAssetMetadata(assetGuid: string): Observable<AssetMetadataState> {
     return this.authService
       .getAccessToken()
       .pipe(
         switchMap((token) =>
           this.http
-            .get<Asset>(`${this.getMetadataUrl}${assetGuid}`, {headers: {'Authorization': 'Bearer ' + token}})
-            .pipe(catchError(this.handleError(`get ${this.getMetadataUrl}${assetGuid}`, undefined)))
+            .get<Asset | null>(`${this.getMetadataUrl}${assetGuid}`, {
+              headers: {'Authorization': 'Bearer ' + token}
+            })
+            .pipe(
+              map((asset): AssetMetadataState => (asset ? {status: 'visible', asset} : {status: 'not-found'})),
+              catchError((error: HttpErrorResponse) => of(this.toAssetMetadataState(error)))
+            )
         )
       );
   }
@@ -122,5 +131,18 @@ export class DetailedViewService {
       console.error(operation + ' - ' + JSON.stringify(error));
       return of(result as T);
     };
+  }
+
+  private toAssetMetadataState(error: HttpErrorResponse): AssetMetadataState {
+    console.error(error);
+    console.error(`get ${this.getMetadataUrl} - ${JSON.stringify(error)}`);
+
+    if (error.status === 403) {
+      return {status: 'forbidden'};
+    }
+    if (error.status === 404) {
+      return {status: 'not-found'};
+    }
+    return {status: 'error'};
   }
 }

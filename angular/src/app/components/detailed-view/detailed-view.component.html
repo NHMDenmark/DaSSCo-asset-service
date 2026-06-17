@@ -1,5 +1,14 @@
 <div *ngIf="dataLoaded; else loading">
-  <div *ngIf="asset$ | async as asset">
+  <div *ngIf="assetLoadStatus === 'forbidden'; else assetContent" class="external-empty-state">
+    <span>You don't have access to this asset.</span>
+    <div class="empty-state-actions">
+      <button type="button" mat-stroked-button (click)="goBack()">Go back</button>
+      <button type="button" mat-raised-button color="primary" (click)="goToQueries()">Go to queries</button>
+    </div>
+  </div>
+
+  <ng-template #assetContent>
+    <div *ngIf="asset$ | async as asset">
     <div class="asset-thumbnail">
       <ng-container *ngIf="thumbnailUrl; else noThumbnail">
         <img (click)="openAssetThumbnailModal()" [src]="thumbnailUrl" class="zoom-pointer" alt="Thumbnail" />
@@ -578,11 +587,15 @@
       </button>
     </div>
   </div>
-  <div *ngIf="(asset$ | async) === undefined">
-    <p>No asset has been found with this asset_guid.</p>
-  </div>
+    <div *ngIf="(asset$ | async) === undefined" class="external-empty-state">
+      <span>No asset has been found with this asset_guid.</span>
+    </div>
+  </ng-template>
 </div>
 
 <ng-template #loading>
-  <div class="loading-spinner">Loading...</div>
+  <div class="external-empty-state">
+    <mat-spinner [diameter]="40"></mat-spinner>
+    <span>Checking access...</span>
+  </div>
 </ng-template>
