@@ -432,6 +432,28 @@ export class AssetBundleDownloadService {
   }
 
   private getErrorMessage(error: any, fallback: string): string {
-    return error?.error?.message ?? error?.error ?? error?.message ?? fallback;
+    const errorBody = error?.error;
+    if (errorBody?.totalSizeBytes != null && errorBody?.maxSizeBytes != null) {
+      return `Selected bundle is ${this.formatBytes(Number(errorBody.totalSizeBytes))}. Maximum allowed is ${this.formatBytes(
+        Number(errorBody.maxSizeBytes)
+      )}. Select fewer assets.`;
+    }
+
+    return errorBody?.message ?? errorBody?.errorMessage ?? errorBody ?? error?.message ?? fallback;
+  }
+
+  private formatBytes(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes < 0) return '0 B';
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    let value = bytes;
+    let unitIndex = 0;
+    while (value >= 1000 && unitIndex < units.length - 1) {
+      value /= 1000;
+      unitIndex++;
+    }
+
+    const maximumFractionDigits = unitIndex === 0 || value >= 10 ? 0 : 1;
+    return `${new Intl.NumberFormat(undefined, {maximumFractionDigits}).format(value)} ${units[unitIndex]}`;
   }
 }

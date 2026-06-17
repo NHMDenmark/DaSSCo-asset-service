@@ -20,9 +20,9 @@
         [diameter]="24"
         [strokeWidth]="3"
         [matTooltip]="download.cancelling ? 'Cancelling download preparation' : ''"></mat-spinner>
-      <mat-icon *ngIf="download.status === 'READY'" color="primary">download_done</mat-icon>
-      <mat-icon *ngIf="download.status === 'FAILED'" color="warn">error</mat-icon>
-      <mat-icon *ngIf="download.status === 'CANCELLED'">info</mat-icon>
+      <mat-icon class="status-icon" *ngIf="download.status === 'READY'" color="primary">download_done</mat-icon>
+      <mat-icon class="status-icon" *ngIf="download.status === 'FAILED'" color="warn">error</mat-icon>
+      <mat-icon class="status-icon" *ngIf="download.status === 'CANCELLED'">info</mat-icon>
 
       <div>
         <h2>{{ download.status }}</h2>
