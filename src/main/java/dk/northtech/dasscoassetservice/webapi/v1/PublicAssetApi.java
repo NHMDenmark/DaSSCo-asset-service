@@ -2,8 +2,13 @@ package dk.northtech.dasscoassetservice.webapi.v1;
 
 
 import dk.northtech.dasscoassetservice.domain.PublicAsset;
+import dk.northtech.dasscoassetservice.domain.Asset;
+import dk.northtech.dasscoassetservice.domain.User;
+import dk.northtech.dasscoassetservice.services.AssetService;
 import dk.northtech.dasscoassetservice.services.PublicAssetService;
+import dk.northtech.dasscoassetservice.services.RightsValidationService;
 import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoError;
+import dk.northtech.dasscoassetservice.webapi.exceptionmappers.DaSSCoErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -40,10 +45,14 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class PublicAssetApi {
 
     private final PublicAssetService publicAssetService;
+    private final AssetService assetService;
+    private final RightsValidationService rightsValidationService;
 
     @Inject
-    public PublicAssetApi(PublicAssetService publicAssetService) {
+    public PublicAssetApi(PublicAssetService publicAssetService, AssetService assetService, RightsValidationService rightsValidationService) {
         this.publicAssetService = publicAssetService;
+        this.assetService = assetService;
+        this.rightsValidationService = rightsValidationService;
     }
 
 
@@ -53,8 +62,14 @@ public class PublicAssetApi {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = PublicAsset.class)))
     @ApiResponse(responseCode = "400-599", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = DaSSCoError.class)))
-    public Optional<PublicAsset> getAssetMetadata(@PathParam("assetGuid") String asset_guid) {
-        return this.publicAssetService.getAsset(asset_guid);
+    public Response getAssetMetadata(@PathParam("assetGuid") String asset_guid) {
+        Response accessError = validateExternalReadAccess(asset_guid);
+        if (accessError != null) {
+            return accessError;
+        }
+        return this.publicAssetService.getAsset(asset_guid)
+                .map(asset -> Response.ok(asset).build())
+                .orElseGet(() -> notFound(asset_guid));
     }
 
     @GET
@@ -79,12 +94,14 @@ public class PublicAssetApi {
             @Parameter(description = "GUID of the asset", required = true)
             @PathParam("assetGuid") String assetGuid
     ) {
-        Optional<PublicAsset> assetOpt = this.publicAssetService.getAsset(assetGuid);
+        Response accessError = validateExternalReadAccess(assetGuid);
+        if (accessError != null) {
+            return accessError;
+        }
 
+        Optional<PublicAsset> assetOpt = this.publicAssetService.getAsset(assetGuid);
         if (assetOpt.isEmpty()) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Asset not found")
-                    .build();
+            return notFound(assetGuid);
         }
 
         PublicAsset asset = assetOpt.get();
@@ -156,6 +173,36 @@ public class PublicAssetApi {
                         HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"asset_" + assetGuid + ".csv\""
                 )
+                .build();
+    }
+
+    private Response validateExternalReadAccess(String assetGuid) {
+        Optional<Asset> assetOpt = assetService.getAsset(assetGuid);
+        if (assetOpt.isEmpty()) {
+            return notFound(assetGuid);
+        }
+
+        User anonymous = new User("anonymous");
+        if (!rightsValidationService.checkRightsAsset(anonymous, assetOpt.get(), false)) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new DaSSCoError(
+                            "1.0",
+                            DaSSCoErrorCode.FORBIDDEN,
+                            "This asset is not available for external viewing."
+                    ))
+                    .build();
+        }
+
+        return null;
+    }
+
+    private Response notFound(String assetGuid) {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(new DaSSCoError(
+                        "1.0",
+                        DaSSCoErrorCode.NOT_FOUND,
+                        "Asset not found: " + assetGuid
+                ))
                 .build();
     }
 

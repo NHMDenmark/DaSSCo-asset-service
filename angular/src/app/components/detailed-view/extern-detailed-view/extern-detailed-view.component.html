@@ -3,7 +3,19 @@
     style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000"></mat-spinner>
 </ng-container>
 
-<ng-container *ngIf="assetMetaData$ | async as asset">
+<ng-container *ngIf="assetState$ | async as assetState">
+  <ng-container [ngSwitch]="assetState.status">
+    <div *ngSwitchCase="'not-found'" class="external-empty-state">The asset does not exist.</div>
+    <div *ngSwitchCase="'forbidden'" class="external-empty-state">
+      <span>This asset is not available for external viewing.</span>
+      <button mat-raised-button color="primary" (click)="loginToDetailedView(assetState.assetGuid)">
+        Log in to view asset
+      </button>
+    </div>
+    <div *ngSwitchCase="'error'" class="external-empty-state">The asset could not be loaded.</div>
+
+    <ng-container *ngSwitchCase="'visible'">
+      <ng-container *ngIf="assetState.asset as asset">
   <a
     [href]="wikiPageUrl"
     target="_blank"
@@ -360,4 +372,7 @@
       </div>
     </button>
   </div>
+</ng-container>
+    </ng-container>
+  </ng-container>
 </ng-container>
