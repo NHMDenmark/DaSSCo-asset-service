@@ -114,7 +114,7 @@ export class AssetBundleDownloadService {
           return;
         }
 
-        const downloadUrl = this.getDownloadUrl(response, access);
+        const downloadUrl = this.getDownloadUrl(response.body.jobId, access);
         const download = this.toDownload(response.body, assetKey, dedupedAssetGuids, access, downloadUrl);
         this.upsertDownload(download);
         this.pollUntilComplete(download, options.cancel$);
@@ -379,17 +379,7 @@ export class AssetBundleDownloadService {
     this.downloadsSubject.next(this.downloadsSubject.value.filter((current) => current.id !== downloadId));
   }
 
-  private getDownloadUrl(response: HttpResponse<AssetBundleJobResponse>, access: AssetBundleDownloadAccess): string {
-    const linkHeader = response.headers.get('Link');
-    const downloadUrl = linkHeader
-      ?.split(',')
-      .map((link) => link.trim())
-      .find((link) => link.includes('rel="download"'))
-      ?.match(/<([^>]+)>/)?.[1];
-
-    if (downloadUrl) return downloadUrl;
-
-    const jobId = response.body?.jobId;
+  private getDownloadUrl(jobId: string, access: AssetBundleDownloadAccess): string {
     return `${this.getJobsUrl(access)}/${jobId}/download`;
   }
 
