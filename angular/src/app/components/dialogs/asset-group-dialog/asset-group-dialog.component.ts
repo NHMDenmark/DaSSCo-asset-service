@@ -37,6 +37,7 @@ export class AssetGroupDialogComponent {
   private readonly action: AssetGroupDialogAction = this.data?.action ?? 'add-assets';
 
   groupName: string | undefined;
+  selectedExistingGroup: AssetGroupDialogGroup | undefined;
   mode: AssetGroupDialogMode = this.isCreateGroupAction() ? 'new' : 'existing';
   new = this.isCreateGroupAction();
 
@@ -67,9 +68,10 @@ export class AssetGroupDialogComponent {
     this.dialogRef.close(this.buildDialogResult());
   }
 
-  selectExistingGroup(): void {
+  selectExistingGroup(group: AssetGroupDialogGroup): void {
     if (this.isCreateGroupAction()) return;
 
+    this.selectedExistingGroup = group;
     this.mode = 'existing';
     this.new = false;
   }
@@ -80,17 +82,20 @@ export class AssetGroupDialogComponent {
     this.mode = mode;
     this.new = mode === 'new';
     this.groupName = undefined;
+    this.selectedExistingGroup = undefined;
     this.digitiserFormControl.reset(null);
   }
 
   canSave(): boolean {
+    if (!this.new) return this.selectedExistingGroup?.group_id !== undefined;
+
     return !!this.groupName?.trim();
   }
 
   private buildDialogResult(): AssetGroupDialogResult {
     const group: AssetGroupDialogGroup = {
-      group_id: undefined,
-      group_name: this.groupName,
+      group_id: this.new ? undefined : this.selectedExistingGroup?.group_id,
+      group_name: this.new ? this.groupName : this.selectedExistingGroup?.group_name,
       assets: this.isCreateGroupAction() ? [] : undefined,
       hasAccess: this.getSelectedDigitisers(),
       keycloakUsers: this.getSelectedKeycloakUsers(),

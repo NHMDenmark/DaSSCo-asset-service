@@ -76,7 +76,7 @@ public class AssetGroupService {
                 }
             }
             if (!assetsWithoutPermission.isEmpty()) {
-                throw new DasscoIllegalActionException("FORBIDDEN, User does not have write access to all assets.", assetsWithoutPermission.toString());
+                throw new DasscoIllegalActionException("You need write permission for every asset before sharing this asset group.", assetsWithoutPermission.toString());
             }
 
             List<String> usernames = resolveAccessUsernames(assetGroup.hasAccess, assetGroup.keycloakUsers);
@@ -382,7 +382,7 @@ public class AssetGroupService {
                 }
             }
             if (!forbiddenAssets.isEmpty()) {
-                throw new DasscoIllegalActionException("FORBIDDEN. User cannot grant access to this asset group as it lacks proper WRITE access.", forbiddenAssets.toString());
+                throw new DasscoIllegalActionException("You need write permission for every asset in this group before granting access.", forbiddenAssets.toString());
             }
         }
 
@@ -426,7 +426,7 @@ public class AssetGroupService {
                 }
             }
             if (!forbiddenAssets.isEmpty()) {
-                throw new DasscoIllegalActionException("FORBIDDEN. User cannot grant access to this asset group as it lacks proper WRITE access.", forbiddenAssets.toString());
+                throw new DasscoIllegalActionException("You need write permission for every asset in this group before granting access.", forbiddenAssets.toString());
             }
         }
 

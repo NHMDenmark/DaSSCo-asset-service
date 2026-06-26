@@ -34,12 +34,12 @@ export class AssetGroupService {
   }
 
   updateGroupAddAssets(
-    groupName: string | undefined,
+    groupId: number | undefined,
     assets: string[]
   ): Observable<AssetGroup | DasscoError | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
-          .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/addAssets`, assets, {
+          .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupId}/addAssets`, assets, {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError))))
@@ -57,33 +57,33 @@ export class AssetGroupService {
       );
   }
 
-  updateGroupRemoveAssets(groupName: string | undefined, assets: string[]): Observable<AssetGroup | undefined> {
+  updateGroupRemoveAssets(groupId: number | undefined, assets: string[]): Observable<AssetGroup | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
-          .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupName}/removeAssets`, assets, {
+          .put<AssetGroup>(`${this.baseUrl}/updategroup/${groupId}/removeAssets`, assets, {
             headers: {'Authorization': 'Bearer ' + token}
           })
-          .pipe(catchError(this.handleError(`get ${this.baseUrl}/updategroup/${groupName}/removeAssets`, undefined))))
+          .pipe(catchError(this.handleError(`get ${this.baseUrl}/updategroup/${groupId}/removeAssets`, undefined))))
     );
   }
 
-  grantAccess(groupName: string | undefined, users: KeycloakUserFrontend[]): Observable<AssetGroup | DasscoError | undefined> {
+  grantAccess(groupId: number | undefined, users: KeycloakUserFrontend[]): Observable<AssetGroup | DasscoError | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
-          .put<AssetGroup>(`${this.baseUrl}/keycloak/grantAccess/${groupName}`, users, {
+          .put<AssetGroup>(`${this.baseUrl}/keycloak/grantAccess/${groupId}`, users, {
             headers: {'Authorization': 'Bearer ' + token}
           })
           .pipe(catchError((error) => of((error as HttpErrorResponse).error as DasscoError))))
     );
   }
 
-  revokeAccess(groupName: string | undefined, users: string[]): Observable<AssetGroup | undefined> {
+  revokeAccess(groupId: number | undefined, users: string[]): Observable<AssetGroup | undefined> {
     return this.authService.getAccessToken().pipe(
       switchMap((token) => this.http
-          .put<AssetGroup>(`${this.baseUrl}/revokeAccess/${groupName}`, users, {
+          .put<AssetGroup>(`${this.baseUrl}/revokeAccess/${groupId}`, users, {
             headers: {'Authorization': 'Bearer ' + token}
           })
-          .pipe(catchError(this.handleError(`get ${this.baseUrl}/revokeAccess/${groupName}`, undefined))))
+          .pipe(catchError(this.handleError(`get ${this.baseUrl}/revokeAccess/${groupId}`, undefined))))
     );
   }
 

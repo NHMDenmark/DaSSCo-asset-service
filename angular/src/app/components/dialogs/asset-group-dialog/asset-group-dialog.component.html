@@ -26,8 +26,8 @@
     <section *ngIf="!isCreateGroupAction() && mode === 'existing'" class="field-stack">
       <mat-form-field appearance="outline">
         <mat-label>Groups</mat-label>
-        <mat-select [(ngModel)]="groupName" (selectionChange)="selectExistingGroup()">
-          <mat-option *ngFor="let group of ownAssetGroups$ | async" [value]="group.group_name">
+        <mat-select [value]="selectedExistingGroup" (selectionChange)="selectExistingGroup($event.value)">
+          <mat-option *ngFor="let group of ownAssetGroups$ | async" [value]="group">
             {{ group.group_name }}
           </mat-option>
         </mat-select>

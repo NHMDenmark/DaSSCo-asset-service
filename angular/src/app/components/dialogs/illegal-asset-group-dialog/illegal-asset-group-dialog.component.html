@@ -1,16 +1,26 @@
 <div class="container">
+  <h2 mat-dialog-title>Assets cannot be shared</h2>
+
   <div mat-dialog-content>
-    An error occurred as you're attempting to share assets you don't have write access to:
-    <ul *ngFor="let asset of assetList">
-      <li>{{asset}}</li>
+    <p *ngIf="data.removable; else blockedOnly">
+      You can only grant access to a group when you have write permission for every asset in it. You do not have
+      write permission for:
+    </p>
+
+    <ng-template #blockedOnly>
+      <p>This group action was blocked because you do not have permission for the following assets:</p>
+    </ng-template>
+
+    <ul>
+      <li *ngFor="let asset of assetList">{{ asset }}</li>
     </ul>
-    <div *ngIf="data.removable">
-      Would you like to remove these assets from the group?
-    </div>
+
+    <p *ngIf="data.removable">Remove these assets from the group and try granting access again?</p>
+    <p *ngIf="!data.removable">No changes were made. Remove these assets or ask for access, then try again.</p>
   </div>
 
   <div mat-dialog-actions>
-    <button mat-button (click)="cancel()">Cancel</button>
-    <button mat-stroked-button (click)="remove(data.removable ? assetList : undefined)">OK</button>
+    <button mat-button (click)="cancel()">{{ data.removable ? 'Keep group unchanged' : 'Close' }}</button>
+    <button *ngIf="data.removable" mat-stroked-button color="warn" (click)="remove(assetList)">Remove listed assets</button>
   </div>
 </div>

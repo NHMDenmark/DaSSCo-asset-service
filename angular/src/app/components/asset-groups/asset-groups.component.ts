@@ -84,6 +84,7 @@ export class AssetGroupsComponent {
       this.editing = false;
       this.downloadingCompleteAssets = false;
       this.auditing = false;
+      this.digitiserFormControl.reset(null);
     }
   }
 
@@ -92,6 +93,7 @@ export class AssetGroupsComponent {
     this.editing = false;
     this.downloadingCompleteAssets = false;
     this.auditing = false;
+    this.digitiserFormControl.reset(null);
   }
 
   editGroup() {
@@ -151,7 +153,7 @@ export class AssetGroupsComponent {
   }
 
   removeAssets(assets: string[], group: AssetGroup) {
-    this.assetGroupService.updateGroupRemoveAssets(group.group_name, assets).subscribe((updatedGroup) => {
+    this.assetGroupService.updateGroupRemoveAssets(group.group_id, assets).subscribe((updatedGroup) => {
       if (updatedGroup) {
         this.updateDataSourceGroup(group, updatedGroup, false);
       }
@@ -226,8 +228,7 @@ export class AssetGroupsComponent {
 
   revokeAccess(users: MatListOption[], group: AssetGroup) {
     const selectedUsers: string[] = users.map((option) => option.value);
-    console.log(selectedUsers);
-    this.assetGroupService.revokeAccess(group.group_name, selectedUsers).subscribe((updatedGroup) => {
+    this.assetGroupService.revokeAccess(group.group_id, selectedUsers).subscribe((updatedGroup) => {
       if (updatedGroup) {
         this.updateDataSourceGroup(group, updatedGroup, false);
       }
@@ -237,7 +238,7 @@ export class AssetGroupsComponent {
   newDigitiserAccess(group: AssetGroup) {
     const selectedUsers = this.digitiserFormControl.value;
     if (selectedUsers) {
-      this.assetGroupService.grantAccess(group.group_name, selectedUsers).subscribe((response) => {
+      this.assetGroupService.grantAccess(group.group_id, selectedUsers).subscribe((response) => {
         this.digitiserFormControl.reset(null);
         if ((response as DasscoError).errorCode) {
           const error = response as DasscoError;

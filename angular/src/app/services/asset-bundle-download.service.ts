@@ -55,7 +55,8 @@ export interface AssetBundleDownloadOptions {
 export class AssetBundleDownloadService {
   private readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
-  private readonly fileProxyRoot = this.trimTrailingSlash(inject(FileProxy));
+  private readonly fileProxyUrl = inject(FileProxy);
+  private readonly fileProxyRoot = this.trimTrailingSlash(this.fileProxyUrl);
   private readonly internalJobsUrl = this.joinFileProxyPath('/file_proxy/api/assetfiles/asset-bundles/jobs');
   private readonly externalJobsUrl = this.joinFileProxyPath('/file_proxy/api/assetfiles/asset-bundles/extern/jobs');
   private readonly downloadsSubject = new BehaviorSubject<AssetBundleDownload[]>([]);
@@ -122,7 +123,9 @@ export class AssetBundleDownloadService {
 
   isBundleInProgress(assetGuids: string[], access: AssetBundleDownloadAccess = 'internal'): boolean {
     const assetKey = this.getAssetKey(assetGuids, access);
-    return this.downloadsSubject.value.some((download) => download.assetKey === assetKey && download.status === 'PREPARING');
+    return this.downloadsSubject.value.some(
+      (download) => download.assetKey === assetKey && download.status === 'PREPARING'
+    );
   }
 
   dismiss(download: AssetBundleDownload): void {
@@ -179,7 +182,10 @@ export class AssetBundleDownloadService {
         takeUntil(stopPolling$),
         switchMap(() => this.getStatus(download.id)),
         catchError((error) => {
-          this.markFailed(download.assetKey, this.getErrorMessage(error, 'There has been an error preparing the ZIP file.'));
+          this.markFailed(
+            download.assetKey,
+            this.getErrorMessage(error, 'There has been an error preparing the ZIP file.')
+          );
           stopPolling$.next();
           return EMPTY;
         })
@@ -234,10 +240,15 @@ export class AssetBundleDownloadService {
 
   private downloadReadyBundle(download: AssetBundleDownload): void {
     this.getReadyBundle(download)
-      .pipe(catchError((error) => {
-        this.markFailed(download.assetKey, this.getErrorMessage(error, 'There has been an error downloading the ZIP file.'));
-        return EMPTY;
-      }))
+      .pipe(
+        catchError((error) => {
+          this.markFailed(
+            download.assetKey,
+            this.getErrorMessage(error, 'There has been an error downloading the ZIP file.')
+          );
+          return EMPTY;
+        })
+      )
       .subscribe((response) => {
         const blob = response.body;
         if (!blob) {
@@ -384,7 +395,10 @@ export class AssetBundleDownloadService {
 
   private getFilename(response: HttpResponse<Blob>): string | undefined {
     const disposition = response.headers.get('Content-Disposition');
-    return disposition?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i)?.slice(1).find(Boolean);
+    return disposition
+      ?.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i)
+      ?.slice(1)
+      .find(Boolean);
   }
 
   private triggerBrowserDownload(blob: Blob, filename: string): void {

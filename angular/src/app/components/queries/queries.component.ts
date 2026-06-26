@@ -427,7 +427,7 @@ export class QueriesComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         } else {
           this.assetGroupService
-            .updateGroupAddAssets(group.group.group_name, group.group.assets)
+            .updateGroupAddAssets(group.group.group_id, group.group.assets)
             .subscribe((response) => {
               if ((response as DasscoError).errorMessage) {
                 const error = response as DasscoError;
