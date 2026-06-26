@@ -5,8 +5,8 @@ import {
   catchError,
   EMPTY,
   finalize,
-  interval,
   Observable,
+  timer,
   of,
   Subject,
   Subscription,
@@ -18,7 +18,7 @@ import {FileProxy} from '../utility';
 import {AuthService} from './auth.service';
 
 export type AssetBundleJobStatus = 'PREPARING' | 'READY' | 'FAILED';
-export type AssetBundleDownloadStatus = AssetBundleJobStatus | 'CANCELLED';
+export type AssetBundleDownloadStatus = AssetBundleJobStatus | 'DOWNLOADING' | 'CANCELLED';
 
 export interface AssetBundleJobResponse {
   jobId: string;
@@ -117,6 +117,14 @@ export class AssetBundleDownloadService {
         const downloadUrl = this.getDownloadUrl(response.body.jobId, access);
         const download = this.toDownload(response.body, assetKey, dedupedAssetGuids, access, downloadUrl);
         this.upsertDownload(download);
+
+        if (download.status === 'READY') {
+          this.downloadReadyBundle(download);
+          return;
+        }
+
+        if (download.status === 'FAILED') return;
+
         this.pollUntilComplete(download, options.cancel$);
       });
   }
@@ -124,7 +132,11 @@ export class AssetBundleDownloadService {
   isBundleInProgress(assetGuids: string[], access: AssetBundleDownloadAccess = 'internal'): boolean {
     const assetKey = this.getAssetKey(assetGuids, access);
     return this.downloadsSubject.value.some(
-      (download) => download.assetKey === assetKey && download.status === 'PREPARING'
+      (download) =>
+        download.assetKey === assetKey
+        && (download.status === 'PREPARING'
+          || download.status === 'READY'
+          || download.status === 'DOWNLOADING')
     );
   }
 
@@ -177,7 +189,7 @@ export class AssetBundleDownloadService {
       this.removeDownload(download.id);
     });
 
-    const pollingSubscription = interval(3000)
+    const pollingSubscription = timer(0, 3000)
       .pipe(
         takeUntil(stopPolling$),
         switchMap(() => this.getStatus(download.id)),
@@ -239,6 +251,12 @@ export class AssetBundleDownloadService {
   }
 
   private downloadReadyBundle(download: AssetBundleDownload): void {
+    this.upsertDownload({
+      ...download,
+      status: 'DOWNLOADING',
+      message: 'Downloading ZIP file...'
+    });
+
     this.getReadyBundle(download)
       .pipe(
         catchError((error) => {
@@ -361,7 +379,13 @@ export class AssetBundleDownloadService {
     }
 
     const next = [...existing];
-    next[index] = {...next[index], ...download};
+    const previousDownload = next[index];
+    if (previousDownload.id !== download.id) {
+      this.pollingSubscriptions.get(previousDownload.id)?.unsubscribe();
+      this.pollingSubscriptions.delete(previousDownload.id);
+    }
+
+    next[index] = {...previousDownload, ...download};
     this.downloadsSubject.next(next);
   }
 
@@ -423,6 +447,7 @@ export class AssetBundleDownloadService {
     if (status === 'CANCELLED') return 'Download preparation no longer exists.';
     if (status === 'FAILED') return 'There has been an error preparing the ZIP file.';
     if (status === 'READY') return 'Download is ready.';
+    if (status === 'DOWNLOADING') return 'Downloading ZIP file...';
     return 'Preparing download from ERDA...';
   }
 

@@ -270,8 +270,7 @@ export class DetailedViewComponent implements OnInit, OnDestroy {
     const asset = this.assetSubject.getValue();
     if (!asset?.asset_guid) return;
     this.assetBundleDownloadService.startBundleDownload([asset.asset_guid], {
-      access: 'internal',
-      cancel$: this.destroy
+      access: 'internal'
     });
   }
 

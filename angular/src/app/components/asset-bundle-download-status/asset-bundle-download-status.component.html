@@ -16,7 +16,7 @@
 
     <div class="status-header">
       <mat-spinner
-        *ngIf="download.status === 'PREPARING'"
+        *ngIf="download.status === 'PREPARING' || download.status === 'DOWNLOADING'"
         [diameter]="24"
         [strokeWidth]="3"
         [matTooltip]="download.cancelling ? 'Cancelling download preparation' : ''"></mat-spinner>

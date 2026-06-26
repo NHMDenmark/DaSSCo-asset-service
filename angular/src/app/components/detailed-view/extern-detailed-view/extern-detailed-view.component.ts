@@ -1,6 +1,6 @@
-import {ChangeDetectionStrategy, Component, inject, OnDestroy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {BehaviorSubject, filter, finalize, map, shareReplay, Subject, switchMap, take, tap} from 'rxjs';
+import {BehaviorSubject, filter, finalize, map, shareReplay, switchMap, take, tap} from 'rxjs';
 import {
   ExternalAssetMetadataState,
   ExternDetailedViewService
@@ -22,14 +22,13 @@ type VisibleExternalAssetMetadataState = Extract<ExternalAssetViewState, {status
   templateUrl: './extern-detailed-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExternDetailedViewComponent implements OnDestroy {
+export class ExternDetailedViewComponent {
   private route = inject(ActivatedRoute);
   private sanitizer = inject(DomSanitizer);
   private cdkDialog = inject(Dialog);
   private assetBundleDownloadService = inject(AssetBundleDownloadService);
   private snackBar = inject(MatSnackBar);
   private authService = inject(AuthService);
-  private readonly destroy = new Subject<void>();
   wikiPageUrl = inject(WikiPageUrl);
   baseUrl = window.location.origin;
   externDetailedViewService = inject(ExternDetailedViewService);
@@ -126,19 +125,13 @@ export class ExternDetailedViewComponent implements OnDestroy {
     if (!assetGuid) return;
 
     this.assetBundleDownloadService.startBundleDownload([assetGuid], {
-      access: 'external',
-      cancel$: this.destroy
+      access: 'external'
     });
   }
 
   isBundleDownloadPreparing(assetGuid: string | undefined): boolean {
     if (!assetGuid) return false;
     return this.assetBundleDownloadService.isBundleInProgress([assetGuid], 'external');
-  }
-
-  ngOnDestroy(): void {
-    this.destroy.next();
-    this.destroy.complete();
   }
 
   openAssetThumbnailModal(thumbnailUrl: SafeUrl) {
