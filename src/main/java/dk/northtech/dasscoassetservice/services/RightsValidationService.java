@@ -47,11 +47,6 @@ public class RightsValidationService {
 
 
     public boolean checkRightsInstitution(User user, String institutionName, boolean write) {
-        Set<String> roles = user.roles;
-        //Default roles always have rights
-        if(checkAdminRoles(user)) {
-            return true;
-        }
         Set<String> allUserRoles = getUserRoles(user.roles);
         Optional<Institution> ifExists = institutionService.getIfExists(institutionName);
         if (ifExists.isEmpty()) {
@@ -104,42 +99,28 @@ public class RightsValidationService {
     }
 
     public boolean checkRightsSpecimen(User user, Specimen specimen, boolean write) {
-        if(checkAdminRoles(user)) {
-            return true;
-        }
         Set<String> allUserRoles = getUserRoles(user.roles);
         if(!checkObjectRoles(allUserRoles, specimen.role_restrictions(), write)){
-            System.out.println(allUserRoles);
-            System.out.println("hell oh" + specimen.role_restrictions());
             return false;
-        };
-        if(!write) {
-            // all may read
-            return true;
         }
         return checkRightsInstitution(user, specimen.institution(),specimen.collection(),write);
     }
 
     public boolean checkRightsAsset(User user, Asset asset, boolean write) {
-        if(checkAdminRoles(user)) {
-            return true;
-        }
         Set<String> allUserRoles = getUserRoles(user.roles);
         if(!checkObjectRoles(allUserRoles, asset.role_restrictions,write)) {
             return false;
         }
-        for(AssetSpecimen assetSpecimen: asset.asset_specimen) {
-            if(assetSpecimen.specimen == null) {
-                // If specimen is not present we are likely checking a user provided asset. We should not do that.
-                throw new RuntimeException("Specimen must be present when checking roles");
+        if (asset.asset_specimen != null) {
+            for(AssetSpecimen assetSpecimen: asset.asset_specimen) {
+                if(assetSpecimen.specimen == null) {
+                    // If specimen is not present we are likely checking a user provided asset. We should not do that.
+                    throw new RuntimeException("Specimen must be present when checking roles");
+                }
+                if(!checkObjectRoles(allUserRoles, assetSpecimen.specimen.role_restrictions(),write)){
+                    return false;
+                }
             }
-            if(!checkObjectRoles(allUserRoles, assetSpecimen.specimen.role_restrictions(),write)){
-                return false;
-            }
-        }
-        if(!write) {
-            //All users have read access to institution
-            return true;
         }
         return checkRightsInstitution(user, asset.institution, asset.collection, write);
     }
@@ -169,10 +150,6 @@ public class RightsValidationService {
     }
 
     public boolean checkRightsInstitution(User user, String institutionName, String collectionName, boolean write) {
-        // Roles that has access to all institutions and collections
-        if(checkAdminRoles(user)) {
-            return true;
-        }
         Set<String> allUserRoles = getUserRoles(user.roles);
 
         Optional<Collection> collectionOpt = collectionService.findCollectionInternal(collectionName, institutionName);
@@ -194,7 +171,7 @@ public class RightsValidationService {
     }
 
     public boolean checkObjectRoles(Set<String> userRoles, List<Role> objectRoles, boolean write) {
-        if (!objectRoles.isEmpty()) {
+        if (objectRoles != null && !objectRoles.isEmpty()) {
             for (Role r : objectRoles) {
                 if (userRoles.contains((write ? WRITE_ROLE_PREFIX : READ_ROLE_PREFIX) + r.name())) {
                     return true;

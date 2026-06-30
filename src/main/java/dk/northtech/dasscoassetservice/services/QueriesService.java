@@ -27,6 +27,7 @@ public class QueriesService {
     private Jdbi jdbi;
     private Jdbi readonlyJdbi;
     private RightsValidationService rightsValidationService;
+    private final AssetService assetService;
 
     LoadingCache<User, Map<String, Set<String>>> accessCache = Caffeine.newBuilder() // <user, <"read",
             // ["collection2"]>>
@@ -125,11 +126,12 @@ public class QueriesService {
 
     @Inject
     public QueriesService(RightsValidationService rightsValidationService, @Qualifier("jdbi") Jdbi jdbi,
-            @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService) {
+            @Qualifier("readonly-jdbi") Jdbi readonlyJdbi, SpecimenService specimenService, AssetService assetService) {
         this.rightsValidationService = rightsValidationService;
         this.jdbi = jdbi;
         this.readonlyJdbi = readonlyJdbi;
         this.specimenService = specimenService;
+        this.assetService = assetService;
     }
 
     public List<QueryItem> getNodeProperties() {
@@ -244,26 +246,7 @@ public class QueriesService {
     }
 
     public int getAssetCountFromQuery(List<QueriesReceived> queries, int limit, User user) {
-        Set<String> collectionsAccess = null; // only need collection, really, as it's the deepest access check (we
-        // check for institute rights in the function if necessary, too)
-        boolean fullAccess = checkRights(user);
-        if (!fullAccess) {
-            collectionsAccess = accessCache.get(user)
-                    .values().stream()
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet());
-        }
-
-        int allAssets = 0;
-        for (QueriesReceived received : queries) { // going through all the queries sent (usually just one though.)
-            String query = unwrapQuery(received, limit, true, collectionsAccess, fullAccess);
-            if (query != null && !StringUtils.isBlank(query)) {
-                logger.info("Getting asset count from query.");
-                allAssets += readonlyJdbi.onDemand(QueriesRepository.class).getAssetCountFromQuery(query);
-            }
-        }
-
-        return allAssets;
+        return getAssetsFromQuery(queries, limit, user).size();
     }
 
     public List<QueryResultAsset> getAssetsFromQuery(List<QueriesReceived> queries, int limit, User user) {
@@ -352,6 +335,19 @@ public class QueriesService {
             leftJoins.append(" left join issue using (asset_guid)");
         }
 
+        String collectionAccessClause = "";
+        if (!fullAccess) {
+            if (collectionsAccess == null || collectionsAccess.isEmpty()) {
+                collectionAccessClause = whereFilters.isEmpty() ? "where false" : " and false";
+            } else {
+                String collectionNames = collectionsAccess.stream()
+                        .map(s -> "'" + s.replace("'", "''") + "'")
+                        .collect(Collectors.joining(", "));
+                collectionAccessClause = (whereFilters.isEmpty() ? "where " : " and ")
+                        + "collection_name in (" + collectionNames + ")";
+            }
+        }
+
         String sql = """
                     select
                         DISTINCT asset_guid,
@@ -367,11 +363,7 @@ public class QueriesService {
                 .replace("#LeftJoins#", leftJoins.toString())
                 .replace("#where#", whereFilters.isEmpty() ? "" : "where " + whereFilters)
                 .replace("#writeAccess#", Boolean.toString(fullAccess))
-                .replace("#collectionAccess#",
-                        fullAccess ? ""
-                                : (whereFilters.isEmpty() ? "where"
-                                        : " and collection_name in (%s)".formatted(collectionsAccess.stream()
-                                                .map(s -> "'" + s + "'").collect(Collectors.joining(", ", "(", ")")))))
+                .replace("#collectionAccess#", collectionAccessClause)
                 .replace("#limit#", limit > 0 ? "limit :limit" : "");
         return readonlyJdbi.withHandle(h -> {
             var query = h.createQuery(sql).bindMap(paramMap);
@@ -386,6 +378,18 @@ public class QueriesService {
             if (assetGuids.isEmpty()) {
                 return List.of();
             }
+
+            Set<String> readableAssetGuids = assetService.getAssets(assetGuids).stream()
+                    .filter(asset -> rightsValidationService.checkRightsAsset(user, asset, false))
+                    .map(Asset::getAsset_guid)
+                    .collect(Collectors.toSet());
+            if (readableAssetGuids.isEmpty()) {
+                return List.of();
+            }
+            queryResultAssets = queryResultAssets.stream()
+                    .filter(asset -> readableAssetGuids.contains(asset.asset_guid()))
+                    .toList();
+            assetGuids = queryResultAssets.stream().map(QueryResultAsset::asset_guid).toList();
 
             Map<String, List<Event>> assetEvents = assetGuids.isEmpty() ? new HashMap<>()
                     : h.createQuery("""
@@ -698,13 +702,9 @@ public class QueriesService {
     }
 
     public boolean checkRights(User user) {
-        Set<String> roles = user.roles;
-        if (roles.contains(InternalRole.ADMIN.roleName)
-                || roles.contains(InternalRole.USER.roleName)
-                || roles.contains(InternalRole.SERVICE_USER.roleName)
-                || roles.contains(InternalRole.DEVELOPER.roleName)) {
-            return true;
-        }
+        // Default Keycloak roles grant endpoint-level access only. Resource-level
+        // institution/collection/specimen/asset role restrictions must still be
+        // evaluated for every user.
         return false;
     }
 }

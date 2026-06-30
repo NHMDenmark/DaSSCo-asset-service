@@ -1031,6 +1031,33 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void readRoleRestrictionAppliesToAllDefaultRoles() {
+        String restrictedRole = "readRoleRestrictionAppliesToAllDefaultRoles";
+        Asset asset = getTestAsset("readRoleRestrictionAppliesToAllDefaultRoles");
+        asset.asset_pid = "pid-readRoleRestrictionAppliesToAllDefaultRoles";
+        asset.role_restrictions.add(new Role(restrictedRole));
+        User creator = userService.ensureExists(new User("read-role-restriction-creator", Set.of("WRITE_" + restrictedRole)));
+        assetService.persistAsset(asset, creator, 1);
+
+        assertThrows(DasscoIllegalActionException.class,
+                () -> assetService.getAsset(asset.asset_guid, new User("default-user-without-read-role", Set.of(SecurityRoles.USER))));
+        assertThrows(DasscoIllegalActionException.class,
+                () -> assetService.getAsset(asset.asset_guid, new User("admin-without-read-role", Set.of(SecurityRoles.ADMIN))));
+        assertThrows(DasscoIllegalActionException.class,
+                () -> assetService.getAsset(asset.asset_guid, new User("service-without-read-role", Set.of(SecurityRoles.SERVICE))));
+        assertThrows(DasscoIllegalActionException.class,
+                () -> assetService.getAsset(asset.asset_guid, new User("developer-without-read-role", Set.of(SecurityRoles.DEVELOPER))));
+
+        Optional<Asset> assetForReader = assetService.getAsset(asset.asset_guid,
+                new User("reader-with-read-role", Set.of("READ_" + restrictedRole)));
+        assertThat(assetForReader.isPresent()).isTrue();
+
+        Optional<Asset> assetForWriter = assetService.getAsset(asset.asset_guid,
+                new User("writer-with-write-role", Set.of("WRITE_" + restrictedRole)));
+        assertThat(assetForWriter.isPresent()).isTrue();
+    }
+
+    @Test
     void testSetAssetStatusUnsupportedStatus() {
         Asset asset = getTestAsset("setAssetStatusUnsupportedStatus");
         asset.pipeline = "i2_p1";
