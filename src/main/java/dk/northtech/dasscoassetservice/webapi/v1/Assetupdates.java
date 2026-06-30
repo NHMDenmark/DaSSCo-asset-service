@@ -268,7 +268,7 @@ public class Assetupdates {
         if (userService.from(securityContext) == null) {
             throw new ForbiddenException("No user found");
         }
-        this.assetService.completeAsset(assetUpdateRequest);
+        this.assetService.completeStorageSync(assetUpdateRequest);
     }
 
 

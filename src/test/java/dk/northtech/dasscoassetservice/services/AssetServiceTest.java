@@ -520,11 +520,12 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.updateAsset(result, user);
         result.payload_type = "nuclear";
         assetService.updateAsset(result, user);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null));
+        assetService.completeStorageSync(new AssetUpdateRequest(new MinimalAsset("createAssetUpdateAsset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null));
         assetService.auditAsset(user, new Audit("Audrey Auditor"), "createAssetUpdateAsset");
         List<Event> resultEvents = assetService.getEvents(result.asset_guid, user);
         resultEvents.forEach(x -> System.out.println(x));
-        assertThat(resultEvents.size()).isEqualTo(4);
+        assertThat(resultEvents.size()).isEqualTo(5);
+        assertThat(resultEvents.stream().anyMatch(x -> x.event == DasscoEvent.SYNC_STORAGE)).isTrue();
         Optional<Asset> resultOpt2 = assetService.getAsset("createAssetUpdateAsset");
         assertThat(resultOpt2.isPresent()).isTrue();
         Asset resultAsset = resultOpt2.get();
@@ -800,8 +801,8 @@ class AssetServiceTest extends AbstractIntegrationTest {
 
 
     @Test
-    void testCompleteAssetAssetDoesntExist() {
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null)));
+    void testCompleteAssetStorageSyncDoesntExist() {
+        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> assetService.completeStorageSync(new AssetUpdateRequest(new MinimalAsset("non-existent-asset", null, null, null), "i1_w1", "i1_p1", "bob", null, null, null)));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");
     }
 
@@ -852,7 +853,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCompleteAsset() {
+    void testCompleteStorageSync() {
         Asset asset = getTestAsset("assetComplete");
         asset.pipeline = "i2_p1";
         asset.workstation = "i2_w1";
@@ -865,14 +866,15 @@ class AssetServiceTest extends AbstractIntegrationTest {
         Optional<Asset> optAsset = assetService.getAsset("assetComplete");
         assertThat(optAsset.isPresent()).isTrue();
         assertThat(optAsset.get().internal_status.toString()).isEqualTo("METADATA_RECEIVED");
-        assertThat(assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null))).isTrue();
+        assertThat(assetService.completeStorageSync(new AssetUpdateRequest(new MinimalAsset("assetComplete", null, null, null), "i2_w1", "i2_p1", "bob", null, null, null))).isTrue();
         Optional<Asset> optCompletedAsset = assetService.getAsset("assetComplete");
         assertThat(optCompletedAsset.isPresent()).isTrue();
         assertThat(optCompletedAsset.get().internal_status.toString()).isEqualTo("ERDA_SYNCHRONISED");
+        assertThat(optCompletedAsset.get().events.stream().anyMatch(event -> event.event == DasscoEvent.SYNC_STORAGE)).isTrue();
     }
 
     @Test
-    void testCompleteAssetSendsSucceededAcknowledgeWhenSpecifySyncLogIdPresent() {
+    void testCompleteStorageSyncSendsSucceededAcknowledgeWhenSpecifySyncLogIdPresent() {
         Asset asset = getTestAsset("assetCompleteSpecifySyncSuccess");
         asset.pipeline = "i2_p1";
         asset.workstation = "i2_w1";
@@ -883,7 +885,7 @@ class AssetServiceTest extends AbstractIntegrationTest {
         assetService.persistAsset(asset, user, 1);
         clearInvocations(queueBroadcaster);
 
-        assertThat(assetService.completeAsset(new AssetUpdateRequest(
+        assertThat(assetService.completeStorageSync(new AssetUpdateRequest(
                 new MinimalAsset("assetCompleteSpecifySyncSuccess", null, null, null),
                 "i2_w1", "i2_p1", "bob", null, null, 123L))).isTrue();
 
@@ -894,11 +896,11 @@ class AssetServiceTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void testCompleteAssetSendsFailedAcknowledgeWhenSpecifySyncLogIdPresent() {
+    void testCompleteStorageSyncSendsFailedAcknowledgeWhenSpecifySyncLogIdPresent() {
         clearInvocations(queueBroadcaster);
 
         IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class,
-                () -> assetService.completeAsset(new AssetUpdateRequest(
+                () -> assetService.completeStorageSync(new AssetUpdateRequest(
                         new MinimalAsset("non-existent-specify-sync", null, null, null),
                         "i1_w1", "i1_p1", "bob", null, null, 456L)));
         assertThat(illegalArgumentException).hasMessageThat().isEqualTo("Asset doesnt exist!");

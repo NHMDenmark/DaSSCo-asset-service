@@ -182,7 +182,7 @@ public class SpecifyArsSyncService {
                             new MinimalAsset(createdAsset.asset_guid, null, createdAsset.institution, createdAsset.collection),
                             specifyArsSyncMessage.specifySyncLogId,
                             temporaryAssetGuid));
-
+            log.info("File status: {}", syncStatus);
             if (syncStatus == SpecifySyncStatus.STARTED) {
                 return;
             }

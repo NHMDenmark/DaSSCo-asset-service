@@ -987,7 +987,7 @@ public class AssetService {
 
     }
 
-    public boolean completeAsset(AssetUpdateRequest assetUpdateRequest) {
+    public boolean completeStorageSync(AssetUpdateRequest assetUpdateRequest) {
         Long specifySyncLogId = assetUpdateRequest.specifySyncLogId();
         String assetGuid = assetUpdateRequest.asset_guid();
         if (assetGuid == null && assetUpdateRequest.minimalAsset() != null) {
@@ -1007,9 +1007,16 @@ public class AssetService {
 
             jdbi.withHandle(h -> {
                 AssetRepository assetRepository = h.attach(AssetRepository.class);
+                EventRepository eventRepository = h.attach(EventRepository.class);
                 assetRepository.updateAssetStatus(asset);
                 this.assetChangeService.syncAssetChangesToEventWithHandle(DasscoEvent.UPDATE_ASSET,
                         assetUpdateRequest.directory_id(), resolvedAssetGuid, h);
+                        eventRepository.insertEvent(
+                        resolvedAssetGuid,
+                        DasscoEvent.SYNC_STORAGE,
+                        resolveStorageSyncUserId(asset, assetUpdateRequest),
+                        resolveStorageSyncPipelineId(asset, assetUpdateRequest));
+
                 return h;
             });
 
@@ -1039,6 +1046,40 @@ public class AssetService {
             }
             throw e;
         }
+    }
+
+    private Integer resolveStorageSyncUserId(Asset asset, AssetUpdateRequest assetUpdateRequest) {
+        List<String> candidateUsernames = new ArrayList<>();
+        candidateUsernames.add(assetUpdateRequest.digitiser());
+        candidateUsernames.add(asset.digitiser);
+        if (asset.events != null) {
+            asset.events.stream()
+                    .map(event -> event.user)
+                    .filter(Objects::nonNull)
+                    .forEach(candidateUsernames::add);
+        }
+
+        return candidateUsernames.stream()
+                .filter(username -> !Strings.isNullOrEmpty(username))
+                .map(username -> userService.getUserIfExists(username)
+                        .map(user -> user.dassco_user_id)
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Unable to resolve user for storage sync event"));
+    }
+
+    private Integer resolveStorageSyncPipelineId(Asset asset, AssetUpdateRequest assetUpdateRequest) {
+        String pipelineName = assetUpdateRequest.pipeline();
+        if (Strings.isNullOrEmpty(pipelineName)) {
+            pipelineName = asset.pipeline;
+        }
+        if (Strings.isNullOrEmpty(pipelineName) || Strings.isNullOrEmpty(asset.institution)) {
+            return null;
+        }
+        return pipelineService.findPipelineByInstitutionAndName(asset.institution, pipelineName)
+                .map(Pipeline::pipeline_id)
+                .orElse(null);
     }
 
     public boolean auditAsset(User user, Audit audit, String assetGuid) {

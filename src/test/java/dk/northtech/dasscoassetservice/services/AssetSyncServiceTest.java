@@ -26,7 +26,9 @@ class AssetSyncServiceTest extends AbstractIntegrationTest {
         Asset asset = getTestAsset("testSendAssets");
         asset.asset_locked = true;
         assetService.persistAsset(asset, user, 777);
-        assetService.completeAsset(new AssetUpdateRequest(new MinimalAsset("testSendAssets", null, null, null),null,"i2_p1", "syncuser", null, null, null));
+        assetService.completeStorageSync(new AssetUpdateRequest(new MinimalAsset("testSendAssets", null, null, null),null,"i2_p1", "syncuser", null, null, null));
+        Asset syncedAsset = assetService.getAsset("testSendAssets").orElseThrow();
+        assertThat(syncedAsset.events.stream().anyMatch(x -> x.event == DasscoEvent.SYNC_STORAGE)).isTrue();
         assetSyncService.syncAssets();
 
     }

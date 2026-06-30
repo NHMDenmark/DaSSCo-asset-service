@@ -14,7 +14,7 @@ These values are seeded by default Liquibase changelogs.
 | `workstation_status` | `IN_SERVICE`, `OUT_OF_SERVICE` |
 | `preparation_type` | `slide`, `pinning` |
 | `subject` | `folder`, `specimen`, `label` |
-| `event_type` | `CREATE_ASSET`, `UPDATE_ASSET`, `AUDIT_ASSET`, `DELETE_ASSET`, `CREATE_ASSET_METADATA`, `UPDATE_ASSET_METADATA`, `BULK_UPDATE_ASSET_METADATA`, `AUDIT_ASSET_METADATA`, `DELETE_ASSET_METADATA`, `METADATA_TAKEN`, `ASSET_FINALISED`, `SYNCHRONISE_SPECIFY` |
+| `event_type` | `CREATE_ASSET`, `UPDATE_ASSET`, `AUDIT_ASSET`, `DELETE_ASSET`, `CREATE_ASSET_METADATA`, `UPDATE_ASSET_METADATA`, `BULK_UPDATE_ASSET_METADATA`, `AUDIT_ASSET_METADATA`, `DELETE_ASSET_METADATA`, `METADATA_TAKEN`, `ASSET_FINALISED`, `SYNC_STORAGE`, `SYNCHRONISE_SPECIFY` |
 | `file_format` | `TIF`, `JPEG`, `RAW`, `RAF`, `CR3`, `DNG`, `TXT` |
 | `file_sync_status` | `NEW_FILE`, `SYNCHRONIZED` |
 
