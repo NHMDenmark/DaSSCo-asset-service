@@ -1,0 +1,842 @@
+<mxfile host="drawio-plugin" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" modified="2026-06-30T08:54:31.309Z" version="22.1.22" etag="zd_8Bs5xg8dKO1JA8Ikn" type="embed" pages="9">
+  <diagram name="1. Data model" id="page-2">
+    <mxGraphModel dx="3743" dy="3650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="1. Data model" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Tables that make up asset groups. Labels are kept short; details live in README/source files." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="dassco_user&lt;br/&gt;PK dassco_user_id&lt;br/&gt;username&lt;br/&gt;keycloak_id&lt;br/&gt;Creators and shared users." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="250" width="430" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="asset_group&lt;br/&gt;PK asset_group_id&lt;br/&gt;group_name UNIQUE&lt;br/&gt;creator_user_id FK&lt;br/&gt;Name is lowercased before insert." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="820" y="210" width="520" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="asset&lt;br/&gt;PK asset_guid&lt;br/&gt;institution&lt;br/&gt;collection&lt;br/&gt;role_restrictions&lt;br/&gt;Used by asset read/write checks." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="250" width="480" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="c-8" value="asset_group_access&lt;br/&gt;PK asset_group_access_id&lt;br/&gt;asset_group_id FK&lt;br/&gt;dassco_user_id FK&lt;br/&gt;Who can read this group." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="650" y="610" width="560" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="asset_group_asset&lt;br/&gt;PK asset_group_asset_id&lt;br/&gt;asset_group_id FK&lt;br/&gt;asset_guid FK&lt;br/&gt;Which assets are in the group." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="610" width="560" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="e-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-6" target="c-5" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-8" target="c-6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-8" target="c-5" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-9" target="c-6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-9" target="c-7" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="Cascade behavior&lt;br/&gt;Deleting an asset_group removes rows in both join tables.&lt;br/&gt;Deleting an asset removes asset_group_asset rows.&lt;br/&gt;Deleting a user removes asset_group_access rows." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="990" width="610" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="c-16" value="Create transaction&lt;br/&gt;1. Insert asset_group.&lt;br/&gt;2. Insert creator into asset_group_access.&lt;br/&gt;3. Insert asset_group_asset rows.&lt;br/&gt;4. If shared, insert extra access rows." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="820" y="970" width="620" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="Read shape returned to UI&lt;br/&gt;AssetGroup {&lt;br/&gt;  group_id, group_name,&lt;br/&gt;  groupCreator, assets[], hasAccess[]&lt;br/&gt;}" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1580" y="970" width="600" height="230" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="2. List and view groups" id="page-2">
+    <mxGraphModel dx="1123" dy="1095" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="2. List and view groups" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Page load and row expansion. The expanded row uses already-loaded assets[] and hasAccess[]." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-5" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="176" width="430" height="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="UI / Browser" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-7" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="495" y="176" width="430" height="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-8" value="Angular" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="495" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-9" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="950" y="176" width="430" height="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-10" value="API" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="950" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-11" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1405" y="176" width="430" height="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-12" value="Service" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1405" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-13" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1860" y="176" width="430" height="1180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-14" value="DB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1860" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="Open /asset-groups&lt;br/&gt;AssetGroupsComponent starts streams." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="220" width="380" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="c-16" value="Fetch accessible groups&lt;br/&gt;GET api/v1/assetgroups/" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="520" y="220" width="380" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="AssetGroups.getListAssetGroup&lt;br/&gt;RolesAllowed user/admin/service/dev." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="975" y="220" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c-18" value="readListAssetGroup(user)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="220" width="380" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="readListAssetGroup SQL&lt;br/&gt;Only groups where user has access.&lt;br/&gt;Aggregates assets[] and hasAccess[]." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1885" y="220" width="380" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="e-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-15" target="c-16" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-16" target="c-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-17" target="c-18" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-18" target="c-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-24" value="Render table&lt;br/&gt;Set isCreator when groupCreator matches username." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="460" width="380" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="Dialog needs owned groups&lt;br/&gt;GET api/v1/assetgroups/owned" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="520" y="460" width="380" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c-26" value="AssetGroups.getOwnListAssetGroup" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="975" y="460" width="380" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="c-27" value="Admin: all accessible groups.&lt;br/&gt;Non-admin: groups where user is creator." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="460" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c-28" value="readOwnedListAssetGroup SQL" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1885" y="460" width="380" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="e-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-19" target="c-24" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-25" target="c-26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-26" target="c-27" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-27" target="c-28" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Expand row&lt;br/&gt;Shows assets[] and hasAccess[].&lt;br/&gt;No backend call." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="720" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c-34" value="Click an asset&lt;br/&gt;Navigate to /detailed-view/{assetGuid}." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="930" width="380" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="c-35" value="DetailedViewService&lt;br/&gt;GET api/v1/assetmetadata/{assetGuid}" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="520" y="930" width="380" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c-36" value="Asset metadata endpoint&lt;br/&gt;Loads asset only if user has read rights." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="975" y="930" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c-37" value="AssetService + RightsValidationService&lt;br/&gt;checkRightsAsset(read)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="930" width="380" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c-38" value="Asset tables&lt;br/&gt;Full metadata returned to detailed view." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1885" y="930" width="380" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="e-39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-24" target="c-33" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-33" target="c-34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-41" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-34" target="c-35" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-42" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-35" target="c-36" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-36" target="c-37" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-37" target="c-38" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="3. Create group" id="page-2">
+    <mxGraphModel dx="1123" dy="1095" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="3. Create group" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Two entry points share the same backend create flow." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-5" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="176" width="430" height="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="UI / Browser" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-7" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="495" y="176" width="430" height="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="c-8" value="Angular" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="495" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-9" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="950" y="176" width="430" height="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="c-10" value="API" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="950" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-11" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1405" y="176" width="430" height="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="c-12" value="Service" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1405" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-13" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;opacity=8;strokeWidth=1;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1860" y="176" width="430" height="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="c-14" value="DB / Users" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1860" y="130" width="430" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="Choose create&lt;br/&gt;Query page: selected assets.&lt;br/&gt;Asset Groups page: empty group." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="220" width="380" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="c-16" value="AssetGroupService.newGroup&lt;br/&gt;POST /assetgroups/createassetgroup&lt;br/&gt;Body: name, assets, users." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="520" y="220" width="380" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="AssetGroups.createAssetGroup&lt;br/&gt;Endpoint role gate.&lt;br/&gt;Build User from SecurityContext." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="975" y="220" width="380" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="c-18" value="Validate request&lt;br/&gt;Body present.&lt;br/&gt;Name present.&lt;br/&gt;hasAccess/keycloakUsers present.&lt;br/&gt;Lowercase group name." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="220" width="380" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Load assets and group&lt;br/&gt;All assets must exist.&lt;br/&gt;Group name must be unique." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1885" y="220" width="380" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="e-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-15" target="c-16" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-21" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-16" target="c-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-17" target="c-18" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-18" target="c-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-24" value="No users selected&lt;br/&gt;Require READ on every asset." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1205" y="520" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="Users selected&lt;br/&gt;Require WRITE on every asset.&lt;br/&gt;Persist Keycloak users if needed." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1645" y="520" width="420" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="e-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-19" target="c-24" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-27" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-19" target="c-25" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-28" value="Create group transaction&lt;br/&gt;Insert group.&lt;br/&gt;Grant creator access.&lt;br/&gt;Insert asset links." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1740" y="790" width="410" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="c-29" value="If shared&lt;br/&gt;Insert asset_group_access rows for selected users." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="2200" y="790" width="390" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-24" target="c-28" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-25" target="c-28" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-25" target="c-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Return AssetGroup&lt;br/&gt;UI appends row or shows snackbar." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="65" y="1060" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="c-34" value="Create failures&lt;br/&gt;Missing body/name.&lt;br/&gt;Duplicate name.&lt;br/&gt;Asset not found.&lt;br/&gt;Missing READ/WRITE.&lt;br/&gt;Error body may include asset GUIDs." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="990" y="1060" width="760" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e-35" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-28" target="c-33" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-29" target="c-33" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" source="c-18" target="c-34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-38" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" source="c-19" target="c-34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-39" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" source="c-24" target="c-34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" source="c-25" target="c-34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="4. Edit group assets" id="page-2">
+    <mxGraphModel dx="2400" dy="1700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="4. Edit group assets" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Add and remove assets are separate UI actions but share owner and asset-right checks." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="Add assets to an existing group" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="Query page selects assets&lt;br/&gt;Dialog chooses an owned existing group." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="240" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="PUT /assetgroups/updategroup/{groupId}/addAssets&lt;br/&gt;Body: asset GUID list." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="383" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-6" target="c-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="Backend reads group by id&lt;br/&gt;Then uses the group name for update." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="526" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-7" target="c-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-11" value="Validate assets&lt;br/&gt;List is non-empty.&lt;br/&gt;Every asset exists." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="669" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-9" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-13" value="Require group owner/admin.&lt;br/&gt;If group is shared: WRITE on new assets.&lt;br/&gt;Otherwise: READ on new assets." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="813" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-11" target="c-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="Insert into asset_group_asset&lt;br/&gt;ON CONFLICT DO NOTHING.&lt;br/&gt;Return updated AssetGroup." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="957" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-13" target="c-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="UI shows snackbar or error dialog." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1101" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-15" target="c-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Remove assets from a group" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1260" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-20" value="Asset Groups edit mode&lt;br/&gt;Select assets in expanded row." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="240" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-21" value="PUT /assetgroups/updategroup/{groupId}/removeAssets&lt;br/&gt;Body: asset GUID list." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="383" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-20" target="c-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-23" value="Validate body, group, and asset list.&lt;br/&gt;De-duplicate selected GUIDs." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="526" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-21" target="c-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="Require group owner/admin." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="669" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-23" target="c-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-27" value="If selected assets are all group assets:&lt;br/&gt;DELETE asset_group.&lt;br/&gt;Cascade removes join rows." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="812" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-25" target="c-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-29" value="Otherwise:&lt;br/&gt;DELETE selected rows from asset_group_asset.&lt;br/&gt;Return updated AssetGroup." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="956" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-27" target="c-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-31" value="UI refreshes row data.&lt;br/&gt;If group became empty/deleted, UI gets an empty AssetGroup." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1100" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-29" target="c-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Common failures&lt;br/&gt;Group not found, empty body/list, asset not found, not owner/admin, missing asset READ/WRITE.&lt;br/&gt;Backend returns DaSSCoError; UI uses snackbar or IllegalAssetGroupDialog." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="360" y="1380" width="1600" height="160" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="5. Grant and revoke users" id="page-2">
+    <mxGraphModel dx="1123" dy="1095" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1750" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="5. Grant and revoke users" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="User access rows are stored in asset_group_access. Granting access requires write rights on all grouped assets." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="Load selectable Keycloak users" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="145" width="2180" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="UI opens digitiser selector." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="140" y="230" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="KeycloakUserService&lt;br/&gt;GET /assetgroups/keycloak/users" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="610" y="230" width="430" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="c-8" value="AssetGroups.getUsers" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1130" y="230" width="360" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="KeycloakService loads users&lt;br/&gt;Returns KeycloakUser[] to selector." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1580" y="230" width="560" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="e-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-6" target="c-7" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-7" target="c-8" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-8" target="c-9" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-13" value="Grant access" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="470" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-14" value="User selects new users&lt;br/&gt;Click Grant Access." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="560" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="PUT /assetgroups/keycloak/grantAccess/{groupId}&lt;br/&gt;Body: Keycloak users." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="703" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-14" target="c-15" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="Validate group and non-empty user list." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="846" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-15" target="c-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Require WRITE on every asset in group.&lt;br/&gt;Then require owner/admin." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="989" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-17" target="c-19" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-21" value="Persist Keycloak users into dassco_user.&lt;br/&gt;Insert access rows in asset_group_access." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1132" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-19" target="c-21" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-23" value="Return updated AssetGroup.&lt;br/&gt;UI refreshes hasAccess[]." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1275" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-21" target="c-23" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="Revoke access" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1260" y="470" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-26" value="User selects existing access rows.&lt;br/&gt;Creator is disabled in UI." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="560" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-27" value="PUT /assetgroups/revokeAccess/{groupId}&lt;br/&gt;Body: usernames." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="703" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-26" target="c-27" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-29" value="Read group.&lt;br/&gt;Require owner/admin.&lt;br/&gt;Require non-empty user list." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="846" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-27" target="c-29" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-31" value="Verify usernames exist." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="990" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-29" target="c-31" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Delete matching rows from asset_group_access." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1133" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-31" target="c-33" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-35" value="Return updated AssetGroup.&lt;br/&gt;UI refreshes hasAccess[]." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1276" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" source="c-33" target="c-35" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-37" value="Grant failure special case&lt;br/&gt;If WRITE is missing for some assets, the error body can contain those asset GUIDs.&lt;br/&gt;The UI opens IllegalAssetGroupDialog with removable=true." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="410" y="1490" width="1580" height="150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="6. Download ZIP and CSV" id="page-2">
+    <mxGraphModel dx="2400" dy="1800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="6. Download ZIP and CSV" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Both flows start from selected assets in an expanded asset-group row." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="ZIP bundle download" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="User chooses Download All ZIP&lt;br/&gt;or Download Selected ZIP." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="240" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="AssetBundleDownloadService&lt;br/&gt;De-dupes GUIDs and creates PREPARING item." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="383" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-6" target="c-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="POST file-proxy /asset-bundles/jobs&lt;br/&gt;Internal request includes bearer token." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="526" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-7" target="c-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-11" value="File-proxy asks ARS to validate read access&lt;br/&gt;POST /v1/assets/readaccessforzip." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="669" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-9" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-13" value="ARS checks every asset with checkRightsAsset(read)." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="812" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-11" target="c-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="File-proxy gathers files and builds bundle job." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="955" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-13" target="c-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="Angular polls jobs/{jobId} every 3 seconds.&lt;br/&gt;READY downloads jobs/{jobId}/download." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1098" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-15" target="c-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Browser downloads blob.&lt;br/&gt;Status item is removed." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1241" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-20" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-17" target="c-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-21" value="CSV metadata download" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1260" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-22" value="User chooses Download CSV&lt;br/&gt;for selected group assets." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="240" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-23" value="DetailedViewService.postCsv(assetGuids)&lt;br/&gt;POST file-proxy /createCsvFile." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="383" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-22" target="c-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="File-proxy asks ARS for CSV&lt;br/&gt;POST /v1/assets/readaccessforcsv." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="526" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-23" target="c-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-27" value="ARS checks read access for every asset.&lt;br/&gt;BulkUpdateService creates CSV string." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="669" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-25" target="c-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-29" value="File-proxy writes temp file&lt;br/&gt;{guid}/assets.csv." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="812" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-27" target="c-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-31" value="Angular GETs temp file as blob&lt;br/&gt;and triggers browser download." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="955" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-29" target="c-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Angular DELETEs temp folder." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1098" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-31" target="c-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-35" value="UI shows snackbar on create/get/delete error." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1241" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-36" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-33" target="c-35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-37" value="ZIP failure states&lt;br/&gt;Start, poll, or download errors mark the download as FAILED.&lt;br/&gt;Cancel removes pending work or DELETEs the file-proxy job.&lt;br/&gt;File-proxy can also reject a bundle that is too large." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="350" y="1540" width="1600" height="160" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="7. Role and access checks" id="page-2">
+    <mxGraphModel dx="2400" dy="1700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="7. Role and access checks" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="The feature uses three layers of checks. Each operation chooses the layer it needs." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="1. Endpoint role gate&lt;br/&gt;@RolesAllowed allows ADMIN, DEVELOPER, SERVICE, or USER on asset-group endpoints.&lt;br/&gt;Requests without these roles are rejected before service logic." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="120" y="190" width="620" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="2a. Group read access&lt;br/&gt;Allowed if admin/developer/service OR username is in asset_group_access.&lt;br/&gt;Used when reading group assets." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="910" y="190" width="620" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="2b. Group management access&lt;br/&gt;Allowed if admin/developer/service OR user is the creator/owner.&lt;br/&gt;Used for edit, grant, revoke, and delete." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1660" y="190" width="620" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="e-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-5" target="c-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-5" target="c-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-10" value="3. Per-asset role checks&lt;br/&gt;checkRightsAsset(user, asset, read/write) checks:&lt;br/&gt;asset role restrictions, specimen role restrictions, collection restrictions, and institution restrictions.&lt;br/&gt;WRITE roles also imply READ." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="620" y="520" width="1150" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="e-11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-6" target="c-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-7" target="c-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-13" value="Operation matrix&lt;br/&gt;List groups: SQL filters by asset_group_access.&lt;br/&gt;Read group assets: group read + READ on every asset.&lt;br/&gt;Create without users: READ on every requested asset.&lt;br/&gt;Create with users: WRITE on every requested asset.&lt;br/&gt;Add assets: owner/admin + READ or WRITE depending on whether group is shared.&lt;br/&gt;Grant access: owner/admin + WRITE on every asset already in the group.&lt;br/&gt;Remove assets, revoke users, delete group: owner/admin.&lt;br/&gt;ZIP/CSV download: READ on every selected asset.&lt;br/&gt;Bulk audit: endpoint gate plus audit rules in AssetService." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="220" y="890" width="1960" height="360" as="geometry" />
+        </mxCell>
+        <mxCell id="c-14" value="Denied checks&lt;br/&gt;Service throws DasscoIllegalActionException or IllegalArgumentException.&lt;br/&gt;Exception mappers return DaSSCoError.&lt;br/&gt;Angular shows snackbar or an error dialog." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="580" y="1360" width="1240" height="150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="8. Delete groups and audit assets" id="page-2">
+    <mxGraphModel dx="2400" dy="1700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="8. Delete groups and audit assets" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Deletion affects asset_group and cascades join rows. Audit runs per selected asset." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="Delete groups" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="90" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="UI selects creator-owned rows.&lt;br/&gt;Click Delete Groups." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="240" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="POST /assetgroups/bulk-delete&lt;br/&gt;Single delete uses DELETE /assetgroups/{groupId}." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="383" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-6" target="c-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="Validate non-empty IDs.&lt;br/&gt;De-duplicate IDs." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="526" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-7" target="c-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-11" value="Read all requested groups.&lt;br/&gt;Detect missing IDs." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="669" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-9" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-13" value="Require creator/admin for every group." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="812" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-11" target="c-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-15" value="DELETE FROM asset_group.&lt;br/&gt;Join rows cascade." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="955" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-13" target="c-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-17" value="UI clears selection and removes rows." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="130" y="1098" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-15" target="c-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Audit selected assets" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1260" y="150" width="1000" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="c-20" value="Expanded group row.&lt;br/&gt;Turn on Audit mode.&lt;br/&gt;Select asset GUIDs." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="240" width="900" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="c-21" value="POST /assetmetadata/bulk/audit&lt;br/&gt;Body: { user, assetGuids }." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="384" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-20" target="c-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-23" value="Endpoint role gate." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="527" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-24" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-21" target="c-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-25" value="AssetService.bulkAuditAssets&lt;br/&gt;Runs audit rules per asset." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="670" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-26" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-23" target="c-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-27" value="Update audit fields and create AUDIT_ASSET events." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="813" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-28" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-25" target="c-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-29" value="Return map: assetGuid → Success or error." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="956" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-30" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-27" target="c-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-31" value="UI snackbar counts successes.&lt;br/&gt;Partial failures are logged to console." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1300" y="1099" width="900" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e-32" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;fontFamily=Helvetica;" parent="1" edge="1" source="c-29" target="c-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-33" value="Deletion caveat&lt;br/&gt;The service checks creator OR admin, but the current repository bulk-delete SQL also filters by creator_user_id.&lt;br/&gt;If admin deletion matters, verify this path before relying on it." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="360" y="1380" width="1600" height="150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="9. Failure branches and UI handling" id="page-2">
+    <mxGraphModel dx="2400" dy="1650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1650" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c-3" value="9. Failure branches and UI handling" style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=28;fontStyle=1;fontColor=#000000;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="26" width="2320" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c-4" value="Common errors and how they surface in the Angular UI." style="text;html=1;strokeColor=none;fillColor=none;whiteSpace=wrap;overflow=hidden;fontSize=15;fontColor=#555555;align=left;verticalAlign=middle;spacing=0;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="40" y="72" width="2320" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="c-5" value="Validation errors&lt;br/&gt;Missing body or group name.&lt;br/&gt;Empty asset/user list.&lt;br/&gt;Group not found.&lt;br/&gt;Duplicate group name." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="120" y="210" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-6" value="Data errors&lt;br/&gt;One or more assets not found.&lt;br/&gt;Legacy username grant/revoke user missing." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="870" y="210" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-7" value="Permission errors&lt;br/&gt;Not in group access list.&lt;br/&gt;Not owner/admin.&lt;br/&gt;Missing asset READ/WRITE role." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1620" y="210" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-8" value="Download errors&lt;br/&gt;File-proxy job failed/cancelled.&lt;br/&gt;Bundle too large.&lt;br/&gt;CSV temp-file create/get/delete failed." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="120" y="620" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-9" value="Audit partial errors&lt;br/&gt;Bulk audit returns per-asset status.&lt;br/&gt;Some assets can fail while others succeed." style="shape=note;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="870" y="620" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-10" value="UI handling&lt;br/&gt;Snackbars for generic errors.&lt;br/&gt;IllegalAssetGroupDialog for forbidden asset lists.&lt;br/&gt;Download status component for ZIP failures." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1620" y="620" width="620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="c-11" value="Backend mapping&lt;br/&gt;Exceptions become DaSSCoError JSON for 400-599 responses." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="500" y="1040" width="620" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="c-12" value="Angular services&lt;br/&gt;Some methods return DaSSCoError.&lt;br/&gt;Some list/remove/revoke methods return undefined on catchError." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="1320" y="1040" width="620" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="e-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-5" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-6" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-7" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-8" target="c-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-11" target="c-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-18" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;startArrow=none;endArrow=block;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;fontFamily=Helvetica;" parent="1" edge="1" source="c-12" target="c-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c-19" value="Maintenance checklist&lt;br/&gt;When a new asset-group action is added, document: UI action, Angular service call, API path, service validations, database changes, and UI error handling." style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=1.5;fontSize=15;align=left;verticalAlign=top;spacing=14;spacingLeft=16;spacingRight=16;spacingTop=12;spacingBottom=12;fontFamily=Helvetica;" parent="1" vertex="1">
+          <mxGeometry x="430" y="1350" width="1500" height="150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
