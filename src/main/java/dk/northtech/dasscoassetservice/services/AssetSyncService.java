@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -67,11 +68,14 @@ public class AssetSyncService {
             AssetRepository assetRepository = handle.attach(AssetRepository.class);
             SpecimenRepository specimenRepository = handle.attach(SpecimenRepository.class);
             if (assetOpt.isPresent()) {
+                // Make sure error message/timestamp are nulled on successful sync.
                 String error_message = null;
+                Instant error_timestamp = null;
                 InternalStatus status = InternalStatus.SPECIFY_SYNCHRONISED;
                 Asset asset = assetOpt.get();
                 if (acknowledge.status() != AcknowledgeStatus.SUCCESS) {
                     error_message = acknowledge.status().toString() + " " + acknowledge.message();
+                    error_timestamp = Instant.now();
                     status = InternalStatus.SPECIFY_SYNC_FAILED;
                 } else {
                     acknowledge.specimensWithSpecifyIds().forEach(specimen -> {
@@ -87,7 +91,7 @@ public class AssetSyncService {
                 }
                 asset.internal_status = status;
                 asset.error_message = error_message;
-
+                asset.error_timestamp = error_timestamp;
                 assetRepository.updateAssetNoEventInternal(asset);
                 if (acknowledge.status() == AcknowledgeStatus.SUCCESS) {
                     EventRepository attach = handle.attach(EventRepository.class);
