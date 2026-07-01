@@ -2,10 +2,12 @@ package dk.northtech.dasscoassetservice.services;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import dk.northtech.dasscoassetservice.assets.KeycloakUserConfig;
 import dk.northtech.dasscoassetservice.domain.KeycloakUser;
+import dk.northtech.dasscoassetservice.domain.User;
 import dk.northtech.dasscoassetservice.domain.UserRepresentation;
 import dk.northtech.dasscoassetservice.utils.CustomKeycloakTokenDeserializer;
 import dk.northtech.dasscoassetservice.utils.KeycloakAuthenticator;
@@ -21,9 +23,11 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class KeycloakService {
@@ -31,15 +35,17 @@ public class KeycloakService {
     private static final int KEYCLOAK_PAGE_SIZE = 100;
     KeycloakAuthenticator keycloakAuthenticator;
     KeycloakUserConfig keycloakUserConfig;
+    private final UserService userService;
     ObjectMapper objectMapper = new ObjectMapper();
     SimpleModule module = new SimpleModule("CustomKeycloakTokenDeserializer", new Version(1, 0, 0, null, null, null));
     private static KeycloakToken keycloakToken;
     private static HttpClient httpClient;
 
     @Inject
-    public KeycloakService(KeycloakAuthenticator keycloakAuthenticator, KeycloakUserConfig keycloakUserConfig) {
+    public KeycloakService(KeycloakAuthenticator keycloakAuthenticator, KeycloakUserConfig keycloakUserConfig, UserService userService) {
         this.keycloakAuthenticator = keycloakAuthenticator;
         this.keycloakUserConfig = keycloakUserConfig;
+        this.userService = userService;
         this.module.addDeserializer(KeycloakToken.class, new CustomKeycloakTokenDeserializer());
         this.objectMapper.registerModule(module);
     }
@@ -88,6 +94,7 @@ public class KeycloakService {
             String json = response.body();
 
             keycloakToken = objectMapper.readValue(json, KeycloakToken.class);
+            syncUserFromAccessToken(keycloakToken.accessToken());
             return keycloakToken;
         } catch (URISyntaxException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
@@ -115,9 +122,44 @@ public class KeycloakService {
             String json = response.body();
 
             keycloakToken = objectMapper.readValue(json, KeycloakToken.class);
+            syncUserFromAccessToken(keycloakToken.accessToken());
             return keycloakToken;
         } catch (URISyntaxException | InterruptedException | IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    void syncUserFromAccessToken(String accessToken) {
+        extractUserFromAccessToken(accessToken)
+                .ifPresent(userService::ensureExists);
+    }
+
+    Optional<User> extractUserFromAccessToken(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return Optional.empty();
+        }
+
+        String[] tokenParts = accessToken.split("\\.");
+        if (tokenParts.length < 2) {
+            LOGGER.warn("Unable to decode Keycloak access token payload");
+            return Optional.empty();
+        }
+
+        try {
+            byte[] decodedPayload = Base64.getUrlDecoder().decode(tokenParts[1]);
+            JsonNode payload = objectMapper.readTree(new String(decodedPayload, StandardCharsets.UTF_8));
+            JsonNode preferredUsernameNode = payload.get("preferred_username");
+            JsonNode subNode = payload.get("sub");
+
+            if (preferredUsernameNode == null || preferredUsernameNode.asText().isBlank() || subNode == null || subNode.asText().isBlank()) {
+                LOGGER.warn("Keycloak access token is missing preferred_username or sub");
+                return Optional.empty();
+            }
+
+            return Optional.of(new User(preferredUsernameNode.asText(), subNode.asText(), null));
+        } catch (IllegalArgumentException | IOException e) {
+            LOGGER.warn("Failed to extract user information from Keycloak access token", e);
+            return Optional.empty();
         }
     }
 
