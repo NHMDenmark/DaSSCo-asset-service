@@ -2,7 +2,6 @@ package dk.northtech.dasscoassetservice.services;
 
 import dk.northtech.dasscoassetservice.domain.*;
 import dk.northtech.dasscoassetservice.repositories.AssetGroupRepository;
-import dk.northtech.dasscoassetservice.repositories.BulkUpdateRepository;
 import dk.northtech.dasscoassetservice.repositories.UserRepository;
 import jakarta.inject.Inject;
 import org.jdbi.v3.core.Jdbi;
@@ -17,6 +16,7 @@ public class AssetGroupService {
     private final Jdbi jdbi;
 
     private final RightsValidationService rightsValidationService;
+    private final AssetService assetService;
     private UserService userService;
     private final KeycloakService keycloakService;
 
@@ -24,9 +24,11 @@ public class AssetGroupService {
     public AssetGroupService(Jdbi jdbi,
                              UserService userService,
                              KeycloakService keycloakService,
-                             RightsValidationService rightsValidationService) {
+                             RightsValidationService rightsValidationService,
+                             AssetService assetService) {
         this.jdbi = jdbi;
         this.rightsValidationService = rightsValidationService;
+        this.assetService = assetService;
         this.userService = userService;
         this.keycloakService = keycloakService;
     }
@@ -51,7 +53,7 @@ public class AssetGroupService {
 
         List<Asset> assets = assetGroup.assets.isEmpty()
                 ? List.of()
-                : jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
+                : assetService.getAssets(assetGroup.assets);
         if (assets.size() != assetGroup.assets.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -92,7 +94,7 @@ public class AssetGroupService {
             List<String> assetsWithoutPermission = new ArrayList<>();
             // Check user roles, you need READ to be able to create an asset group:
             for (Asset asset : assets) {
-                boolean hasAccess = rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, false);
                 if (!hasAccess) {
                     assetsWithoutPermission.add(asset.asset_guid);
                 }
@@ -108,6 +110,16 @@ public class AssetGroupService {
     private boolean hasUsersToShare(AssetGroup assetGroup) {
         return (assetGroup.keycloakUsers != null && !assetGroup.keycloakUsers.isEmpty())
                 || (assetGroup.hasAccess != null && !assetGroup.hasAccess.isEmpty());
+    }
+
+    private void requireReadAccessToAllAssets(User user, List<Asset> assets) {
+        List<String> assetsWithoutPermission = assets.stream()
+                .filter(asset -> !rightsValidationService.checkRightsAsset(user, asset, false))
+                .map(asset -> asset.asset_guid)
+                .toList();
+        if (!assetsWithoutPermission.isEmpty()) {
+            throw new DasscoIllegalActionException("FORBIDDEN, User does not have read access to all assets.", assetsWithoutPermission.toString());
+        }
     }
 
     private List<String> resolveAccessUsernames(List<String> usernames, List<KeycloakUser> keycloakUsers) {
@@ -132,7 +144,9 @@ public class AssetGroupService {
         if (assetGroupOptional.isPresent()) {
             AssetGroup assetGroup = assetGroupOptional.get();
             rightsValidationService.checkReadRightsThrowing(user, assetGroup);
-            return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
+            List<Asset> assets = assetService.getAssets(assetGroup.assets);
+            requireReadAccessToAllAssets(user, assets);
+            return assets;
         } else {
             throw new IllegalArgumentException("Asset group does not exist!");
         }
@@ -141,7 +155,9 @@ public class AssetGroupService {
     public List<Asset> readAssetGroup(Integer groupId, User user) {
         AssetGroup assetGroup = readAssetGroupById(groupId);
         rightsValidationService.checkReadRightsThrowing(user, assetGroup);
-        return jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetGroup.assets);
+        List<Asset> assets = assetService.getAssets(assetGroup.assets);
+        requireReadAccessToAllAssets(user, assets);
+        return assets;
     }
 
     private AssetGroup readAssetGroupById(Integer groupId) {
@@ -261,7 +277,7 @@ public class AssetGroupService {
             throw new IllegalArgumentException("Asset Group has to have assets!");
         }
 
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
+        List<Asset> assets = assetService.getAssets(assetList);
         if (assets.size() != assetList.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -284,7 +300,7 @@ public class AssetGroupService {
         } else {
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets) {
-                boolean hasAccess = rightsValidationService.checkReadRights(user, asset.institution, asset.collection);
+                boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, false);
                 if (!hasAccess) {
                     forbiddenAssets.add(asset.asset_guid);
                 }
@@ -325,7 +341,7 @@ public class AssetGroupService {
         Set<String> assetSet = new HashSet<>(assetList); // Keep unique.
         assetList = new ArrayList<>(assetSet);
 
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(assetList);
+        List<Asset> assets = assetService.getAssets(assetList);
         if (assets.size() != assetList.size()) {
             throw new IllegalArgumentException("One or more assets were not found!");
         }
@@ -372,7 +388,7 @@ public class AssetGroupService {
 
 
         AssetGroup found = assetGroupOptional.get();
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(found.assets);
+        List<Asset> assets = assetService.getAssets(found.assets);
         if (!assets.isEmpty()) {
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets) {
@@ -416,7 +432,7 @@ public class AssetGroupService {
         }
 
         AssetGroup found = assetGroupOptional.get();
-        List<Asset> assets = jdbi.onDemand(BulkUpdateRepository.class).readMultipleAssets(found.assets);
+        List<Asset> assets = assetService.getAssets(found.assets);
         if (!assets.isEmpty()) {
             List<String> forbiddenAssets = new ArrayList<>();
             for (Asset asset : assets) {

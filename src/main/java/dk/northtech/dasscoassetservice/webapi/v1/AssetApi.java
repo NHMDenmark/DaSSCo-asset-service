@@ -235,9 +235,10 @@ public class AssetApi {
         }
         // List of Assets that the User has access to:
         List<Asset> hasReadAccessTo = new ArrayList<>();
+        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, false);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }
@@ -277,9 +278,10 @@ public class AssetApi {
         }
         // List of Assets that the User has access to:
         List<Asset> hasReadAccessTo = new ArrayList<>();
+        User user = securityContext.getUserPrincipal() == null ? new User("anonymous") : userService.from(securityContext);
 
         for (Asset asset : assetList){
-            boolean hasAccess = rightsValidationService.checkReadRights(userService.from(securityContext), asset.institution, asset.collection);
+            boolean hasAccess = rightsValidationService.checkRightsAsset(user, asset, false);
             if(hasAccess){
                 hasReadAccessTo.add(asset);
             }

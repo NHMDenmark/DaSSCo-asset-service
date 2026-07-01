@@ -1,0 +1,658 @@
+<mxfile host="drawio-plugin" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" modified="2026-06-30T08:27:38.063Z" version="22.1.22" etag="eLTNMkHZRyVZv26HIkcQ" type="embed" pages="4">
+  <diagram id="relational-core" name="Relational Core">
+    <mxGraphModel dx="3323" dy="1095" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1550" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="rc-title" value="Relational Core - public schema" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;" parent="1" vertex="1">
+          <mxGeometry x="40" y="20" width="720" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-note" value="Solid lines are database foreign keys. Dashed lines are application-level validation or soft references." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="1650" y="20" width="480" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-institution" value="INSTITUTION&#xa;────────────&#xa;PK institution_name : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="70" y="120" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-collection" value="COLLECTION&#xa;────────────&#xa;PK collection_id    : int&#xa;   collection_name  : text&#xa;FK institution_name : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="120" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-pipeline" value="PIPELINE&#xa;────────────&#xa;PK pipeline_id      : int&#xa;   pipeline_name    : text&#xa;FK institution_name : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="310" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-workstation-status" value="WORKSTATION_STATUS&#xa;────────────&#xa;PK workstation_status : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="70" y="520" width="300" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-workstation" value="WORKSTATION&#xa;────────────&#xa;PK workstation_id     : int&#xa;   workstation_name   : text&#xa;FK institution_name   : text&#xa;FK workstation_status : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="510" width="320" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-asset" value="ASSET&#xa;────────────&#xa;PK asset_guid      : text&#xa;FK collection_id   : int&#xa;FK digitiser_id    : int&#xa;FK status          : text&#xa;FK subject         : text&#xa;FK internal_status : text&#xa;FK workstation_id  : int&#xa;FK legality_id     : bigint&#xa;   file_formats    : text[]&#xa;   payload_type    : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="860" y="330" width="350" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-subject" value="SUBJECT&#xa;────────────&#xa;PK subject : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="770" y="130" width="230" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-asset-status" value="ASSET_STATUS&#xa;────────────&#xa;PK asset_status : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1040" y="130" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-internal-status" value="INTERNAL_ASSET_STATUS&#xa;────────────&#xa;PK internal_status : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1330" y="130" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-file-format" value="FILE_FORMAT&#xa;────────────&#xa;PK file_format : text&#xa;   validates asset.file_formats[]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1250" y="740" width="310" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-legality" value="LEGALITY&#xa;────────────&#xa;PK legality_id : bigint&#xa;   license     : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1290" y="300" width="280" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-user" value="DASSCO_USER&#xa;────────────&#xa;PK dassco_user_id : int&#xa;UK username       : text&#xa;UK keycloak_id    : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1420" y="430" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-digitiser-list" value="DIGITISER_LIST&#xa;────────────&#xa;PK digitiser_list_id : int&#xa;FK dassco_user_id    : int&#xa;FK asset_guid        : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1290" y="610" width="310" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-event-type" value="EVENT_TYPE&#xa;────────────&#xa;PK event : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="510" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-event" value="EVENT&#xa;────────────&#xa;PK event_id       : int&#xa;FK asset_guid     : text&#xa;FK dassco_user_id : int&#xa;FK event          : text&#xa;FK pipeline_id    : int&#xa;   timestamp      : timestamp" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="760" width="310" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-issue-category" value="ISSUE_CATEGORY&#xa;────────────&#xa;PK issue_category : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="1050" width="290" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-issue" value="ISSUE&#xa;────────────&#xa;PK issue_id   : int&#xa;FK asset_guid : text&#xa;FK category   : text&#xa;   solved     : boolean" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1430" y="1030" width="280" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-specimen" value="SPECIMEN&#xa;────────────&#xa;PK specimen_id       : int&#xa;   specimen_pid      : text&#xa;FK collection_id     : int&#xa;   preparation_types : text[]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="780" width="320" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-asset-specimen" value="ASSET_SPECIMEN&#xa;────────────&#xa;PK asset_specimen_id : bigint&#xa;FK asset_guid        : text&#xa;FK specimen_id       : int&#xa;FK preparation_type  : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="820" y="810" width="320" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-prep-type" value="PREPARATION_TYPE&#xa;────────────&#xa;PK preparation_type : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="850" y="1040" width="310" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-parent-child" value="PARENT_CHILD&#xa;────────────&#xa;PK parent_child_id : bigint&#xa;FK parent_guid     : text&#xa;FK child_guid      : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1270" y="570" width="290" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-funding" value="FUNDING&#xa;────────────&#xa;PK funding_id : int&#xa;   funding    : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="1180" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-asset-funding" value="ASSET_FUNDING&#xa;────────────&#xa;PK asset_funding_id : int&#xa;FK funding_id       : int&#xa;FK asset_guid       : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="720" y="1170" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-publisher" value="PUBLISHER&#xa;────────────&#xa;PK publisher : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="1350" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-asset-publisher" value="ASSET_PUBLISHER&#xa;────────────&#xa;PK asset_publisher_id : bigint&#xa;FK publisher          : text&#xa;FK asset_guid         : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="720" y="1340" width="310" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-role" value="ROLE&#xa;────────────&#xa;PK role : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="70" y="760" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-role-restrictions" value="ROLE RESTRICTION TABLES&#xa;────────────&#xa;COLLECTION_ROLE_RESTRICTION&#xa;  FK role, collection_id&#xa;INSTITUTION_ROLE_RESTRICTION&#xa;  FK role, institution_name&#xa;SPECIMEN_ROLE_RESTRICTION&#xa;  FK role, specimen_id&#xa;ASSET_ROLE_RESTRICTION&#xa;  FK role, asset_guid" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="70" y="900" width="310" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-group" value="ASSET_GROUP&#xa;────────────&#xa;PK asset_group_id : int&#xa;   group_name     : text&#xa;FK creator_user_id : int" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="120" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-group-access" value="ASSET_GROUP_ACCESS&#xa;────────────&#xa;PK asset_group_access_id : int&#xa;FK asset_group_id        : int&#xa;FK dassco_user_id        : int" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="270" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-group-asset" value="ASSET_GROUP_ASSET&#xa;────────────&#xa;PK asset_group_asset_id : bigint&#xa;FK asset_group_id       : int&#xa;FK asset_guid           : text" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Helvetica;fontSize=11;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontStyle=0;horizontal=1;" parent="1" vertex="1">
+          <mxGeometry x="1780" y="770" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="rc-edge-inst-coll" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-institution" target="rc-collection" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="165" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-inst-pipe" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-institution" target="rc-pipeline" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="165" />
+              <mxPoint x="360" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-inst-ws" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-institution" target="rc-workstation" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="385" y="165" />
+              <mxPoint x="385" y="585" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-wss-ws" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-workstation-status" target="rc-workstation" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="385" y="565" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-coll-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-collection" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="185" />
+              <mxPoint x="760" y="400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-ws-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-workstation" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="585" />
+              <mxPoint x="760" y="470" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-status-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset-status" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-subject-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-subject" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="815" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-internal-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-internal-status" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="260" />
+              <mxPoint x="1240" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-legality-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-legality" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-fileformat-asset" value="app validated" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-file-format" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1225" y="795" />
+              <mxPoint x="1225" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-user-asset" value="digitiser" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-user" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1245" y="495" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-event" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-event" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1225" y="700" />
+              <mxPoint x="1390" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-user-event" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-user" target="rc-event" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1570" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-user-digitiser-list" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-user" target="rc-digitiser-list" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1570" y="585" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-digitiser-list" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-digitiser-list" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-eventtype-event" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-event-type" target="rc-event" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1740" y="555" />
+              <mxPoint x="1740" y="845" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-pipe-event" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-pipeline" target="rc-event" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="375" />
+              <mxPoint x="750" y="985" />
+              <mxPoint x="1380" y="985" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-issue" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-issue" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1235" y="600" />
+              <mxPoint x="1235" y="1095" />
+              <mxPoint x="1390" y="1095" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-issuecat-issue" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-issue-category" target="rc-issue" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1740" y="1095" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-coll-specimen" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-collection" target="rc-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="185" />
+              <mxPoint x="760" y="845" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-assetspec" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-asset-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="935" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-spec-assetspec" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-specimen" target="rc-asset-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="845" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-prep-assetspec" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-prep-type" target="rc-asset-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1010" y="1000" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-prep-specimen" value="app validates array" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;dashed=1;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-prep-type" target="rc-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="1085" />
+              <mxPoint x="760" y="845" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-parent" value="parent/child" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-parent-child" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1240" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-assetfunding" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-asset-funding" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1225" y="620" />
+              <mxPoint x="1225" y="1230" />
+              <mxPoint x="1060" y="1230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-funding-assetfunding" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-funding" target="rc-asset-funding" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="1230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-publisher" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-asset-publisher" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1235" y="620" />
+              <mxPoint x="1235" y="1400" />
+              <mxPoint x="1060" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-publisher-assetpublisher" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-publisher" target="rc-asset-publisher" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-role-restrictions" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-role" target="rc-role-restrictions" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-restrictions-asset" value="asset restriction" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-role-restrictions" target="rc-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="965" />
+              <mxPoint x="380" y="690" />
+              <mxPoint x="820" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-restrictions-specimen" value="specimen restriction" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-role-restrictions" target="rc-specimen" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="965" />
+              <mxPoint x="380" y="845" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-restrictions-collection" value="collection restriction" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-role-restrictions" target="rc-collection" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="990" />
+              <mxPoint x="390" y="185" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-restrictions-institution" value="institution restriction" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-role-restrictions" target="rc-institution" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="1000" />
+              <mxPoint x="40" y="165" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-user-group" value="creates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-user" target="rc-group" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1740" y="495" />
+              <mxPoint x="1740" y="185" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-group-access" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-group" target="rc-group-access" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1930" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-user-groupaccess" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-user" target="rc-group-access" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1740" y="495" />
+              <mxPoint x="1740" y="335" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-group-asset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-group" target="rc-group-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2110" y="185" />
+              <mxPoint x="2110" y="835" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rc-edge-asset-groupasset" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;fontFamily=Helvetica;horizontal=1;" parent="1" source="rc-asset" target="rc-group-asset" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1225" y="590" />
+              <mxPoint x="1225" y="950" />
+              <mxPoint x="1740" y="950" />
+              <mxPoint x="1740" y="835" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="file-share-upload-query" name="File Share Upload Query">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="fs-title" value="File, Share, Upload, and Query Support" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="620" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-note" value="Solid lines are database foreign keys. Dashed lines are indexed or recorded identifiers without FKs." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="840" y="20" width="380" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-asset" value="ASSET&#xa;asset_guid PK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-file" value="FILE&#xa;file_id PK&#xa;asset_guid FK&#xa;sync_status FK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="110" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-file-status" value="FILE_SYNC_STATUS&#xa;file_sync_status PK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="250" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-file-cache" value="FILE_CACHE&#xa;file_cache_id PK&#xa;file_id FK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="120" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-directories" value="DIRECTORIES&#xa;directory_id PK&#xa;access access_type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="390" width="210" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-shared" value="SHARED_ASSETS&#xa;shared_asset_id PK&#xa;directory_id FK&#xa;asset_guid soft ref" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="360" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-user-access" value="USER_ACCESS&#xa;user_access_id PK&#xa;directory_id FK&#xa;username soft ref" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="340" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-asset-change" value="ASSET_CHANGE&#xa;asset_change_id PK&#xa;directory_id FK&#xa;asset/user soft refs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="220" y="540" width="210" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-large" value="ACTIVE_LARGE_UPLOADS&#xa;upload_id PK&#xa;directory_id FK&#xa;asset_guid indexed soft ref" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="820" y="520" width="230" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-user" value="DASSCO_USER&#xa;username UK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="690" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-saved-query" value="SAVED_QUERY&#xa;username FK&#xa;unique(username, name)&#xa;no primary key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="670" width="210" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-parked" value="PARKED_FILE&#xa;parked_file_id PK&#xa;path UK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="610" y="680" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-caches" value="ASSET_CACHES&#xa;legacy cache table&#xa;no FKs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="680" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-asset-file" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-asset" target="fs-file">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-status-file" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-file-status" target="fs-file">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-file-cache" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-file" target="fs-file-cache">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-dir-shared" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-directories" target="fs-shared">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-dir-user" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-directories" target="fs-user-access">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-dir-change" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-directories" target="fs-asset-change">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-dir-large" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-directories" target="fs-large">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-user-query" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="fs-user" target="fs-saved-query">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-shared-asset" value="soft ref" style="endArrow=open;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="fs-shared" target="fs-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-change-asset" value="soft ref" style="endArrow=open;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="fs-asset-change" target="fs-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-large-asset" value="soft ref" style="endArrow=open;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="fs-large" target="fs-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-useraccess-user" value="soft ref" style="endArrow=open;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="fs-user-access" target="fs-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fs-edge-change-user" value="soft ref" style="endArrow=open;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="fs-asset-change" target="fs-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="mappings-schema" name="Mappings Schema">
+    <mxGraphModel dx="1100" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="650" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="map-title" value="mappings schema - ARS to Specify names" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="map-note" value="ARS side is unique in each mapping table. One Specify name can be mapped from multiple ARS names." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="650" y="20" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="map-inst-spec" value="institutions_specify&#xa;id PK&#xa;name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="160" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="map-inst-map" value="institutions_mapping&#xa;id PK&#xa;institution_specify_id FK&#xa;institution_ars_id FK UK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="390" y="140" width="230" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="map-inst-ars" value="institutions_ars&#xa;id PK&#xa;name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="160" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="map-coll-spec" value="collections_specify&#xa;id PK&#xa;name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="map-coll-map" value="collections_mapping&#xa;id PK&#xa;collection_specify_id FK&#xa;collection_ars_id FK UK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="390" y="390" width="230" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="map-coll-ars" value="collections_ars&#xa;id PK&#xa;name" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="740" y="410" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="map-edge-inst-spec" value="FK" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="map-inst-spec" target="map-inst-map">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="map-edge-inst-ars" value="FK + unique ARS" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="map-inst-ars" target="map-inst-map">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="map-edge-coll-spec" value="FK" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="map-coll-spec" target="map-coll-map">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="map-edge-coll-ars" value="FK + unique ARS" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="map-coll-ars" target="map-coll-map">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="age-legacy" name="AGE Legacy Graph">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="age-title" value="Apache AGE legacy graph - dassco" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="560" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="age-note" value="Legacy/manual graph. The relational PostgreSQL schema is the current source of truth." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="820" y="20" width="380" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="age-asset" value="Asset&#xa;name / asset_guid / guid&#xa;status, internal_status&#xa;tags, file_formats, payload_type" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="320" width="230" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="age-event" value="Event&#xa;name, event, timestamp" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="120" width="180" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="age-user" value="User&#xa;name, user_id" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="120" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="age-pipeline" value="Pipeline" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="800" y="110" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-workstation" value="Workstation&#xa;name, status" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="110" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="age-institution" value="Institution&#xa;also legacy Institute label" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="330" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="age-collection" value="Collection" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="810" y="500" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-specimen" value="Specimen&#xa;name, barcode, specimen_pid" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="500" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="age-asset-parent" value="Asset parent" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="320" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-lookups" value="Lookup-like nodes&#xa;Status, Subject, Payload_type, File_format, Internal_status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="650" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="age-funding" value="Funding_entity" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="660" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-digitiser" value="Digitiser" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="660" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-role" value="Role" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="500" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-group" value="Asset_Group" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="430" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-asset-event" value="CHANGED_BY" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-asset" target="age-event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-event-user" value="INITIATED_BY" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-event" target="age-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-event-pipeline" value="USED" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-event" target="age-pipeline">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-event-workstation" value="USED" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-event" target="age-workstation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-asset-inst" value="BELONGS_TO" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-asset" target="age-institution">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-asset-coll" value="IS_PART_OF" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-asset" target="age-collection">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-specimen-asset" value="USED_BY / CREATED_BY / BELONGS_TO" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-specimen" target="age-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-parent" value="CHILD_OF" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-asset" target="age-asset-parent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-coll-inst" value="USED_BY" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-collection" target="age-institution">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-pipe-inst" value="USED_BY" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-pipeline" target="age-institution">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-ws-inst" value="STATIONED_AT" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-workstation" target="age-institution">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-lookup" value="HAS" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="age-asset" target="age-lookups">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-funding" value="FUNDS" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="age-funding" target="age-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-digitiser" value="DIGITISED" style="endArrow=block;html=1;rounded=0;dashed=1;" edge="1" parent="1" source="age-digitiser" target="age-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-role-inst" value="RESTRICTED_TO" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-institution" target="age-role">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-group-asset" value="CONTAINS" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-group" target="age-asset">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="age-edge-group-user" value="HAS_ACCESS / MADE_BY" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="age-group" target="age-user">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

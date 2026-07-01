@@ -224,6 +224,9 @@ services:
 | POSTGRES_MAX_LIFETIME       | Set the maxLifetime. Check here for the detailed description: https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby       | FALSE    |
 | POSTGRES_MINIMUM_IDLE       | Set the minimumIdle. Check here for the detailed description: https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby       | FALSE    |
 | POSTGRES_MAXIMUM_POOL_SIZE  | Set the maximumPoolSize. Check here for the detailed description: https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby   | FALSE    |
+| POSTGRES_READONLY_DATABASE  | Set the database name used when Liquibase grants access to the readonly user. Example: "dassco_asset_service"                                                  | FALSE    |
+| POSTGRES_READONLY_USER      | Set the readonly database username. Example: "readonly_user"                                                                                                     | FALSE    |
+| POSTGRES_READONLY_PASSWORD  | Set the readonly database password. Example: "PASSWORD"                                                                                                          | FALSE    |
 
 ## DaSSCo FileProxy
 ### Prerequisite
@@ -271,8 +274,8 @@ In this case: "/root/ars/config/default.conf" has to exist on the host machine w
 #### Database Variables
 | Environment Variable        | Description                                                                                                                                                      | Required |
 |-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| POSTGRES_URL                | Set the jdbc url for your postgres database, usually an internal url. Example: "jdbc:postgresql://postgres:5432/dassco_file_poxy"                                | TRUE     |
-| POSTGRES_USER               | Set the username for the database user you want to use. Example: "dassco_file_proxy"                                                                             | TRUE     |
+| POSTGRES_URL                | Set the jdbc url for your postgres database, usually an internal url. Example: "jdbc:postgresql://postgres:5432/dassco_asset_service"                            | TRUE     |
+| POSTGRES_USER               | Set the username for the database user you want to use. Example: "dassco_asset_service"                                                                          | TRUE     |
 | POSTGRES_PASSWORD           | Set the password for the database user you want to use. Example: "PASSWORD"                                                                                      | TRUE     |
 | POSTGRES_CONNECTION_TIMEOUT | Set the connectionTimeout. Check here for the detailed description: https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby | FALSE    |
 | POSTGRES_IDLE_TIMEOUT       | Set the idleTimeout. Check here for the detailed description: https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby       | FALSE    |
@@ -331,7 +334,7 @@ In this case: "/root/ars/postgres_data" has to exist on the host machine where t
 | Environment Variable | Description                                                                 | Required |
 |----------------------|-----------------------------------------------------------------------------|----------|
 | POSTGRES_DB          | Set the name of the database. Example: "dassco_asset_service"               | TRUE     |
-| POSTGRES_USER        | Set the username of the database user. Example: "dassco_asset_service_user" | TRUE     |
+| POSTGRES_USER        | Set the username of the database user. Example: "dassco_asset_service"      | TRUE     |
 | POSTGRES_PASSWORD    | Set the password of the database used. Example: "PASSWORD"                  | TRUE     |
 
 ## DaSSCo Nginx Load Balancer
@@ -395,3 +398,4 @@ upstream idp {
 * Furthermore everything else that has to do with project description and agreements have been transferred to dasscos N drive.
 * All confluence documents have been converted to pdfs and can be found in N:/SCI-SNM-DigitalCollections/DaSSCo/IT_infrastructure/Storage%20solution/Confluence%20documentation.
 
+[See README.md in ARS-Deployment](https://github.com/NHMDenmark/ARS-Deployment)
