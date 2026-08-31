@@ -2,7 +2,7 @@
 
 | ENV | URL |
 |--|--|
-| TEST | https://idp.test.dassco.dk |
+| TEST | https://auth.dassco.dk |
 | PROD | xx |
 
 ARS access is controlled by Keycloak realm roles and by checks in the ARS codebase.
